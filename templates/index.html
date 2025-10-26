@@ -1,0 +1,452 @@
+{{define "index.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}}</title>
+    <!-- LineIcons CSS -->
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/static/css/partials/navbar.css">
+    <link rel="stylesheet" href="/static/css/partials/footer.css">
+    <link rel="stylesheet" href="/static/css/index.css">
+</head>
+<body>
+    <!-- Navbar -->
+    {{template "partials/navbar.html" .}}
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-container">
+            <!-- Átomo superior derecha (azul fuerte) -->
+            <div id="atome-top-right" class="atome-decoration atome-blue-strong">
+                <div class="atome-wrap">
+                    <div class="circle circle_0"></div>
+                    <div class="circle circle_1"></div>
+                    <div class="circle circle_2"></div>
+                    <div class="circle circle_3"></div>
+                </div>
+            </div>
+
+            <!-- Contenido centrado -->
+            <div class="hero-content">
+                <h1 class="hero-title">Automatiza tu negocios con Agentes de IA</h1>
+                <p class="hero-subtitle">Disponible 24/7, listo en minutos y sin escribir una línea de código.</p>
+                <button class="hero-btn">Crear mi Agente</button>
+            </div>
+
+            <!-- Átomo inferior izquierda (azul marino) -->
+            <div id="atome-bottom-left" class="atome-decoration atome-blue-dark">
+                <div class="atome-wrap">
+                    <div class="circle circle_0"></div>
+                    <div class="circle circle_1"></div>
+                    <div class="circle circle_2"></div>
+                    <div class="circle circle_3"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección de Redes Sociales -->
+    <section class="social-platforms-section">
+        <div class="social-platforms-container">
+            <h2 class="social-platforms-title">Integra con tus plataformas favoritas</h2>
+            <div class="social-platforms-grid">
+                <div class="social-platform-item" data-platform="whatsapp">
+                    <div class="social-platform-icon whatsapp">
+                        <i class="lni lni-whatsapp"></i>
+                    </div>
+                    <div class="social-platform-name">WhatsApp</div>
+                </div>
+                
+                <div class="social-platform-item" data-platform="facebook">
+                    <div class="social-platform-icon facebook">
+                        <i class="lni lni-facebook"></i>
+                    </div>
+                    <div class="social-platform-name">Facebook</div>
+                </div>
+                
+                <div class="social-platform-item" data-platform="instagram">
+                    <div class="social-platform-icon instagram">
+                        <i class="lni lni-instagram-original"></i>
+                    </div>
+                    <div class="social-platform-name">Instagram</div>
+                </div>
+                
+                <div class="social-platform-item" data-platform="telegram">
+                    <div class="social-platform-icon telegram">
+                        <i class="lni lni-telegram-original"></i>
+                    </div>
+                    <div class="social-platform-name">Telegram</div>
+                </div>
+                
+                <div class="social-platform-item" data-platform="wechat">
+                    <div class="social-platform-icon wechat">
+                        <i class="lni lni-wechat"></i>
+                    </div>
+                    <div class="social-platform-name">WeChat</div>
+                </div>
+
+                <div class="social-platform-item" data-platform="kakaotalk">
+                    <div class="social-platform-icon kakaotalk">
+                        <i class="lni lni-comments"></i>
+                    </div>
+                    <div class="social-platform-name">KakaoTalk</div>
+                </div>
+
+                <div class="social-platform-item" data-platform="line">
+                    <div class="social-platform-icon line">
+                        <i class="lni lni-line"></i>
+                    </div>
+                    <div class="social-platform-name">Line</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección de plataformas -->
+    <section class="platforms-section">
+        <div class="section-header">
+            <h2 class="section-title">Chatbots en Todas las Plataformas</h2>
+            <p class="section-subtitle">Llega a tus clientes donde sea que estén. Nuestros chatbots se integran perfectamente con las plataformas más populares.</p>
+        </div>
+
+        <!-- Carrusel de Plataformas -->
+        <div class="platforms-carousel-container">
+            <button class="carousel-arrow carousel-arrow-left" id="carouselPrev">
+                <i class="lni lni-chevron-left"></i>
+            </button>
+
+            <div class="platforms-carousel" id="platformsCarousel">
+                <!-- WhatsApp - Clínica Dental -->
+                <div class="platform-slide" data-platform="whatsapp">
+                    <div class="mockup-container">
+                        <div class="mockup-phone">
+                            <video class="phone-screen-video" autoplay loop muted playsinline>
+                                <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+                                Tu navegador no soporta video HTML5.
+                            </video>
+                            <img src="/static/images/mockup.png" alt="WhatsApp Chatbot Mockup" class="mockup-image">
+                        </div>
+                    </div>
+                    <div class="platform-content">
+                        <h3 class="platform-name">
+                            <div class="platform-icon platform-icon-black whatsapp">
+                                <i class="lni lni-heart-pulse"></i>
+                            </div>
+                            Clínica Dental
+                        </h3>
+                        <p class="platform-description">
+                            Optimiza la gestión de tu clínica dental con un chatbot especializado que agenda citas, confirma tratamientos, envía recordatorios y responde consultas odontológicas básicas las 24 horas. Ideal para mejorar la experiencia del paciente y reducir las llamadas de recepción.
+                        </p>
+                        <ul class="platform-features">
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Agendamiento automático de citas</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Recordatorios de tratamientos y revisiones</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Consultas sobre higiene dental y servicios</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Envío de presupuestos y planes de tratamiento</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Facebook - Peluquería -->
+                <div class="platform-slide" data-platform="facebook">
+                    <div class="mockup-container">
+                        <div class="mockup-phone">
+                            <video class="phone-screen-video" autoplay loop muted playsinline>
+                                <source src="/static/videos/coming-soon.mp4" type="video/mp4">
+                                Tu navegador no soporta video HTML5.
+                            </video>
+                            <img src="/static/images/mockup.png" alt="Facebook Messenger Chatbot Mockup" class="mockup-image">
+                        </div>
+                    </div>
+                    <div class="platform-content">
+                        <h3 class="platform-name">
+                            <div class="platform-icon platform-icon-black facebook">
+                                <i class="lni lni-cut"></i>
+                            </div>
+                            Peluquería
+                        </h3>
+                        <p class="platform-description">
+                            Transforma tu salón de belleza con un asistente virtual que gestiona reservas, muestra catálogos de cortes y tratamientos, ofrece consejos de cuidado capilar y mantiene a tus clientes informadas sobre tendencias y promociones especiales.
+                        </p>
+                        <ul class="platform-features">
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Reserva de citas para cortes y tratamientos</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Catálogo visual de estilos y colores</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Consejos personalizados de cuidado capilar</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Notificaciones de promociones y nuevos servicios</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Instagram - Pizzería -->
+                <div class="platform-slide" data-platform="instagram">
+                    <div class="mockup-container">
+                        <div class="mockup-phone">
+                            <video class="phone-screen-video" autoplay loop muted playsinline>
+                                <source src="/static/videos/coming-soon.mp4" type="video/mp4">
+                                Tu navegador no soporta video HTML5.
+                            </video>
+                            <img src="/static/images/mockup.png" alt="Instagram Direct Chatbot Mockup" class="mockup-image">
+                        </div>
+                    </div>
+                    <div class="platform-content">
+                        <h3 class="platform-name">
+                            <div class="platform-icon platform-icon-black instagram">
+                                <i class="lni lni-pizza"></i>
+                            </div>
+                            Pizzería
+                        </h3>
+                        <p class="platform-description">
+                            Acelera las ventas de tu pizzería con un bot que toma pedidos directamente desde Instagram, muestra el menú con imágenes atractivas, calcula tiempos de entrega y procesa pagos. Perfecto para generar ventas desde tus posts y stories.
+                        </p>
+                        <ul class="platform-features">
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Pedidos directos desde stories y posts</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Menú visual interactivo con precios</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Cálculo automático de costos y delivery</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Promociones y combos especiales</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Telegram - Escuela -->
+                <div class="platform-slide" data-platform="telegram">
+                    <div class="mockup-container">
+                        <div class="mockup-phone">
+                            <video class="phone-screen-video" autoplay loop muted playsinline>
+                                <source src="/static/videos/coming-soon.mp4" type="video/mp4">
+                                Tu navegador no soporta video HTML5.
+                            </video>
+                            <img src="/static/images/mockup.png" alt="Telegram Bot Mockup" class="mockup-image">
+                        </div>
+                    </div>
+                    <div class="platform-content">
+                        <h3 class="platform-name">
+                            <div class="platform-icon platform-icon-black telegram">
+                                <i class="lni lni-graduation"></i>
+                            </div>
+                            Escuela
+                        </h3>
+                        <p class="platform-description">
+                            Mejora la comunicación escolar con un bot educativo que envía horarios, calificaciones, notificaciones importantes, gestiona permisos y facilita la comunicación entre padres, estudiantes y profesores de manera segura y organizada.
+                        </p>
+                        <ul class="platform-features">
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Consulta de horarios y calendario escolar</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Notificaciones de calificaciones y tareas</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Gestión de permisos y ausencias</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Comunicación directa con profesores</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- WeChat - Restaurante -->
+                <div class="platform-slide" data-platform="wechat">
+                    <div class="mockup-container">
+                        <div class="mockup-phone">
+                            <video class="phone-screen-video" autoplay loop muted playsinline>
+                                <source src="/static/videos/coming-soon.mp4" type="video/mp4">
+                                Tu navegador no soporta video HTML5.
+                            </video>
+                            <img src="/static/images/mockup.png" alt="WeChat Bot Mockup" class="mockup-image">
+                        </div>
+                    </div>
+                    <div class="platform-content">
+                        <h3 class="platform-name">
+                            <div class="platform-icon platform-icon-black wechat">
+                                <i class="lni lni-restaurant"></i>
+                            </div>
+                            Restaurante
+                        </h3>
+                        <p class="platform-description">
+                            Eleva la experiencia gastronómica con un chatbot que toma reservaciones, presenta el menú del día, sugiere maridajes, gestiona pedidos para llevar y colecta feedback de los comensales para mejorar continuamente el servicio.
+                        </p>
+                        <ul class="platform-features">
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Reservas de mesas y eventos especiales</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Menú interactivo con sugerencias del chef</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Recomendaciones de maridajes y vinos</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Pedidos para llevar y delivery</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <button class="carousel-arrow carousel-arrow-right" id="carouselNext">
+                <i class="lni lni-chevron-right"></i>
+            </button>
+        </div>
+
+        <!-- Indicadores del carrusel -->
+        <div class="carousel-indicators" id="carouselIndicators"></div>
+    </section>
+
+    <!-- Sección de Planes -->
+    <section class="pricing-section">
+        <div class="pricing-header">
+            <h2 class="pricing-title">Planes que se Adaptan a Ti</h2>
+            <p class="pricing-subtitle">Elige el plan perfecto para tu negocio. Todos incluyen soporte 24/7 y actualizaciones gratuitas.</p>
+        </div>
+
+        <div class="pricing-grid">
+            <!-- Plan Protón -->
+            <div class="pricing-card" data-plan="proton">
+                <h3 class="plan-name">Plan Protón</h3>
+                <div class="plan-price" data-base-price="655">$655</div>
+                <div class="plan-period">por mes</div>
+                <p class="plan-description">Perfecto para pequeños negocios que comienzan con chatbots.</p>
+                
+                <ul class="plan-features">
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>1 Chatbot incluido</li>
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>1,000 mensajes/mes</li>
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Integración WhatsApp</li>
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Soporte por email</li>
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Panel básico de analytics</li>
+                </ul>
+                
+                <button class="plan-button primary">Elegir Plan</button>
+            </div>
+
+            <!-- Plan Neutrón -->
+            <div class="pricing-card featured" data-plan="neutron">
+                <div class="pricing-badge">Más Popular</div>
+                <h3 class="plan-name">Plan Neutrón</h3>
+                <div class="plan-price" data-base-price="255">$255</div>
+                <div class="plan-period">por mes</div>
+                <p class="plan-description">Ideal para Mipymes en crecimiento.</p>
+                
+                <ul class="plan-features">
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>3 Chatbots incluidos</li>
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>10,000 mensajes/mes</li>
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Todas las plataformas</li>
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Soporte prioritario</li>
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Analytics avanzados</li>
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Integraciones CRM</li>
+                </ul>
+                
+                <button class="plan-button primary">Elegir Plan</button>
+            </div>
+
+            <!-- Plan Electrón -->
+            <div class="pricing-card" data-plan="electron">
+                <h3 class="plan-name">Plan Electrón</h3>
+                <div class="plan-price" id="customPrice">$199</div>
+                <div class="plan-period">por mes</div>
+                <p class="plan-description">Plan flexible basado en tu consumo real.</p>
+                
+                <!-- Selector de plan base -->
+                <div class="plan-selector">
+                    <label class="plan-selector-label">Plan base:</label>
+                    <div class="plan-buttons">
+                        <button class="plan-type-btn active" data-plan-type="neutron">Neutrón</button>
+                        <button class="plan-type-btn" data-plan-type="proton">Protón</button>
+                    </div>
+                </div>
+
+                <!-- Slider de GB -->
+                <div class="gb-selector">
+                    <label for="gbSlider" class="gb-label">Almacenamiento GB: <span id="gbValue">40</span> GB</label>
+                    <input type="range" id="gbSlider" class="gb-slider" min="40" max="320" value="40" step="10">
+                    <div class="gb-range">
+                        <span>40 GB</span>
+                        <span>320 GB</span>
+                    </div>
+                </div>
+                
+                <ul class="plan-features">
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Chatbots según plan base</li>
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Almacenamiento variable</li>
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Todas las funcionalidades</li>
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Soporte dedicado</li>
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>API personalizada</li>
+                    <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Facturación por uso real</li>
+                </ul>
+                
+                <button class="plan-button secondary">Contactar Ventas</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección de FAQ -->
+    <section class="faq-section">
+        <div class="faq-header">
+            <h2 class="faq-title">Preguntas Frecuentes</h2>
+            <p class="faq-subtitle">Encuentra respuestas a las preguntas más comunes sobre nuestros chatbots.</p>
+        </div>
+
+        <div class="faq-container">
+            <div class="faq-item">
+                <button class="faq-question">
+                    ¿Qué tan difícil es configurar un chatbot?
+                    <div class="faq-icon">+</div>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Es muy sencillo. Nuestro asistente de configuración te guía paso a paso y puedes tener tu chatbot funcionando en menos de 10 minutos. No necesitas conocimientos técnicos.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    ¿Puedo cambiar de plan en cualquier momento?
+                    <div class="faq-icon">+</div>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Sí, puedes actualizar o degradar tu plan cuando quieras. Los cambios se aplican inmediatamente y solo pagas la diferencia prorrateada.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    ¿Los chatbots funcionan en múltiples idiomas?
+                    <div class="faq-icon">+</div>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Absolutamente. Nuestros chatbots soportan más de 50 idiomas y pueden detectar automáticamente el idioma del usuario para responder en consecuencia.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    ¿Qué tipo de soporte técnico ofrecen?
+                    <div class="faq-icon">+</div>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Ofrecemos soporte 24/7 por email, chat en vivo y teléfono. Los planes Profesional y Empresarial incluyen soporte prioritario con tiempos de respuesta garantizados.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    ¿Hay límite en la personalización del chatbot?
+                    <div class="faq-icon">+</div>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        No hay límites. Puedes personalizar completamente la personalidad, respuestas, flujos de conversación y apariencia de tu chatbot para que refleje tu marca.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    {{template "partials/footer.html" .}}
+
+    <!-- Botón flotante de WhatsApp -->
+    <div class="whatsapp-float" onclick="openWhatsApp()">
+        <i class="lni lni-whatsapp"></i>
+        <div class="whatsapp-tooltip">¡Contáctanos por WhatsApp!</div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/static/js/index.js"></script>
+</body>
+</html>
+
+{{end}}
