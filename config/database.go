@@ -3,7 +3,9 @@ package config
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
+	"strings"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -13,16 +15,30 @@ import (
 var DB *gorm.DB
 
 func ConnectDatabase() {
-	// Primero intentar con MYSQL_PUBLIC_URL (Railway)
-	publicURL := os.Getenv("MYSQL_PUBLIC_URL")
-
 	var dsn string
 
+	// Intentar con MYSQL_PUBLIC_URL primero (Railway)
+	publicURL := os.Getenv("MYSQL_PUBLIC_URL")
+
 	if publicURL != "" {
-		// Usar la URL pública directamente
-		dsn = publicURL
+		// Parsear la URL de MySQL
+		parsedURL, err := url.Parse(publicURL)
+		if err != nil {
+			log.Fatal("Error al parsear MYSQL_PUBLIC_URL:", err)
+		}
+
+		// Extraer componentes
+		password, _ := parsedURL.User.Password()
+		username := parsedURL.User.Username()
+		host := parsedURL.Hostname()
+		port := parsedURL.Port()
+		database := strings.TrimPrefix(parsedURL.Path, "/")
+
+		// Construir DSN en el formato correcto
+		dsn = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+			username, password, host, port, database)
 	} else {
-		// Construir DSN manualmente (para desarrollo local)
+		// Construcción manual (desarrollo local)
 		host := os.Getenv("MYSQL_HOST")
 		port := os.Getenv("MYSQL_PORT")
 		database := os.Getenv("MYSQL_DATABASE")
