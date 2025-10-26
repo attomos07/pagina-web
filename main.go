@@ -5,6 +5,7 @@ import (
 	"attomos/handlers"
 	"attomos/middleware"
 	"attomos/models"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -14,68 +15,94 @@ import (
 )
 
 func main() {
-	// Cargar variables de entorno
 	if err := godotenv.Load(); err != nil {
 		log.Println("⚠️  Advertencia: No se encontró archivo .env")
 	}
 
-	// Conectar a la base de datos
+	log.Println("🔍 Verificando variables de entorno...")
+	if os.Getenv("MYSQL_PUBLIC_URL") == "" && os.Getenv("MYSQL_HOST") == "" {
+		log.Println("⚠️  Advertencia: No hay configuración de MySQL")
+	} else {
+		log.Println("✅ Configuración de MySQL encontrada")
+	}
+
 	config.ConnectDatabase()
 
-	// Migrar modelos (crear tablas)
 	if err := config.DB.AutoMigrate(&models.User{}); err != nil {
 		log.Fatal("Error al migrar la base de datos:", err)
 	}
-	log.Println("✅ Migraciones de base de datos completadas")
+	log.Println("✅ Migraciones completadas")
 
-	// Crear router Gin
+	if _, err := os.Stat("./templates"); os.IsNotExist(err) {
+		log.Fatal("❌ ERROR: Falta la carpeta templates/")
+	}
+	if _, err := os.Stat("./static"); os.IsNotExist(err) {
+		log.Println("⚠️  Advertencia: Falta la carpeta static/")
+	}
+
+	if os.Getenv("GIN_MODE") == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	router := gin.Default()
 
-	// Cargar templates
-	router.LoadHTMLGlob("templates/**/*.html")
+	// ✅ Cargar templates de forma explícita por nivel de directorio
+	tmpl := template.New("") // Start with a base template
 
-	// Servir archivos estáticos
+	// Top-level files in templates/
+	basePatterns := []string{
+		"templates/*.html",          // e.g., index.html, dashboard.html
+		"templates/auth/*.html",     // e.g., auth/login.html, auth/register.html
+		"templates/partials/*.html", // e.g., partials/agents.html, etc.
+	}
+
+	for _, pattern := range basePatterns {
+		parsed, err := tmpl.ParseGlob(pattern)
+		if err != nil {
+			log.Fatalf("❌ Error parsing templates from %s: %v", pattern, err)
+		}
+		tmpl = parsed
+	}
+
+	if len(tmpl.Templates()) == 0 {
+		log.Fatal("❌ No templates found! Check your templates/ directory.")
+	}
+
+	router.SetHTMLTemplate(tmpl)
+	log.Printf("✅ Templates cargados correctamente (%d archivos)", len(tmpl.Templates()))
+
 	router.Static("/static", "./static")
 
 	// ==========================================
-	// RUTAS PÚBLICAS (SIN AUTENTICACIÓN)
+	// RUTAS PÚBLICAS
 	// ==========================================
-
-	// Páginas públicas
 	router.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", gin.H{
-			"title": "Attomos",
-		})
+		log.Println("📄 Solicitud GET / recibida")
+		c.HTML(http.StatusOK, "index.html", gin.H{"title": "Attomos"})
 	})
 
 	router.GET("/agents", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "agents.html", gin.H{
-			"title": "Agentes",
-		})
+		c.HTML(http.StatusOK, "partials/agents.html", gin.H{"title": "Agentes"})
 	})
 
 	router.GET("/pricing", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "pricing.html", gin.H{
-			"title": "Precios",
-		})
+		c.HTML(http.StatusOK, "partials/pricing.html", gin.H{"title": "Precios"})
 	})
 
 	router.GET("/contact", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "contact.html", gin.H{
-			"title": "Contacto",
-		})
+		c.HTML(http.StatusOK, "partials/contact.html", gin.H{"title": "Contacto"})
 	})
 
 	router.GET("/login", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "login.html", gin.H{
-			"title": "Iniciar sesión",
-		})
+		c.HTML(http.StatusOK, "auth/login.html", gin.H{"title": "Iniciar sesión"})
 	})
 
 	router.GET("/register", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "register.html", gin.H{
-			"title": "Registrarse",
-		})
+		c.HTML(http.StatusOK, "auth/register.html", gin.H{"title": "Registrarse"})
+	})
+
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
 	// ==========================================
@@ -89,32 +116,33 @@ func main() {
 	}
 
 	// ==========================================
-	// RUTAS PROTEGIDAS (CON AUTENTICACIÓN)
+	// RUTAS PROTEGIDAS
 	// ==========================================
 	protected := router.Group("/")
 	protected.Use(middleware.AuthRequired())
 	{
-		// Dashboard
 		protected.GET("/dashboard", func(c *gin.Context) {
-			c.HTML(http.StatusOK, "dashboard.html", gin.H{
-				"title": "Dashboard",
-			})
+			c.HTML(http.StatusOK, "dashboard.html", gin.H{"title": "Dashboard"})
 		})
 
-		// API protegidas
 		api := protected.Group("/api")
 		{
 			api.GET("/me", handlers.GetCurrentUser)
 		}
 	}
 
-	// Obtener puerto
+	router.NoRoute(func(c *gin.Context) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Ruta no encontrada",
+			"path":  c.Request.URL.Path,
+		})
+	})
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	// Iniciar servidor
 	log.Printf("🚀 Servidor corriendo en http://localhost:%s\n", port)
 	if err := router.Run(":" + port); err != nil {
 		log.Fatal("Error al iniciar el servidor:", err)
