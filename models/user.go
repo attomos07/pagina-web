@@ -1,43 +1,49 @@
-package config
+package models
 
 import (
-	"fmt"
-	"log"
-	"os"
+	"time"
 
-	"gorm.io/driver/mysql"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
-var DB *gorm.DB
-
-// ConnectDatabase establece la conexión con MySQL
-func ConnectDatabase() {
-	host := os.Getenv("MYSQL_HOST")
-	port := os.Getenv("MYSQL_PORT")
-	database := os.Getenv("MYSQL_DATABASE")
-	user := os.Getenv("MYSQL_USER")
-	password := os.Getenv("MYSQL_PASSWORD")
-
-	// Construir DSN (Data Source Name)
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		user, password, host, port, database)
-
-	// Conectar a la base de datos
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
-
-	if err != nil {
-		log.Fatal("Error al conectar con la base de datos:", err)
-	}
-
-	DB = db
-	log.Println("✅ Conexión exitosa con MySQL")
+// User representa el modelo de usuario en la base de datos
+type User struct {
+	ID           uint           `gorm:"primaryKey" json:"id"`
+	FirstName    string         `gorm:"size:100;not null" json:"firstName"`
+	LastName     string         `gorm:"size:100;not null" json:"lastName"`
+	Email        string         `gorm:"size:255;uniqueIndex;not null" json:"email"`
+	Password     string         `gorm:"size:255;not null" json:"-"` // No se expone en JSON
+	Company      string         `gorm:"size:255" json:"company"`
+	BusinessType string         `gorm:"size:100" json:"businessType"`
+	CreatedAt    time.Time      `json:"createdAt"`
+	UpdatedAt    time.Time      `json:"updatedAt"`
+	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
-// GetDB retorna la instancia de la base de datos
-func GetDB() *gorm.DB {
-	return DB
+// HashPassword encripta la contraseña del usuario
+func (u *User) HashPassword(password string) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	u.Password = string(hashedPassword)
+	return nil
+}
+
+// CheckPassword verifica si la contraseña es correcta
+func (u *User) CheckPassword(password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+	return err == nil
+}
+
+// BeforeCreate hook que se ejecuta antes de crear un usuario
+func (u *User) BeforeCreate(tx *gorm.DB) error {
+	// Validaciones adicionales si es necesario
+	return nil
+}
+
+// TableName especifica el nombre de la tabla
+func (User) TableName() string {
+	return "users"
 }
