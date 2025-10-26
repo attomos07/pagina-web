@@ -1,5 +1,5 @@
 // ============================================
-// LOGIN JAVASCRIPT - ESPECÍFICO
+// LOGIN JAVASCRIPT - CON API REAL
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -35,15 +35,6 @@ function initLoginValidation() {
             clearFieldError(this);
         });
     });
-    
-    // Validación especial para checkboxes
-    const rememberCheckbox = document.getElementById('remember');
-    if (rememberCheckbox) {
-        rememberCheckbox.addEventListener('change', function() {
-            // El checkbox "recordarme" no es requerido, solo opcional
-            console.log('Remember me:', this.checked);
-        });
-    }
 }
 
 function validateLoginField(field) {
@@ -148,12 +139,11 @@ function initLoginForm() {
     }
 }
 
-function handleLoginSubmit(e) {
+async function handleLoginSubmit(e) {
     e.preventDefault();
     
     const form = e.target;
     const formData = new FormData(form);
-    const data = Object.fromEntries(formData);
     
     // Validar todos los campos requeridos
     let isValid = true;
@@ -176,59 +166,59 @@ function handleLoginSubmit(e) {
         return;
     }
     
+    // Preparar datos
+    const data = {
+        email: formData.get('email'),
+        password: formData.get('password')
+    };
+    
     // Mostrar loading
     const submitBtn = form.querySelector('.auth-btn');
     setButtonLoading(submitBtn, true);
     
-    // Simular envío al servidor
-    simulateLoginRequest(data, submitBtn);
-}
+    try {
+        // Enviar petición al servidor
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+            credentials: 'include' // Importante para cookies
+        });
 
-function simulateLoginRequest(data, button) {
-    // Simular tiempo de respuesta del servidor
-    setTimeout(() => {
-        // Simular diferentes escenarios
-        const scenarios = ['success', 'invalid_credentials', 'server_error'];
-        const randomScenario = scenarios[0]; // Siempre éxito para demo
-        
-        switch (randomScenario) {
-            case 'success':
-                handleLoginSuccess(data);
-                break;
-            case 'invalid_credentials':
-                handleLoginError('Email o contraseña incorrectos');
-                setButtonLoading(button, false);
-                break;
-            case 'server_error':
-                handleLoginError('Error del servidor. Inténtalo de nuevo');
-                setButtonLoading(button, false);
-                break;
+        const result = await response.json();
+
+        if (response.ok) {
+            // Login exitoso
+            handleLoginSuccess(result);
+        } else {
+            // Error en login
+            handleLoginError(result.error || 'Error al iniciar sesión');
+            setButtonLoading(submitBtn, false);
         }
-    }, 2000);
+    } catch (error) {
+        console.error('Error en login:', error);
+        handleLoginError('Error de conexión. Intenta de nuevo.');
+        setButtonLoading(submitBtn, false);
+    }
 }
 
 function handleLoginSuccess(data) {
     console.log('Login exitoso:', data);
-    
-    // Guardar datos de sesión si "recordarme" está marcado
-    if (data.remember) {
-        localStorage.setItem('rememberLogin', 'true');
-        localStorage.setItem('loginEmail', data.email);
-    }
     
     // Mostrar notificación de éxito
     showNotification('¡Bienvenido! Redirigiendo al panel...', 'success');
     
     // Tracking del evento
     trackLoginEvent('login_success', {
-        method: 'email',
-        remember: data.remember || false
+        method: 'email'
     });
     
     // Redirigir después de un momento
     setTimeout(() => {
         window.location.href = '/dashboard';
-    }, 1500);
+    }, 1000);
 }
 
 function handleLoginError(message) {
@@ -253,20 +243,14 @@ function handleLoginError(message) {
 // ============================================
 
 function initSocialLogin() {
-    // Los botones sociales ya tienen onclick en el HTML
     console.log('🔗 Social login inicializado');
 }
 
 function loginWithGoogle() {
     showNotification('Redirigiendo a Google...', 'info');
-    
-    // Tracking
     trackLoginEvent('social_login_attempt', { provider: 'google' });
     
-    // Aquí integrarías con Google OAuth
-    // window.location.href = '/auth/google';
-    
-    // Simulación para demo
+    // Implementar OAuth con Google aquí
     setTimeout(() => {
         showNotification('Funcionalidad en desarrollo', 'warning');
     }, 1000);
@@ -274,14 +258,9 @@ function loginWithGoogle() {
 
 function loginWithFacebook() {
     showNotification('Redirigiendo a Facebook...', 'info');
-    
-    // Tracking
     trackLoginEvent('social_login_attempt', { provider: 'facebook' });
     
-    // Aquí integrarías with Facebook Login
-    // window.location.href = '/auth/facebook';
-    
-    // Simulación para demo
+    // Implementar OAuth con Facebook aquí
     setTimeout(() => {
         showNotification('Funcionalidad en desarrollo', 'warning');
     }, 1000);
@@ -346,7 +325,6 @@ function setButtonLoading(button, isLoading) {
 // ============================================
 
 function showNotification(message, type = 'info') {
-    // Crear elemento de notificación
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.innerHTML = `
@@ -357,20 +335,16 @@ function showNotification(message, type = 'info') {
         </div>
     `;
     
-    // Agregar estilos si no existen
     if (!document.getElementById('notification-styles')) {
         addNotificationStyles();
     }
     
-    // Agregar al DOM
     document.body.appendChild(notification);
     
-    // Mostrar con animación
     setTimeout(() => {
         notification.classList.add('show');
     }, 100);
     
-    // Auto-ocultar después de 5 segundos
     setTimeout(() => {
         closeNotification(notification);
     }, 5000);
@@ -482,62 +456,16 @@ function addNotificationStyles() {
 }
 
 // ============================================
-// RECORDAR DATOS DE LOGIN
-// ============================================
-
-function initRememberMe() {
-    // Verificar si hay datos guardados
-    const rememberLogin = localStorage.getItem('rememberLogin');
-    const savedEmail = localStorage.getItem('loginEmail');
-    
-    if (rememberLogin === 'true' && savedEmail) {
-        const emailField = document.getElementById('email');
-        const rememberCheckbox = document.getElementById('remember');
-        
-        if (emailField) {
-            emailField.value = savedEmail;
-        }
-        
-        if (rememberCheckbox) {
-            rememberCheckbox.checked = true;
-        }
-    }
-}
-
-// ============================================
-// FORMATEO AUTOMÁTICO
-// ============================================
-
-function initAutoFormat() {
-    // Prevenir espacios en email
-    const emailInput = document.getElementById('email');
-    if (emailInput) {
-        emailInput.addEventListener('input', function() {
-            this.value = this.value.replace(/\s/g, '');
-        });
-    }
-}
-
-// ============================================
 // ANALYTICS Y TRACKING
 // ============================================
 
 function trackLoginEvent(event, data = {}) {
     console.log(`🔍 Login Event: ${event}`, data);
     
-    // Integración con Google Analytics
     if (typeof gtag !== 'undefined') {
         gtag('event', event, {
             event_category: 'authentication',
             page_title: 'Login',
-            ...data
-        });
-    }
-    
-    // Integración con servicios de analytics personalizados
-    if (typeof analytics !== 'undefined') {
-        analytics.track(event, {
-            page: 'login',
             ...data
         });
     }
@@ -549,37 +477,10 @@ function trackLoginEvent(event, data = {}) {
 
 window.addEventListener('error', function(e) {
     console.error('Error en login.js:', e.error);
-    
-    // Mostrar mensaje amigable al usuario
     showNotification('Ocurrió un error inesperado. Por favor recarga la página.', 'error');
-    
-    // Track error
     trackLoginEvent('login_javascript_error', {
-        message: e.error?.message || 'Unknown error',
-        filename: e.filename,
-        lineno: e.lineno
+        message: e.error?.message || 'Unknown error'
     });
-});
-
-// ============================================
-// INICIALIZACIÓN FINAL
-// ============================================
-
-// Ejecutar funciones adicionales cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', function() {
-    initRememberMe();
-    initAutoFormat();
-    
-    // Track page view
-    trackLoginEvent('login_page_view');
-    
-    // Track form focus
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('focus', function() {
-            trackLoginEvent('login_form_focus');
-        }, true);
-    }
 });
 
 // ============================================
@@ -587,37 +488,22 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================
 
 document.addEventListener('keydown', function(e) {
-    // Enter en cualquier campo = submit form
     if (e.key === 'Enter' && e.target.classList.contains('form-input')) {
         const form = e.target.closest('form');
         if (form) {
+            e.preventDefault();
             form.querySelector('.auth-btn').click();
         }
     }
     
-    // Escape = limpiar formulario
     if (e.key === 'Escape') {
         const loginForm = document.getElementById('loginForm');
         if (loginForm) {
             loginForm.reset();
-            // Limpiar errores
             const errorElements = loginForm.querySelectorAll('.form-error.show');
             errorElements.forEach(error => error.classList.remove('show'));
-            
-            // Limpiar clases de validación
             const inputs = loginForm.querySelectorAll('.form-input');
             inputs.forEach(input => input.classList.remove('error', 'success'));
         }
     }
 });
-
-// Export funciones si es necesario (para testing)
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        validateLoginField,
-        isValidEmail,
-        showNotification,
-        trackLoginEvent,
-        handleLoginSubmit
-    };
-}

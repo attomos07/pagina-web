@@ -1,11 +1,10 @@
 // ============================================
-// REGISTER JAVASCRIPT - ESPECÍFICO
+// REGISTER JAVASCRIPT - CON API REAL
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Register JS cargado correctamente');
     
-    // Inicializar funcionalidades específicas del registro
     initRegisterValidation();
     initPasswordStrength();
     initRegisterForm();
@@ -27,16 +26,13 @@ function initRegisterValidation() {
     const inputs = registerForm.querySelectorAll('.form-input');
     
     inputs.forEach(input => {
-        // Validación en tiempo real al perder el foco
         input.addEventListener('blur', function() {
             validateRegisterField(this);
         });
         
-        // Limpiar errores al escribir
         input.addEventListener('input', function() {
             clearFieldError(this);
             
-            // Actualizar strength meter mientras se escribe la contraseña
             if (this.id === 'password') {
                 updatePasswordStrength(this.value);
             }
@@ -50,10 +46,8 @@ function validateRegisterField(field) {
     let isValid = true;
     let errorMessage = '';
 
-    // Limpiar estado previo
     clearFieldError(field);
 
-    // Validaciones según el campo
     switch (fieldName) {
         case 'firstName':
         case 'lastName':
@@ -100,7 +94,6 @@ function validateRegisterField(field) {
             break;
     }
 
-    // Mostrar estado de validación
     if (!isValid) {
         showFieldError(field, errorMessage);
     } else {
@@ -146,18 +139,15 @@ function updatePasswordStrength(password) {
 
     let strength = 0;
     
-    // Criterios de fortaleza
     if (password.length >= 8) strength++;
     if (password.length >= 12) strength++;
     if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
     if (/\d/.test(password)) strength++;
     if (/[^a-zA-Z0-9]/.test(password)) strength++;
 
-    // Resetear clases
     strengthMeterFill.className = 'strength-meter-fill';
     strengthText.className = 'strength-text';
 
-    // Aplicar nivel de fortaleza
     if (strength <= 2) {
         strengthMeterFill.classList.add('weak');
         strengthText.classList.add('weak');
@@ -202,7 +192,6 @@ function initRegisterForm() {
     
     registerForm.addEventListener('submit', handleRegisterSubmit);
     
-    // Auto-focus en el campo de nombre al cargar
     const firstNameField = document.getElementById('firstName');
     if (firstNameField) {
         setTimeout(() => {
@@ -211,12 +200,11 @@ function initRegisterForm() {
     }
 }
 
-function handleRegisterSubmit(e) {
+async function handleRegisterSubmit(e) {
     e.preventDefault();
     
     const form = e.target;
     const formData = new FormData(form);
-    const data = Object.fromEntries(formData);
     
     // Validar todos los campos requeridos
     let isValid = true;
@@ -238,7 +226,6 @@ function handleRegisterSubmit(e) {
     
     if (!isValid) {
         showNotification('Por favor corrige los errores en el formulario', 'error');
-        // Focus en el primer campo con error
         const firstError = form.querySelector('.form-input.error');
         if (firstError) {
             firstError.focus();
@@ -246,65 +233,75 @@ function handleRegisterSubmit(e) {
         return;
     }
     
+    // Preparar datos - obtener el valor real del select personalizado
+    const businessTypeInput = document.getElementById('businessType');
+    const businessTypeValue = businessTypeInput.getAttribute('data-value') || businessTypeInput.value;
+    
+    const data = {
+        firstName: formData.get('firstName'),
+        lastName: formData.get('lastName'),
+        email: formData.get('email'),
+        password: formData.get('password'),
+        company: formData.get('company') || '',
+        businessType: businessTypeValue
+    };
+    
     // Mostrar loading
     const submitBtn = form.querySelector('.auth-btn');
     setButtonLoading(submitBtn, true);
     
-    // Simular envío al servidor
-    simulateRegisterRequest(data, submitBtn);
-}
+    try {
+        // Enviar petición al servidor
+        const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+            credentials: 'include' // Importante para cookies
+        });
 
-function simulateRegisterRequest(data, button) {
-    // Simular tiempo de respuesta del servidor
-    setTimeout(() => {
-        // Simular diferentes escenarios
-        const scenarios = ['success', 'email_exists', 'server_error'];
-        const randomScenario = scenarios[0]; // Siempre éxito para demo
-        
-        switch (randomScenario) {
-            case 'success':
-                handleRegisterSuccess(data);
-                break;
-            case 'email_exists':
-                handleRegisterError('Este email ya está registrado');
-                setButtonLoading(button, false);
-                break;
-            case 'server_error':
-                handleRegisterError('Error del servidor. Inténtalo de nuevo');
-                setButtonLoading(button, false);
-                break;
+        const result = await response.json();
+
+        if (response.ok) {
+            // Registro exitoso
+            handleRegisterSuccess(result);
+        } else {
+            // Error en registro
+            handleRegisterError(result.error || 'Error al crear la cuenta');
+            setButtonLoading(submitBtn, false);
         }
-    }, 2000);
+    } catch (error) {
+        console.error('Error en registro:', error);
+        handleRegisterError('Error de conexión. Intenta de nuevo.');
+        setButtonLoading(submitBtn, false);
+    }
 }
 
 function handleRegisterSuccess(data) {
     console.log('Registro exitoso:', data);
     
-    // Mostrar notificación de éxito
     showNotification('¡Cuenta creada exitosamente! Redirigiendo...', 'success');
     
-    // Tracking del evento
     trackRegisterEvent('register_success', {
         method: 'email',
-        has_company: !!data.company
+        has_company: !!data.user.company
     });
     
-    // Redirigir después de un momento
+    // Redirigir al dashboard
     setTimeout(() => {
         window.location.href = '/dashboard';
-    }, 1500);
+    }, 1000);
 }
 
 function handleRegisterError(message) {
     showNotification(message, 'error');
     
-    // Tracking del error
     trackRegisterEvent('register_error', {
         method: 'email',
         error: message
     });
     
-    // Focus en el campo de email si es error de email existente
     if (message.toLowerCase().includes('email')) {
         const emailField = document.getElementById('email');
         if (emailField) {
@@ -319,20 +316,12 @@ function handleRegisterError(message) {
 // ============================================
 
 function initSocialRegister() {
-    // Los botones sociales ya tienen onclick en el HTML
     console.log('🔗 Social register inicializado');
 }
 
 function registerWithGoogle() {
     showNotification('Redirigiendo a Google...', 'info');
-    
-    // Tracking
     trackRegisterEvent('social_register_attempt', { provider: 'google' });
-    
-    // Aquí integrarías con Google OAuth
-    // window.location.href = '/auth/google';
-    
-    // Simulación para demo
     setTimeout(() => {
         showNotification('Funcionalidad en desarrollo', 'warning');
     }, 1000);
@@ -340,14 +329,7 @@ function registerWithGoogle() {
 
 function registerWithFacebook() {
     showNotification('Redirigiendo a Facebook...', 'info');
-    
-    // Tracking
     trackRegisterEvent('social_register_attempt', { provider: 'facebook' });
-    
-    // Aquí integrarías con Facebook Login
-    // window.location.href = '/auth/facebook';
-    
-    // Simulación para demo
     setTimeout(() => {
         showNotification('Funcionalidad en desarrollo', 'warning');
     }, 1000);
@@ -371,25 +353,21 @@ function initCustomSelect() {
         return;
     }
 
-    // Toggle dropdown al hacer click en el input
     selectInput.addEventListener('click', function(e) {
         e.stopPropagation();
         toggleDropdown();
     });
 
-    // Búsqueda en tiempo real
     if (searchInput) {
         searchInput.addEventListener('input', function() {
             filterOptions(this.value);
         });
 
-        // Prevenir que el click en search cierre el dropdown
         searchInput.addEventListener('click', function(e) {
             e.stopPropagation();
         });
     }
 
-    // Seleccionar opción
     options.forEach(option => {
         option.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -397,14 +375,12 @@ function initCustomSelect() {
         });
     });
 
-    // Cerrar dropdown al hacer click fuera
     document.addEventListener('click', function(e) {
         if (!selectWrapper.contains(e.target)) {
             closeDropdown();
         }
     });
 
-    // Cerrar con ESC
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && selectWrapper.classList.contains('active')) {
             closeDropdown();
@@ -425,20 +401,17 @@ function initCustomSelect() {
         selectWrapper.classList.add('active');
         selectInput.classList.add('active');
         
-        // Focus en el search input
         if (searchInput) {
             setTimeout(() => {
                 searchInput.focus();
             }, 100);
         }
 
-        // Resetear búsqueda y mostrar todas las opciones
         if (searchInput) {
             searchInput.value = '';
         }
         filterOptions('');
         
-        // Resetear animaciones de cascada
         const visibleOptions = optionsContainer.querySelectorAll('.select-option:not(.hidden)');
         visibleOptions.forEach((option, index) => {
             option.style.animation = 'none';
@@ -447,7 +420,6 @@ function initCustomSelect() {
             }, 10);
         });
 
-        // Track evento
         trackRegisterEvent('business_type_dropdown_opened');
     }
 
@@ -455,7 +427,6 @@ function initCustomSelect() {
         selectWrapper.classList.remove('active');
         selectInput.classList.remove('active');
         
-        // Limpiar búsqueda
         if (searchInput) {
             searchInput.value = '';
         }
@@ -478,7 +449,6 @@ function initCustomSelect() {
             }
         });
 
-        // Mostrar/ocultar mensaje de "no results"
         if (noResults) {
             if (visibleCount === 0 && term !== '') {
                 noResults.style.display = 'block';
@@ -489,7 +459,6 @@ function initCustomSelect() {
             }
         }
 
-        // Re-aplicar animación cascada a opciones visibles
         const visibleOptions = optionsContainer.querySelectorAll('.select-option:not(.hidden)');
         visibleOptions.forEach((option, index) => {
             option.style.animationDelay = `${index * 0.05}s`;
@@ -500,22 +469,17 @@ function initCustomSelect() {
         const value = option.getAttribute('data-value');
         const text = option.querySelector('span').textContent;
 
-        // Actualizar input
         selectInput.value = text;
         selectInput.setAttribute('data-value', value);
 
-        // Marcar opción seleccionada
         options.forEach(opt => opt.classList.remove('selected'));
         option.classList.add('selected');
 
-        // Validar campo
         clearFieldError(selectInput);
         showFieldSuccess(selectInput);
 
-        // Cerrar dropdown
         closeDropdown();
 
-        // Track selección
         trackRegisterEvent('business_type_selected', {
             business_type: value,
             business_name: text
@@ -532,7 +496,6 @@ function initCustomSelect() {
 // ============================================
 
 function initAutoFormat() {
-    // Prevenir espacios en email y convertir a minúsculas
     const emailInput = document.getElementById('email');
     if (emailInput) {
         emailInput.addEventListener('input', function() {
@@ -540,7 +503,6 @@ function initAutoFormat() {
         });
     }
 
-    // Solo permitir letras en nombres
     const nameInputs = document.querySelectorAll('#firstName, #lastName');
     nameInputs.forEach(input => {
         input.addEventListener('input', function() {
@@ -608,7 +570,6 @@ function setButtonLoading(button, isLoading) {
 // ============================================
 
 function showNotification(message, type = 'info') {
-    // Crear elemento de notificación
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.innerHTML = `
@@ -619,20 +580,16 @@ function showNotification(message, type = 'info') {
         </div>
     `;
     
-    // Agregar estilos si no existen
     if (!document.getElementById('notification-styles')) {
         addNotificationStyles();
     }
     
-    // Agregar al DOM
     document.body.appendChild(notification);
     
-    // Mostrar con animación
     setTimeout(() => {
         notification.classList.add('show');
     }, 100);
     
-    // Auto-ocultar después de 5 segundos
     setTimeout(() => {
         closeNotification(notification);
     }, 5000);
@@ -750,19 +707,10 @@ function addNotificationStyles() {
 function trackRegisterEvent(event, data = {}) {
     console.log(`📊 Register Event: ${event}`, data);
     
-    // Integración con Google Analytics
     if (typeof gtag !== 'undefined') {
         gtag('event', event, {
             event_category: 'authentication',
             page_title: 'Register',
-            ...data
-        });
-    }
-    
-    // Integración con servicios de analytics personalizados
-    if (typeof analytics !== 'undefined') {
-        analytics.track(event, {
-            page: 'register',
             ...data
         });
     }
@@ -774,15 +722,9 @@ function trackRegisterEvent(event, data = {}) {
 
 window.addEventListener('error', function(e) {
     console.error('Error en register.js:', e.error);
-    
-    // Mostrar mensaje amigable al usuario
     showNotification('Ocurrió un error inesperado. Por favor recarga la página.', 'error');
-    
-    // Track error
     trackRegisterEvent('register_javascript_error', {
-        message: e.error?.message || 'Unknown error',
-        filename: e.filename,
-        lineno: e.lineno
+        message: e.error?.message || 'Unknown error'
     });
 });
 
@@ -791,30 +733,25 @@ window.addEventListener('error', function(e) {
 // ============================================
 
 document.addEventListener('keydown', function(e) {
-    // Enter en cualquier campo = submit form
     if (e.key === 'Enter' && e.target.classList.contains('form-input')) {
         const form = e.target.closest('form');
-        if (form && e.target.id !== 'company') { // No auto-submit en empresa (opcional)
+        if (form && e.target.id !== 'company') {
             e.preventDefault();
             form.querySelector('.auth-btn').click();
         }
     }
     
-    // Escape = limpiar formulario
     if (e.key === 'Escape') {
         const registerForm = document.getElementById('registerForm');
         if (registerForm) {
             registerForm.reset();
             
-            // Limpiar errores
             const errorElements = registerForm.querySelectorAll('.form-error.show');
             errorElements.forEach(error => error.classList.remove('show'));
             
-            // Limpiar clases de validación
             const inputs = registerForm.querySelectorAll('.form-input');
             inputs.forEach(input => input.classList.remove('error', 'success'));
             
-            // Ocultar password strength
             const strengthContainer = document.getElementById('passwordStrength');
             if (strengthContainer) {
                 strengthContainer.classList.remove('show');
@@ -822,32 +759,3 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
-
-// ============================================
-// INICIALIZACIÓN FINAL
-// ============================================
-
-// Track page view cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', function() {
-    trackRegisterEvent('register_page_view');
-    
-    // Track form focus
-    const registerForm = document.getElementById('registerForm');
-    if (registerForm) {
-        registerForm.addEventListener('focus', function() {
-            trackRegisterEvent('register_form_focus');
-        }, true);
-    }
-});
-
-// Export funciones si es necesario (para testing)
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        validateRegisterField,
-        isValidEmail,
-        showNotification,
-        trackRegisterEvent,
-        handleRegisterSubmit,
-        updatePasswordStrength
-    };
-}

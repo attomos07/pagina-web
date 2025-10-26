@@ -1,0 +1,235 @@
+{{define "dashboard.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}} - Dashboard</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .dashboard-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 3rem;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .welcome-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .user-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+        }
+
+        .user-info p {
+            font-size: 1.1rem;
+            margin: 0.5rem 0;
+        }
+
+        .user-info strong {
+            font-weight: 600;
+        }
+
+        .dashboard-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .action-btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .secondary-btn {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .secondary-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Cargando información...</p>
+        </div>
+
+        <div id="dashboardContent" style="display: none;">
+            <div class="welcome-icon">🎉</div>
+            <h1>¡Bienvenido a tu Dashboard!</h1>
+            <p style="color: #666; font-size: 1.1rem; margin-bottom: 2rem;">
+                Tu cuenta ha sido creada exitosamente
+            </p>
+
+            <div class="user-info" id="userInfo">
+                <p><strong>Nombre:</strong> <span id="userName">Cargando...</span></p>
+                <p><strong>Email:</strong> <span id="userEmail">Cargando...</span></p>
+                <p><strong>Empresa:</strong> <span id="userCompany">-</span></p>
+                <p><strong>Giro de Negocio:</strong> <span id="userBusiness">-</span></p>
+            </div>
+
+            <div class="dashboard-actions">
+                <button class="action-btn primary-btn">
+                    <i class="lni lni-bot"></i>
+                    Crear mi Primer Bot
+                </button>
+                <button class="action-btn secondary-btn" onclick="window.location.href='/'">
+                    <i class="lni lni-home"></i>
+                    Ir al Inicio
+                </button>
+                <button class="action-btn logout-btn" onclick="logout()">
+                    <i class="lni lni-exit"></i>
+                    Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cargar información del usuario
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/me', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('No autenticado');
+                }
+
+                const data = await response.json();
+                const user = data.user;
+
+                // Mostrar información del usuario
+                document.getElementById('userName').textContent = `${user.firstName} ${user.lastName}`;
+                document.getElementById('userEmail').textContent = user.email;
+                document.getElementById('userCompany').textContent = user.company || 'No especificada';
+                document.getElementById('userBusiness').textContent = user.businessType || 'No especificado';
+
+                // Mostrar contenido
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboardContent').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error al cargar información:', error);
+                // Redirigir al login si no está autenticado
+                window.location.href = '/login';
+            }
+        }
+
+        // Cerrar sesión
+        async function logout() {
+            try {
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                window.location.href = '/login';
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+                window.location.href = '/login';
+            }
+        }
+
+        // Cargar información al cargar la página
+        document.addEventListener('DOMContentLoaded', loadUserInfo);
+    </script>
+</body>
+</html>
+{{end}}
