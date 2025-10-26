@@ -82,23 +82,23 @@ func main() {
 	})
 
 	router.GET("/agents", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "partials/agents.html", gin.H{"title": "Agentes"})
+		c.HTML(http.StatusOK, "agents.html", gin.H{"title": "Agentes"})
 	})
 
 	router.GET("/pricing", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "partials/pricing.html", gin.H{"title": "Precios"})
+		c.HTML(http.StatusOK, "pricing.html", gin.H{"title": "Precios"})
 	})
 
 	router.GET("/contact", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "partials/contact.html", gin.H{"title": "Contacto"})
+		c.HTML(http.StatusOK, "contact.html", gin.H{"title": "Contacto"})
 	})
 
 	router.GET("/login", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "auth/login.html", gin.H{"title": "Iniciar sesión"})
+		c.HTML(http.StatusOK, "login.html", gin.H{"title": "Iniciar sesión"})
 	})
 
 	router.GET("/register", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "auth/register.html", gin.H{"title": "Registrarse"})
+		c.HTML(http.StatusOK, "register.html", gin.H{"title": "Registrarse"})
 	})
 
 	router.GET("/health", func(c *gin.Context) {
