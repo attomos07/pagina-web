@@ -28,7 +28,7 @@ func main() {
 
 	config.ConnectDatabase()
 
-	if err := config.DB.AutoMigrate(&models.User{}); err != nil {
+	if err := config.DB.AutoMigrate(&models.User{}, &models.Agent{}); err != nil {
 		log.Fatal("Error al migrar la base de datos:", err)
 	}
 	log.Println("✅ Migraciones completadas")
@@ -125,9 +125,21 @@ func main() {
 			c.HTML(http.StatusOK, "dashboard.html", gin.H{"title": "Dashboard"})
 		})
 
+		protected.GET("/onboarding", func(c *gin.Context) {
+			c.HTML(http.StatusOK, "onboarding.html", gin.H{"title": "Crear Bot"})
+		})
+
 		api := protected.Group("/api")
 		{
 			api.GET("/me", handlers.GetCurrentUser)
+			
+			// Rutas de agentes
+			api.POST("/agents", handlers.CreateAgent)
+			api.GET("/agents", handlers.GetUserAgents)
+			api.GET("/agents/:id", handlers.GetAgent)
+			api.PUT("/agents/:id", handlers.UpdateAgent)
+			api.DELETE("/agents/:id", handlers.DeleteAgent)
+			api.PATCH("/agents/:id/toggle", handlers.ToggleAgentStatus)
 		}
 	}
 

@@ -1,0 +1,270 @@
+{{define "onboarding.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Tu Agente - {{.title}}</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/onboarding.css">
+</head>
+<body>
+    <div class="onboarding-container">
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+            <div class="progress-step active" data-step="1">
+                <div class="step-number">1</div>
+                <div class="step-label">Verificación</div>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step" data-step="2">
+                <div class="step-number">2</div>
+                <div class="step-label">Configuración</div>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step" data-step="3">
+                <div class="step-number">3</div>
+                <div class="step-label">Confirmación</div>
+            </div>
+        </div>
+
+        <!-- Steps Container -->
+        <div class="steps-container">
+            <!-- Step 1: Meta Verification -->
+            <div class="step step-1 active" data-step="1">
+                <div class="step-header">
+                    <i class="lni lni-shield-check"></i>
+                    <h2>Verificación de Negocio en Meta</h2>
+                    <p>Sube tu documento de verificación de negocio de Meta para continuar</p>
+                </div>
+
+                <div class="step-content">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">
+                            <i class="lni lni-cloud-upload"></i>
+                        </div>
+                        <h3>Arrastra tu documento aquí</h3>
+                        <p>o haz clic para seleccionar un archivo</p>
+                        <input type="file" id="metaDocument" accept=".pdf,.jpg,.jpeg,.png" hidden>
+                        <button type="button" class="btn-select-file" onclick="document.getElementById('metaDocument').click()">
+                            Seleccionar Archivo
+                        </button>
+                        <div class="upload-help">
+                            <small>Formatos aceptados: PDF, JPG, PNG (Máx. 5MB)</small>
+                        </div>
+                    </div>
+
+                    <div class="file-preview" id="filePreview" style="display: none;">
+                        <div class="file-info">
+                            <i class="lni lni-files"></i>
+                            <div class="file-details">
+                                <p class="file-name" id="fileName"></p>
+                                <p class="file-size" id="fileSize"></p>
+                            </div>
+                            <button type="button" class="btn-remove-file" onclick="removeFile()">
+                                <i class="lni lni-trash-can"></i>
+                            </button>
+                        </div>
+                        <div class="file-upload-progress" id="uploadProgress" style="display: none;">
+                            <div class="progress-bar-fill"></div>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <i class="lni lni-information"></i>
+                        <div>
+                            <strong>¿Por qué necesitamos esto?</strong>
+                            <p>Meta requiere verificación de negocio para usar WhatsApp Business API. Este documento confirma la legitimidad de tu negocio.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-actions">
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='/dashboard'">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btnStep1" onclick="nextStep(2)" disabled>
+                        Continuar
+                        <i class="lni lni-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Agent Configuration -->
+            <div class="step step-2" data-step="2">
+                <div class="step-header">
+                    <i class="lni lni-cog"></i>
+                    <h2>Configura Tu Agente</h2>
+                    <p>Personaliza la información que tu agente compartirá con tus clientes</p>
+                </div>
+
+                <div class="step-content">
+                    <form id="agentConfigForm">
+                        <!-- Basic Info -->
+                        <div class="form-section">
+                            <h3><i class="lni lni-information"></i> Información Básica</h3>
+                            
+                            <div class="form-group">
+                                <label for="agentName">Nombre del Agente *</label>
+                                <input type="text" id="agentName" name="agentName" class="form-input" placeholder="Ej: Agente de La Antigua Barbería" required>
+                                <small>Este nombre se mostrará en el título de tu agente</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="phoneNumber">Número de WhatsApp del Agente *</label>
+                                <input type="tel" id="phoneNumber" name="phoneNumber" class="form-input" placeholder="+52 662 123 4567" required>
+                                <small>El número de teléfono donde estará activo tu agente de WhatsApp</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="welcomeMessage">Mensaje de Bienvenida *</label>
+                                <textarea id="welcomeMessage" name="welcomeMessage" class="form-textarea" rows="3" required placeholder="¡Hola! Bienvenido a..."></textarea>
+                                <small>El primer mensaje que verán tus clientes al contactarte</small>
+                            </div>
+                        </div>
+
+                        <!-- Schedule -->
+                        <div class="form-section">
+                            <h3><i class="lni lni-calendar"></i> Horario de Atención</h3>
+                            <div class="schedule-grid" id="scheduleGrid">
+                                <!-- Se llenará dinámicamente con JavaScript -->
+                            </div>
+                        </div>
+
+                        <!-- Services -->
+                        <div class="form-section">
+                            <h3><i class="lni lni-briefcase"></i> Servicios</h3>
+                            <div id="servicesContainer">
+                                <!-- Se llenará dinámicamente -->
+                            </div>
+                            <button type="button" class="btn btn-outline" onclick="addService()">
+                                <i class="lni lni-plus"></i> Agregar Servicio
+                            </button>
+                        </div>
+
+                        <!-- Staff -->
+                        <div class="form-section">
+                            <h3><i class="lni lni-users"></i> Personal</h3>
+                            <div id="staffContainer">
+                                <!-- Se llenará dinámicamente -->
+                            </div>
+                            <button type="button" class="btn btn-outline" onclick="addStaffMember()">
+                                <i class="lni lni-plus"></i> Agregar Personal
+                            </button>
+                        </div>
+
+                        <!-- Promotions -->
+                        <div class="form-section">
+                            <h3><i class="lni lni-tag"></i> Promociones (Opcional)</h3>
+                            <div id="promotionsContainer">
+                                <!-- Se llenará dinámicamente -->
+                            </div>
+                            <button type="button" class="btn btn-outline" onclick="addPromotion()">
+                                <i class="lni lni-plus"></i> Agregar Promoción
+                            </button>
+                        </div>
+
+                        <!-- Facilities -->
+                        <div class="form-section">
+                            <h3><i class="lni lni-car"></i> Facilidades (Opcional)</h3>
+                            <div class="facilities-grid">
+                                <label class="checkbox-card">
+                                    <input type="checkbox" name="facility" value="Estacionamiento">
+                                    <div class="checkbox-content">
+                                        <i class="lni lni-car"></i>
+                                        <span>Estacionamiento</span>
+                                    </div>
+                                </label>
+                                <label class="checkbox-card">
+                                    <input type="checkbox" name="facility" value="WiFi Gratis">
+                                    <div class="checkbox-content">
+                                        <i class="lni lni-signal"></i>
+                                        <span>WiFi Gratis</span>
+                                    </div>
+                                </label>
+                                <label class="checkbox-card">
+                                    <input type="checkbox" name="facility" value="Aire Acondicionado">
+                                    <div class="checkbox-content">
+                                        <i class="lni lni-fresh-juice"></i>
+                                        <span>Aire Acondicionado</span>
+                                    </div>
+                                </label>
+                                <label class="checkbox-card">
+                                    <input type="checkbox" name="facility" value="Pagos con Tarjeta">
+                                    <div class="checkbox-content">
+                                        <i class="lni lni-credit-cards"></i>
+                                        <span>Pagos con Tarjeta</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="step-actions">
+                    <button type="button" class="btn btn-secondary" onclick="previousStep(1)">
+                        <i class="lni lni-arrow-left"></i>
+                        Anterior
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="nextStep(3)">
+                        Continuar
+                        <i class="lni lni-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Confirmation -->
+            <div class="step step-3" data-step="3">
+                <div class="step-header">
+                    <i class="lni lni-checkmark-circle"></i>
+                    <h2>Confirma Tu Configuración</h2>
+                    <p>Revisa que toda la información sea correcta antes de crear tu bot</p>
+                </div>
+
+                <div class="step-content">
+                    <div class="summary-container" id="summaryContainer">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+                </div>
+
+                <div class="step-actions">
+                    <button type="button" class="btn btn-secondary" onclick="previousStep(2)">
+                        <i class="lni lni-arrow-left"></i>
+                        Anterior
+                    </button>
+                    <button type="button" class="btn btn-primary btn-create" id="btnCreateAgent" onclick="createAgent()">
+                        <i class="lni lni-rocket"></i>
+                        Crear Agente
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h3>Creando tu agente...</h3>
+            <p>Por favor espera un momento</p>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal" id="successModal" style="display: none;">
+        <div class="modal-content success">
+            <div class="modal-icon">
+                <i class="lni lni-checkmark-circle"></i>
+            </div>
+            <h2>¡Agente Creado Exitosamente!</h2>
+            <p>Tu agente ha sido configurado y está listo para usar</p>
+            <button class="btn btn-primary" onclick="window.location.href='/dashboard'">
+                Ir al Dashboard
+            </button>
+        </div>
+    </div>
+
+    <script src="/static/js/onboarding.js"></script>
+</body>
+</html>
+{{end}}
