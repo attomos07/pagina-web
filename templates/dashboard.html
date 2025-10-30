@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.title}} - Dashboard</title>
+    <title>Dashboard</title>
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <style>
         * {
@@ -14,128 +14,250 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f9fafb;
             min-height: 100vh;
-            padding: 2rem;
         }
 
-        .dashboard-container {
-            max-width: 1200px;
+        .dashboard-layout {
+            padding: 2rem;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
-        .dashboard-header {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem;
+        /* Sidebar - REMOVED */
+        /* Top Bar - REMOVED */
+
+        /* Header with Create Button */
+        .page-header {
+            display: flex;
+            justify-content: flex-end;
             margin-bottom: 2rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 1) 100%);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(6, 182, 212, 0.1);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #06b6d4 0%, #0891b2 50%, #06b6d4 100%);
+            background-size: 200% 100%;
+            animation: gradientShift 3s ease infinite;
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.03) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(6, 182, 212, 0.25);
+            border-color: rgba(6, 182, 212, 0.3);
+        }
+
+        .stat-card:hover::after {
+            opacity: 1;
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            box-shadow: 0 8px 20px rgba(6, 182, 212, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .stat-icon::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+
+        .stat-card:hover .stat-icon {
+            transform: rotate(10deg) scale(1.1);
+        }
+
+        .stat-card:hover .stat-icon::before {
+            opacity: 1;
+            animation: pulse 2s ease infinite;
+        }
+
+        .stat-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: #6b7280;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .trend-up {
+            color: #10b981;
+        }
+
+        .trend-down {
+            color: #ef4444;
+        }
+
+        .trend-neutral {
+            color: #6b7280;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.05);
+            }
+        }
+
+        /* Agents Section */
+        .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 1.5rem;
         }
 
-        .header-content h1 {
-            font-size: 2rem;
-            color: #1f2937;
-            margin-bottom: 0.5rem;
+        .section-title {
+            font-size: 1.5rem;
+            color: #1a1a1a;
+            font-weight: bold;
         }
 
-        .header-content p {
-            color: #6b7280;
-            font-size: 1.1rem;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .btn {
-            padding: 0.875rem 1.5rem;
+        .btn-primary {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 1rem;
+            padding: 1rem 2rem;
+            border-radius: 12px;
             font-weight: 600;
+            font-size: 1rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 0.5rem;
             transition: all 0.3s ease;
             text-decoration: none;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-primary:hover::before {
+            width: 300px;
+            height: 300px;
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
         }
 
-        .btn-secondary {
-            background: white;
-            color: #667eea;
-            border: 2px solid #667eea;
+        .btn-primary:active {
+            transform: translateY(-1px);
         }
 
-        .btn-secondary:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        .agents-section {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #e5e7eb;
-        }
-
-        .section-header h2 {
-            font-size: 1.5rem;
-            color: #1f2937;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .section-header h2 i {
-            color: #667eea;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-        }
-
-        .empty-icon {
-            font-size: 5rem;
-            color: #d1d5db;
-            margin-bottom: 1rem;
-        }
-
-        .empty-state h3 {
-            color: #374151;
-            margin-bottom: 0.5rem;
-            font-size: 1.5rem;
-        }
-
-        .empty-state p {
-            color: #6b7280;
-            margin-bottom: 2rem;
-            font-size: 1.1rem;
+        .btn-primary i,
+        .btn-primary span {
+            position: relative;
+            z-index: 1;
         }
 
         .agents-grid {
@@ -145,19 +267,13 @@
         }
 
         .agent-card {
-            background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
-            border: 2px solid #e5e7eb;
+            background: white;
             border-radius: 16px;
             padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
-        }
-
-        .agent-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.1);
-            border-color: #667eea;
         }
 
         .agent-card::before {
@@ -167,7 +283,12 @@
             left: 0;
             right: 0;
             height: 4px;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(90deg, #06b6d4 0%, #0891b2 100%);
+        }
+
+        .agent-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px -5px rgba(6, 182, 212, 0.2);
         }
 
         .agent-header {
@@ -177,19 +298,15 @@
             margin-bottom: 1rem;
         }
 
-        .agent-title {
-            flex: 1;
-        }
-
         .agent-title h3 {
-            color: #1f2937;
+            color: #1a1a1a;
             font-size: 1.25rem;
             margin-bottom: 0.5rem;
         }
 
         .agent-phone {
             color: #6b7280;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             display: flex;
             align-items: center;
             gap: 0.3rem;
@@ -214,7 +331,7 @@
 
         .agent-info {
             background: #f9fafb;
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 1rem;
             margin-bottom: 1rem;
         }
@@ -223,8 +340,7 @@
             display: flex;
             justify-content: space-between;
             margin-bottom: 0.5rem;
-            color: #374151;
-            font-size: 0.95rem;
+            font-size: 0.875rem;
         }
 
         .info-item:last-child {
@@ -237,12 +353,12 @@
 
         .info-value {
             font-weight: 600;
+            color: #374151;
         }
 
         .agent-actions {
             display: flex;
             gap: 0.5rem;
-            margin-top: 1rem;
         }
 
         .agent-btn {
@@ -250,7 +366,7 @@
             padding: 0.6rem 1rem;
             border: none;
             border-radius: 8px;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             font-weight: 600;
             cursor: pointer;
             display: flex;
@@ -261,12 +377,12 @@
         }
 
         .agent-btn-view {
-            background: #667eea;
+            background: #06b6d4;
             color: white;
         }
 
         .agent-btn-view:hover {
-            background: #5568d3;
+            background: #0891b2;
         }
 
         .agent-btn-toggle {
@@ -287,14 +403,40 @@
             background: #fee2e2;
         }
 
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            color: #1a1a1a;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: #6b7280;
+            margin-bottom: 2rem;
+        }
+
+        /* Loading */
         .loading {
             text-align: center;
             padding: 3rem;
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #06b6d4;
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -308,294 +450,187 @@
         }
 
         @media (max-width: 768px) {
-            body {
+            .dashboard-layout {
                 padding: 1rem;
             }
 
-            .dashboard-header {
-                flex-direction: column;
+            .stats-grid {
+                grid-template-columns: 1fr;
                 gap: 1.5rem;
-                text-align: center;
-            }
-
-            .header-actions {
-                width: 100%;
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-                justify-content: center;
             }
 
             .agents-grid {
                 grid-template-columns: 1fr;
             }
+
+            .page-header {
+                margin-bottom: 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <!-- Header -->
-        <div class="dashboard-header">
-            <div class="header-content">
-                <h1>Mi Dashboard</h1>
-                <p id="userName">Cargando...</p>
+    <div class="dashboard-layout">
+        <!-- Create Button -->
+        <div class="page-header">
+            <a href="/onboarding" class="btn-primary">
+                <i class="lni lni-plus"></i>
+                <span>Crear Agente</span>
+            </a>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-content">
+                        <div class="stat-value">4</div>
+                        <div class="stat-label">Agentes Activos</div>
+                        <div class="stat-trend trend-up">
+                            <i class="lni lni-arrow-up"></i>
+                            <span>+12% este mes</span>
+                        </div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="lni lni-bot"></i>
+                    </div>
+                </div>
             </div>
-            <div class="header-actions">
-                <a href="/onboarding" class="btn btn-primary">
-                    <i class="lni lni-plus"></i>
-                    Crear Nuevo Agente
-                </a>
-                <button class="btn btn-secondary" onclick="logout()">
-                    <i class="lni lni-exit"></i>
-                    Cerrar Sesión
-                </button>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-content">
+                        <div class="stat-value">127</div>
+                        <div class="stat-label">Conversaciones</div>
+                        <div class="stat-trend trend-up">
+                            <i class="lni lni-arrow-up"></i>
+                            <span>+23% este mes</span>
+                        </div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="lni lni-comments"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-content">
+                        <div class="stat-value">45</div>
+                        <div class="stat-label">Citas Agendadas</div>
+                        <div class="stat-trend trend-neutral">
+                            <i class="lni lni-minus"></i>
+                            <span>Sin cambios</span>
+                        </div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="lni lni-calendar"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-content">
+                        <div class="stat-value">98%</div>
+                        <div class="stat-label">Satisfacción</div>
+                        <div class="stat-trend trend-up">
+                            <i class="lni lni-arrow-up"></i>
+                            <span>+5% este mes</span>
+                        </div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="lni lni-thumbs-up"></i>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Agentes Section -->
-        <div class="agents-section">
-            <div class="section-header">
-                <h2>
-                    <i class="lni lni-agent"></i>
-                    Mis Agentes
-                </h2>
-            </div>
+        <!-- Agents Section -->
+        <div class="section-header">
+            <h2 class="section-title">Mis Agentes</h2>
+        </div>
 
-            <!-- Loading State -->
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p>Cargando tus agents...</p>
-            </div>
+                <!-- Loading State -->
+                <div class="loading" id="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Cargando agentes...</p>
+                </div>
 
-            <!-- Empty State -->
-            <div class="empty-state" id="emptyState" style="display: none;">
-                <div class="empty-icon">🤖</div>
-                <h3>No tienes agents creados</h3>
-                <p>Crea tu primer agent para comenzar a automatizar tu atención al cliente</p>
-                <a href="/onboarding" class="btn btn-primary">
-                    <i class="lni lni-rocket"></i>
-                    Crear Mi Primer Agente
-                </a>
-            </div>
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-icon">🤖</div>
+                    <h3>No tienes agentes creados</h3>
+                    <p>Crea tu primer agente para comenzar a automatizar tu atención al cliente</p>
+                    <a href="/onboarding" class="btn-primary">
+                        <i class="lni lni-rocket"></i>
+                        Crear Mi Primer Agente
+                    </a>
+                </div>
 
-            <!-- Agentes Grid -->
-            <div class="agents-grid" id="botsGrid" style="display: none;">
-                <!-- Los agents se cargarán dinámicamente aquí -->
+                <!-- Agents Grid -->
+                <div class="agents-grid" id="botsGrid">
+                    <!-- Sample Agent Card -->
+                    <div class="agent-card">
+                        <div class="agent-header">
+                            <div class="agent-title">
+                                <h3>Estética Luna</h3>
+                                <div class="agent-phone">
+                                    <i class="lni lni-phone"></i>
+                                    +52 123 456 7890
+                                </div>
+                            </div>
+                            <span class="agent-status status-active">Activo</span>
+                        </div>
+
+                        <div class="agent-info">
+                            <div class="info-item">
+                                <span class="info-label">Giro:</span>
+                                <span class="info-value">Peluquería & Spa</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Servicios:</span>
+                                <span class="info-value">5</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Personal:</span>
+                                <span class="info-value">3</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Creado:</span>
+                                <span class="info-value">15 Oct 2024</span>
+                            </div>
+                        </div>
+
+                        <div class="agent-actions">
+                            <button class="agent-btn agent-btn-view">
+                                <i class="lni lni-eye"></i>
+                                Ver
+                            </button>
+                            <button class="agent-btn agent-btn-toggle">
+                                <i class="lni lni-power-switch"></i>
+                                Desactivar
+                            </button>
+                            <button class="agent-btn agent-btn-delete">
+                                <i class="lni lni-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Cargar información del usuario
+        // Load user info and bots (implement your API calls here)
         async function loadUserInfo() {
-            try {
-                const response = await fetch('/api/me', {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-
-                if (!response.ok) {
-                    throw new Error('No autenticado');
-                }
-
-                const data = await response.json();
-                const user = data.user;
-
-                document.getElementById('userName').textContent = `Hola, ${user.firstName} ${user.lastName}`;
-            } catch (error) {
-                console.error('Error al cargar información:', error);
-                window.location.href = '/login';
-            }
+            // Your implementation
         }
 
-        // Cargar agents del usuario
         async function loadBots() {
-            try {
-                const response = await fetch('/api/agents', {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-
-                if (!response.ok) {
-                    throw new Error('Error al cargar agents');
-                }
-
-                const data = await response.json();
-                const agents = data.agents || [];
-
-                document.getElementById('loading').style.display = 'none';
-
-                if (agents.length === 0) {
-                    document.getElementById('emptyState').style.display = 'block';
-                } else {
-                    document.getElementById('botsGrid').style.display = 'grid';
-                    renderBots(agents);
-                }
-            } catch (error) {
-                console.error('Error al cargar agents:', error);
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('emptyState').style.display = 'block';
-            }
+            // Your implementation
         }
 
-        // Renderizar agents en la grid
-        function renderBots(agents) {
-            const grid = document.getElementById('botsGrid');
-            grid.innerHTML = '';
-
-            agents.forEach(agent => {
-                const botCard = createBotCard(agent);
-                grid.appendChild(botCard);
-            });
-        }
-
-        // Crear tarjeta de agent
-        function createBotCard(agent) {
-            const card = document.createElement('div');
-            card.className = 'agent-card';
-            
-            const statusClass = agent.isActive ? 'status-active' : 'status-inactive';
-            const statusText = agent.isActive ? 'Activo' : 'Inactivo';
-            const toggleText = agent.isActive ? 'Desactivar' : 'Activar';
-
-            card.innerHTML = `
-                <div class="agent-header">
-                    <div class="agent-title">
-                        <h3>${agent.name}</h3>
-                        <div class="agent-phone">
-                            <i class="lni lni-phone"></i>
-                            ${agent.phoneNumber}
-                        </div>
-                    </div>
-                    <span class="agent-status ${statusClass}">
-                        ${statusText}
-                    </span>
-                </div>
-
-                <div class="agent-info">
-                    <div class="info-item">
-                        <span class="info-label">Giro:</span>
-                        <span class="info-value">${agent.businessType}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Servicios:</span>
-                        <span class="info-value">${agent.config?.services?.length || 0}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Personal:</span>
-                        <span class="info-value">${agent.config?.staff?.length || 0}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Creado:</span>
-                        <span class="info-value">${formatDate(agent.createdAt)}</span>
-                    </div>
-                </div>
-
-                <div class="agent-actions">
-                    <button class="agent-btn agent-btn-view" onclick="viewBot(${agent.id})">
-                        <i class="lni lni-eye"></i>
-                        Ver
-                    </button>
-                    <button class="agent-btn agent-btn-toggle" onclick="toggleBot(${agent.id}, ${agent.isActive})">
-                        <i class="lni lni-power-switch"></i>
-                        ${toggleText}
-                    </button>
-                    <button class="agent-btn agent-btn-delete" onclick="deleteBot(${agent.id})">
-                        <i class="lni lni-trash-can"></i>
-                    </button>
-                </div>
-            `;
-
-            return card;
-        }
-
-        // Ver detalles del agent
-        function viewBot(botId) {
-            // Por ahora, redirigir al onboarding en modo edición
-            window.location.href = `/agents/${botId}`;
-        }
-
-        // Activar/desactivar agent
-        async function toggleBot(botId, currentStatus) {
-            if (!confirm(`¿Estás seguro de que quieres ${currentStatus ? 'desactivar' : 'activar'} este agent?`)) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/agents/${botId}/toggle`, {
-                    method: 'PATCH',
-                    credentials: 'include'
-                });
-
-                if (response.ok) {
-                    showNotification(`Agente ${currentStatus ? 'desactivado' : 'activado'} exitosamente`, 'success');
-                    loadBots();
-                } else {
-                    throw new Error('Error al cambiar el estado');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showNotification('Error al cambiar el estado del agent', 'error');
-            }
-        }
-
-        // Eliminar agent
-        async function deleteBot(botId) {
-            if (!confirm('¿Estás seguro de que quieres eliminar este agent? Esta acción no se puede deshacer.')) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/agents/${botId}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                });
-
-                if (response.ok) {
-                    showNotification('Agente eliminado exitosamente', 'success');
-                    loadBots();
-                } else {
-                    throw new Error('Error al eliminar agent');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showNotification('Error al eliminar el agent', 'error');
-            }
-        }
-
-        // Cerrar sesión
-        async function logout() {
-            try {
-                await fetch('/api/auth/logout', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                window.location.href = '/login';
-            } catch (error) {
-                console.error('Error al cerrar sesión:', error);
-                window.location.href = '/login';
-            }
-        }
-
-        // Formatear fecha
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('es-MX', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-        }
-
-        // Mostrar notificación
-        function showNotification(message, type = 'info') {
-            // Simple alert por ahora
-            alert(message);
-        }
-
-        // Cargar información al iniciar
         document.addEventListener('DOMContentLoaded', function() {
             loadUserInfo();
             loadBots();
