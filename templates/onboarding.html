@@ -1,504 +1,676 @@
-{{define "onboarding.html"}}
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crear Tu Agente</title>
-  <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
-  <link rel="stylesheet" href="../static/css/onboarding.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onboarding - Crear Agente de IA</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="../static/css/onboarding.css">
 </head>
 <body>
-  <!-- Header -->
-  <div class="header">
-    <div class="header-content">
-      <div class="logo-section">
-        <div class="logo-icon">
-          <div class="logo-inner"></div>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <div class="logo-inner"></div>
+                </div>
+                <div class="brand-text">AGENT BUILDER</div>
+            </div>
+            <div class="header-actions">
+                <a href="/" class="btn-header btn-cancel">
+                    <svg class="lucide" viewBox="0 0 24 24">
+                        <path d="M18 6 6 18"/>
+                        <path d="m6 6 12 12"/>
+                    </svg>
+                    Cancelar
+                </a>
+            </div>
         </div>
-        <span class="brand-text">AGENT BUILDER</span>
-      </div>
-      <div class="header-actions">
-        <a href="/dashboard" class="btn-header btn-cancel">
-          <svg class="lucide" viewBox="0 0 24 24">
-            <path d="M18 6 6 18"/>
-            <path d="m6 6 12 12"/>
-          </svg>
-          Cancelar
-        </a>
-      </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Progress Bar -->
+        <div class="progress-wrapper">
+            <div class="progress-steps">
+                <div class="progress-line-bg">
+                    <div class="progress-line-fill" id="progressFill"></div>
+                </div>
+                
+                <div class="progress-step active">
+                    <div class="step-circle">1</div>
+                    <div class="step-label">Red Social</div>
+                </div>
+                
+                <div class="progress-step">
+                    <div class="step-circle">2</div>
+                    <div class="step-label">Documento</div>
+                </div>
+                
+                <div class="progress-step">
+                    <div class="step-circle">3</div>
+                    <div class="step-label">Configuración</div>
+                </div>
+                
+                <div class="progress-step">
+                    <div class="step-circle">4</div>
+                    <div class="step-label">Resumen</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Card -->
+        <div class="content-card">
+            <!-- PASO 1: Selección de Red Social -->
+            <div id="step1" class="step active">
+                <div class="step-header">
+                    <div class="step-icon">
+                        <i class="lni lni-network"></i>
+                    </div>
+                    <h2 class="step-title">Selecciona tu Red Social</h2>
+                    <p class="step-description">Elige la plataforma donde operará tu agente de IA</p>
+                </div>
+
+                <div class="social-grid">
+                    <label class="social-card">
+                        <input type="radio" name="social" value="whatsapp">
+                        <div class="social-content">
+                            <div class="check-indicator">
+                                <svg class="lucide" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </div>
+                            <div class="social-icon" style="background: linear-gradient(135deg, #25D366 0%, #128C7E 100%); color: white;">
+                                <i class="lni lni-whatsapp"></i>
+                            </div>
+                            <div class="social-name">WhatsApp</div>
+                            <div class="social-status status-available">Disponible</div>
+                        </div>
+                    </label>
+
+                    <label class="social-card">
+                        <input type="radio" name="social" value="facebook">
+                        <div class="social-content">
+                            <div class="check-indicator">
+                                <svg class="lucide" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </div>
+                            <div class="social-icon" style="background: linear-gradient(135deg, #1877F2 0%, #0C5DBD 100%); color: white;">
+                                <i class="lni lni-facebook-filled"></i>
+                            </div>
+                            <div class="social-name">Facebook</div>
+                            <div class="social-status status-available">Disponible</div>
+                        </div>
+                    </label>
+
+                    <label class="social-card">
+                        <input type="radio" name="social" value="instagram">
+                        <div class="social-content">
+                            <div class="check-indicator">
+                                <svg class="lucide" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </div>
+                            <div class="social-icon" style="background: linear-gradient(135deg, #E4405F 0%, #5B51D8 100%); color: white;">
+                                <i class="lni lni-instagram-filled"></i>
+                            </div>
+                            <div class="social-name">Instagram</div>
+                            <div class="social-status status-available">Disponible</div>
+                        </div>
+                    </label>
+
+                    <label class="social-card">
+                        <input type="radio" name="social" value="telegram">
+                        <div class="social-content">
+                            <div class="check-indicator">
+                                <svg class="lucide" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </div>
+                            <div class="social-icon" style="background: linear-gradient(135deg, #0088CC 0%, #006699 100%); color: white;">
+                                <i class="lni lni-telegram-original"></i>
+                            </div>
+                            <div class="social-name">Telegram</div>
+                            <div class="social-status status-available">Disponible</div>
+                        </div>
+                    </label>
+
+                    <label class="social-card">
+                        <input type="radio" name="social" value="wechat">
+                        <div class="social-content">
+                            <div class="check-indicator">
+                                <svg class="lucide" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </div>
+                            <div class="social-icon" style="background: linear-gradient(135deg, #09B83E 0%, #078129 100%); color: white;">
+                                <i class="lni lni-wechat"></i>
+                            </div>
+                            <div class="social-name">WeChat</div>
+                            <div class="social-status status-coming-soon">Próximamente</div>
+                        </div>
+                    </label>
+
+                    <label class="social-card">
+                        <input type="radio" name="social" value="kakaotalk">
+                        <div class="social-content">
+                            <div class="check-indicator">
+                                <svg class="lucide" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </div>
+                            <div class="social-icon" style="background: linear-gradient(135deg, #FEE500 0%, #FDD835 100%); color: #3C1E1E;">
+                                <i class="lni lni-comments-alt"></i>
+                            </div>
+                            <div class="social-name">KakaoTalk</div>
+                            <div class="social-status status-coming-soon">Próximamente</div>
+                        </div>
+                    </label>
+
+                    <label class="social-card">
+                        <input type="radio" name="social" value="line">
+                        <div class="social-content">
+                            <div class="check-indicator">
+                                <svg class="lucide" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </div>
+                            <div class="social-icon" style="background: linear-gradient(135deg, #00B900 0%, #009900 100%); color: white;">
+                                <i class="lni lni-line"></i>
+                            </div>
+                            <div class="social-name">Line</div>
+                            <div class="social-status status-coming-soon">Próximamente</div>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="button" id="btnStep1" class="btn btn-next" disabled>
+                        Continuar
+                        <svg class="lucide" viewBox="0 0 24 24">
+                            <path d="M5 12h14"/>
+                            <path d="m12 5 7 7-7 7"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- PASO 2: Subir Documento -->
+            <div id="step2" class="step">
+                <div class="step-header">
+                    <div class="step-icon">
+                        <i class="lni lni-shield-check"></i>
+                    </div>
+                    <h2 class="step-title">Sube tu Documento</h2>
+                    <p class="step-description">Proporciona información sobre tu negocio para entrenar a la IA</p>
+                </div>
+
+                <div class="upload-section">
+                    <div id="uploadArea" class="upload-area">
+                        <div class="upload-icon">
+                            <i class="lni lni-cloud-upload"></i>
+                        </div>
+                        <h3>Arrastra y suelta tu documento aquí</h3>
+                        <p>o haz clic para seleccionar</p>
+                        <button type="button" id="btnSelectFile" class="btn-select-file">
+                            Seleccionar Archivo
+                        </button>
+                        <input type="file" id="metaDocument" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
+                        <p class="upload-help">Formatos: PDF, JPG, PNG • Máximo 5MB</p>
+                    </div>
+
+                    <div id="filePreview" class="file-preview">
+                        <div class="file-icon">
+                            <i class="lni lni-files"></i>
+                        </div>
+                        <div class="file-details">
+                            <div class="file-name" id="fileName">documento.pdf</div>
+                            <div class="file-size" id="fileSize">2.5 MB</div>
+                        </div>
+                        <button type="button" id="btnRemoveFile" class="btn-remove-file">
+                            <i class="lni lni-trash-can"></i>
+                        </button>
+                    </div>
+
+                    <div id="uploadProgress" class="upload-progress">
+                        <div class="progress-bar-container">
+                            <div class="progress-fill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="button" id="btnBackStep2" class="btn btn-back">
+                        <svg class="lucide" viewBox="0 0 24 24">
+                            <path d="M19 12H5"/>
+                            <path d="m12 19-7-7 7-7"/>
+                        </svg>
+                        Atrás
+                    </button>
+                    <button type="button" id="btnStep2" class="btn btn-next" disabled>
+                        Continuar
+                        <svg class="lucide" viewBox="0 0 24 24">
+                            <path d="M5 12h14"/>
+                            <path d="m12 5 7 7-7 7"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- PASO 3: Configuración -->
+            <div id="step3" class="step">
+                <div class="step-header">
+                    <div class="step-icon">
+                        <i class="lni lni-cog"></i>
+                    </div>
+                    <h2 class="step-title">Configuración del Agente</h2>
+                    <p class="step-description">Personaliza el comportamiento y mensajes de tu agente de IA</p>
+                </div>
+
+                <!-- Información Básica -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="lni lni-user section-icon"></i>
+                        Información Básica
+                    </h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Nombre del Agente *</label>
+                        <input type="text" id="agentName" class="form-input" placeholder="Ej: Barbería El Clásico" required>
+                        <span class="form-help">Este nombre se usará para identificar tu agente</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Número de Teléfono *</label>
+                        <div class="phone-input-group">
+                            <div class="country-code-wrapper">
+                                <select id="countryCode" class="country-code-select">
+                                    <option value="+52">🇲🇽 +52</option>
+                                </select>
+                                <div id="countryDropdown" class="country-dropdown">
+                                    <div class="country-option" data-value="+1">
+                                        <span class="country-flag">🇺🇸</span>
+                                        <span class="country-name">Estados Unidos</span>
+                                        <span class="country-code">+1</span>
+                                    </div>
+                                    <div class="country-option" data-value="+52">
+                                        <span class="country-flag">🇲🇽</span>
+                                        <span class="country-name">México</span>
+                                        <span class="country-code">+52</span>
+                                    </div>
+                                    <div class="country-option" data-value="+34">
+                                        <span class="country-flag">🇪🇸</span>
+                                        <span class="country-name">España</span>
+                                        <span class="country-code">+34</span>
+                                    </div>
+                                    <div class="country-option" data-value="+54">
+                                        <span class="country-flag">🇦🇷</span>
+                                        <span class="country-name">Argentina</span>
+                                        <span class="country-code">+54</span>
+                                    </div>
+                                    <div class="country-option" data-value="+57">
+                                        <span class="country-flag">🇨🇴</span>
+                                        <span class="country-name">Colombia</span>
+                                        <span class="country-code">+57</span>
+                                    </div>
+                                    <div class="country-option" data-value="+56">
+                                        <span class="country-flag">🇨🇱</span>
+                                        <span class="country-name">Chile</span>
+                                        <span class="country-code">+56</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="tel" id="phoneNumber" class="form-input" placeholder="6621234567" required>
+                        </div>
+                        <span class="form-help">Número de WhatsApp Business donde operará el agente</span>
+                    </div>
+                </div>
+
+                <!-- Mensaje de Bienvenida -->
+                <div class="form-section" id="welcomeMessageSection">
+                    <h3 class="section-title">
+                        <i class="lni lni-comments section-icon"></i>
+                        Mensaje de Bienvenida
+                    </h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Mensaje de Bienvenida *</label>
+                        <div class="rich-editor">
+                            <div class="editor-toolbar">
+                                <button type="button" class="editor-btn" data-command="bold" title="Negrita">
+                                    <strong>B</strong>
+                                </button>
+                                <button type="button" class="editor-btn" data-command="italic" title="Cursiva">
+                                    <em>I</em>
+                                </button>
+                                <button type="button" class="editor-btn" data-command="underline" title="Subrayado">
+                                    <u>U</u>
+                                </button>
+                                <button type="button" class="editor-btn" data-emoji="👋" title="Emoji">
+                                    😊
+                                </button>
+                                <button type="button" class="editor-btn" data-command="insertUnorderedList" title="Lista">
+                                    ☰
+                                </button>
+                            </div>
+                            <div class="editor-content" 
+                                 id="welcomeMessage"
+                                 contenteditable="true" 
+                                 data-placeholder="Ej: ¡Hola! 👋 Bienvenido a nuestra barbería. ¿En qué puedo ayudarte hoy?">
+                            </div>
+                        </div>
+                        <span class="form-help">Este mensaje se enviará cuando un cliente inicie una conversación</span>
+                    </div>
+                </div>
+
+                <!-- Personalidad de la IA -->
+                <div class="form-section" id="aiPersonalitySection">
+                    <h3 class="section-title">
+                        <i class="lni lni-brain section-icon"></i>
+                        Personalidad de la IA
+                    </h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Descripción de la Personalidad *</label>
+                        <div class="rich-editor">
+                            <div class="editor-toolbar">
+                                <button type="button" class="editor-btn" data-command="bold" title="Negrita">
+                                    <strong>B</strong>
+                                </button>
+                                <button type="button" class="editor-btn" data-command="italic" title="Cursiva">
+                                    <em>I</em>
+                                </button>
+                                <button type="button" class="editor-btn" data-command="underline" title="Subrayado">
+                                    <u>U</u>
+                                </button>
+                                <button type="button" class="editor-btn" data-emoji="🤖" title="Emoji">
+                                    😊
+                                </button>
+                                <button type="button" class="editor-btn" data-command="insertUnorderedList" title="Lista">
+                                    ☰
+                                </button>
+                            </div>
+                            <div class="editor-content" 
+                                 id="aiPersonality"
+                                 contenteditable="true" 
+                                 data-placeholder="Ej: Eres un asistente amigable y profesional de una barbería. Hablas de manera casual pero respetuosa. Usas emojis ocasionalmente para ser más cercano. Siempre buscas ayudar al cliente de la mejor manera.">
+                            </div>
+                        </div>
+                        <span class="form-help">Define cómo debe comportarse y comunicarse tu agente de IA con los clientes</span>
+                    </div>
+                </div>
+
+                <!-- Plantilla de Confirmación de Cita -->
+                <div class="form-section" id="confirmationTemplateSection">
+                    <h3 class="section-title">
+                        <i class="lni lni-checkmark-circle section-icon"></i>
+                        Plantilla de Confirmación de Cita
+                    </h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Mensaje de Confirmación *</label>
+                        <div class="rich-editor">
+                            <div class="editor-toolbar">
+                                <button type="button" class="editor-btn" data-command="bold" title="Negrita">
+                                    <strong>B</strong>
+                                </button>
+                                <button type="button" class="editor-btn" data-command="italic" title="Cursiva">
+                                    <em>I</em>
+                                </button>
+                                <button type="button" class="editor-btn" data-command="underline" title="Subrayado">
+                                    <u>U</u>
+                                </button>
+                                <button type="button" class="editor-btn" data-emoji="🎉" title="Emoji">
+                                    😊
+                                </button>
+                                <button type="button" class="editor-btn" data-command="insertUnorderedList" title="Lista">
+                                    ☰
+                                </button>
+                            </div>
+                            <div class="editor-content" 
+                                 id="confirmationTemplate"
+                                 contenteditable="true" 
+                                 data-placeholder="Escribe tu plantilla de confirmación aquí...">¡Perfecto! 🎉 Tu cita ha sido agendada exitosamente.
+
+📋 Resumen de tu cita:
+👤 Nombre: {nombre}
+✂️ Servicio: {servicio}
+👨 Barbero: {barbero}
+📅 Fecha: {fecha}
+⏰ Hora: {hora}
+
+Te esperamos en la fecha y hora acordada. ¡Gracias por confiar en nosotros! 😊</div>
+                        </div>
+                        <span class="form-help">Variables disponibles: {nombre}, {servicio}, {barbero}, {fecha}, {hora} - Se reemplazarán automáticamente con los datos de la cita</span>
+                    </div>
+                </div>
+
+                <!-- Horario de Atención -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="lni lni-calendar section-icon"></i>
+                        Horario de Atención
+                    </h3>
+
+                    <div id="scheduleList" class="schedule-list"></div>
+
+                    <div class="schedule-summary">
+                        <div class="summary-header">
+                            <div class="summary-icon">
+                                <i class="lni lni-information"></i>
+                            </div>
+                            <div class="summary-title">Nota Importante</div>
+                        </div>
+                        <p class="summary-text">El horario que configures aquí será usado por la IA para gestionar las citas y responder a los clientes sobre disponibilidad.</p>
+                    </div>
+                </div>
+
+                <!-- Modo de Duración de Servicios -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="lni lni-briefcase section-icon"></i>
+                        Servicios
+                    </h3>
+
+                    <div class="duration-mode-section">
+                        <div class="duration-mode-title">
+                            <i class="lni lni-timer"></i>
+                            Duración de los Servicios
+                        </div>
+                        <div class="duration-radio-group">
+                            <label class="duration-radio-option selected">
+                                <input type="radio" name="duration-mode" value="variable" checked>
+                                <div class="duration-radio-label">
+                                    <strong>Duración Personalizada</strong>
+                                    <span>Cada servicio tiene su propia duración</span>
+                                </div>
+                            </label>
+                            <label class="duration-radio-option">
+                                <input type="radio" name="duration-mode" value="fixed">
+                                <div class="duration-radio-label">
+                                    <strong>Misma Duración para Todos</strong>
+                                    <span>Todos los servicios tendrán la misma duración</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="fixed-duration-config" id="fixedDurationConfig">
+                            <div class="form-group">
+                                <label class="form-label">Duración Estándar</label>
+                                <div id="fixedDurationDropdown"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="servicesContainer" class="items-container"></div>
+
+                    <button type="button" id="btnAddService" class="btn-add">
+                        <i class="lni lni-plus"></i>
+                        Agregar Servicio
+                    </button>
+                </div>
+
+                <!-- Personal -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="lni lni-users section-icon"></i>
+                        Personal
+                    </h3>
+
+                    <div id="staffContainer" class="items-container"></div>
+
+                    <button type="button" id="btnAddStaff" class="btn-add">
+                        <i class="lni lni-plus"></i>
+                        Agregar Personal
+                    </button>
+                </div>
+
+                <!-- Promociones (Opcional) -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="lni lni-tag section-icon"></i>
+                        Promociones (Opcional)
+                    </h3>
+
+                    <div id="promotionsContainer" class="items-container"></div>
+
+                    <button type="button" id="btnAddPromotion" class="btn-add">
+                        <i class="lni lni-plus"></i>
+                        Agregar Promoción
+                    </button>
+                </div>
+
+                <!-- Facilidades (Opcional) -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="lni lni-car section-icon"></i>
+                        Facilidades (Opcional)
+                    </h3>
+
+                    <div class="facilities-grid">
+                        <label class="facility-card">
+                            <input type="checkbox" name="facility" value="Estacionamiento">
+                            <div class="facility-content">
+                                <i class="lni lni-car facility-icon"></i>
+                                <div class="facility-name">Estacionamiento</div>
+                            </div>
+                        </label>
+
+                        <label class="facility-card">
+                            <input type="checkbox" name="facility" value="WiFi">
+                            <div class="facility-content">
+                                <i class="lni lni-signal facility-icon"></i>
+                                <div class="facility-name">WiFi Gratis</div>
+                            </div>
+                        </label>
+
+                        <label class="facility-card">
+                            <input type="checkbox" name="facility" value="Aire Acondicionado">
+                            <div class="facility-content">
+                                <i class="lni lni-fresh-juice facility-icon"></i>
+                                <div class="facility-name">Aire Acondicionado</div>
+                            </div>
+                        </label>
+
+                        <label class="facility-card">
+                            <input type="checkbox" name="facility" value="Música">
+                            <div class="facility-content">
+                                <i class="lni lni-music facility-icon"></i>
+                                <div class="facility-name">Música</div>
+                            </div>
+                        </label>
+
+                        <label class="facility-card">
+                            <input type="checkbox" name="facility" value="TV">
+                            <div class="facility-content">
+                                <i class="lni lni-screen facility-icon"></i>
+                                <div class="facility-name">Televisión</div>
+                            </div>
+                        </label>
+
+                        <label class="facility-card">
+                            <input type="checkbox" name="facility" value="Café">
+                            <div class="facility-content">
+                                <i class="lni lni-cup facility-icon"></i>
+                                <div class="facility-name">Café</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Botones de navegación -->
+                <div class="action-buttons">
+                    <button type="button" id="btnBackStep3" class="btn btn-back">
+                        <svg class="lucide" viewBox="0 0 24 24">
+                            <path d="M19 12H5"/>
+                            <path d="m12 19-7-7 7-7"/>
+                        </svg>
+                        Atrás
+                    </button>
+                    <button type="button" id="btnStep3" class="btn btn-next">
+                        Continuar
+                        <svg class="lucide" viewBox="0 0 24 24">
+                            <path d="M5 12h14"/>
+                            <path d="m12 5 7 7-7 7"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- PASO 4: Resumen -->
+            <div id="step4" class="step">
+                <div class="step-header">
+                    <div class="step-icon">
+                        <i class="lni lni-checkmark-circle"></i>
+                    </div>
+                    <h2 class="step-title">Resumen de Configuración</h2>
+                    <p class="step-description">Revisa la información antes de crear tu agente</p>
+                </div>
+
+                <div id="summaryContainer" class="summary-grid"></div>
+
+                <div class="action-buttons">
+                    <button type="button" id="btnBackStep4" class="btn btn-back">
+                        <svg class="lucide" viewBox="0 0 24 24">
+                            <path d="M19 12H5"/>
+                            <path d="m12 19-7-7 7-7"/>
+                        </svg>
+                        Atrás
+                    </button>
+                    <button type="button" id="btnCreateAgent" class="btn btn-next btn-create">
+                        <i class="lni lni-rocket"></i>
+                        Crear Agente
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- Main Container -->
-  <div class="main-container">
-    <!-- Progress Bar -->
-    <div class="progress-wrapper">
-      <div class="progress-steps">
-        <div class="progress-line-bg">
-          <div class="progress-line-fill" id="progressFill"></div>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="overlay">
+        <div class="overlay-content">
+            <div class="spinner"></div>
+            <h3>Creando tu agente...</h3>
+            <p>Esto puede tomar unos momentos</p>
         </div>
-        <div class="progress-step active" data-step="1">
-          <div class="step-circle">1</div>
-          <div class="step-label">Red Social</div>
-        </div>
-        <div class="progress-step" data-step="2">
-          <div class="step-circle">2</div>
-          <div class="step-label">Verificación</div>
-        </div>
-        <div class="progress-step" data-step="3">
-          <div class="step-circle">3</div>
-          <div class="step-label">Configuración</div>
-        </div>
-        <div class="progress-step" data-step="4">
-          <div class="step-circle">4</div>
-          <div class="step-label">Confirmación</div>
-        </div>
-      </div>
     </div>
 
-    <!-- Content Card -->
-    <div class="content-card">
-      <!-- Step 1: Social Network Selection -->
-      <div class="step active" id="step1">
-        <div class="step-header">
-          <div class="step-icon">
-            <i class="lni lni-network"></i>
-          </div>
-          <h1 class="step-title">Selecciona la Red Social</h1>
-          <p class="step-description">Elige la plataforma donde deseas crear tu agente de atención al cliente</p>
-        </div>
-
-        <div class="social-grid">
-          <label class="social-card">
-            <input type="radio" name="social" value="whatsapp" id="social-whatsapp">
-            <div class="social-content">
-              <div class="check-indicator">
-                <svg class="lucide" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </div>
-              <div class="social-icon" style="background: linear-gradient(135deg, #25D366 0%, #128C7E 100%); color: white;">
-                <i class="lni lni-whatsapp"></i>
-              </div>
-              <div class="social-name">WhatsApp</div>
-              <span class="social-status status-available">Disponible</span>
+    <!-- Success Modal -->
+    <div id="successModal" class="overlay">
+        <div class="overlay-content">
+            <div class="success-icon">
+                <i class="lni lni-checkmark-circle"></i>
             </div>
-          </label>
-
-          <label class="social-card">
-            <input type="radio" name="social" value="facebook" id="social-facebook">
-            <div class="social-content">
-              <div class="check-indicator">
-                <svg class="lucide" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </div>
-              <div class="social-icon" style="background: linear-gradient(135deg, #1877F2 0%, #0C5DBD 100%); color: white;">
-                <i class="lni lni-facebook-filled"></i>
-              </div>
-              <div class="social-name">Facebook</div>
-              <span class="social-status status-available">Disponible</span>
-            </div>
-          </label>
-
-          <label class="social-card">
-            <input type="radio" name="social" value="instagram" id="social-instagram">
-            <div class="social-content">
-              <div class="check-indicator">
-                <svg class="lucide" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </div>
-              <div class="social-icon" style="background: linear-gradient(135deg, #E4405F 0%, #5B51D8 100%); color: white;">
-                <i class="lni lni-instagram-filled"></i>
-              </div>
-              <div class="social-name">Instagram</div>
-              <span class="social-status status-available">Disponible</span>
-            </div>
-          </label>
-
-          <label class="social-card">
-            <input type="radio" name="social" value="telegram" id="social-telegram">
-            <div class="social-content">
-              <div class="check-indicator">
-                <svg class="lucide" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </div>
-              <div class="social-icon" style="background: linear-gradient(135deg, #0088CC 0%, #006699 100%); color: white;">
-                <i class="lni lni-telegram-original"></i>
-              </div>
-              <div class="social-name">Telegram</div>
-              <span class="social-status status-available">Disponible</span>
-            </div>
-          </label>
-
-          <label class="social-card">
-            <input type="radio" name="social" value="wechat" id="social-wechat">
-            <div class="social-content">
-              <div class="check-indicator">
-                <svg class="lucide" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </div>
-              <div class="social-icon" style="background: linear-gradient(135deg, #09B83E 0%, #078129 100%); color: white;">
-                <i class="lni lni-wechat"></i>
-              </div>
-              <div class="social-name">WeChat</div>
-              <span class="social-status status-coming-soon">Próximamente</span>
-            </div>
-          </label>
-
-          <label class="social-card">
-            <input type="radio" name="social" value="kakaotalk" id="social-kakaotalk">
-            <div class="social-content">
-              <div class="check-indicator">
-                <svg class="lucide" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </div>
-              <div class="social-icon" style="background: linear-gradient(135deg, #FEE500 0%, #FDD835 100%); color: #3C1E1E;">
-                <i class="lni lni-comments-alt"></i>
-              </div>
-              <div class="social-name">KakaoTalk</div>
-              <span class="social-status status-coming-soon">Próximamente</span>
-            </div>
-          </label>
-
-          <label class="social-card">
-            <input type="radio" name="social" value="line" id="social-line">
-            <div class="social-content">
-              <div class="check-indicator">
-                <svg class="lucide" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </div>
-              <div class="social-icon" style="background: linear-gradient(135deg, #00B900 0%, #009900 100%); color: white;">
-                <i class="lni lni-line"></i>
-              </div>
-              <div class="social-name">Line</div>
-              <span class="social-status status-coming-soon">Próximamente</span>
-            </div>
-          </label>
-        </div>
-
-        <div class="action-buttons">
-          <button type="button" class="btn btn-next" id="btnStep1" disabled>
-            Continuar
-            <svg class="lucide" viewBox="0 0 24 24">
-              <path d="M5 12h14"/>
-              <path d="m12 5 7 7-7 7"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Step 2: Verification (Only for WhatsApp) -->
-      <div class="step" id="step2">
-        <div class="step-header">
-          <div class="step-icon">
-            <i class="lni lni-shield-check"></i>
-          </div>
-          <h1 class="step-title">Verificación de Negocio</h1>
-          <p class="step-description">Sube tu documento de verificación de negocio de Meta</p>
-        </div>
-
-        <div class="upload-section">
-          <div class="upload-area" id="uploadArea">
-            <div class="upload-icon">
-              <i class="lni lni-cloud-upload"></i>
-            </div>
-            <h3>Arrastra tu documento aquí</h3>
-            <p>o haz clic para seleccionar un archivo</p>
-            <input type="file" id="metaDocument" accept=".pdf,.jpg,.jpeg,.png" hidden>
-            <button type="button" class="btn-select-file" id="btnSelectFile">
-              Seleccionar Archivo
+            <h3>¡Agente Creado Exitosamente!</h3>
+            <p>Tu agente de IA está listo para comenzar a trabajar</p>
+            <button type="button" id="btnGoToDashboard" class="btn btn-next" style="margin-top: 24px; width: 100%; justify-content: center;">
+                Ir al Dashboard
             </button>
-            <div class="upload-help">
-              Formatos aceptados: PDF, JPG, PNG (Máx. 5MB)
-            </div>
-          </div>
-
-          <div class="file-preview" id="filePreview" style="display: none;">
-            <div class="file-icon">
-              <i class="lni lni-files"></i>
-            </div>
-            <div class="file-details">
-              <div class="file-name" id="fileName"></div>
-              <div class="file-size" id="fileSize"></div>
-            </div>
-            <button type="button" class="btn-remove-file" id="btnRemoveFile">
-              <i class="lni lni-trash-can"></i>
-            </button>
-          </div>
-
-          <div class="upload-progress" id="uploadProgress" style="display: none;">
-            <div class="progress-fill"></div>
-          </div>
-
-          <div class="info-card">
-            <svg class="lucide info-icon" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 16v-4"/>
-              <path d="M12 8h.01"/>
-            </svg>
-            <div class="info-content">
-              <h4>¿Por qué necesitamos esto?</h4>
-              <p>Meta requiere verificación de negocio para usar WhatsApp Business API. Este documento confirma la legitimidad de tu negocio.</p>
-            </div>
-          </div>
         </div>
-
-        <div class="action-buttons">
-          <button type="button" class="btn btn-back" id="btnBackStep2">
-            <svg class="lucide" viewBox="0 0 24 24">
-              <path d="M19 12H5"/>
-              <path d="m12 19-7-7 7-7"/>
-            </svg>
-            Anterior
-          </button>
-          <button type="button" class="btn btn-next" id="btnStep2" disabled>
-            Continuar
-            <svg class="lucide" viewBox="0 0 24 24">
-              <path d="M5 12h14"/>
-              <path d="m12 5 7 7-7 7"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Step 3: Configuration -->
-      <div class="step" id="step3">
-        <div class="step-header">
-          <div class="step-icon">
-            <i class="lni lni-cog"></i>
-          </div>
-          <h1 class="step-title">Configura Tu Agente</h1>
-          <p class="step-description">Personaliza la información que tu agente compartirá con tus clientes</p>
-        </div>
-
-        <form id="agentForm">
-          <!-- Basic Info -->
-          <div class="form-section">
-            <h3 class="section-title">
-              <i class="lni lni-information section-icon"></i>
-              Información Básica
-            </h3>
-
-            <div class="form-group">
-              <label class="form-label">Nombre del Agente *</label>
-              <input type="text" class="form-input" id="agentName" placeholder="Ej: Agente de La Antigua Barbería" required>
-              <small class="form-help">Este nombre se mostrará en el título de tu agente</small>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Número de Teléfono del Agente *</label>
-              <div class="phone-input-group">
-                <div class="country-code">
-                  <select id="countryCode">
-                    <option value="+52">🇲🇽 +52</option>
-                    <option value="+1">🇺🇸 +1</option>
-                    <option value="+34">🇪🇸 +34</option>
-                    <option value="+54">🇦🇷 +54</option>
-                    <option value="+57">🇨🇴 +57</option>
-                    <option value="+51">🇵🇪 +51</option>
-                    <option value="+56">🇨🇱 +56</option>
-                  </select>
-                </div>
-                <input type="tel" class="form-input" id="phoneNumber" placeholder="662 123 4567" required>
-              </div>
-              <small class="form-help">El número donde estará activo tu agente</small>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Mensaje de Bienvenida *</label>
-              <div class="rich-editor">
-                <div class="editor-toolbar">
-                  <button type="button" class="editor-btn" data-command="bold" title="Negrita">
-                    <strong>B</strong>
-                  </button>
-                  <button type="button" class="editor-btn" data-command="italic" title="Cursiva">
-                    <em>I</em>
-                  </button>
-                  <button type="button" class="editor-btn" data-command="underline" title="Subrayado">
-                    <u>U</u>
-                  </button>
-                  <button type="button" class="editor-btn" data-emoji="👋" title="Emoji">
-                    😊
-                  </button>
-                  <button type="button" class="editor-btn" data-command="insertUnorderedList" title="Lista">
-                    ☰
-                  </button>
-                </div>
-                <div class="editor-content" 
-                     id="welcomeMessage" 
-                     contenteditable="true" 
-                     data-placeholder="¡Hola! Bienvenido a...">
-                </div>
-              </div>
-              <small class="form-help">El primer mensaje que verán tus clientes</small>
-            </div>
-          </div>
-
-          <!-- Schedule -->
-          <div class="form-section">
-            <h3 class="section-title">
-              <i class="lni lni-calendar section-icon"></i>
-              Horario de Atención
-            </h3>
-            <div class="schedule-list" id="scheduleList"></div>
-          </div>
-
-          <!-- Services -->
-          <div class="form-section">
-            <h3 class="section-title">
-              <i class="lni lni-briefcase section-icon"></i>
-              Servicios
-            </h3>
-            <div class="items-container" id="servicesContainer"></div>
-            <button type="button" class="btn-add" id="btnAddService">
-              <i class="lni lni-plus"></i>
-              Agregar Servicio
-            </button>
-          </div>
-
-          <!-- Staff -->
-          <div class="form-section">
-            <h3 class="section-title">
-              <i class="lni lni-users section-icon"></i>
-              Personal
-            </h3>
-            <div class="items-container" id="staffContainer"></div>
-            <button type="button" class="btn-add" id="btnAddStaff">
-              <i class="lni lni-plus"></i>
-              Agregar Personal
-            </button>
-          </div>
-
-          <!-- Promotions -->
-          <div class="form-section">
-            <h3 class="section-title">
-              <i class="lni lni-tag section-icon"></i>
-              Promociones (Opcional)
-            </h3>
-            <div class="items-container" id="promotionsContainer"></div>
-            <button type="button" class="btn-add" id="btnAddPromotion">
-              <i class="lni lni-plus"></i>
-              Agregar Promoción
-            </button>
-          </div>
-
-          <!-- Facilities -->
-          <div class="form-section">
-            <h3 class="section-title">
-              <i class="lni lni-car section-icon"></i>
-              Facilidades (Opcional)
-            </h3>
-            <div class="facilities-grid">
-              <label class="facility-card">
-                <input type="checkbox" name="facility" value="Estacionamiento">
-                <div class="facility-content">
-                  <i class="lni lni-car facility-icon"></i>
-                  <span class="facility-name">Estacionamiento</span>
-                </div>
-              </label>
-              <label class="facility-card">
-                <input type="checkbox" name="facility" value="WiFi Gratis">
-                <div class="facility-content">
-                  <i class="lni lni-signal facility-icon"></i>
-                  <span class="facility-name">WiFi Gratis</span>
-                </div>
-              </label>
-              <label class="facility-card">
-                <input type="checkbox" name="facility" value="Aire Acondicionado">
-                <div class="facility-content">
-                  <i class="lni lni-fresh-juice facility-icon"></i>
-                  <span class="facility-name">Aire Acondicionado</span>
-                </div>
-              </label>
-              <label class="facility-card">
-                <input type="checkbox" name="facility" value="Pagos con Tarjeta">
-                <div class="facility-content">
-                  <i class="lni lni-credit-cards facility-icon"></i>
-                  <span class="facility-name">Pagos con Tarjeta</span>
-                </div>
-              </label>
-            </div>
-          </div>
-        </form>
-
-        <div class="action-buttons">
-          <button type="button" class="btn btn-back" id="btnBackStep3">
-            <svg class="lucide" viewBox="0 0 24 24">
-              <path d="M19 12H5"/>
-              <path d="m12 19-7-7 7-7"/>
-            </svg>
-            Anterior
-          </button>
-          <button type="button" class="btn btn-next" id="btnStep3">
-            Continuar
-            <svg class="lucide" viewBox="0 0 24 24">
-              <path d="M5 12h14"/>
-              <path d="m12 5 7 7-7 7"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Step 4: Confirmation -->
-      <div class="step" id="step4">
-        <div class="step-header">
-          <div class="step-icon">
-            <i class="lni lni-checkmark-circle"></i>
-          </div>
-          <h1 class="step-title">Confirma Tu Configuración</h1>
-          <p class="step-description">Revisa que toda la información sea correcta antes de crear tu agente</p>
-        </div>
-
-        <div class="summary-grid" id="summaryContainer"></div>
-
-        <div class="action-buttons">
-          <button type="button" class="btn btn-back" id="btnBackStep4">
-            <svg class="lucide" viewBox="0 0 24 24">
-              <path d="M19 12H5"/>
-              <path d="m12 19-7-7 7-7"/>
-            </svg>
-            Anterior
-          </button>
-          <button type="button" class="btn btn-next btn-create" id="btnCreateAgent">
-            <i class="lni lni-rocket"></i>
-            Crear Agente
-          </button>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Loading Overlay -->
-  <div class="overlay" id="loadingOverlay">
-    <div class="overlay-content">
-      <div class="spinner"></div>
-      <h3>Creando tu agente...</h3>
-      <p>Por favor espera un momento</p>
-    </div>
-  </div>
-
-  <!-- Success Modal -->
-  <div class="overlay" id="successModal">
-    <div class="overlay-content">
-      <div class="success-icon">
-        <i class="lni lni-checkmark-circle"></i>
-      </div>
-      <h3>¡Agente Creado Exitosamente!</h3>
-      <p>Tu agente ha sido configurado y está listo para usar</p>
-      <button class="btn btn-next" id="btnGoToDashboard" style="margin-top: 24px; width: 100%; justify-content: center;">
-        Ir al Dashboard
-      </button>
-    </div>
-  </div>
-
-  <script src="../static/js/onboarding.js"></script>
+    <script src="../static/js/onboarding.js"></script>
 </body>
 </html>
-{{end}}
