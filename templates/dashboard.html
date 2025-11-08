@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="dashboard-layout">
+                    <!-- Create Button -->
+                    <div class="page-header">
+                        <a href="/onboarding" class="btn-primary">
+                            <i class="lni lni-plus"></i>
+                            <span>Crear Agente</span>
+                        </a>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-content">
+                                    <div class="stat-value" id="activeAgentsCount">0</div>
+                                    <div class="stat-label">Agentes Activos</div>
+                                </div>
+                                <div class="stat-icon">
+                                    <i class="lni lni-bot"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-content">
+                                    <div class="stat-value">0</div>
+                                    <div class="stat-label">Conversaciones</div>
+                                </div>
+                                <div class="stat-icon">
+                                    <i class="lni lni-comments"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-content">
+                                    <div class="stat-value">0</div>
+                                    <div class="stat-label">Citas Agendadas</div>
+                                </div>
+                                <div class="stat-icon">
+                                    <i class="lni lni-calendar"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-content">
+                                    <div class="stat-value">--</div>
+                                    <div class="stat-label">Tiempo de Respuesta</div>
+                                </div>
+                                <div class="stat-icon">
+                                    <i class="lni lni-timer"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Billing Section -->
+                    <div class="ai-billing-section">
+                        <div class="billing-header">
+                            <div class="billing-title-wrapper">
+                                <h2 class="section-title">
+                                    <i class="lni lni-coin"></i>
+                                    Costos de IA
+                                </h2>
+                                <span class="billing-badge">Gemini API</span>
+                            </div>
+                            <div class="billing-controls">
+                                <select class="currency-select" id="currencySelect">
+                                    <option value="MXN" selected>🇲🇽 MXN</option>
+                                    <option value="USD">🇺🇸 USD</option>
+                                    <option value="EUR">🇪🇺 EUR</option>
+                                    <option value="GBP">🇬🇧 GBP</option>
+                                    <option value="CAD">🇨🇦 CAD</option>
+                                    <option value="ARS">🇦🇷 ARS</option>
+                                    <option value="COP">🇨🇴 COP</option>
+                                    <option value="CLP">🇨🇱 CLP</option>
+                                </select>
+                                <select class="time-range-select" id="billingTimeRange">
+                                    <option value="7">Últimos 7 días</option>
+                                    <option value="14">Últimos 14 días</option>
+                                    <option value="28" selected>Últimos 28 días</option>
+                                    <option value="90">Últimos 90 días</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="billing-card">
+                            <div class="cost-summary">
+                                <div class="cost-item">
+                                    <div class="cost-label">Costo Total</div>
+                                    <div class="cost-value" id="totalCost">$0.00</div>
+                                </div>
+                                <div class="cost-item period">
+                                    <div class="cost-label">Periodo</div>
+                                    <div class="cost-value-period" id="periodLabel">28 días</div>
+                                </div>
+                            </div>
+
+                            <div class="chart-container">
+                                <canvas id="costChart"></canvas>
+                            </div>
+
+                            <div class="billing-footer">
+                                <div class="billing-info">
+                                    <i class="lni lni-information"></i>
+                                    <span>Los costos se actualizan cada hora. Basado en el uso de tokens de la API de Gemini.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Agents Section -->
+                    <div class="section-header">
+                        <h2 class="section-title">Mis Agentes</h2>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div class="loading" id="loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Cargando agentes...</p>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="empty-state" id="emptyState" style="display: none;">
+                        <div class="empty-icon">🤖</div>
+                        <h3>No tienes agentes creados</h3>
+                        <p>Crea tu primer agente para comenzar a automatizar tu atención al cliente</p>
+                        <a href="/onboarding" class="btn-primary">
+                            <i class="lni lni-rocket"></i>
+                            Crear Mi Primer Agente
+                        </a>
+                    </div>
+
+                    <!-- Agents Grid -->
+                    <div class="agents-grid" id="botsGrid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

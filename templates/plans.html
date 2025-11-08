@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planes - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/sidebar.css">
+    <link rel="stylesheet" href="/static/css/userbar.css">
+    <link rel="stylesheet" href="/static/css/plans.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="plans-layout">
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <div class="header-content">
+                            <h1 class="page-title">Planes y Precios</h1>
+                            <p class="page-subtitle">Elige el plan perfecto para tu negocio. Cambia o cancela en cualquier momento.</p>
+                        </div>
+                    </div>
+
+                    <!-- Current Plan Banner (si ya tiene un plan) -->
+                    <div class="current-plan-banner">
+                        <div class="banner-icon">
+                            <i class="lni lni-star-filled"></i>
+                        </div>
+                        <div class="banner-content">
+                            <div class="banner-title">Plan Actual: <strong>Protón</strong></div>
+                            <div class="banner-subtitle">Tu plan se renueva el 15 de Noviembre, 2025</div>
+                        </div>
+                        <a href="/billing" class="banner-link">
+                            Ver Facturación
+                            <i class="lni lni-arrow-right"></i>
+                        </a>
+                    </div>
+
+                    <!-- Toggle de Periodo de Facturación -->
+                    <div class="billing-toggle">
+                        <span class="toggle-label">Mensual</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="billingToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="toggle-label">Anual <span class="savings-badge">Ahorra 20%</span></span>
+                    </div>
+
+                    <!-- Pricing Cards -->
+                    <div class="pricing-grid">
+                        <!-- Plan Protón -->
+                        <div class="pricing-card" data-plan="proton">
+                            <h3 class="plan-name">Plan Protón</h3>
+                            <div class="plan-price">
+                                <span class="price-amount" data-monthly="149" data-annual="1432">$149</span>
+                                <span class="price-period">/ mes</span>
+                            </div>
+                            <p class="plan-description">Perfecto para pequeños negocios que comienzan con chatbots.</p>
+                            
+                            <ul class="plan-features">
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>1 Chatbot incluido</span>
+                                </li>
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>1,000 mensajes/mes</span>
+                                </li>
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>Integración WhatsApp</span>
+                                </li>
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>Soporte por email</span>
+                                </li>
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>Panel básico de analytics</span>
+                                </li>
+                            </ul>
+                            
+                            <button class="plan-button current-plan" disabled>Plan Actual</button>
+                        </div>
+
+                        <!-- Plan Neutrón -->
+                        <div class="pricing-card featured" data-plan="neutron">
+                            <div class="popular-badge">Más Popular</div>
+                            <h3 class="plan-name">Plan Neutrón</h3>
+                            <div class="plan-price">
+                                <span class="price-amount" data-monthly="255" data-annual="2448">$255</span>
+                                <span class="price-period">/ mes</span>
+                            </div>
+                            <p class="plan-description">Ideal para Mipymes en crecimiento.</p>
+                            
+                            <ul class="plan-features">
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>3 Chatbots incluidos</span>
+                                </li>
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>10,000 mensajes/mes</span>
+                                </li>
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>Todas las plataformas</span>
+                                </li>
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>Soporte prioritario</span>
+                                </li>
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>Analytics avanzados</span>
+                                </li>
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>Integraciones CRM</span>
+                                </li>
+                            </ul>
+                            
+                            <button class="plan-button upgrade">Actualizar Plan</button>
+                        </div>
+
+                        <!-- Plan Electrón -->
+                        <div class="pricing-card" data-plan="electron">
+                            <h3 class="plan-name">Plan Electrón</h3>
+                            <div class="plan-price">
+                                <span class="price-amount">Personalizado</span>
+                            </div>
+                            <p class="plan-description">Plan flexible basado en tu consumo real.</p>
+                            
+                            <ul class="plan-features">
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>Chatbots ilimitados</span>
+                                </li>
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>Mensajes ilimitados</span>
+                                </li>
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>Todas las funcionalidades</span>
+                                </li>
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>Soporte dedicado 24/7</span>
+                                </li>
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>API personalizada</span>
+                                </li>
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>Facturación por uso real</span>
+                                </li>
+                            </ul>
+                            
+                            <button class="plan-button secondary">Contactar Ventas</button>
+                        </div>
+                    </div>
+
+                    <!-- Comparison Table -->
+                    <div class="comparison-section">
+                        <h2 class="comparison-title">Comparación Detallada de Planes</h2>
+                        
+                        <div class="comparison-table-wrapper">
+                            <table class="comparison-table">
+                                <thead>
+                                    <tr>
+                                        <th class="feature-column">Características</th>
+                                        <th>Protón</th>
+                                        <th class="featured-column">Neutrón</th>
+                                        <th>Electrón</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="feature-name">Número de Chatbots</td>
+                                        <td>1</td>
+                                        <td class="featured-cell">3</td>
+                                        <td>Ilimitados</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Mensajes mensuales</td>
+                                        <td>1,000</td>
+                                        <td class="featured-cell">10,000</td>
+                                        <td>Ilimitados</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Plataformas</td>
+                                        <td>WhatsApp</td>
+                                        <td class="featured-cell">Todas</td>
+                                        <td>Todas</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Analytics</td>
+                                        <td>Básico</td>
+                                        <td class="featured-cell">Avanzado</td>
+                                        <td>Personalizado</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Soporte</td>
+                                        <td>Email</td>
+                                        <td class="featured-cell">Prioritario</td>
+                                        <td>Dedicado 24/7</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Integraciones CRM</td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td class="featured-cell"><i class="lni lni-checkmark"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">API Personalizada</td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td class="featured-cell"><i class="lni lni-close"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Section -->
+                    <div class="faq-section">
+                        <h2 class="faq-title">Preguntas Frecuentes</h2>
+                        
+                        <div class="faq-grid">
+                            <div class="faq-item">
+                                <div class="faq-question">
+                                    <i class="lni lni-question-circle"></i>
+                                    <span>¿Puedo cambiar de plan en cualquier momento?</span>
+                                </div>
+                                <p class="faq-answer">Sí, puedes actualizar o cambiar tu plan cuando quieras. Los cambios se aplican inmediatamente.</p>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question">
+                                    <i class="lni lni-question-circle"></i>
+                                    <span>¿Qué pasa si excedo mi límite de mensajes?</span>
+                                </div>
+                                <p class="faq-answer">Puedes adquirir paquetes adicionales de mensajes o actualizar a un plan superior.</p>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question">
+                                    <i class="lni lni-question-circle"></i>
+                                    <span>¿Ofrecen garantía de devolución?</span>
+                                </div>
+                                <p class="faq-answer">Sí, ofrecemos garantía de devolución de 30 días sin preguntas.</p>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question">
+                                    <i class="lni lni-question-circle"></i>
+                                    <span>¿Cómo funciona la facturación anual?</span>
+                                </div>
+                                <p class="faq-answer">Al elegir facturación anual, pagas por adelantado y obtienes un 20% de descuento.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/plans.js"></script>
+</body>
+</html>

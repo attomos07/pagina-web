@@ -1,0 +1,631 @@
+{{define "agents.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbots - ChatBot Hub</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/partials/navbar.css">
+    <link rel="stylesheet" href="/static/css/partials/footer.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #ffffff;
+            padding-top: 80px;
+            line-height: 1.6;
+            color: #1f2937;
+        }
+
+        /* Hero Section */
+        .chatbots-hero {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            padding: 100px 20px 80px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chatbots-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .chatbots-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(34, 211, 238, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 15s infinite ease-in-out reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -30px) scale(1.1); }
+        }
+
+        .hero-content {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-title {
+            font-size: 56px;
+            font-weight: 800;
+            color: #1a1a1a;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            font-size: 22px;
+            color: #6b7280;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-top: 60px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .stat-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(6, 182, 212, 0.15);
+        }
+
+        .stat-number {
+            font-size: 48px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 16px;
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        /* Categories Section */
+        .categories-section {
+            padding: 100px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-title {
+            font-size: 48px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-subtitle {
+            font-size: 20px;
+            color: #6b7280;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px 32px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #06b6d4, #22d3ee);
+            transform: scaleX(0);
+            transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .category-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .category-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 25px 60px rgba(6, 182, 212, 0.2);
+        }
+
+        .category-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 25px rgba(6, 182, 212, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .category-card:hover .category-icon {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 12px 35px rgba(6, 182, 212, 0.4);
+        }
+
+        .category-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+
+        .category-description {
+            font-size: 16px;
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .category-features {
+            list-style: none;
+            padding: 0;
+        }
+
+        .category-features li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .feature-check {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #06b6d4, #22d3ee);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+
+        /* Features Section */
+        .features-section {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            padding: 100px 20px;
+        }
+
+        .features-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            margin-top: 60px;
+        }
+
+        .feature-item {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            display: flex;
+            gap: 24px;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .feature-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(6, 182, 212, 0.15);
+        }
+
+        .feature-icon-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(34, 211, 238, 0.1));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .feature-icon-box i {
+            font-size: 28px;
+            color: #06b6d4;
+        }
+
+        .feature-content h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 12px;
+        }
+
+        .feature-content p {
+            font-size: 16px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 100px 20px;
+            text-align: center;
+        }
+
+        .cta-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            border-radius: 32px;
+            padding: 80px 60px;
+            box-shadow: 0 20px 60px rgba(6, 182, 212, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cta-title {
+            font-size: 42px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .cta-text {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #06b6d4;
+            padding: 18px 48px;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.3);
+            background: #f0f9ff;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 36px;
+            }
+
+            .hero-subtitle {
+                font-size: 18px;
+            }
+
+            .hero-stats {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .categories-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .feature-item {
+                flex-direction: column;
+                padding: 30px;
+            }
+
+            .cta-container {
+                padding: 60px 30px;
+            }
+
+            .cta-title {
+                font-size: 32px;
+            }
+
+            .cta-text {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    {{template "partials/navbar.html" .}}
+
+    <!-- Hero Section -->
+    <section class="chatbots-hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Chatbots Inteligentes para Cada Necesidad</h1>
+            <p class="hero-subtitle">Desde atención al cliente hasta ventas automatizadas, nuestros chatbots impulsados por IA transforman la forma en que te comunicas con tus clientes.</p>
+            
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Disponibilidad</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">95%</div>
+                    <div class="stat-label">Satisfacción</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">3x</div>
+                    <div class="stat-label">Más Conversiones</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="categories-section">
+        <div class="section-header">
+            <h2 class="section-title">Tipos de Chatbots</h2>
+            <p class="section-subtitle">Soluciones especializadas para cada industria y necesidad de tu negocio.</p>
+        </div>
+
+        <div class="categories-grid">
+            <div class="category-card">
+                <div class="category-icon">
+                    <i class="lni lni-headphone-alt"></i>
+                </div>
+                <h3 class="category-title">Atención al Cliente</h3>
+                <p class="category-description">Responde consultas instantáneamente y brinda soporte 24/7 a tus clientes.</p>
+                <ul class="category-features">
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Respuestas instantáneas</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Múltiples idiomas</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Historial de conversación</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Escalamiento a humanos</li>
+                </ul>
+            </div>
+
+            <div class="category-card">
+                <div class="category-icon">
+                    <i class="lni lni-cart"></i>
+                </div>
+                <h3 class="category-title">E-Commerce</h3>
+                <p class="category-description">Aumenta tus ventas con asistentes virtuales que guían a tus clientes.</p>
+                <ul class="category-features">
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Recomendaciones personalizadas</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Seguimiento de pedidos</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Carritos abandonados</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Upselling inteligente</li>
+                </ul>
+            </div>
+
+            <div class="category-card">
+                <div class="category-icon">
+                    <i class="lni lni-calendar"></i>
+                </div>
+                <h3 class="category-title">Reservas y Citas</h3>
+                <p class="category-description">Automatiza la gestión de citas y reservaciones sin complicaciones.</p>
+                <ul class="category-features">
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Agendamiento automático</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Recordatorios por SMS/Email</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Cancelaciones y reagendado</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Sincronización de calendario</li>
+                </ul>
+            </div>
+
+            <div class="category-card">
+                <div class="category-icon">
+                    <i class="lni lni-rocket"></i>
+                </div>
+                <h3 class="category-title">Lead Generation</h3>
+                <p class="category-description">Captura y califica leads automáticamente para tu equipo de ventas.</p>
+                <ul class="category-features">
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Calificación automática</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Formularios conversacionales</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Integración con CRM</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Segmentación inteligente</li>
+                </ul>
+            </div>
+
+            <div class="category-card">
+                <div class="category-icon">
+                    <i class="lni lni-graduation"></i>
+                </div>
+                <h3 class="category-title">Educación</h3>
+                <p class="category-description">Tutores virtuales y asistentes educativos para instituciones.</p>
+                <ul class="category-features">
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Tutoría personalizada</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Respuestas FAQ instantáneas</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Seguimiento de progreso</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Notificaciones automáticas</li>
+                </ul>
+            </div>
+
+            <div class="category-card">
+                <div class="category-icon">
+                    <i class="lni lni-heart-pulse"></i>
+                </div>
+                <h3 class="category-title">Salud</h3>
+                <p class="category-description">Asistentes médicos virtuales para clínicas y hospitales.</p>
+                <ul class="category-features">
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Triaje de síntomas</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Gestión de citas médicas</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>Recordatorios de medicamentos</li>
+                    <li><span class="feature-check"><i class="lni lni-checkmark"></i></span>HIPAA compliant</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="features-container">
+            <div class="section-header">
+                <h2 class="section-title">Características Avanzadas</h2>
+                <p class="section-subtitle">Tecnología de punta que hace que nuestros chatbots sean excepcionales.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon-box">
+                        <i class="lni lni-brain"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h3>Procesamiento de Lenguaje Natural</h3>
+                        <p>Comprende el contexto y la intención detrás de cada mensaje para dar respuestas precisas y naturales.</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon-box">
+                        <i class="lni lni-layers"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h3>Integración Multicanal</h3>
+                        <p>Funciona perfectamente en WhatsApp, Facebook, Instagram, Telegram, web y más plataformas.</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon-box">
+                        <i class="lni lni-graph"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h3>Analytics en Tiempo Real</h3>
+                        <p>Obtén insights detallados sobre el comportamiento de tus usuarios y optimiza conversaciones.</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon-box">
+                        <i class="lni lni-shield"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h3>Seguridad y Privacidad</h3>
+                        <p>Encriptación de extremo a extremo y cumplimiento con GDPR, HIPAA y otras regulaciones.</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon-box">
+                        <i class="lni lni-cog"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h3>Personalización Total</h3>
+                        <p>Adapta la personalidad, tono y respuestas del chatbot para reflejar tu marca perfectamente.</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon-box">
+                        <i class="lni lni-bolt"></i>
+                    </div>
+                    <div class="feature-content">
+                        <h3>Respuestas Instantáneas</h3>
+                        <p>Tiempo de respuesta menor a 1 segundo para mantener a tus clientes siempre satisfechos.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-container">
+            <h2 class="cta-title">¿Listo para Automatizar tu Negocio?</h2>
+            <p class="cta-text">Únete a miles de empresas que ya están transformando su atención al cliente con nuestros chatbots inteligentes.</p>
+            <a href="/register" class="cta-button">Comienza Gratis Ahora</a>
+        </div>
+    </section>
+
+    {{template "partials/footer.html" .}}
+
+    <script src="/static/js/index.js"></script>
+</body>
+</html>
+{{end}}
