@@ -178,7 +178,7 @@ async function handleLoginSubmit(e) {
     
     try {
         // Enviar petición al servidor
-        const response = await fetch('/auth/login', {
+        const response = await fetch('/api/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
