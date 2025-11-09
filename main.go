@@ -65,7 +65,7 @@ func main() {
 
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     allowedOrigins,
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
@@ -99,7 +99,7 @@ func main() {
 	router.POST("/api/logout", handlers.Logout)
 
 	// ============================================
-	// RUTAS PROTEGIDAS
+	// RUTAS PROTEGIDAS (API)
 	// ============================================
 
 	protected := router.Group("/api")
@@ -115,7 +115,10 @@ func main() {
 		protected.GET("/agents/:id", handlers.GetAgent)
 		protected.PUT("/agents/:id", handlers.UpdateAgent)
 		protected.DELETE("/agents/:id", handlers.DeleteAgent)
-		protected.POST("/agents/:id/toggle", handlers.ToggleAgentStatus)
+		protected.PATCH("/agents/:id/toggle", handlers.ToggleAgentStatus)
+
+		// Billing (NUEVA RUTA)
+		protected.GET("/billing/data", handlers.GetBillingData)
 	}
 
 	// ============================================
@@ -198,7 +201,7 @@ func main() {
 	}
 
 	log.Printf("🚀 Servidor iniciado en puerto %s", port)
-	log.Printf("📍 http://localhost:%s", port)
+	log.Printf("🌐 http://localhost:%s", port)
 
 	if err := router.Run(":" + port); err != nil {
 		log.Fatal("❌ Error al iniciar servidor:", err)
