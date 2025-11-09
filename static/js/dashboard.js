@@ -300,7 +300,6 @@ async function selectPlatform(agentId, platform) {
         if (response.ok) {
             closePlatformModal();
             loadAgents();
-            // Mostrar notificación de éxito
             showNotification('Plataforma agregada exitosamente', 'success');
         } else {
             showNotification('Error al agregar la plataforma', 'error');
@@ -370,7 +369,6 @@ function initializeCostChart() {
 
     const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const textColor = isDarkMode ? '#e5e7eb' : '#6b7280';
-    const gridColor = isDarkMode ? '#374151' : '#e5e7eb';
 
     costChart = new Chart(ctx, {
         type: 'line',
@@ -457,16 +455,28 @@ function initializeCostChart() {
     });
 }
 
+// MODIFICADO: Ahora consulta el endpoint real de billing
 async function loadBillingData(days = 28) {
     try {
-        // Simular datos de facturación (reemplazar con API real)
-        const mockData = generateMockBillingData(days);
+        // Llamar al endpoint real de billing
+        const response = await fetch(`/api/billing/data?days=${days}`);
         
-        updateCostSummary(mockData.summary, days);
-        updateCostChart(mockData.timeline);
+        if (!response.ok) {
+            throw new Error('Error fetching billing data');
+        }
+        
+        const data = await response.json();
+        
+        updateCostSummary(data.summary, days);
+        updateCostChart(data.timeline);
         
     } catch (error) {
         console.error('Error loading billing data:', error);
+        
+        // Fallback a datos simulados si falla el API
+        const mockData = generateMockBillingData(days);
+        updateCostSummary(mockData.summary, days);
+        updateCostChart(mockData.timeline);
     }
 }
 
@@ -495,6 +505,7 @@ function updateCostChart(timeline) {
     costChart.update('none'); // 'none' para animación más rápida
 }
 
+// Fallback: Generar datos simulados si el API falla
 function generateMockBillingData(days) {
     const labels = [];
     const costs = [];
