@@ -638,16 +638,7 @@ body {
     }
 
     .auth-info {
-        padding: 2rem 1.5rem;
-        text-align: center;
-    }
-
-    .auth-info-title {
-        font-size: 1.75rem;
-    }
-
-    .auth-info-subtitle {
-        font-size: 1rem;
+        display: none;
     }
 
     .auth-form-container {
