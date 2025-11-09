@@ -4,12 +4,10 @@
 <!-- Sidebar -->
 <div class="sidebar sidebar-border collapsed" id="sidebar">
     <div class="sidebar-header">
-        <div class="logo-wrapper">
-            <div class="logo-icon">
-                <div class="logo-inner"></div>
-            </div>
+        <a href="/" class="logo-wrapper">
+            <img src="/static/images/attomos-logo.png" alt="Attomos Logo" class="logo-icon">
             <span class="brand-text">Attomos</span>
-        </div>
+        </a>
         <button class="pin-btn" id="pinBtn" title="Fijar sidebar">
             <svg class="lucide" viewBox="0 0 24 24">
                 <line x1="12" x2="12" y1="17" y2="22"/>
@@ -88,7 +86,7 @@
     </nav>
 
     <div class="sidebar-footer">
-        <button class="menu-button logout-button">
+        <button class="menu-button logout-button" id="logoutBtn">
             <div class="icon-wrapper">
                 <svg class="lucide" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
             </div>
@@ -142,6 +140,31 @@
         if (!isPinned) {
             sidebar.classList.remove('expanded');
             sidebar.classList.add('collapsed');
+        }
+    });
+
+    // Logout functionality
+    const logoutBtn = document.getElementById('logoutBtn');
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            const response = await fetch('/api/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                // Limpiar localStorage
+                localStorage.removeItem('sidebarPinned');
+                
+                // Redirigir al login
+                window.location.href = '/login';
+            } else {
+                console.error('Error al cerrar sesión');
+                alert('Error al cerrar sesión. Por favor intenta de nuevo.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al cerrar sesión. Por favor intenta de nuevo.');
         }
     });
 </script>

@@ -49,30 +49,21 @@
     display: flex;
     align-items: center;
     gap: 16px;
+    text-decoration: none;
+    color: inherit;
 }
 
 .logo-icon {
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     flex-shrink: 0;
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
-    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
     transition: all 0.4s ease;
+    object-fit: contain;
 }
 
 .logo-wrapper:hover .logo-icon {
-    transform: rotate(180deg) scale(1.1);
-}
-
-.logo-inner {
-    width: 16px;
-    height: 16px;
-    background: white;
-    border-radius: 2px;
+    transform: scale(1.1);
 }
 
 .brand-text {
@@ -233,6 +224,18 @@
 .sidebar-footer {
     padding: 12px;
     border-top: 1px solid #f3f4f6;
+}
+
+.logout-button {
+    width: 100%;
+}
+
+.logout-button:hover {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.05) 100%);
+}
+
+.logout-button:hover .icon-wrapper {
+    color: #ef4444;
 }
 
 /* Lucide Icons */
