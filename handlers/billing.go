@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -10,8 +11,9 @@ import (
 
 	"attomos/models"
 
+	"cloud.google.com/go/bigquery"
 	"github.com/gin-gonic/gin"
-	billing "google.golang.org/api/cloudbilling/v1"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
@@ -30,7 +32,12 @@ type BillingTimeline struct {
 	Costs  []float64 `json:"costs"`
 }
 
-// GetBillingData obtiene los costos de Google Cloud del usuario
+type DailyCostRow struct {
+	Date string  `bigquery:"date"`
+	Cost float64 `bigquery:"cost"`
+}
+
+// GetBillingData obtiene los costos REALES desde BigQuery
 func GetBillingData(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
@@ -42,110 +49,140 @@ func GetBillingData(c *gin.Context) {
 
 	user := userInterface.(*models.User)
 
-	// Verificar que el usuario tenga proyecto
 	if user.GCPProjectID == nil || *user.GCPProjectID == "" {
-		c.JSON(http.StatusOK, gin.H{
-			"summary": BillingSummary{
-				Cost:     0,
-				Currency: "USD",
-			},
-			"timeline": BillingTimeline{
-				Labels: []string{},
-				Costs:  []float64{},
-			},
-		})
+		c.JSON(http.StatusOK, generateEmptyBillingData(28))
 		return
 	}
 
-	// Obtener parámetro de días (default 28)
 	daysParam := c.DefaultQuery("days", "28")
 	days, err := strconv.Atoi(daysParam)
 	if err != nil || days <= 0 {
 		days = 28
 	}
 
-	// Obtener costos reales de GCP
-	billingData, err := fetchGCPBillingData(*user.GCPProjectID, days)
+	// Obtener datos REALES de BigQuery
+	billingData, err := fetchBillingFromBigQuery(*user.GCPProjectID, days)
 	if err != nil {
-		// Si hay error, devolver datos simulados para que no falle el dashboard
-		c.JSON(http.StatusOK, generateMockBillingData(days))
+		log.Printf("⚠️ [User %d] No se pueden obtener costos de BigQuery: %v", user.ID, err)
+		log.Printf("ℹ️ Asegúrate de haber configurado Billing Export a BigQuery")
+
+		// Retornar ceros si no hay billing export configurado
+		c.JSON(http.StatusOK, generateEmptyBillingData(days))
 		return
 	}
 
 	c.JSON(http.StatusOK, billingData)
 }
 
-// fetchGCPBillingData consulta los costos reales de Google Cloud
-func fetchGCPBillingData(projectID string, days int) (*BillingResponse, error) {
+// fetchBillingFromBigQuery consulta BigQuery para obtener costos del proyecto
+func fetchBillingFromBigQuery(projectID string, days int) (*BillingResponse, error) {
 	ctx := context.Background()
 
-	// Usar las mismas credenciales que para crear proyectos
-	credOption, err := getCredentialsForBilling()
+	// Configuración de BigQuery
+	bigqueryProjectID := os.Getenv("GCP_BIGQUERY_PROJECT_ID")
+	if bigqueryProjectID == "" {
+		bigqueryProjectID = "attomos-billing" // Proyecto donde está el dataset de billing
+	}
+
+	datasetID := os.Getenv("GCP_BILLING_DATASET_ID")
+	if datasetID == "" {
+		datasetID = "billing_export" // Dataset por defecto
+	}
+
+	tableID := os.Getenv("GCP_BILLING_TABLE_ID")
+	if tableID == "" {
+		tableID = "gcp_billing_export_v1_*" // Tabla por defecto (wildcard)
+	}
+
+	// Obtener credenciales
+	credOption, err := getCredentialsOption()
 	if err != nil {
 		return nil, fmt.Errorf("error obteniendo credenciales: %v", err)
 	}
 
-	// Crear cliente de Billing
-	billingService, err := billing.NewService(ctx, credOption)
+	// Crear cliente de BigQuery
+	client, err := bigquery.NewClient(ctx, bigqueryProjectID, credOption)
 	if err != nil {
-		return nil, fmt.Errorf("error creando servicio de billing: %v", err)
+		return nil, fmt.Errorf("error creando cliente BigQuery: %v", err)
 	}
+	defer client.Close()
 
-	// Obtener información de billing del proyecto
-	projectName := fmt.Sprintf("projects/%s", projectID)
-	projectsService := billing.NewProjectsService(billingService)
-
-	billingInfo, err := projectsService.GetBillingInfo(projectName).Do()
-	if err != nil {
-		return nil, fmt.Errorf("error obteniendo billing info: %v", err)
-	}
-
-	if !billingInfo.BillingEnabled {
-		// Si billing no está habilitado, devolver ceros
-		return generateEmptyBillingData(days), nil
-	}
-
-	// NOTA: Para obtener costos reales específicos necesitas usar la Cloud Billing API
-	// con export a BigQuery. Por ahora devolvemos estimación basada en uso de API.
-
-	// Calcular costos estimados basados en uso de Gemini API
-	estimatedCost := estimateGeminiCosts(days)
-
-	return generateBillingDataFromEstimate(estimatedCost, days), nil
-}
-
-// estimateGeminiCosts estima costos basados en uso típico
-func estimateGeminiCosts(days int) float64 {
-	// Aquí podrías implementar lógica para consultar:
-	// 1. Cloud Monitoring API para ver requests
-	// 2. BigQuery si tienes exports de billing
-	// 3. O mantener un contador interno de llamadas
-
-	// Por ahora, retornamos una estimación conservadora
-	// Basado en ~100 conversaciones/día con ~10 mensajes cada una
-	// Usando Gemini Flash: ~$0.02 por día
-
-	return float64(days) * 0.02 // $0.02 USD por día
-}
-
-// generateBillingDataFromEstimate genera la estructura de respuesta
-func generateBillingDataFromEstimate(totalCost float64, days int) *BillingResponse {
-	labels := []string{}
-	costs := []float64{}
-
+	// Calcular fechas
 	endDate := time.Now()
 	startDate := endDate.AddDate(0, 0, -days)
 
-	dailyCost := totalCost / float64(days)
-	accumulatedCost := 0.0
+	// Query SQL para obtener costos por día
+	queryStr := fmt.Sprintf(`
+		SELECT 
+			DATE(usage_start_time) as date,
+			SUM(cost) as cost
+		FROM `+"`%s.%s.%s`"+`
+		WHERE project.id = @projectID
+		AND DATE(usage_start_time) >= @startDate
+		AND DATE(usage_start_time) <= @endDate
+		GROUP BY DATE(usage_start_time)
+		ORDER BY date ASC
+	`, bigqueryProjectID, datasetID, tableID)
+
+	q := client.Query(queryStr)
+	q.Parameters = []bigquery.QueryParameter{
+		{
+			Name:  "projectID",
+			Value: projectID,
+		},
+		{
+			Name:  "startDate",
+			Value: startDate.Format("2006-01-02"),
+		},
+		{
+			Name:  "endDate",
+			Value: endDate.Format("2006-01-02"),
+		},
+	}
+
+	// Ejecutar query
+	it, err := q.Read(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error ejecutando query: %v", err)
+	}
+
+	// Leer resultados
+	dailyCosts := make(map[string]float64)
+	totalCost := 0.0
+
+	for {
+		var row DailyCostRow
+		err := it.Next(&row)
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("error leyendo resultados: %v", err)
+		}
+
+		dailyCosts[row.Date] = row.Cost
+		totalCost += row.Cost
+	}
+
+	// Construir timeline con acumulado
+	labels := []string{}
+	costs := []float64{}
+	accumulated := 0.0
 
 	for d := startDate; d.Before(endDate) || d.Equal(endDate); d = d.AddDate(0, 0, 1) {
-		dateStr := d.Format("Jan 02")
-		labels = append(labels, dateStr)
+		dateKey := d.Format("2006-01-02")
+		displayDate := d.Format("Jan 02")
 
-		accumulatedCost += dailyCost
-		costs = append(costs, accumulatedCost)
+		labels = append(labels, displayDate)
+
+		if cost, exists := dailyCosts[dateKey]; exists {
+			accumulated += cost
+		}
+
+		costs = append(costs, accumulated)
 	}
+
+	log.Printf("✅ [Project %s] Costos obtenidos de BigQuery: $%.2f USD", projectID, totalCost)
 
 	return &BillingResponse{
 		Summary: BillingSummary{
@@ -156,10 +193,10 @@ func generateBillingDataFromEstimate(totalCost float64, days int) *BillingRespon
 			Labels: labels,
 			Costs:  costs,
 		},
-	}
+	}, nil
 }
 
-// generateEmptyBillingData genera datos vacíos
+// generateEmptyBillingData genera datos en cero
 func generateEmptyBillingData(days int) *BillingResponse {
 	labels := []string{}
 	costs := []float64{}
@@ -185,53 +222,19 @@ func generateEmptyBillingData(days int) *BillingResponse {
 	}
 }
 
-// generateMockBillingData genera datos simulados como fallback
-func generateMockBillingData(days int) *BillingResponse {
-	labels := []string{}
-	costs := []float64{}
-	totalCost := 0.0
-
-	endDate := time.Now()
-	startDate := endDate.AddDate(0, 0, -days)
-
-	for d := startDate; d.Before(endDate) || d.Equal(endDate); d = d.AddDate(0, 0, 1) {
-		dateStr := d.Format("Jan 02")
-		labels = append(labels, dateStr)
-
-		// Costo diario aleatorio simulado
-		dailyCost := 0.01 + (float64(d.Day()%10) * 0.005)
-		totalCost += dailyCost
-		costs = append(costs, totalCost)
-	}
-
-	return &BillingResponse{
-		Summary: BillingSummary{
-			Cost:     totalCost,
-			Currency: "USD",
-		},
-		Timeline: BillingTimeline{
-			Labels: labels,
-			Costs:  costs,
-		},
-	}
-}
-
-// getCredentialsForBilling obtiene las credenciales (helper)
-func getCredentialsForBilling() (option.ClientOption, error) {
-	// Reutilizar la misma lógica de google_cloud_automation.go
-
-	// Prioridad 1: JSON completo en variable (Railway/producción)
+// getCredentialsOption obtiene credenciales de GCP
+func getCredentialsOption() (option.ClientOption, error) {
 	jsonContent := os.Getenv("GCP_SERVICE_ACCOUNT_JSON")
 	if jsonContent != "" {
-		tmpFile, err := os.CreateTemp("", "gcp-billing-*.json")
+		tmpFile, err := os.CreateTemp("", "gcp-*.json")
 		if err != nil {
-			return nil, fmt.Errorf("error creando archivo temporal: %v", err)
+			return nil, err
 		}
 
 		if _, err := tmpFile.Write([]byte(jsonContent)); err != nil {
 			tmpFile.Close()
 			os.Remove(tmpFile.Name())
-			return nil, fmt.Errorf("error escribiendo credenciales: %v", err)
+			return nil, err
 		}
 
 		tmpFileName := tmpFile.Name()
@@ -240,14 +243,13 @@ func getCredentialsForBilling() (option.ClientOption, error) {
 		return option.WithCredentialsFile(tmpFileName), nil
 	}
 
-	// Prioridad 2: Path a archivo (desarrollo local)
 	credPath := os.Getenv("GCP_SERVICE_ACCOUNT_PATH")
 	if credPath == "" {
 		credPath = "./credentials/service-account.json"
 	}
 
 	if _, err := os.Stat(credPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("archivo de credenciales no encontrado: %s", credPath)
+		return nil, fmt.Errorf("credenciales no encontradas")
 	}
 
 	return option.WithCredentialsFile(credPath), nil
