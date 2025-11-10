@@ -75,11 +75,13 @@ async function loadAgents() {
 
         if (!data.agents || data.agents.length === 0) {
             emptyState.style.display = 'block';
-            document.getElementById('activeAgentsCount').textContent = '0';
+            updateStatCard('activeAgentsCount', 0, 0);
             return;
         }
 
-        document.getElementById('activeAgentsCount').textContent = data.agents.length;
+        const activeCount = data.agents.filter(a => a.serverStatus === 'running').length;
+        const totalCount = data.agents.length;
+        updateStatCard('activeAgentsCount', activeCount, totalCount);
 
         data.agents.forEach(agent => {
             const card = createAgentCard(agent);
@@ -90,6 +92,23 @@ async function loadAgents() {
         console.error('Error loading agents:', error);
         loading.style.display = 'none';
         emptyState.style.display = 'block';
+    }
+}
+
+// Actualizar tarjeta de estadística con anillo circular
+function updateStatCard(elementId, value, total) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    element.textContent = value;
+    
+    // Los anillos siempre están completos (sin porcentaje visual)
+    const statCard = element.closest('.stat-card');
+    const progressCircle = statCard?.querySelector('.circle-progress');
+    
+    if (progressCircle) {
+        // Anillo completamente lleno
+        progressCircle.style.strokeDashoffset = 0;
     }
 }
 
@@ -130,15 +149,15 @@ function createAgentCard(agent) {
                 <span class="info-label">Tipo de Negocio</span>
                 <span class="info-value">${agent.businessType || 'General'}</span>
             </div>
+            <div class="info-item">
+                <span class="info-label">Conversaciones</span>
+                <span class="info-value">0</span>
+            </div>
             <div class="info-item info-item-platforms">
                 <span class="info-label">Plataformas</span>
                 <div class="platforms-container">
                     ${platformsHTML}
                 </div>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Conversaciones</span>
-                <span class="info-value">0</span>
             </div>
             <div class="info-item">
                 <span class="info-label">Creado</span>
@@ -154,9 +173,6 @@ function createAgentCard(agent) {
             <button class="agent-btn agent-btn-add-platform" onclick="addPlatform('${agent.id}')" title="Agregar plataforma">
                 <i class="lni lni-plus"></i>
                 <span>Plataforma</span>
-            </button>
-            <button class="agent-btn agent-btn-toggle" onclick="toggleAgent('${agent.id}')">
-                <i class="lni lni-power-switch"></i>
             </button>
             <button class="agent-btn agent-btn-delete" onclick="deleteAgent('${agent.id}')">
                 <i class="lni lni-trash-can"></i>
@@ -325,37 +341,76 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-async function toggleAgent(id) {
+async function deleteAgent(id) {
+    // Obtener información del agente para mostrar en el modal
+    let agentName = 'este agente';
     try {
-        const response = await fetch(`/api/agents/${id}/toggle`, {
-            method: 'PATCH'
-        });
-        
-        if (response.ok) {
-            loadAgents();
+        const response = await fetch('/api/agents');
+        const data = await response.json();
+        const agent = data.agents?.find(a => a.id === id);
+        if (agent) {
+            agentName = agent.name;
         }
     } catch (error) {
-        console.error('Error toggling agent:', error);
-        alert('Error al cambiar el estado del agente');
+        console.error('Error fetching agent info:', error);
+    }
+    
+    // Crear modal de confirmación
+    const modal = document.createElement('div');
+    modal.className = 'delete-modal';
+    modal.innerHTML = `
+        <div class="delete-modal-overlay" onclick="closeDeleteModal()"></div>
+        <div class="delete-modal-content">
+            <div class="delete-modal-header">
+                <div class="delete-modal-icon">
+                    <i class="lni lni-warning"></i>
+                </div>
+                <h3>¿Eliminar Agente?</h3>
+            </div>
+            <p class="delete-modal-description">
+                ¿Estás seguro de que deseas eliminar <span class="delete-modal-agent-name">"${agentName}"</span>? 
+                Esta acción no se puede deshacer y se perderán todos los datos asociados.
+            </p>
+            <div class="delete-modal-actions">
+                <button class="delete-modal-btn delete-modal-btn-cancel" onclick="closeDeleteModal()">
+                    <i class="lni lni-close"></i>
+                    Cancelar
+                </button>
+                <button class="delete-modal-btn delete-modal-btn-confirm" onclick="confirmDeleteAgent('${id}')">
+                    <i class="lni lni-trash-can"></i>
+                    Eliminar
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    setTimeout(() => modal.classList.add('active'), 10);
+}
+
+function closeDeleteModal() {
+    const modal = document.querySelector('.delete-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.remove(), 300);
     }
 }
 
-async function deleteAgent(id) {
-    if (!confirm('¿Estás seguro de que quieres eliminar este agente?')) {
-        return;
-    }
-    
+async function confirmDeleteAgent(id) {
     try {
         const response = await fetch(`/api/agents/${id}`, {
             method: 'DELETE'
         });
         
         if (response.ok) {
+            closeDeleteModal();
+            showNotification('Agente eliminado exitosamente', 'success');
             loadAgents();
+        } else {
+            showNotification('Error al eliminar el agente', 'error');
         }
     } catch (error) {
         console.error('Error deleting agent:', error);
-        alert('Error al eliminar el agente');
+        showNotification('Error al eliminar el agente', 'error');
     }
 }
 

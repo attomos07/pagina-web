@@ -37,7 +37,19 @@
                                     <div class="stat-label">Agentes Activos</div>
                                 </div>
                                 <div class="stat-icon">
-                                    <i class="lni lni-bot"></i>
+                                    <svg>
+                                        <defs>
+                                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+                                                <stop offset="100%" style="stop-color:#0891b2;stop-opacity:1" />
+                                            </linearGradient>
+                                        </defs>
+                                        <circle class="circle-bg" cx="50" cy="50" r="45"></circle>
+                                        <circle class="circle-progress" cx="50" cy="50" r="45"></circle>
+                                    </svg>
+                                    <div class="stat-icon-content">
+                                        <i class="lni lni-bot"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -49,7 +61,13 @@
                                     <div class="stat-label">Conversaciones</div>
                                 </div>
                                 <div class="stat-icon">
-                                    <i class="lni lni-comments"></i>
+                                    <svg>
+                                        <circle class="circle-bg" cx="50" cy="50" r="45"></circle>
+                                        <circle class="circle-progress" cx="50" cy="50" r="45"></circle>
+                                    </svg>
+                                    <div class="stat-icon-content">
+                                        <i class="lni lni-comments"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -61,7 +79,13 @@
                                     <div class="stat-label">Citas Agendadas</div>
                                 </div>
                                 <div class="stat-icon">
-                                    <i class="lni lni-calendar"></i>
+                                    <svg>
+                                        <circle class="circle-bg" cx="50" cy="50" r="45"></circle>
+                                        <circle class="circle-progress" cx="50" cy="50" r="45"></circle>
+                                    </svg>
+                                    <div class="stat-icon-content">
+                                        <i class="lni lni-calendar"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -73,7 +97,13 @@
                                     <div class="stat-label">Tiempo de Respuesta</div>
                                 </div>
                                 <div class="stat-icon">
-                                    <i class="lni lni-timer"></i>
+                                    <svg>
+                                        <circle class="circle-bg" cx="50" cy="50" r="45"></circle>
+                                        <circle class="circle-progress" cx="50" cy="50" r="45"></circle>
+                                    </svg>
+                                    <div class="stat-icon-content">
+                                        <i class="lni lni-timer"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -114,10 +144,6 @@
                                 <div class="cost-item">
                                     <div class="cost-label">Costo Total</div>
                                     <div class="cost-value" id="totalCost">$0.00</div>
-                                </div>
-                                <div class="cost-item period">
-                                    <div class="cost-label">Periodo</div>
-                                    <div class="cost-value-period" id="periodLabel">28 días</div>
                                 </div>
                             </div>
 
