@@ -160,6 +160,99 @@
                         </div>
                     </div>
 
+                    <!-- Services Statistics Section -->
+                    <div class="services-stats-section">
+                        <div class="services-stats-grid">
+                            <!-- Most Requested Services -->
+                            <div class="service-chart-card">
+                                <div class="service-chart-header">
+                                    <h3>
+                                        <i class="lni lni-bar-chart"></i>
+                                        Servicios Más Pedidos
+                                    </h3>
+                                </div>
+                                <div id="mostRequestedServicesContainer" class="service-bars-container">
+                                    <!-- Los servicios se cargarán dinámicamente aquí -->
+                                </div>
+                            </div>
+
+                            <!-- Least Requested Services -->
+                            <div class="service-chart-card least-requested">
+                                <div class="service-chart-header">
+                                    <h3>
+                                        <i class="lni lni-stats-down"></i>
+                                        Servicios Menos Pedidos
+                                    </h3>
+                                </div>
+                                <div id="leastRequestedServicesContainer" class="service-bars-container">
+                                    <!-- Los servicios se cargarán dinámicamente aquí -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pie Charts Section (NUEVO) -->
+                    <div class="pie-charts-section">
+                        <div class="pie-charts-header">
+                            <div class="pie-charts-title">
+                                <h2>
+                                    <i class="lni lni-pie-chart"></i>
+                                    Distribución de Servicios
+                                </h2>
+                            </div>
+                            <div class="export-buttons">
+                                <button class="btn-export btn-export-excel" onclick="exportToExcel()">
+                                    <i class="lni lni-download"></i>
+                                    <span>Exportar Excel</span>
+                                </button>
+                                <button class="btn-export btn-export-pdf" onclick="exportToPDF()">
+                                    <i class="lni lni-download"></i>
+                                    <span>Exportar PDF</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="pie-charts-grid">
+                            <!-- Pie Chart - Most Requested -->
+                            <div class="pie-chart-card">
+                                <div class="pie-chart-header">
+                                    <div class="pie-chart-title">
+                                        <i class="lni lni-graph"></i>
+                                        <h3>Servicios Más Solicitados</h3>
+                                    </div>
+                                    <span class="pie-chart-badge" id="mostRequestedTotal">0 Total</span>
+                                </div>
+                                <div class="pie-chart-content">
+                                    <div class="pie-chart-canvas-wrapper">
+                                        <canvas id="mostRequestedPieChart"></canvas>
+                                    </div>
+                                    <div class="pie-chart-legend" id="mostRequestedLegend">
+                                        <!-- Leyenda se genera dinámicamente -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pie Chart - Least Requested -->
+                            <div class="pie-chart-card">
+                                <div class="pie-chart-header">
+                                    <div class="pie-chart-title">
+                                        <i class="lni lni-graph"></i>
+                                        <h3>Servicios Menos Solicitados</h3>
+                                    </div>
+                                    <span class="pie-chart-badge" id="leastRequestedTotal">0 Total</span>
+                                </div>
+                                <div class="pie-chart-content">
+                                    <div class="pie-chart-canvas-wrapper">
+                                        <canvas id="leastRequestedPieChart"></canvas>
+                                    </div>
+                                    <div class="pie-chart-legend" id="leastRequestedLegend">
+                                        <!-- Leyenda se genera dinámicamente -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Agents Section -->
                     <div class="section-header">
                         <h2 class="section-title">Mis Agentes</h2>
@@ -191,6 +284,10 @@
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- SheetJS para Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- jsPDF para PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/dashboard.js"></script>
 </body>

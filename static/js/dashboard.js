@@ -1,5 +1,8 @@
 // Dashboard functionality
 let costChart = null;
+let mostRequestedPieChart = null;
+let leastRequestedPieChart = null;
+let servicesData = null; // Para guardar los datos y usarlos en exportación
 
 // Currency conversion rates (relative to USD)
 const currencyRates = {
@@ -38,6 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadAgents();
     initializeCostChart();
     loadBillingData();
+    loadServicesStatistics();
     
     // Event listener para cambio de rango de tiempo
     const timeRangeSelect = document.getElementById('billingTimeRange');
@@ -510,7 +514,6 @@ function initializeCostChart() {
     });
 }
 
-// MODIFICADO: Ahora consulta el endpoint real de billing
 async function loadBillingData(days = 28) {
     try {
         // Llamar al endpoint real de billing
@@ -557,7 +560,7 @@ function updateCostChart(timeline) {
     
     costChart.data.labels = timeline.labels;
     costChart.data.datasets[0].data = convertedCosts;
-    costChart.update('none'); // 'none' para animación más rápida
+    costChart.update('none');
 }
 
 // Fallback: Generar datos simulados si el API falla
@@ -589,4 +592,396 @@ function generateMockBillingData(days) {
             costs: costs
         }
     };
+}
+
+// ============================================
+// SERVICES STATISTICS FUNCTIONALITY (NUEVO)
+// ============================================
+
+async function loadServicesStatistics() {
+    try {
+        // Llamar al endpoint real de servicios
+        const response = await fetch('/api/services/statistics');
+        
+        if (!response.ok) {
+            throw new Error('Error fetching services statistics');
+        }
+        
+        const data = await response.json();
+        servicesData = data; // Guardar para exportación
+        
+        renderServiceBars('mostRequestedServicesContainer', data.mostRequested, false);
+        renderServiceBars('leastRequestedServicesContainer', data.leastRequested, true);
+        
+        // Renderizar gráficos de pastel
+        renderPieChart('mostRequestedPieChart', 'mostRequestedLegend', 'mostRequestedTotal', data.mostRequested, false);
+        renderPieChart('leastRequestedPieChart', 'leastRequestedLegend', 'leastRequestedTotal', data.leastRequested, true);
+        
+    } catch (error) {
+        console.error('Error loading services statistics:', error);
+        
+        // Fallback a datos simulados si falla el API
+        const mockData = generateMockServicesData();
+        servicesData = mockData; // Guardar para exportación
+        
+        renderServiceBars('mostRequestedServicesContainer', mockData.mostRequested, false);
+        renderServiceBars('leastRequestedServicesContainer', mockData.leastRequested, true);
+        
+        // Renderizar gráficos de pastel
+        renderPieChart('mostRequestedPieChart', 'mostRequestedLegend', 'mostRequestedTotal', mockData.mostRequested, false);
+        renderPieChart('leastRequestedPieChart', 'leastRequestedLegend', 'leastRequestedTotal', mockData.leastRequested, true);
+    }
+}
+
+function renderServiceBars(containerId, services, isLeast = false) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    // Limpiar contenedor
+    container.innerHTML = '';
+    
+    if (!services || services.length === 0) {
+        container.innerHTML = `
+            <div class="service-chart-empty">
+                <i class="lni lni-pie-chart"></i>
+                <p>No hay datos disponibles</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Calcular el máximo para normalizar las barras
+    const maxCount = Math.max(...services.map(s => s.count));
+    
+    // Renderizar cada barra
+    services.forEach(service => {
+        const percentage = (service.count / maxCount) * 100;
+        
+        const barItem = document.createElement('div');
+        barItem.className = 'service-bar-item';
+        barItem.innerHTML = `
+            <div class="service-bar-label">${service.name}</div>
+            <div class="service-bar-wrapper">
+                <div class="service-bar-track">
+                    <div class="service-bar-fill" style="width: 0%;">
+                        <span class="service-bar-value">${percentage.toFixed(0)}%</span>
+                    </div>
+                </div>
+                <div class="service-count">${service.count}</div>
+            </div>
+        `;
+        
+        container.appendChild(barItem);
+        
+        // Animar la barra después de un pequeño delay
+        setTimeout(() => {
+            const fillBar = barItem.querySelector('.service-bar-fill');
+            if (fillBar) {
+                fillBar.style.width = percentage + '%';
+            }
+        }, 100);
+    });
+}
+
+// Generar datos simulados de servicios
+function generateMockServicesData() {
+    const allServices = [
+        { name: 'Corte de Cabello', count: 145 },
+        { name: 'Manicure', count: 132 },
+        { name: 'Pedicure', count: 98 },
+        { name: 'Tinte', count: 87 },
+        { name: 'Depilación', count: 76 },
+        { name: 'Masaje', count: 65 },
+        { name: 'Facial', count: 54 },
+        { name: 'Maquillaje', count: 43 },
+        { name: 'Extensiones', count: 21 },
+        { name: 'Keratina', count: 15 }
+    ];
+    
+    // Top 5 más pedidos
+    const mostRequested = allServices.slice(0, 5);
+    
+    // Top 5 menos pedidos (pero al revés para mostrarlo de mayor a menor)
+    const leastRequested = allServices.slice(-5).reverse();
+    
+    return {
+        mostRequested,
+        leastRequested
+    };
+}
+
+// ============================================
+// PIE CHARTS FUNCTIONALITY (NUEVO)
+// ============================================
+
+// Colores para los gráficos de pastel
+const pieColors = [
+    '#06b6d4', // Cyan
+    '#8b5cf6', // Púrpura
+    '#10b981', // Verde
+    '#f59e0b', // Amarillo
+    '#ef4444', // Rojo
+    '#ec4899', // Rosa
+    '#6366f1', // Índigo
+    '#14b8a6', // Teal
+    '#f97316', // Naranja
+    '#a855f7'  // Púrpura claro
+];
+
+function renderPieChart(canvasId, legendId, totalId, services, isLeast = false) {
+    const canvas = document.getElementById(canvasId);
+    const legendContainer = document.getElementById(legendId);
+    const totalBadge = document.getElementById(totalId);
+    
+    if (!canvas || !legendContainer || !totalBadge) return;
+    
+    if (!services || services.length === 0) {
+        canvas.parentElement.innerHTML = `
+            <div class="service-chart-empty">
+                <i class="lni lni-pie-chart"></i>
+                <p>No hay datos disponibles</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Calcular total
+    const total = services.reduce((sum, service) => sum + service.count, 0);
+    totalBadge.textContent = `${total} Total`;
+    
+    // Preparar datos
+    const labels = services.map(s => s.name);
+    const data = services.map(s => s.count);
+    const colors = services.map((_, index) => pieColors[index % pieColors.length]);
+    
+    // Destruir gráfico anterior si existe
+    if (isLeast && leastRequestedPieChart) {
+        leastRequestedPieChart.destroy();
+    } else if (!isLeast && mostRequestedPieChart) {
+        mostRequestedPieChart.destroy();
+    }
+    
+    // Crear gráfico
+    const chart = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderWidth: 3,
+                borderColor: '#fff',
+                hoverOffset: 15
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: colors[0],
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed;
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return ` ${context.label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '65%',
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 1000,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+    
+    // Guardar referencia del gráfico
+    if (isLeast) {
+        leastRequestedPieChart = chart;
+    } else {
+        mostRequestedPieChart = chart;
+    }
+    
+    // Renderizar leyenda personalizada
+    renderPieLegend(legendContainer, services, colors, total);
+}
+
+function renderPieLegend(container, services, colors, total) {
+    container.innerHTML = '';
+    
+    services.forEach((service, index) => {
+        const percentage = ((service.count / total) * 100).toFixed(1);
+        
+        const legendItem = document.createElement('div');
+        legendItem.className = 'pie-legend-item';
+        legendItem.innerHTML = `
+            <div class="pie-legend-color" style="background-color: ${colors[index]};"></div>
+            <div class="pie-legend-info">
+                <span class="pie-legend-label">${service.name}</span>
+                <div class="pie-legend-value">
+                    <span class="pie-legend-percentage">${percentage}%</span>
+                    <span class="pie-legend-count">(${service.count})</span>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(legendItem);
+    });
+}
+
+// ============================================
+// EXPORT FUNCTIONS (NUEVO)
+// ============================================
+
+function exportToExcel() {
+    if (!servicesData) {
+        showNotification('No hay datos para exportar', 'error');
+        return;
+    }
+    
+    try {
+        // Crear workbook
+        const wb = XLSX.utils.book_new();
+        
+        // Preparar datos de servicios más pedidos
+        const mostRequestedData = [
+            ['Servicios Más Pedidos'],
+            ['Servicio', 'Cantidad', 'Porcentaje'],
+            ...servicesData.mostRequested.map(service => {
+                const total = servicesData.mostRequested.reduce((sum, s) => sum + s.count, 0);
+                const percentage = ((service.count / total) * 100).toFixed(1) + '%';
+                return [service.name, service.count, percentage];
+            }),
+            [],
+            ['Total', servicesData.mostRequested.reduce((sum, s) => sum + s.count, 0)]
+        ];
+        
+        // Preparar datos de servicios menos pedidos
+        const leastRequestedData = [
+            ['Servicios Menos Pedidos'],
+            ['Servicio', 'Cantidad', 'Porcentaje'],
+            ...servicesData.leastRequested.map(service => {
+                const total = servicesData.leastRequested.reduce((sum, s) => sum + s.count, 0);
+                const percentage = ((service.count / total) * 100).toFixed(1) + '%';
+                return [service.name, service.count, percentage];
+            }),
+            [],
+            ['Total', servicesData.leastRequested.reduce((sum, s) => sum + s.count, 0)]
+        ];
+        
+        // Crear hojas
+        const wsMostRequested = XLSX.utils.aoa_to_sheet(mostRequestedData);
+        const wsLeastRequested = XLSX.utils.aoa_to_sheet(leastRequestedData);
+        
+        // Agregar hojas al workbook
+        XLSX.utils.book_append_sheet(wb, wsMostRequested, 'Más Pedidos');
+        XLSX.utils.book_append_sheet(wb, wsLeastRequested, 'Menos Pedidos');
+        
+        // Generar archivo
+        const fileName = `servicios_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        
+        showNotification('Excel exportado exitosamente', 'success');
+    } catch (error) {
+        console.error('Error exporting to Excel:', error);
+        showNotification('Error al exportar a Excel', 'error');
+    }
+}
+
+function exportToPDF() {
+    if (!servicesData) {
+        showNotification('No hay datos para exportar', 'error');
+        return;
+    }
+    
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Título
+        doc.setFontSize(20);
+        doc.setTextColor(6, 182, 212);
+        doc.text('Reporte de Servicios', 20, 20);
+        
+        // Fecha
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Fecha: ${new Date().toLocaleDateString('es-MX')}`, 20, 30);
+        
+        // Servicios más pedidos
+        doc.setFontSize(16);
+        doc.setTextColor(0);
+        doc.text('Servicios Más Pedidos', 20, 45);
+        
+        let yPos = 55;
+        const mostTotal = servicesData.mostRequested.reduce((sum, s) => sum + s.count, 0);
+        
+        doc.setFontSize(10);
+        servicesData.mostRequested.forEach((service, index) => {
+            const percentage = ((service.count / mostTotal) * 100).toFixed(1);
+            doc.setTextColor(80);
+            doc.text(`${index + 1}. ${service.name}`, 25, yPos);
+            doc.setTextColor(6, 182, 212);
+            doc.text(`${service.count} (${percentage}%)`, 150, yPos);
+            yPos += 8;
+        });
+        
+        // Total servicios más pedidos
+        yPos += 5;
+        doc.setFontSize(12);
+        doc.setTextColor(0);
+        doc.text(`Total: ${mostTotal}`, 25, yPos);
+        
+        // Servicios menos pedidos
+        yPos += 20;
+        doc.setFontSize(16);
+        doc.text('Servicios Menos Pedidos', 20, yPos);
+        
+        yPos += 10;
+        const leastTotal = servicesData.leastRequested.reduce((sum, s) => sum + s.count, 0);
+        
+        doc.setFontSize(10);
+        servicesData.leastRequested.forEach((service, index) => {
+            const percentage = ((service.count / leastTotal) * 100).toFixed(1);
+            doc.setTextColor(80);
+            doc.text(`${index + 1}. ${service.name}`, 25, yPos);
+            doc.setTextColor(139, 92, 246);
+            doc.text(`${service.count} (${percentage}%)`, 150, yPos);
+            yPos += 8;
+        });
+        
+        // Total servicios menos pedidos
+        yPos += 5;
+        doc.setFontSize(12);
+        doc.setTextColor(0);
+        doc.text(`Total: ${leastTotal}`, 25, yPos);
+        
+        // Footer
+        const pageHeight = doc.internal.pageSize.height;
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text('Generado por Attomos Dashboard', 20, pageHeight - 10);
+        
+        // Guardar PDF
+        const fileName = `servicios_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
+        
+        showNotification('PDF exportado exitosamente', 'success');
+    } catch (error) {
+        console.error('Error exporting to PDF:', error);
+        showNotification('Error al exportar a PDF', 'error');
+    }
 }
