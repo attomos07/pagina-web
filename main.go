@@ -117,7 +117,7 @@ func main() {
 		protected.DELETE("/agents/:id", handlers.DeleteAgent)
 		protected.PATCH("/agents/:id/toggle", handlers.ToggleAgentStatus)
 
-		// Billing (NUEVA RUTA)
+		// Billing
 		protected.GET("/billing/data", handlers.GetBillingData)
 	}
 
@@ -178,6 +178,16 @@ func main() {
 	// Plans (requiere autenticación)
 	router.GET("/plans", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "plans.html", nil)
+	})
+
+	// Settings (requiere autenticación)
+	router.GET("/settings", middleware.AuthRequired(), func(c *gin.Context) {
+		c.HTML(200, "settings.html", nil)
+	})
+
+	// Profile (requiere autenticación)
+	router.GET("/profile", middleware.AuthRequired(), func(c *gin.Context) {
+		c.HTML(200, "profile.html", nil)
 	})
 
 	// ============================================
