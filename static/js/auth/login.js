@@ -1,5 +1,5 @@
 // ============================================
-// LOGIN JAVASCRIPT - CON API REAL
+// LOGIN JAVASCRIPT - CON API REAL Y ANIMACIÓN iOS
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -157,7 +157,7 @@ async function handleLoginSubmit(e) {
     });
     
     if (!isValid) {
-        showNotification('Por favor corrige los errores en el formulario', 'error');
+        showNotificationIOS('Por favor corrige los errores en el formulario', 'error');
         // Focus en el primer campo con error
         const firstError = form.querySelector('.form-input.error');
         if (firstError) {
@@ -207,8 +207,8 @@ async function handleLoginSubmit(e) {
 function handleLoginSuccess(data) {
     console.log('Login exitoso:', data);
     
-    // Mostrar notificación de éxito
-    showNotification('¡Bienvenido! Redirigiendo al panel...', 'success');
+    // Mostrar notificación de éxito con animación iOS
+    showNotificationIOS('¡Inicio de sesión exitoso!', 'success');
     
     // Tracking del evento
     trackLoginEvent('login_success', {
@@ -218,11 +218,11 @@ function handleLoginSuccess(data) {
     // Redirigir después de un momento
     setTimeout(() => {
         window.location.href = '/dashboard';
-    }, 1000);
+    }, 1500);
 }
 
 function handleLoginError(message) {
-    showNotification(message, 'error');
+    showNotificationIOS(message, 'error');
     
     // Tracking del error
     trackLoginEvent('login_error', {
@@ -247,22 +247,22 @@ function initSocialLogin() {
 }
 
 function loginWithGoogle() {
-    showNotification('Redirigiendo a Google...', 'info');
+    showNotificationIOS('Redirigiendo a Google...', 'info');
     trackLoginEvent('social_login_attempt', { provider: 'google' });
     
     // Implementar OAuth con Google aquí
     setTimeout(() => {
-        showNotification('Funcionalidad en desarrollo', 'warning');
+        showNotificationIOS('Funcionalidad en desarrollo', 'warning');
     }, 1000);
 }
 
 function loginWithFacebook() {
-    showNotification('Redirigiendo a Facebook...', 'info');
+    showNotificationIOS('Redirigiendo a Facebook...', 'info');
     trackLoginEvent('social_login_attempt', { provider: 'facebook' });
     
     // Implementar OAuth con Facebook aquí
     setTimeout(() => {
-        showNotification('Funcionalidad en desarrollo', 'warning');
+        showNotificationIOS('Funcionalidad en desarrollo', 'warning');
     }, 1000);
 }
 
@@ -321,134 +321,259 @@ function setButtonLoading(button, isLoading) {
 }
 
 // ============================================
-// SISTEMA DE NOTIFICACIONES
+// SISTEMA DE NOTIFICACIONES ESTILO iOS
 // ============================================
 
-function showNotification(message, type = 'info') {
+function showNotificationIOS(message, type = 'info') {
+    // Asegurar que los estilos estén cargados
+    if (!document.getElementById('notification-ios-styles')) {
+        addNotificationIOSStyles();
+    }
+    
+    // Crear contenedor si no existe
+    let container = document.getElementById('notification-ios-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notification-ios-container';
+        document.body.appendChild(container);
+    }
+    
+    // Crear notificación
     const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
+    notification.className = `notification-ios notification-ios-${type}`;
+    
+    const iconHTML = getNotificationIconHTML(type);
+    
     notification.innerHTML = `
-        <div class="notification-content">
-            <span class="notification-icon">${getNotificationIcon(type)}</span>
-            <span class="notification-message">${message}</span>
-            <button class="notification-close" onclick="closeNotification(this.parentElement.parentElement)">×</button>
+        <div class="notification-ios-content">
+            <div class="notification-ios-icon">${iconHTML}</div>
+            <span class="notification-ios-message">${message}</span>
         </div>
     `;
     
-    if (!document.getElementById('notification-styles')) {
-        addNotificationStyles();
-    }
+    container.appendChild(notification);
     
-    document.body.appendChild(notification);
+    // Forzar reflow para activar animación
+    void notification.offsetWidth;
     
+    // Activar animación de entrada
+    requestAnimationFrame(() => {
+        notification.classList.add('notification-ios-show');
+    });
+    
+    // Remover después de 2500ms con animación de salida
     setTimeout(() => {
-        notification.classList.add('show');
-    }, 100);
-    
-    setTimeout(() => {
-        closeNotification(notification);
-    }, 5000);
+        notification.classList.remove('notification-ios-show');
+        notification.classList.add('notification-ios-hide');
+        
+        // Remover del DOM después de la animación
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.parentElement.removeChild(notification);
+            }
+        }, 500);
+    }, 2500);
 }
 
-function getNotificationIcon(type) {
+function getNotificationIconHTML(type) {
     const icons = {
-        success: '✅',
-        error: '❌',
-        warning: '⚠️',
-        info: 'ℹ️'
+        success: `
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="white"/>
+                <path d="M9 12l2 2 4-4" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        `,
+        error: `
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="white"/>
+                <path d="M15 9l-6 6M9 9l6 6" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        `,
+        warning: `
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="white"/>
+                <path d="M12 8v4M12 16h.01" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        `,
+        info: `
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="white"/>
+                <path d="M12 16v-4M12 8h.01" stroke="#06B6D4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        `
     };
     return icons[type] || icons.info;
 }
 
-function closeNotification(notification) {
-    notification.classList.remove('show');
-    setTimeout(() => {
-        if (notification.parentElement) {
-            notification.parentElement.removeChild(notification);
-        }
-    }, 300);
-}
-
-function addNotificationStyles() {
+function addNotificationIOSStyles() {
     const styles = document.createElement('style');
-    styles.id = 'notification-styles';
+    styles.id = 'notification-ios-styles';
     styles.textContent = `
-        .notification {
+        /* Contenedor de notificaciones */
+        #notification-ios-container {
             position: fixed;
-            top: 100px;
+            top: 120px;
+            left: 20px;
             right: 20px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
             z-index: 10000;
-            transform: translateX(100%);
-            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-            opacity: 0;
-            max-width: 400px;
-            border-left: 4px solid #3b82f6;
-        }
-        
-        .notification.show {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        
-        .notification-success {
-            border-left-color: #10b981;
-        }
-        
-        .notification-error {
-            border-left-color: #ef4444;
-        }
-        
-        .notification-warning {
-            border-left-color: #f59e0b;
-        }
-        
-        .notification-content {
-            padding: 1rem 1.5rem;
+            pointer-events: none;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 0.75rem;
+            gap: 12px;
         }
         
-        .notification-icon {
-            font-size: 1.2rem;
-            flex-shrink: 0;
+        /* Notificación base */
+        .notification-ios {
+            background: #10B981;
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
+            border-radius: 16px;
+            padding: 18px 24px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            will-change: transform, opacity;
+            pointer-events: auto;
+            max-width: 500px;
+            width: 100%;
+            opacity: 0;
+            transform: translateY(-50px) scale(0.9);
         }
         
-        .notification-message {
-            flex: 1;
-            font-weight: 500;
-            color: #374151;
+        /* Variantes de color */
+        .notification-ios-success {
+            background: #10B981;
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
         }
         
-        .notification-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #6b7280;
-            padding: 0;
-            width: 20px;
-            height: 20px;
+        .notification-ios-error {
+            background: #EF4444;
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35);
+        }
+        
+        .notification-ios-warning {
+            background: #F59E0B;
+            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.35);
+        }
+        
+        .notification-ios-info {
+            background: #06B6D4;
+            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.35);
+        }
+        
+        /* Contenido */
+        .notification-ios-content {
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 50%;
-            transition: all 0.2s ease;
+            gap: 12px;
         }
         
-        .notification-close:hover {
-            background: #f3f4f6;
-            color: #374151;
+        /* Icono */
+        .notification-ios-icon {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+        }
+        
+        /* Mensaje */
+        .notification-ios-message {
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+            line-height: 1.4;
+        }
+        
+        /* Animación de entrada - iOS style */
+        @keyframes notificationSlideIn {
+            0% {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+            60% {
+                opacity: 1;
+                transform: translateY(5px) scale(1.02);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        /* Animación de salida - iOS style */
+        @keyframes notificationSlideOut {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            40% {
+                opacity: 0.8;
+                transform: translateY(10px) scale(0.98);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(50px) scale(0.9);
+            }
+        }
+        
+        /* Animación del icono */
+        @keyframes iconBounce {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+            20% {
+                transform: rotate(72deg) scale(1.1);
+            }
+            40% {
+                transform: rotate(144deg) scale(1.05);
+            }
+            60% {
+                transform: rotate(216deg) scale(1.1);
+            }
+            80% {
+                transform: rotate(288deg) scale(1.05);
+            }
+            100% {
+                transform: rotate(360deg) scale(1);
+            }
+        }
+        
+        /* Aplicar animaciones */
+        .notification-ios-show {
+            animation: notificationSlideIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        
+        .notification-ios-show .notification-ios-icon {
+            animation: iconBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        
+        .notification-ios-hide {
+            animation: notificationSlideOut 0.5s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            #notification-ios-container {
+                top: 100px;
+            }
         }
         
         @media (max-width: 480px) {
-            .notification {
-                right: 10px;
+            #notification-ios-container {
+                top: 80px;
                 left: 10px;
-                max-width: none;
+                right: 10px;
+            }
+            
+            .notification-ios {
+                padding: 16px 20px;
+            }
+            
+            .notification-ios-message {
+                font-size: 15px;
             }
         }
     `;
@@ -460,7 +585,7 @@ function addNotificationStyles() {
 // ============================================
 
 function trackLoginEvent(event, data = {}) {
-    console.log(`🔍 Login Event: ${event}`, data);
+    console.log(`📊 Login Event: ${event}`, data);
     
     if (typeof gtag !== 'undefined') {
         gtag('event', event, {
@@ -477,7 +602,7 @@ function trackLoginEvent(event, data = {}) {
 
 window.addEventListener('error', function(e) {
     console.error('Error en login.js:', e.error);
-    showNotification('Ocurrió un error inesperado. Por favor recarga la página.', 'error');
+    showNotificationIOS('Ocurrió un error inesperado. Por favor recarga la página.', 'error');
     trackLoginEvent('login_javascript_error', {
         message: e.error?.message || 'Unknown error'
     });
