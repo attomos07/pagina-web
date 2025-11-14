@@ -218,6 +218,7 @@
                                 <p class="step-description">Personaliza el comportamiento y características de tu agente</p>
                             </div>
 
+                            <!-- Información Básica -->
                             <div class="form-section">
                                 <h3 class="section-title">
                                     <i class="lni lni-information"></i>
@@ -230,36 +231,8 @@
                                             Nombre del Agente
                                             <span class="form-label-required">*</span>
                                         </label>
-                                        <input type="text" id="agentName" class="form-input" placeholder="Ej: Asistente Dental" required>
+                                        <input type="text" id="agentName" class="form-input" placeholder="Ej: Asistente Virtual" required>
                                         <span class="form-help">Este nombre identificará a tu agente en el dashboard</span>
-                                    </div>
-                                </div>
-
-                                <div class="form-grid-2col">
-                                    <div class="form-group">
-                                        <label class="form-label">
-                                            Tipo de Negocio
-                                            <span class="form-label-required">*</span>
-                                        </label>
-                                        <select id="businessType" class="form-select" required>
-                                            <option value="">Selecciona una opción</option>
-                                            <option value="dental">Clínica Dental</option>
-                                            <option value="salon">Peluquería / Salón</option>
-                                            <option value="restaurant">Restaurante</option>
-                                            <option value="gym">Gimnasio</option>
-                                            <option value="store">Tienda</option>
-                                            <option value="other">Otro</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label class="form-label">Idioma Principal</label>
-                                        <select id="language" class="form-select">
-                                            <option value="es">Español</option>
-                                            <option value="en">Inglés</option>
-                                            <option value="fr">Francés</option>
-                                            <option value="pt">Portugués</option>
-                                        </select>
                                     </div>
                                 </div>
 
@@ -286,8 +259,48 @@
                                         <input type="tel" id="phoneNumber" class="form-input" placeholder="6621234567" required>
                                     </div>
                                 </div>
+
+                                <div class="form-group" style="margin-top: 48px;">
+                                    <label class="form-label">
+                                        ¿En qué idiomas hablará el agente?
+                                        <span class="form-label-required">*</span>
+                                    </label>
+                                    <span class="form-help">Selecciona al menos un idioma para tu agente</span>
+                                    <div class="language-checkboxes">
+                                        <label class="language-checkbox-item">
+                                            <input type="checkbox" name="language" value="es" class="checkbox-input">
+                                            <span class="language-checkbox-label">🇪🇸 Español</span>
+                                        </label>
+                                        
+                                        <label class="language-checkbox-item">
+                                            <input type="checkbox" name="language" value="en" class="checkbox-input">
+                                            <span class="language-checkbox-label">🇺🇸 Inglés</span>
+                                        </label>
+                                        
+                                        <label class="language-checkbox-item">
+                                            <input type="checkbox" name="language" value="fr" class="checkbox-input">
+                                            <span class="language-checkbox-label">🇫🇷 Francés</span>
+                                        </label>
+                                        
+                                        <label class="language-checkbox-item">
+                                            <input type="checkbox" name="language" value="pt" class="checkbox-input">
+                                            <span class="language-checkbox-label">🇧🇷 Portugués</span>
+                                        </label>
+                                        
+                                        <label class="language-checkbox-item">
+                                            <input type="checkbox" name="language" value="de" class="checkbox-input">
+                                            <span class="language-checkbox-label">🇩🇪 Alemán</span>
+                                        </label>
+                                        
+                                        <label class="language-checkbox-item">
+                                            <input type="checkbox" name="language" value="it" class="checkbox-input">
+                                            <span class="language-checkbox-label">🇮🇹 Italiano</span>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
 
+                            <!-- Personalidad del Agente -->
                             <div class="form-section">
                                 <h3 class="section-title">
                                     <i class="lni lni-comments"></i>
@@ -296,31 +309,71 @@
                                 
                                 <div class="form-group">
                                     <label class="form-label">Tono de Conversación</label>
-                                    <div class="checkbox-group" style="flex-direction: row; flex-wrap: wrap;">
-                                        <label class="checkbox-item" style="flex: 1; min-width: 200px;">
-                                            <input type="radio" name="tone" value="formal" class="checkbox-input" checked>
-                                            <span class="checkbox-label"><i class="lni lni-graduation"></i> Formal - Profesional y cortés</span>
+                                    <div class="tone-radio-group">
+                                        <label class="tone-radio-option selected">
+                                            <input type="radio" name="tone" value="formal" checked>
+                                            <div class="tone-icon-wrapper">
+                                                <i class="lni lni-graduation"></i>
+                                            </div>
+                                            <div class="tone-radio-label">
+                                                <strong>Formal</strong>
+                                                <span>Profesional y cortés</span>
+                                            </div>
                                         </label>
                                         
-                                        <label class="checkbox-item" style="flex: 1; min-width: 200px;">
-                                            <input type="radio" name="tone" value="friendly" class="checkbox-input">
-                                            <span class="checkbox-label"><i class="lni lni-heart"></i> Amigable - Cercano y cálido</span>
+                                        <label class="tone-radio-option">
+                                            <input type="radio" name="tone" value="friendly">
+                                            <div class="tone-icon-wrapper">
+                                                <i class="lni lni-heart"></i>
+                                            </div>
+                                            <div class="tone-radio-label">
+                                                <strong>Amigable</strong>
+                                                <span>Cercano y cálido</span>
+                                            </div>
                                         </label>
                                         
-                                        <label class="checkbox-item" style="flex: 1; min-width: 200px;">
-                                            <input type="radio" name="tone" value="casual" class="checkbox-input">
-                                            <span class="checkbox-label"><i class="lni lni-hand"></i> Casual - Relajado e informal</span>
+                                        <label class="tone-radio-option">
+                                            <input type="radio" name="tone" value="casual">
+                                            <div class="tone-icon-wrapper">
+                                                <i class="lni lni-hand"></i>
+                                            </div>
+                                            <div class="tone-radio-label">
+                                                <strong>Casual</strong>
+                                                <span>Relajado e informal</span>
+                                            </div>
                                         </label>
                                     </div>
                                 </div>
 
-                                <div class="form-group">
+                                <div class="form-group" style="margin-top: 48px;">
                                     <label class="form-label">Instrucciones Especiales (Opcional)</label>
-                                    <textarea id="specialInstructions" class="form-textarea" placeholder="Ej: Siempre mencionar las promociones vigentes al inicio de la conversación..."></textarea>
                                     <span class="form-help">Proporciona directrices específicas sobre cómo debe comportarse tu agente</span>
+                                    
+                                    <div class="rich-editor">
+                                        <div class="editor-toolbar">
+                                            <button type="button" class="editor-btn" id="boldBtn" title="Negrita">
+                                                <i class="lni lni-text-format"></i>
+                                            </button>
+                                            <button type="button" class="editor-btn" id="italicBtn" title="Cursiva">
+                                                <i class="lni lni-italic"></i>
+                                            </button>
+                                            <button type="button" class="editor-btn" id="underlineBtn" title="Subrayado">
+                                                <i class="lni lni-underline"></i>
+                                            </button>
+                                            <button type="button" class="editor-btn" id="listBtn" title="Lista">
+                                                <i class="lni lni-list"></i>
+                                            </button>
+                                        </div>
+                                        <div class="editor-content" 
+                                             id="editorContent" 
+                                             contenteditable="true" 
+                                             data-placeholder="Ej: Siempre mencionar las promociones vigentes al inicio de la conversación...">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
+                            <!-- Capacidades del Agente -->
                             <div class="form-section">
                                 <h3 class="section-title">
                                     <i class="lni lni-checkmark-circle"></i>
@@ -328,24 +381,24 @@
                                 </h3>
                                 
                                 <div class="checkbox-group">
-                                    <label class="checkbox-item">
+                                    <label class="capability-checkbox-item">
                                         <input type="checkbox" id="capability-appointments" class="checkbox-input" checked>
-                                        <span class="checkbox-label">Agendar citas y reservaciones</span>
+                                        <span class="capability-checkbox-label">Agendar citas y reservaciones</span>
                                     </label>
                                     
-                                    <label class="checkbox-item">
+                                    <label class="capability-checkbox-item">
                                         <input type="checkbox" id="capability-faq" class="checkbox-input" checked>
-                                        <span class="checkbox-label">Responder preguntas frecuentes</span>
+                                        <span class="capability-checkbox-label">Responder preguntas frecuentes</span>
                                     </label>
                                     
-                                    <label class="checkbox-item">
+                                    <label class="capability-checkbox-item">
                                         <input type="checkbox" id="capability-products" class="checkbox-input">
-                                        <span class="checkbox-label">Información de productos/servicios</span>
+                                        <span class="capability-checkbox-label">Información de productos/servicios</span>
                                     </label>
                                     
-                                    <label class="checkbox-item">
+                                    <label class="capability-checkbox-item">
                                         <input type="checkbox" id="capability-support" class="checkbox-input">
-                                        <span class="checkbox-label">Soporte técnico básico</span>
+                                        <span class="capability-checkbox-label">Soporte técnico básico</span>
                                     </label>
                                 </div>
                             </div>

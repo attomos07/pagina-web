@@ -1,8 +1,8 @@
 // State Management
 let currentStep = 1;
 let selectedSocial = '';
-let selectedBusinessType = '';
 let uploadedFile = null;
+let userBusinessType = '';
 let agentData = {
   social: '',
   businessType: '',
@@ -12,11 +12,14 @@ let agentData = {
   config: {
     welcomeMessage: '',
     aiPersonality: '',
+    tone: 'formal',
+    languages: [],
     schedule: {},
     services: [],
     staff: [],
     promotions: [],
-    facilities: []
+    facilities: [],
+    capabilities: []
   }
 };
 
@@ -26,12 +29,33 @@ let promotionCounter = 0;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
+  fetchUserData();
   initializeSocialSelection();
   initializeFileUpload();
-  initializeBusinessTypeSelection();
   initializeNavigationButtons();
   initializeCountryDropdown();
+  initializeToneSelection();
+  initializeLanguageSelection();
+  initializeRichEditor();
 });
+
+// Fetch User Data
+async function fetchUserData() {
+  try {
+    const response = await fetch('/api/me', {
+      credentials: 'include'
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      userBusinessType = data.user.businessType;
+      agentData.businessType = userBusinessType;
+      console.log('✅ Tipo de negocio del usuario:', userBusinessType);
+    }
+  } catch (error) {
+    console.error('❌ Error obteniendo datos del usuario:', error);
+  }
+}
 
 // Social Network Selection
 function initializeSocialSelection() {
@@ -48,15 +72,122 @@ function initializeSocialSelection() {
   });
 }
 
-// Business Type Selection
-function initializeBusinessTypeSelection() {
-  const businessTypeSelect = document.getElementById('businessType');
+// Tone Selection
+function initializeToneSelection() {
+  const toneInputs = document.querySelectorAll('input[name="tone"]');
   
-  if (businessTypeSelect) {
-    businessTypeSelect.addEventListener('change', function() {
-      selectedBusinessType = this.value;
-      agentData.businessType = this.value;
-      console.log('Tipo de negocio seleccionado:', selectedBusinessType);
+  toneInputs.forEach(input => {
+    input.addEventListener('change', function() {
+      document.querySelectorAll('.tone-radio-option').forEach(opt => {
+        opt.classList.remove('selected');
+      });
+      
+      this.closest('.tone-radio-option').classList.add('selected');
+      agentData.config.tone = this.value;
+    });
+  });
+}
+
+// Language Selection
+function initializeLanguageSelection() {
+  const languageCheckboxes = document.querySelectorAll('input[name="language"]');
+  
+  languageCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+      if (this.checked) {
+        if (!agentData.config.languages.includes(this.value)) {
+          agentData.config.languages.push(this.value);
+        }
+      } else {
+        agentData.config.languages = agentData.config.languages.filter(lang => lang !== this.value);
+      }
+      console.log('Idiomas seleccionados:', agentData.config.languages);
+    });
+  });
+}
+
+// Rich Text Editor
+function initializeRichEditor() {
+  const editorContent = document.getElementById('editorContent');
+  if (!editorContent) return;
+
+  const boldBtn = document.getElementById('boldBtn');
+  const italicBtn = document.getElementById('italicBtn');
+  const underlineBtn = document.getElementById('underlineBtn');
+  const listBtn = document.getElementById('listBtn');
+
+  if (boldBtn) {
+    boldBtn.addEventListener('click', () => {
+      document.execCommand('bold', false, null);
+      editorContent.focus();
+    });
+  }
+
+  if (italicBtn) {
+    italicBtn.addEventListener('click', () => {
+      document.execCommand('italic', false, null);
+      editorContent.focus();
+    });
+  }
+
+  if (underlineBtn) {
+    underlineBtn.addEventListener('click', () => {
+      document.execCommand('underline', false, null);
+      editorContent.focus();
+    });
+  }
+
+  if (listBtn) {
+    listBtn.addEventListener('click', () => {
+      document.execCommand('insertUnorderedList', false, null);
+      editorContent.focus();
+    });
+  }
+
+  editorContent.addEventListener('input', function() {
+    agentData.config.specialInstructions = this.innerHTML;
+  });
+}
+
+// Initialize rich editor for dynamically created elements
+function initializeRichEditorForElement(container) {
+  const editorContent = container.querySelector('.editor-content');
+  if (!editorContent) return;
+
+  const boldBtn = container.querySelector('.editor-bold');
+  const italicBtn = container.querySelector('.editor-italic');
+  const underlineBtn = container.querySelector('.editor-underline');
+  const listBtn = container.querySelector('.editor-list');
+
+  if (boldBtn) {
+    boldBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.execCommand('bold', false, null);
+      editorContent.focus();
+    });
+  }
+
+  if (italicBtn) {
+    italicBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.execCommand('italic', false, null);
+      editorContent.focus();
+    });
+  }
+
+  if (underlineBtn) {
+    underlineBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.execCommand('underline', false, null);
+      editorContent.focus();
+    });
+  }
+
+  if (listBtn) {
+    listBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.execCommand('insertUnorderedList', false, null);
+      editorContent.focus();
     });
   }
 }
@@ -263,7 +394,6 @@ function nextStep() {
       return;
     }
     collectFormData();
-    generateDynamicFields();
   }
 
   if (currentStep === 4) {
@@ -273,6 +403,13 @@ function nextStep() {
   currentStep++;
   updateStepDisplay();
   updateProgressBar();
+
+  // Generar campos dinámicos cuando se entra al paso 3
+  if (currentStep === 3 && (userBusinessType === 'clinica-dental' || userBusinessType === 'peluqueria')) {
+    setTimeout(() => {
+      generateDynamicFields();
+    }, 100);
+  }
 
   if (currentStep === 4) {
     generateSummary();
@@ -296,7 +433,6 @@ function previousStep() {
 
 function validateStep3() {
   const agentName = document.getElementById('agentName').value.trim();
-  const businessType = document.getElementById('businessType').value;
   const phoneNumber = document.getElementById('phoneNumber').value.trim();
 
   if (!agentName) {
@@ -305,15 +441,14 @@ function validateStep3() {
     return false;
   }
 
-  if (!businessType) {
-    alert('Por favor selecciona el tipo de negocio');
-    document.getElementById('businessType').focus();
-    return false;
-  }
-
   if (!phoneNumber) {
     alert('Por favor ingresa el número de teléfono');
     document.getElementById('phoneNumber').focus();
+    return false;
+  }
+
+  if (agentData.config.languages.length === 0) {
+    alert('Por favor selecciona al menos un idioma');
     return false;
   }
 
@@ -349,16 +484,14 @@ function generateDynamicFields() {
   const step3Content = document.getElementById('step3');
   const formSections = step3Content.querySelectorAll('.form-section');
   
-  // Remover secciones dinámicas anteriores
   formSections.forEach((section, index) => {
-    if (index > 1) { // Mantener solo las primeras 2 secciones (básica y personalidad)
+    if (index > 1) {
       section.remove();
     }
   });
 
-  const businessType = document.getElementById('businessType').value;
-
-  if (businessType === 'salon' || businessType === 'dental') {
+  if (userBusinessType === 'clinica-dental' || userBusinessType === 'peluqueria') {
+    const businessType = userBusinessType === 'clinica-dental' ? 'dental' : 'salon';
     generateBusinessSpecificFields(businessType);
   }
 }
@@ -381,7 +514,6 @@ function generateBusinessSpecificFields(type) {
 
 function generateSalonFields() {
   return `
-    <!-- Horario de Atención -->
     <div class="form-section">
       <h3 class="section-title">
         <i class="lni lni-calendar"></i>
@@ -390,7 +522,6 @@ function generateSalonFields() {
       <div class="schedule-list" id="scheduleList"></div>
     </div>
 
-    <!-- Servicios -->
     <div class="form-section">
       <h3 class="section-title">
         <i class="lni lni-briefcase"></i>
@@ -403,7 +534,6 @@ function generateSalonFields() {
       <div id="servicesContainer"></div>
     </div>
 
-    <!-- Personal -->
     <div class="form-section">
       <h3 class="section-title">
         <i class="lni lni-users"></i>
@@ -416,7 +546,6 @@ function generateSalonFields() {
       <div id="staffContainer"></div>
     </div>
 
-    <!-- Promociones -->
     <div class="form-section">
       <h3 class="section-title">
         <i class="lni lni-tag"></i>
@@ -429,7 +558,6 @@ function generateSalonFields() {
       <div id="promotionsContainer"></div>
     </div>
 
-    <!-- Facilidades -->
     <div class="form-section">
       <h3 class="section-title">
         <i class="lni lni-apartment"></i>
@@ -508,7 +636,6 @@ function generateSalonFields() {
 
 function generateDentalFields() {
   return `
-    <!-- Horario de Atención -->
     <div class="form-section">
       <h3 class="section-title">
         <i class="lni lni-calendar"></i>
@@ -517,7 +644,6 @@ function generateDentalFields() {
       <div class="schedule-list" id="scheduleList"></div>
     </div>
 
-    <!-- Servicios Dentales -->
     <div class="form-section">
       <h3 class="section-title">
         <i class="lni lni-briefcase"></i>
@@ -530,7 +656,6 @@ function generateDentalFields() {
       <div id="servicesContainer"></div>
     </div>
 
-    <!-- Dentistas -->
     <div class="form-section">
       <h3 class="section-title">
         <i class="lni lni-users"></i>
@@ -543,7 +668,6 @@ function generateDentalFields() {
       <div id="staffContainer"></div>
     </div>
 
-    <!-- Promociones -->
     <div class="form-section">
       <h3 class="section-title">
         <i class="lni lni-tag"></i>
@@ -556,7 +680,6 @@ function generateDentalFields() {
       <div id="promotionsContainer"></div>
     </div>
 
-    <!-- Facilidades -->
     <div class="form-section">
       <h3 class="section-title">
         <i class="lni lni-hospital"></i>
@@ -656,22 +779,20 @@ function generateDentalFields() {
 }
 
 function initializeDynamicFieldsEvents() {
-  // Inicializar horario
   initializeSchedule();
   
-  // Botones de agregar
   const btnAddService = document.getElementById('btnAddService');
   const btnAddStaff = document.getElementById('btnAddStaff');
   const btnAddPromotion = document.getElementById('btnAddPromotion');
   
   if (btnAddService) {
     btnAddService.addEventListener('click', addService);
-    addService(); // Agregar uno por defecto
+    addService();
   }
   
   if (btnAddStaff) {
     btnAddStaff.addEventListener('click', addStaff);
-    addStaff(); // Agregar uno por defecto
+    addStaff();
   }
   
   if (btnAddPromotion) {
@@ -890,9 +1011,8 @@ function addService() {
   div.className = 'item-card';
   div.dataset.id = id;
   
-  const businessType = document.getElementById('businessType').value;
-  const serviceLabel = businessType === 'dental' ? 'Tratamiento' : 'Servicio';
-  const servicePlaceholder = businessType === 'dental' ? 'Ej: Limpieza Dental' : 'Ej: Corte de Cabello';
+  const serviceLabel = userBusinessType === 'clinica-dental' ? 'Tratamiento' : 'Servicio';
+  const servicePlaceholder = userBusinessType === 'clinica-dental' ? 'Ej: Limpieza Dental' : 'Ej: Corte de Cabello';
   
   div.innerHTML = `
     <div class="item-header">
@@ -907,7 +1027,28 @@ function addService() {
     </div>
     <div class="form-group">
       <label class="form-label">Descripción</label>
-      <textarea class="form-textarea" data-field="description" rows="2" placeholder="Breve descripción"></textarea>
+      <span class="form-help">Breve descripción del ${serviceLabel.toLowerCase()}</span>
+      <div class="rich-editor">
+        <div class="editor-toolbar">
+          <button type="button" class="editor-btn editor-bold" title="Negrita">
+            <i class="lni lni-text-format"></i>
+          </button>
+          <button type="button" class="editor-btn editor-italic" title="Cursiva">
+            <i class="lni lni-italic"></i>
+          </button>
+          <button type="button" class="editor-btn editor-underline" title="Subrayado">
+            <i class="lni lni-underline"></i>
+          </button>
+          <button type="button" class="editor-btn editor-list" title="Lista">
+            <i class="lni lni-list"></i>
+          </button>
+        </div>
+        <div class="editor-content" 
+             data-field="description"
+             contenteditable="true" 
+             data-placeholder="Describe brevemente este ${serviceLabel.toLowerCase()}...">
+        </div>
+      </div>
     </div>
     <div class="field-row">
       <div class="form-group">
@@ -928,6 +1069,8 @@ function addService() {
   div.querySelector('.btn-remove-item').addEventListener('click', function() {
     removeItem(id);
   });
+  
+  initializeRichEditorForElement(div);
 }
 
 function addStaff() {
@@ -940,10 +1083,9 @@ function addStaff() {
   div.className = 'item-card';
   div.dataset.id = id;
   
-  const businessType = document.getElementById('businessType').value;
-  const staffLabel = businessType === 'dental' ? 'Dentista' : 'Estilista';
-  const staffPlaceholder = businessType === 'dental' ? 'Ej: Dr. García' : 'Ej: María';
-  const rolePlaceholder = businessType === 'dental' ? 'Ej: Ortodoncista' : 'Ej: Estilista Senior';
+  const staffLabel = userBusinessType === 'clinica-dental' ? 'Dentista' : 'Estilista';
+  const staffPlaceholder = userBusinessType === 'clinica-dental' ? 'Ej: Dr. García' : 'Ej: María';
+  const rolePlaceholder = userBusinessType === 'clinica-dental' ? 'Ej: Ortodoncista' : 'Ej: Estilista Senior';
   
   div.innerHTML = `
     <div class="item-header">
@@ -970,7 +1112,28 @@ function addStaff() {
     </div>
     <div class="form-group">
       <label class="form-label">Especialidades</label>
-      <textarea class="form-textarea" data-field="specialties" rows="2" placeholder="Ej: Fade, Diseños, Barba..."></textarea>
+      <span class="form-help">Describe las especialidades de este ${staffLabel.toLowerCase()}</span>
+      <div class="rich-editor">
+        <div class="editor-toolbar">
+          <button type="button" class="editor-btn editor-bold" title="Negrita">
+            <i class="lni lni-text-format"></i>
+          </button>
+          <button type="button" class="editor-btn editor-italic" title="Cursiva">
+            <i class="lni lni-italic"></i>
+          </button>
+          <button type="button" class="editor-btn editor-underline" title="Subrayado">
+            <i class="lni lni-underline"></i>
+          </button>
+          <button type="button" class="editor-btn editor-list" title="Lista">
+            <i class="lni lni-list"></i>
+          </button>
+        </div>
+        <div class="editor-content" 
+             data-field="specialties"
+             contenteditable="true" 
+             data-placeholder="Ej: Fade, Diseños, Barba...">
+        </div>
+      </div>
     </div>
   `;
   container.appendChild(div);
@@ -978,6 +1141,8 @@ function addStaff() {
   div.querySelector('.btn-remove-item').addEventListener('click', function() {
     removeItem(id);
   });
+  
+  initializeRichEditorForElement(div);
 }
 
 function addPromotion() {
@@ -1013,7 +1178,28 @@ function addPromotion() {
     </div>
     <div class="form-group">
       <label class="form-label">Descripción</label>
-      <textarea class="form-textarea" data-field="description" rows="2" placeholder="Detalles de la promoción"></textarea>
+      <span class="form-help">Detalles de la promoción</span>
+      <div class="rich-editor">
+        <div class="editor-toolbar">
+          <button type="button" class="editor-btn editor-bold" title="Negrita">
+            <i class="lni lni-text-format"></i>
+          </button>
+          <button type="button" class="editor-btn editor-italic" title="Cursiva">
+            <i class="lni lni-italic"></i>
+          </button>
+          <button type="button" class="editor-btn editor-underline" title="Subrayado">
+            <i class="lni lni-underline"></i>
+          </button>
+          <button type="button" class="editor-btn editor-list" title="Lista">
+            <i class="lni lni-list"></i>
+          </button>
+        </div>
+        <div class="editor-content" 
+             data-field="description"
+             contenteditable="true" 
+             data-placeholder="Describe los detalles de la promoción...">
+        </div>
+      </div>
     </div>
   `;
   container.appendChild(div);
@@ -1021,6 +1207,8 @@ function addPromotion() {
   div.querySelector('.btn-remove-item').addEventListener('click', function() {
     removeItem(id);
   });
+  
+  initializeRichEditorForElement(div);
 }
 
 function removeItem(id) {
@@ -1032,28 +1220,21 @@ function removeItem(id) {
 
 function collectFormData() {
   agentData.name = document.getElementById('agentName').value;
-  agentData.businessType = document.getElementById('businessType').value;
-  
+
   const countryCode = document.getElementById('countryCode').value;
   const phoneNumber = document.getElementById('phoneNumber').value;
   agentData.phoneNumber = countryCode + phoneNumber;
-
-  const language = document.getElementById('language');
-  if (language) {
-    agentData.config.language = language.value;
-  }
 
   const tone = document.querySelector('input[name="tone"]:checked');
   if (tone) {
     agentData.config.tone = tone.value;
   }
 
-  const specialInstructions = document.getElementById('specialInstructions');
-  if (specialInstructions) {
-    agentData.config.specialInstructions = specialInstructions.value;
+  const editorContent = document.getElementById('editorContent');
+  if (editorContent) {
+    agentData.config.specialInstructions = editorContent.innerHTML;
   }
 
-  // Recopilar horario
   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   days.forEach(day => {
     const checkbox = document.getElementById(`day-${day}`);
@@ -1070,52 +1251,50 @@ function collectFormData() {
     }
   });
 
-  // Recopilar servicios
   agentData.config.services = [];
   const serviceCards = document.querySelectorAll('#servicesContainer .item-card');
   serviceCards.forEach(card => {
+    const descriptionEditor = card.querySelector('[data-field="description"].editor-content');
     const service = {
       name: card.querySelector('[data-field="name"]').value,
-      description: card.querySelector('[data-field="description"]').value,
+      description: descriptionEditor ? descriptionEditor.innerHTML : '',
       price: card.querySelector('[data-field="price"]').value,
       duration: card.querySelector('[data-field="duration"]').value
     };
     agentData.config.services.push(service);
   });
 
-  // Recopilar personal
   agentData.config.staff = [];
   const staffCards = document.querySelectorAll('#staffContainer .item-card');
   staffCards.forEach(card => {
+    const specialtiesEditor = card.querySelector('[data-field="specialties"].editor-content');
     const staff = {
       name: card.querySelector('[data-field="name"]').value,
       role: card.querySelector('[data-field="role"]').value,
-      specialties: card.querySelector('[data-field="specialties"]').value
+      specialties: specialtiesEditor ? specialtiesEditor.innerHTML : ''
     };
     agentData.config.staff.push(staff);
   });
 
-  // Recopilar promociones
   agentData.config.promotions = [];
   const promotionCards = document.querySelectorAll('#promotionsContainer .item-card');
   promotionCards.forEach(card => {
+    const descriptionEditor = card.querySelector('[data-field="description"].editor-content');
     const promotion = {
       name: card.querySelector('[data-field="name"]').value,
       discount: card.querySelector('[data-field="discount"]').value,
       validDays: card.querySelector('[data-field="validDays"]').value,
-      description: card.querySelector('[data-field="description"]').value
+      description: descriptionEditor ? descriptionEditor.innerHTML : ''
     };
     agentData.config.promotions.push(promotion);
   });
 
-  // Recopilar facilidades
   agentData.config.facilities = [];
   const facilityCheckboxes = document.querySelectorAll('input[name="facility"]:checked');
   facilityCheckboxes.forEach(checkbox => {
     agentData.config.facilities.push(checkbox.value);
   });
 
-  // Recopilar capacidades
   agentData.config.capabilities = [];
   const capabilityCheckboxes = document.querySelectorAll('input[id^="capability-"]:checked');
   capabilityCheckboxes.forEach(checkbox => {
@@ -1148,12 +1327,19 @@ function generateSummary() {
   };
 
   const businessTypeNames = {
-    dental: 'Clínica Dental',
-    salon: 'Peluquería / Salón de Belleza',
-    restaurant: 'Restaurante',
-    gym: 'Gimnasio',
-    store: 'Tienda',
-    other: 'Otro'
+    'clinica-dental': 'Clínica Dental',
+    'peluqueria': 'Peluquería / Salón de Belleza',
+    'restaurante': 'Restaurante',
+    'pizzeria': 'Pizzería',
+    'escuela': 'Escuela / Educación',
+    'gym': 'Gimnasio / Fitness',
+    'spa': 'Spa / Wellness',
+    'consultorio': 'Consultorio Médico',
+    'veterinaria': 'Veterinaria',
+    'hotel': 'Hotel / Hospedaje',
+    'tienda': 'Tienda / Retail',
+    'agencia': 'Agencia / Servicios',
+    'otro': 'Otro'
   };
   
   let scheduleHTML = '<ul class="summary-list">';
@@ -1200,34 +1386,50 @@ function generateSummary() {
         <span class="summary-label">Número de Teléfono:</span>
         <span class="summary-value">${agentData.phoneNumber}</span>
       </div>
-    </div>
-    
-    <div class="summary-section">
-      <h3 class="summary-section-title">
-        <i class="lni lni-calendar"></i>
-        Horario de Atención
-      </h3>
-      ${scheduleHTML}
-    </div>
-    
-    <div class="summary-section">
-      <h3 class="summary-section-title">
-        <i class="lni lni-briefcase"></i>
-        Servicios (${agentData.config.services.length})
-      </h3>
-      <ul class="summary-list">
-        ${agentData.config.services.map(s => `<li>${s.name} - ${s.price} - ${s.duration}</li>`).join('')}
-      </ul>
-    </div>
-    
-    <div class="summary-section">
-      <h3 class="summary-section-title">
-        <i class="lni lni-users"></i>
-        Personal (${agentData.config.staff.length})
-      </h3>
-      ${staffHTML}
+      <div class="summary-item">
+        <span class="summary-label">Idiomas:</span>
+        <span class="summary-value">${agentData.config.languages.join(', ')}</span>
+      </div>
     </div>
   `;
+  
+  if (Object.keys(agentData.config.schedule).length > 0) {
+    html += `
+      <div class="summary-section">
+        <h3 class="summary-section-title">
+          <i class="lni lni-calendar"></i>
+          Horario de Atención
+        </h3>
+        ${scheduleHTML}
+      </div>
+    `;
+  }
+  
+  if (agentData.config.services.length > 0) {
+    html += `
+      <div class="summary-section">
+        <h3 class="summary-section-title">
+          <i class="lni lni-briefcase"></i>
+          Servicios (${agentData.config.services.length})
+        </h3>
+        <ul class="summary-list">
+          ${agentData.config.services.map(s => `<li>${s.name} - ${s.price} - ${s.duration}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+  }
+  
+  if (agentData.config.staff.length > 0) {
+    html += `
+      <div class="summary-section">
+        <h3 class="summary-section-title">
+          <i class="lni lni-users"></i>
+          Personal (${agentData.config.staff.length})
+        </h3>
+        ${staffHTML}
+      </div>
+    `;
+  }
   
   if (agentData.config.promotions.length > 0) {
     html += `
