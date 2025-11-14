@@ -432,25 +432,74 @@ function generateSalonFields() {
     <!-- Facilidades -->
     <div class="form-section">
       <h3 class="section-title">
-        <i class="lni lni-car"></i>
+        <i class="lni lni-apartment"></i>
         Facilidades Adicionales
       </h3>
-      <div class="checkbox-group">
-        <label class="checkbox-item">
-          <input type="checkbox" name="facility" value="Estacionamiento" class="checkbox-input">
-          <span class="checkbox-label">Estacionamiento disponible</span>
+      <div class="facility-grid">
+        <label class="facility-item">
+          <input type="checkbox" name="facility" value="Estacionamiento">
+          <div class="facility-icon-wrapper">
+            <i class="lni lni-car-alt"></i>
+          </div>
+          <div class="facility-content">
+            <div class="facility-name">Estacionamiento</div>
+            <div class="facility-description">Estacionamiento exclusivo disponible</div>
+          </div>
         </label>
-        <label class="checkbox-item">
-          <input type="checkbox" name="facility" value="WiFi Gratis" class="checkbox-input">
-          <span class="checkbox-label">WiFi Gratis</span>
+        
+        <label class="facility-item">
+          <input type="checkbox" name="facility" value="WiFi Gratis">
+          <div class="facility-icon-wrapper">
+            <i class="lni lni-wifi"></i>
+          </div>
+          <div class="facility-content">
+            <div class="facility-name">WiFi Gratis</div>
+            <div class="facility-description">Internet de alta velocidad</div>
+          </div>
         </label>
-        <label class="checkbox-item">
-          <input type="checkbox" name="facility" value="Café/Bebidas" class="checkbox-input">
-          <span class="checkbox-label">Café y bebidas</span>
+        
+        <label class="facility-item">
+          <input type="checkbox" name="facility" value="Café/Bebidas">
+          <div class="facility-icon-wrapper">
+            <i class="lni lni-cup"></i>
+          </div>
+          <div class="facility-content">
+            <div class="facility-name">Café y Bebidas</div>
+            <div class="facility-description">Café de cortesía para clientes</div>
+          </div>
         </label>
-        <label class="checkbox-item">
-          <input type="checkbox" name="facility" value="Sala de Espera" class="checkbox-input">
-          <span class="checkbox-label">Sala de espera cómoda</span>
+        
+        <label class="facility-item">
+          <input type="checkbox" name="facility" value="Sala de Espera">
+          <div class="facility-icon-wrapper">
+            <i class="lni lni-sofa"></i>
+          </div>
+          <div class="facility-content">
+            <div class="facility-name">Sala de Espera</div>
+            <div class="facility-description">Área cómoda con entretenimiento</div>
+          </div>
+        </label>
+        
+        <label class="facility-item">
+          <input type="checkbox" name="facility" value="Productos Premium">
+          <div class="facility-icon-wrapper">
+            <i class="lni lni-producthunt"></i>
+          </div>
+          <div class="facility-content">
+            <div class="facility-name">Productos Premium</div>
+            <div class="facility-description">Marcas de alta calidad</div>
+          </div>
+        </label>
+        
+        <label class="facility-item">
+          <input type="checkbox" name="facility" value="Tarjetas de Regalo">
+          <div class="facility-icon-wrapper">
+            <i class="lni lni-gift"></i>
+          </div>
+          <div class="facility-content">
+            <div class="facility-name">Tarjetas de Regalo</div>
+            <div class="facility-description">Disponibles para compra</div>
+          </div>
         </label>
       </div>
     </div>
@@ -510,29 +559,96 @@ function generateDentalFields() {
     <!-- Facilidades -->
     <div class="form-section">
       <h3 class="section-title">
-        <i class="lni lni-shield-check"></i>
+        <i class="lni lni-hospital"></i>
         Facilidades y Certificaciones
       </h3>
-      <div class="checkbox-group">
-        <label class="checkbox-item">
-          <input type="checkbox" name="facility" value="Estacionamiento" class="checkbox-input">
-          <span class="checkbox-label">Estacionamiento disponible</span>
+      <div class="facility-grid">
+        <label class="facility-item">
+          <input type="checkbox" name="facility" value="Estacionamiento">
+          <div class="facility-icon-wrapper">
+            <i class="lni lni-car-alt"></i>
+          </div>
+          <div class="facility-content">
+            <div class="facility-name">Estacionamiento</div>
+            <div class="facility-description">Estacionamiento exclusivo disponible</div>
+          </div>
         </label>
-        <label class="checkbox-item">
-          <input type="checkbox" name="facility" value="Equipo Digital" class="checkbox-input">
-          <span class="checkbox-label">Equipo digital de última generación</span>
+        
+        <label class="facility-item">
+          <input type="checkbox" name="facility" value="Equipo Digital">
+          <div class="facility-icon-wrapper">
+            <i class="lni lni-display-alt"></i>
+          </div>
+          <div class="facility-content">
+            <div class="facility-name">Equipo Digital</div>
+            <div class="facility-description">Tecnología de última generación</div>
+          </div>
         </label>
-        <label class="checkbox-item">
-          <input type="checkbox" name="facility" value="Esterilización" class="checkbox-input">
-          <span class="checkbox-label">Protocolo de esterilización certificado</span>
+        
+        <label class="facility-item">
+          <input type="checkbox" name="facility" value="Esterilización">
+          <div class="facility-icon-wrapper">
+            <i class="lni lni-shield-check"></i>
+          </div>
+          <div class="facility-content">
+            <div class="facility-name">Esterilización</div>
+            <div class="facility-description">Protocolo certificado</div>
+          </div>
         </label>
-        <label class="checkbox-item">
-          <input type="checkbox" name="facility" value="Emergencias" class="checkbox-input">
-          <span class="checkbox-label">Atención de emergencias</span>
+        
+        <label class="facility-item">
+          <input type="checkbox" name="facility" value="Emergencias">
+          <div class="facility-icon-wrapper">
+            <i class="lni lni-ambulance"></i>
+          </div>
+          <div class="facility-content">
+            <div class="facility-name">Emergencias</div>
+            <div class="facility-description">Atención 24/7 para urgencias</div>
+          </div>
         </label>
-        <label class="checkbox-item">
-          <input type="checkbox" name="facility" value="Niños" class="checkbox-input">
-          <span class="checkbox-label">Especialización en niños</span>
+        
+        <label class="facility-item">
+          <input type="checkbox" name="facility" value="Odontopediatría">
+          <div class="facility-icon-wrapper">
+            <i class="lni lni-emoji-smile"></i>
+          </div>
+          <div class="facility-content">
+            <div class="facility-name">Odontopediatría</div>
+            <div class="facility-description">Especialización en niños</div>
+          </div>
+        </label>
+        
+        <label class="facility-item">
+          <input type="checkbox" name="facility" value="Rayos X Digital">
+          <div class="facility-icon-wrapper">
+            <i class="lni lni-camera"></i>
+          </div>
+          <div class="facility-content">
+            <div class="facility-name">Rayos X Digital</div>
+            <div class="facility-description">Diagnóstico preciso e inmediato</div>
+          </div>
+        </label>
+        
+        <label class="facility-item">
+          <input type="checkbox" name="facility" value="Sedación Consciente">
+          <div class="facility-icon-wrapper">
+            <i class="lni lni-heart-monitor"></i>
+          </div>
+          <div class="facility-content">
+            <div class="facility-name">Sedación Consciente</div>
+            <div class="facility-description">Para pacientes con ansiedad</div>
+          </div>
+        </label>
+        
+        <label class="facility-item">
+          <input type="checkbox" name="facility" value="Sala de Espera">
+          <div class="facility-icon-wrapper">
+            <i class="lni lni-sofa"></i>
+          </div>
+          <div class="facility-content">
+            <div class="facility-name">Sala de Espera</div>
+            <div class="facility-description">Área cómoda con entretenimiento</div>
+          </div>
         </label>
       </div>
     </div>
