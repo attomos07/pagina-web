@@ -10,17 +10,8 @@
     <link rel="stylesheet" href="/static/css/onboarding.css">
 </head>
 <body>
-    <!-- App Container -->
     <div class="app-container">
-        <!-- Sidebar -->
-        {{template "sidebar.html" .}}
-
-        <!-- Main Content -->
         <div class="main-content">
-            <!-- Userbar -->
-            {{template "userbar.html" .}}
-
-            <!-- Onboarding Content Wrapper -->
             <div class="content-wrapper">
                 <div class="main-container">
                     <!-- Progress Bar -->
@@ -145,7 +136,7 @@
                             </div>
 
                             <div class="action-buttons">
-                                <button type="button" id="btnStep1" class="btn btn-next" disabled onclick="nextStep()">
+                                <button type="button" id="btnStep1" class="btn btn-next" disabled>
                                     Continuar
                                     <svg class="lucide" viewBox="0 0 24 24">
                                         <path d="M5 12h14"/>
@@ -159,7 +150,7 @@
                         <div id="step2" class="step">
                             <div class="step-header">
                                 <div class="step-icon">
-                                    <i class="lni lni-shield-check"></i>
+                                    <i class="lni lni-cloud-upload"></i>
                                 </div>
                                 <h2 class="step-title">Sube tu Documento</h2>
                                 <p class="step-description">Proporciona información sobre tu negocio para entrenar a la IA</p>
@@ -172,11 +163,11 @@
                                     </div>
                                     <h3>Arrastra tu documento aquí</h3>
                                     <p>o haz clic para seleccionar un archivo</p>
-                                    <input type="file" id="metaDocument" accept=".pdf,.doc,.docx,.txt" hidden>
+                                    <input type="file" id="metaDocument" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png" hidden>
                                     <button type="button" id="btnSelectFile" class="btn-select-file">
                                         Seleccionar Archivo
                                     </button>
-                                    <div class="upload-help">Formatos soportados: PDF, DOC, DOCX, TXT (Máx. 10MB)</div>
+                                    <div class="upload-help">Formatos soportados: PDF, DOC, DOCX, TXT, JPG, PNG (Máx. 10MB)</div>
                                 </div>
 
                                 <div id="filePreview" class="file-preview" style="display: none;">
@@ -253,8 +244,8 @@
                                         <select id="businessType" class="form-select" required>
                                             <option value="">Selecciona una opción</option>
                                             <option value="dental">Clínica Dental</option>
+                                            <option value="salon">Peluquería / Salón</option>
                                             <option value="restaurant">Restaurante</option>
-                                            <option value="salon">Salón de Belleza</option>
                                             <option value="gym">Gimnasio</option>
                                             <option value="store">Tienda</option>
                                             <option value="other">Otro</option>
@@ -275,16 +266,24 @@
                                 <div class="form-group phone-input-group">
                                     <div class="phone-prefix">
                                         <label class="form-label">Código País</label>
-                                        <select id="countryCode" class="form-select">
-                                            <option value="+52">+52 (México)</option>
-                                            <option value="+1">+1 (USA/Canadá)</option>
-                                            <option value="+34">+34 (España)</option>
-                                            <option value="+54">+54 (Argentina)</option>
-                                        </select>
+                                        <div class="country-code-wrapper">
+                                            <select id="countryCode" class="form-select">
+                                                <option value="+52">+52 (México)</option>
+                                                <option value="+1">+1 (USA/Canadá)</option>
+                                                <option value="+34">+34 (España)</option>
+                                                <option value="+54">+54 (Argentina)</option>
+                                            </select>
+                                            <div class="country-dropdown" id="countryDropdown">
+                                                <div class="country-option" data-value="+52">+52 (México)</div>
+                                                <div class="country-option" data-value="+1">+1 (USA/Canadá)</div>
+                                                <div class="country-option" data-value="+34">+34 (España)</div>
+                                                <div class="country-option" data-value="+54">+54 (Argentina)</div>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="phone-number">
-                                        <label class="form-label">Número de Teléfono</label>
-                                        <input type="tel" id="phoneNumber" class="form-input" placeholder="6621234567">
+                                        <label class="form-label">Número de Teléfono *</label>
+                                        <input type="tel" id="phoneNumber" class="form-input" placeholder="6621234567" required>
                                     </div>
                                 </div>
                             </div>
@@ -297,32 +296,20 @@
                                 
                                 <div class="form-group">
                                     <label class="form-label">Tono de Conversación</label>
-                                    <div class="tone-selector">
-                                        <label class="tone-option">
-                                            <input type="radio" name="tone" value="formal" checked>
-                                            <div class="tone-option-content">
-                                                <div class="tone-emoji">🎩</div>
-                                                <div class="tone-name">Formal</div>
-                                                <div class="tone-description">Profesional y cortés</div>
-                                            </div>
+                                    <div class="checkbox-group" style="flex-direction: row; flex-wrap: wrap;">
+                                        <label class="checkbox-item" style="flex: 1; min-width: 200px;">
+                                            <input type="radio" name="tone" value="formal" class="checkbox-input" checked>
+                                            <span class="checkbox-label">🎩 Formal - Profesional y cortés</span>
                                         </label>
                                         
-                                        <label class="tone-option">
-                                            <input type="radio" name="tone" value="friendly">
-                                            <div class="tone-option-content">
-                                                <div class="tone-emoji">😊</div>
-                                                <div class="tone-name">Amigable</div>
-                                                <div class="tone-description">Cercano y cálido</div>
-                                            </div>
+                                        <label class="checkbox-item" style="flex: 1; min-width: 200px;">
+                                            <input type="radio" name="tone" value="friendly" class="checkbox-input">
+                                            <span class="checkbox-label">😊 Amigable - Cercano y cálido</span>
                                         </label>
                                         
-                                        <label class="tone-option">
-                                            <input type="radio" name="tone" value="casual">
-                                            <div class="tone-option-content">
-                                                <div class="tone-emoji">👋</div>
-                                                <div class="tone-name">Casual</div>
-                                                <div class="tone-description">Relajado e informal</div>
-                                            </div>
+                                        <label class="checkbox-item" style="flex: 1; min-width: 200px;">
+                                            <input type="radio" name="tone" value="casual" class="checkbox-input">
+                                            <span class="checkbox-label">👋 Casual - Relajado e informal</span>
                                         </label>
                                     </div>
                                 </div>
@@ -523,7 +510,6 @@
         </div>
     </div>
 
-    <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/onboarding.js"></script>
 </body>
 </html>
