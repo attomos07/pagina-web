@@ -174,20 +174,9 @@
 </div>
 
 <script>
-    // Notification panel functionality
-    const notificationBtn = document.getElementById('notificationBtn');
-    const notificationPanel = document.getElementById('notificationPanel');
-    const notificationContainer = document.querySelector('.notification-container');
+    // Notification panel functionality - Solo se abre al hacer hover en el contenedor
     const markAllBtn = document.getElementById('markAllBtn');
     const notificationBadge = document.getElementById('notificationBadge');
-
-    notificationContainer.addEventListener('mouseenter', () => {
-        notificationPanel.classList.add('open');
-    });
-
-    notificationContainer.addEventListener('mouseleave', () => {
-        notificationPanel.classList.remove('open');
-    });
 
     // Mark all notifications as read
     markAllBtn.addEventListener('click', () => {
