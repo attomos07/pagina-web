@@ -79,7 +79,7 @@
     z-index: 100;
 }
 
-.notification-panel.open {
+.notification-container:hover .notification-panel {
     max-height: 600px;
     opacity: 1;
 }
@@ -141,7 +141,18 @@
     position: relative;
     transition: all 0.3s ease;
     cursor: pointer;
+    opacity: 0;
+    transform: translateY(-10px);
 }
+
+.notification-container:hover .notification-item {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.notification-container:hover .notification-item:nth-child(1) { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.05s; }
+.notification-container:hover .notification-item:nth-child(2) { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.1s; }
+.notification-container:hover .notification-item:nth-child(3) { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.15s; }
 
 .notification-item:hover {
     transform: translateX(4px);
@@ -191,6 +202,14 @@
     padding: 12px 20px;
     border-top: 1px solid #f3f4f6;
     text-align: center;
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.notification-container:hover .notification-footer {
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.2s;
 }
 
 .view-all-btn {
@@ -329,7 +348,7 @@
 }
 
 .userbar:hover .dropdown-menu {
-    max-height: 400px;
+    max-height: 650px;
 }
 
 .menu-divider {
@@ -362,6 +381,10 @@
 .userbar:hover .dropdown-menu .menu-item:nth-child(2) { transition-delay: 0.1s; }
 .userbar:hover .dropdown-menu .menu-item:nth-child(3) { transition-delay: 0.15s; }
 .userbar:hover .dropdown-menu .menu-item:nth-child(4) { transition-delay: 0.2s; }
+.userbar:hover .dropdown-menu .menu-item:nth-child(5) { transition-delay: 0.25s; }
+.userbar:hover .dropdown-menu .menu-item:nth-child(6) { transition-delay: 0.3s; }
+.userbar:hover .dropdown-menu .menu-item:nth-child(7) { transition-delay: 0.35s; }
+.userbar:hover .dropdown-menu .menu-item:nth-child(8) { transition-delay: 0.4s; }
 
 .dropdown-menu .menu-button {
     width: 100%;
@@ -441,7 +464,7 @@
 .userbar:hover .logout-section {
     opacity: 1;
     transform: translateY(0);
-    transition-delay: 0.25s;
+    transition-delay: 0.45s;
 }
 
 .logout-button:hover {
