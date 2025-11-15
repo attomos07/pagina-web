@@ -491,14 +491,175 @@
     fill: none;
 }
 
-/* Mobile Responsive */
+/* ==========================================
+   MOBILE RESPONSIVE
+   ========================================== */
+
 @media (max-width: 768px) {
     .top-bar {
-        height: 60px;
-        padding: 0 16px;
+        height: 80px;
+        padding: 0 16px 0 84px; /* Space for hamburger button */
+        gap: 8px;
+    }
+
+    /* Hide notification button on very small screens */
+    .notification-container {
+        display: flex;
+    }
+
+    .notification-btn {
+        width: 44px;
+        height: 44px;
+    }
+
+    /* Mobile notification panel */
+    .notification-panel {
+        position: fixed;
+        top: 80px;
+        right: 8px;
+        left: 8px;
+        width: auto;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    /* Tap to open notifications on mobile */
+    .notification-container {
+        position: static;
+    }
+
+    .notification-panel.mobile-active {
+        max-height: 600px;
+        opacity: 1;
+    }
+
+    .notification-container:hover .notification-panel {
+        max-height: 0;
+        opacity: 0;
+    }
+
+    /* Userbar mobile */
+    .userbar {
+        width: auto;
+        flex: 1;
+        max-width: 280px;
+    }
+
+    .userbar::after {
+        display: none;
+    }
+
+    .profile-section {
+        padding: 8px 12px;
+        gap: 8px;
+    }
+
+    .profile-image {
+        width: 44px;
+        height: 44px;
+    }
+
+    .profile-info {
+        display: flex;
+        flex-direction: column;
+        min-width: 0; /* Allow text truncation */
+    }
+
+    .company-name {
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .business-type {
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Mobile userbar dropdown */
+    .dropdown-menu {
+        position: fixed;
+        top: 80px;
+        right: 8px;
+        left: 8px;
+        width: auto;
+        max-width: 360px;
+        margin: 0 auto;
+    }
+
+    /* Tap to open userbar menu on mobile */
+    .userbar:hover .dropdown-menu {
+        max-height: 0;
+    }
+
+    .userbar.mobile-menu-active .dropdown-menu {
+        max-height: calc(100vh - 96px);
+        overflow-y: auto;
+    }
+
+    .userbar.mobile-menu-active .dropdown-menu .menu-item {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .userbar.mobile-menu-active .logout-section {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* Remove hover effects on mobile */
+    .userbar:hover .profile-section::before,
+    .dropdown-menu .menu-button:hover::before {
+        width: 0;
+        height: 0;
+    }
+
+    .userbar:hover .profile-image {
+        transform: none;
+        box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
+    }
+
+    .dropdown-menu .menu-button:active {
+        background: rgba(6, 182, 212, 0.1);
+    }
+
+    /* Notification list mobile */
+    .notification-list {
+        max-height: 60vh;
+    }
+
+    .notification-item {
+        padding: 12px;
+    }
+
+    .notification-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .notification-text {
+        font-size: 13px;
+    }
+
+    .notification-time {
+        font-size: 11px;
+    }
+}
+
+/* Very small screens */
+@media (max-width: 360px) {
+    .profile-info {
+        display: none;
     }
 
     .userbar {
         width: auto;
+    }
+
+    .profile-section {
+        padding: 8px;
     }
 }

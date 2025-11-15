@@ -249,23 +249,203 @@
     fill: none;
 }
 
-/* Mobile Responsive */
+/* ==========================================
+   MOBILE MENU BUTTON
+   ========================================== */
+
+.mobile-menu-btn {
+    display: none;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 8px 24px rgba(6, 182, 212, 0.4);
+    cursor: pointer;
+    z-index: 1001;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    align-items: center;
+    justify-content: center;
+}
+
+.mobile-menu-btn:active {
+    transform: scale(0.95);
+}
+
+.mobile-menu-btn .hamburger {
+    width: 24px;
+    height: 20px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.mobile-menu-btn .hamburger span {
+    display: block;
+    width: 100%;
+    height: 3px;
+    background: white;
+    border-radius: 3px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+}
+
+.mobile-menu-btn.active .hamburger span:nth-child(1) {
+    transform: translateY(8.5px) rotate(45deg);
+}
+
+.mobile-menu-btn.active .hamburger span:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0);
+}
+
+.mobile-menu-btn.active .hamburger span:nth-child(3) {
+    transform: translateY(-8.5px) rotate(-45deg);
+}
+
+/* Mobile Overlay */
+.mobile-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.mobile-overlay.active {
+    opacity: 1;
+}
+
+/* ==========================================
+   MOBILE RESPONSIVE
+   ========================================== */
+
 @media (max-width: 768px) {
+    /* Show mobile menu button */
+    .mobile-menu-btn {
+        display: flex;
+    }
+
+    /* Hide sidebar by default on mobile */
     .sidebar {
-        width: 100%;
-        height: auto;
-        flex-direction: row;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 280px;
+        height: 100vh;
+        transform: translateX(-100%);
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1000;
+        box-shadow: none;
+    }
+
+    /* Show sidebar when active */
+    .sidebar.mobile-active {
+        transform: translateX(0);
+        box-shadow: 8px 0 24px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Always expanded on mobile when visible */
+    .sidebar.mobile-active {
+        width: 280px;
+    }
+
+    .sidebar.mobile-active .brand-text,
+    .sidebar.mobile-active .text-label {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .sidebar.mobile-active .pin-btn {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* Show overlay */
+    .mobile-overlay {
+        display: block;
+    }
+
+    /* Adjust sidebar header for mobile */
+    .sidebar-header {
+        height: 80px;
+        padding: 0 20px;
+    }
+
+    .logo-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .brand-text {
+        font-size: 20px;
+    }
+
+    /* Adjust menu items */
+    .sidebar-nav {
+        padding: 24px 0;
+        overflow-y: auto;
+    }
+
+    .menu-list {
+        padding: 0 16px;
+    }
+
+    .menu-item {
+        margin-bottom: 4px;
+    }
+
+    .menu-button {
+        padding: 16px;
+        border-radius: 12px;
+    }
+
+    .icon-wrapper {
+        width: 28px;
+        height: 28px;
+    }
+
+    .text-label {
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    .sidebar-footer {
+        padding: 16px;
+    }
+
+    /* Remove hover effects on mobile */
+    .sidebar .menu-button:hover::before {
+        width: 0;
+        height: 0;
+    }
+
+    .sidebar .menu-button:active {
+        background: rgba(6, 182, 212, 0.1);
+    }
+}
+
+/* Tablet adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .sidebar {
+        width: 72px;
     }
 
     .sidebar.expanded {
-        width: 100%;
+        width: 240px;
     }
 
     .sidebar-header {
-        height: 60px;
-    }
-
-    .sidebar-nav {
-        display: none;
+        padding: 0 20px;
     }
 }
