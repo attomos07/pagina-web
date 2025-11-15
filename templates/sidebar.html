@@ -1,6 +1,18 @@
 <!-- Sidebar Styles -->
 <link rel="stylesheet" href="/static/css/sidebar.css">
 
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-btn" id="mobileMenuBtn">
+    <div class="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</button>
+
+<!-- Mobile Overlay -->
+<div class="mobile-overlay" id="mobileOverlay"></div>
+
 <!-- Sidebar -->
 <div class="sidebar sidebar-border collapsed" id="sidebar">
     <div class="sidebar-header">
@@ -99,10 +111,13 @@
     // Sidebar hover functionality
     const sidebar = document.getElementById('sidebar');
     const pinBtn = document.getElementById('pinBtn');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileOverlay = document.getElementById('mobileOverlay');
     let isPinned = false;
+    let isMobile = window.innerWidth <= 768;
 
     // Check if sidebar was pinned in localStorage
-    if (localStorage.getItem('sidebarPinned') === 'true') {
+    if (localStorage.getItem('sidebarPinned') === 'true' && !isMobile) {
         isPinned = true;
         sidebar.classList.add('pinned');
         sidebar.classList.add('expanded');
@@ -110,9 +125,11 @@
         pinBtn.classList.add('active');
     }
 
-    // Pin button functionality
+    // Pin button functionality (desktop only)
     pinBtn.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (isMobile) return;
+        
         isPinned = !isPinned;
         
         if (isPinned) {
@@ -128,18 +145,85 @@
         }
     });
 
-    // Hover functionality (only works when not pinned)
+    // Hover functionality (only works when not pinned and not mobile)
     sidebar.addEventListener('mouseenter', () => {
-        if (!isPinned) {
+        if (!isPinned && !isMobile) {
             sidebar.classList.remove('collapsed');
             sidebar.classList.add('expanded');
         }
     });
 
     sidebar.addEventListener('mouseleave', () => {
-        if (!isPinned) {
+        if (!isPinned && !isMobile) {
             sidebar.classList.remove('expanded');
             sidebar.classList.add('collapsed');
+        }
+    });
+
+    // Mobile menu functionality
+    mobileMenuBtn.addEventListener('click', () => {
+        const isActive = sidebar.classList.contains('mobile-active');
+        
+        if (isActive) {
+            closeMobileSidebar();
+        } else {
+            openMobileSidebar();
+        }
+    });
+
+    // Overlay click to close
+    mobileOverlay.addEventListener('click', () => {
+        closeMobileSidebar();
+    });
+
+    function openMobileSidebar() {
+        sidebar.classList.add('mobile-active');
+        mobileOverlay.classList.add('active');
+        mobileMenuBtn.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeMobileSidebar() {
+        sidebar.classList.remove('mobile-active');
+        mobileOverlay.classList.remove('active');
+        mobileMenuBtn.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Close mobile sidebar when clicking on a link
+    const menuLinks = sidebar.querySelectorAll('.menu-button');
+    menuLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (isMobile) {
+                closeMobileSidebar();
+            }
+        });
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        const wasMobile = isMobile;
+        isMobile = window.innerWidth <= 768;
+        
+        // Transitioning from mobile to desktop
+        if (wasMobile && !isMobile) {
+            closeMobileSidebar();
+            
+            // Restore pinned state if it was set
+            if (localStorage.getItem('sidebarPinned') === 'true') {
+                isPinned = true;
+                sidebar.classList.add('pinned', 'expanded');
+                sidebar.classList.remove('collapsed');
+                pinBtn.classList.add('active');
+            }
+        }
+        
+        // Transitioning from desktop to mobile
+        if (!wasMobile && isMobile) {
+            sidebar.classList.remove('pinned', 'expanded');
+            sidebar.classList.add('collapsed');
+            pinBtn.classList.remove('active');
+            isPinned = false;
         }
     });
 

@@ -62,8 +62,8 @@
         </div>
     </div>
 
-    <div class="userbar">
-        <div class="profile-section">
+    <div class="userbar" id="userbar">
+        <div class="profile-section" id="profileSection">
             <div class="profile-image">
                 <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop" alt="Perfil">
             </div>
@@ -73,7 +73,7 @@
             </div>
         </div>
 
-        <div class="dropdown-menu">
+        <div class="dropdown-menu" id="userDropdown">
             <div class="menu-divider"></div>
             
             <ul class="menu-list">
@@ -158,7 +158,7 @@
             </ul>
 
             <div class="logout-section">
-                <button class="menu-button logout-button">
+                <button class="menu-button logout-button" id="userbarLogoutBtn">
                     <div class="icon-wrapper">
                         <svg class="lucide" viewBox="0 0 24 24">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -174,9 +174,29 @@
 </div>
 
 <script>
-    // Notification panel functionality - Solo se abre al hacer hover en el contenedor
+    // Check if mobile
+    let isMobile = window.innerWidth <= 768;
+
+    // Notification functionality
+    const notificationBtn = document.getElementById('notificationBtn');
+    const notificationPanel = document.getElementById('notificationPanel');
     const markAllBtn = document.getElementById('markAllBtn');
     const notificationBadge = document.getElementById('notificationBadge');
+
+    // Mobile: Tap to toggle notifications
+    if (isMobile) {
+        notificationBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notificationPanel.classList.toggle('mobile-active');
+        });
+
+        // Close notification panel when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!notificationPanel.contains(e.target) && !notificationBtn.contains(e.target)) {
+                notificationPanel.classList.remove('mobile-active');
+            }
+        });
+    }
 
     // Mark all notifications as read
     markAllBtn.addEventListener('click', () => {
@@ -206,4 +226,66 @@
             notificationBadge.classList.add('hidden');
         }
     }
+
+    // Userbar functionality
+    const userbar = document.getElementById('userbar');
+    const profileSection = document.getElementById('profileSection');
+    const userDropdown = document.getElementById('userDropdown');
+
+    // Mobile: Tap to toggle userbar menu
+    if (isMobile) {
+        profileSection.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userbar.classList.toggle('mobile-menu-active');
+        });
+
+        // Close userbar menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!userbar.contains(e.target)) {
+                userbar.classList.remove('mobile-menu-active');
+            }
+        });
+
+        // Close menu when clicking on a link
+        const userMenuLinks = userDropdown.querySelectorAll('.menu-button');
+        userMenuLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                userbar.classList.remove('mobile-menu-active');
+            });
+        });
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        const wasMobile = isMobile;
+        isMobile = window.innerWidth <= 768;
+
+        // Reset states when switching between mobile/desktop
+        if (wasMobile !== isMobile) {
+            notificationPanel.classList.remove('mobile-active');
+            userbar.classList.remove('mobile-menu-active');
+        }
+    });
+
+    // Logout functionality
+    const userbarLogoutBtn = document.getElementById('userbarLogoutBtn');
+    userbarLogoutBtn.addEventListener('click', async () => {
+        try {
+            const response = await fetch('/api/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                localStorage.removeItem('sidebarPinned');
+                window.location.href = '/login';
+            } else {
+                console.error('Error al cerrar sesión');
+                alert('Error al cerrar sesión. Por favor intenta de nuevo.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al cerrar sesión. Por favor intenta de nuevo.');
+        }
+    });
 </script>
