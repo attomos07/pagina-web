@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="dashboard-layout">
+                    <!-- Create Button -->
+                    <div class="page-header">
+                        <a href="/onboarding" class="btn-primary">
+                            <i class="lni lni-plus"></i>
+                            <span>Crear Agente</span>
+                        </a>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-content">
+                                    <div class="stat-value" id="activeAgentsCount">0</div>
+                                    <div class="stat-label">Agentes Activos</div>
+                                </div>
+                                <div class="stat-icon">
+                                    <svg>
+                                        <defs>
+                                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+                                                <stop offset="100%" style="stop-color:#0891b2;stop-opacity:1" />
+                                            </linearGradient>
+                                        </defs>
+                                        <circle class="circle-bg" cx="50" cy="50" r="45"></circle>
+                                        <circle class="circle-progress" cx="50" cy="50" r="45"></circle>
+                                    </svg>
+                                    <div class="stat-icon-content">
+                                        <svg class="stat-bot-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <!-- Antenna -->
+                                            <line x1="24" y1="6" x2="24" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                            <circle cx="24" cy="5" r="1.5" fill="currentColor"/>
+                                            
+                                            <!-- Head -->
+                                            <rect x="14" y="10" width="20" height="16" rx="4" stroke="currentColor" stroke-width="2" fill="none"/>
+                                            
+                                            <!-- Eyes -->
+                                            <circle cx="19" cy="16" r="2" fill="currentColor"/>
+                                            <circle cx="29" cy="16" r="2" fill="currentColor"/>
+                                            
+                                            <!-- Mouth -->
+                                            <path d="M 18 21 Q 24 23 30 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+                                            
+                                            <!-- Body -->
+                                            <rect x="16" y="26" width="16" height="12" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
+                                            
+                                            <!-- Chest Circle -->
+                                            <circle cx="24" cy="31" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                                            <circle cx="24" cy="31" r="0.8" fill="currentColor"/>
+                                            
+                                            <!-- Arms -->
+                                            <rect x="10" y="28" width="4" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                            <rect x="34" y="28" width="4" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                            
+                                            <!-- Legs -->
+                                            <rect x="18" y="38" width="4" height="4" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
+                                            <rect x="26" y="38" width="4" height="4" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-content">
+                                    <div class="stat-value">0</div>
+                                    <div class="stat-label">Conversaciones</div>
+                                </div>
+                                <div class="stat-icon stat-icon-shifted">
+                                    <svg>
+                                        <circle class="circle-bg" cx="50" cy="50" r="45"></circle>
+                                        <circle class="circle-progress" cx="50" cy="50" r="45"></circle>
+                                    </svg>
+                                    <div class="stat-icon-content">
+                                        <i class="lni lni-comments"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-content">
+                                    <div class="stat-value">0</div>
+                                    <div class="stat-label">Citas Agendadas</div>
+                                </div>
+                                <div class="stat-icon">
+                                    <svg>
+                                        <circle class="circle-bg" cx="50" cy="50" r="45"></circle>
+                                        <circle class="circle-progress" cx="50" cy="50" r="45"></circle>
+                                    </svg>
+                                    <div class="stat-icon-content">
+                                        <i class="lni lni-calendar"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-content">
+                                    <div class="stat-value">--</div>
+                                    <div class="stat-label">Tiempo de Respuesta</div>
+                                </div>
+                                <div class="stat-icon">
+                                    <svg>
+                                        <circle class="circle-bg" cx="50" cy="50" r="45"></circle>
+                                        <circle class="circle-progress" cx="50" cy="50" r="45"></circle>
+                                    </svg>
+                                    <div class="stat-icon-content">
+                                        <i class="lni lni-timer"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Billing Section -->
+                    <div class="ai-billing-section">
+                        <div class="billing-header">
+                            <div class="billing-title-wrapper">
+                                <h2 class="section-title">
+                                    <i class="lni lni-coin"></i>
+                                    Costos de IA
+                                </h2>
+                                <span class="billing-badge">Gemini API</span>
+                            </div>
+                            <div class="billing-controls">
+                                <select class="currency-select" id="currencySelect">
+                                    <option value="MXN" selected>🇲🇽 MXN</option>
+                                    <option value="USD">🇺🇸 USD</option>
+                                    <option value="EUR">🇪🇺 EUR</option>
+                                    <option value="GBP">🇬🇧 GBP</option>
+                                    <option value="CAD">🇨🇦 CAD</option>
+                                    <option value="ARS">🇦🇷 ARS</option>
+                                    <option value="COP">🇨🇴 COP</option>
+                                    <option value="CLP">🇨🇱 CLP</option>
+                                </select>
+                                <select class="time-range-select" id="billingTimeRange">
+                                    <option value="7">Últimos 7 días</option>
+                                    <option value="14">Últimos 14 días</option>
+                                    <option value="28" selected>Últimos 28 días</option>
+                                    <option value="90">Últimos 90 días</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="billing-card">
+                            <div class="cost-summary">
+                                <div class="cost-item">
+                                    <div class="cost-label">Costo Total</div>
+                                    <div class="cost-value" id="totalCost">$0.00</div>
+                                </div>
+                            </div>
+
+                            <div class="chart-container">
+                                <canvas id="costChart"></canvas>
+                            </div>
+
+                            <div class="billing-footer">
+                                <div class="billing-info">
+                                    <i class="lni lni-information"></i>
+                                    <span>Los costos se actualizan cada hora. Basado en el uso de tokens de la API de Gemini.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Services Statistics Section -->
+                    <div class="services-stats-section">
+                        <div class="services-stats-grid">
+                            <!-- Most Requested Services -->
+                            <div class="service-chart-card">
+                                <div class="service-chart-header">
+                                    <h3>
+                                        <i class="lni lni-bar-chart"></i>
+                                        Servicios Más Pedidos
+                                    </h3>
+                                </div>
+                                <div id="mostRequestedServicesContainer" class="service-bars-container">
+                                    <!-- Los servicios se cargarán dinámicamente aquí -->
+                                </div>
+                            </div>
+
+                            <!-- Least Requested Services -->
+                            <div class="service-chart-card least-requested">
+                                <div class="service-chart-header">
+                                    <h3>
+                                        <i class="lni lni-stats-down"></i>
+                                        Servicios Menos Pedidos
+                                    </h3>
+                                </div>
+                                <div id="leastRequestedServicesContainer" class="service-bars-container">
+                                    <!-- Los servicios se cargarán dinámicamente aquí -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pie Charts Section (NUEVO) -->
+                    <div class="pie-charts-section">
+                        <div class="pie-charts-header">
+                            <div class="pie-charts-title">
+                                <h2>
+                                    <i class="lni lni-pie-chart"></i>
+                                    Distribución de Servicios
+                                </h2>
+                            </div>
+                            <div class="export-buttons">
+                                <button class="btn-export btn-export-excel" onclick="exportToExcel()">
+                                    <i class="lni lni-download"></i>
+                                    <span>Exportar Excel</span>
+                                </button>
+                                <button class="btn-export btn-export-pdf" onclick="exportToPDF()">
+                                    <i class="lni lni-download"></i>
+                                    <span>Exportar PDF</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="pie-charts-grid">
+                            <!-- Pie Chart - Most Requested -->
+                            <div class="pie-chart-card">
+                                <div class="pie-chart-header">
+                                    <div class="pie-chart-title">
+                                        <i class="lni lni-graph"></i>
+                                        <h3>Servicios Más Solicitados</h3>
+                                    </div>
+                                    <span class="pie-chart-badge" id="mostRequestedTotal">0 Total</span>
+                                </div>
+                                <div class="pie-chart-content">
+                                    <div class="pie-chart-canvas-wrapper">
+                                        <canvas id="mostRequestedPieChart"></canvas>
+                                    </div>
+                                    <div class="pie-chart-legend" id="mostRequestedLegend">
+                                        <!-- Leyenda se genera dinámicamente -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pie Chart - Least Requested -->
+                            <div class="pie-chart-card">
+                                <div class="pie-chart-header">
+                                    <div class="pie-chart-title">
+                                        <i class="lni lni-graph"></i>
+                                        <h3>Servicios Menos Solicitados</h3>
+                                    </div>
+                                    <span class="pie-chart-badge" id="leastRequestedTotal">0 Total</span>
+                                </div>
+                                <div class="pie-chart-content">
+                                    <div class="pie-chart-canvas-wrapper">
+                                        <canvas id="leastRequestedPieChart"></canvas>
+                                    </div>
+                                    <div class="pie-chart-legend" id="leastRequestedLegend">
+                                        <!-- Leyenda se genera dinámicamente -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Agents Section -->
+                    <div class="section-header">
+                        <h2 class="section-title">Mis Agentes</h2>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div class="loading" id="loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Cargando agentes...</p>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="empty-state" id="emptyState" style="display: none;">
+                        <div class="empty-icon">
+                            <svg class="custom-bot-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Antenna -->
+                                <line x1="32" y1="8" x2="32" y2="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <circle cx="32" cy="6" r="2.5" fill="currentColor"/>
+                                
+                                <!-- Head -->
+                                <rect x="18" y="14" width="28" height="24" rx="6" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                
+                                <!-- Eyes -->
+                                <circle cx="26" cy="24" r="3" fill="currentColor"/>
+                                <circle cx="38" cy="24" r="3" fill="currentColor"/>
+                                
+                                <!-- Mouth -->
+                                <path d="M 24 31 Q 32 34 40 31" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                                
+                                <!-- Body -->
+                                <rect x="20" y="38" width="24" height="18" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                
+                                <!-- Chest Panel -->
+                                <rect x="28" y="42" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                <circle cx="32" cy="46" r="1.5" fill="currentColor"/>
+                                
+                                <!-- Arms -->
+                                <rect x="12" y="40" width="6" height="12" rx="3" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                <rect x="46" y="40" width="6" height="12" rx="3" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                
+                                <!-- Legs -->
+                                <rect x="24" y="56" width="6" height="6" rx="2" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                <rect x="34" y="56" width="6" height="6" rx="2" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                            </svg>
+                        </div>
+                        <h3>No tienes agentes creados</h3>
+                        <p>Crea tu primer agente para comenzar a automatizar tu atención al cliente</p>
+                        <a href="/onboarding" class="btn-primary btn-primary-compact">
+                            <i class="lni lni-rocket"></i>
+                            Crear Mi Primer Agente
+                        </a>
+                    </div>
+
+                    <!-- Agents Grid -->
+                    <div class="agents-grid" id="botsGrid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- SheetJS para Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- jsPDF para PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

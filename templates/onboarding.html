@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onboarding - Crear Agente de IA</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/sidebar.css">
+    <link rel="stylesheet" href="/static/css/userbar.css">
+    <link rel="stylesheet" href="/static/css/onboarding.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="main-content">
+            <div class="content-wrapper">
+                <div class="main-container">
+                    <!-- Progress Bar -->
+                    <div class="progress-wrapper">
+                        <div class="progress-steps">
+                            <div class="progress-line-bg">
+                                <div class="progress-line-fill" id="progressFill"></div>
+                            </div>
+                            
+                            <div class="progress-step active">
+                                <div class="step-circle">1</div>
+                                <div class="step-label">Red Social</div>
+                            </div>
+                            
+                            <div class="progress-step">
+                                <div class="step-circle">2</div>
+                                <div class="step-label">Documento</div>
+                            </div>
+                            
+                            <div class="progress-step">
+                                <div class="step-circle">3</div>
+                                <div class="step-label">Configuración</div>
+                            </div>
+                            
+                            <div class="progress-step">
+                                <div class="step-circle">4</div>
+                                <div class="step-label">Resumen</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Card -->
+                    <div class="content-card">
+                        <!-- PASO 1: Selección de Red Social -->
+                        <div id="step1" class="step active">
+                            <div class="step-header">
+                                <div class="step-icon">
+                                    <i class="lni lni-network"></i>
+                                </div>
+                                <h2 class="step-title">Selecciona tu Red Social</h2>
+                                <p class="step-description">Elige la plataforma donde operará tu agente de IA</p>
+                            </div>
+
+                            <div class="social-grid">
+                                <label class="social-card">
+                                    <input type="radio" name="social" value="whatsapp">
+                                    <div class="social-content">
+                                        <div class="social-icon-wrapper" style="background-color: #25D36615; border-color: #25D36640;">
+                                            <i class="lni lni-whatsapp" style="color: #25D366;"></i>
+                                        </div>
+                                        <div class="social-name">WhatsApp</div>
+                                    </div>
+                                </label>
+
+                                <label class="social-card">
+                                    <input type="radio" name="social" value="facebook">
+                                    <div class="social-content">
+                                        <div class="social-icon-wrapper" style="background-color: #0084FF15; border-color: #0084FF40;">
+                                            <i class="lni lni-facebook-messenger" style="color: #0084FF;"></i>
+                                        </div>
+                                        <div class="social-name">Messenger</div>
+                                    </div>
+                                </label>
+
+                                <label class="social-card">
+                                    <input type="radio" name="social" value="instagram">
+                                    <div class="social-content">
+                                        <div class="social-icon-wrapper" style="background-color: #E4405F15; border-color: #E4405F40;">
+                                            <i class="lni lni-instagram" style="color: #E4405F;"></i>
+                                        </div>
+                                        <div class="social-name">Instagram</div>
+                                    </div>
+                                </label>
+
+                                <label class="social-card">
+                                    <input type="radio" name="social" value="telegram">
+                                    <div class="social-content">
+                                        <div class="social-icon-wrapper" style="background-color: #0088cc15; border-color: #0088cc40;">
+                                            <i class="lni lni-telegram" style="color: #0088cc;"></i>
+                                        </div>
+                                        <div class="social-name">Telegram</div>
+                                    </div>
+                                </label>
+
+                                <label class="social-card">
+                                    <input type="radio" name="social" value="wechat">
+                                    <div class="social-content">
+                                        <div class="social-icon-wrapper" style="background-color: #09B83E15; border-color: #09B83E40;">
+                                            <i class="lni lni-wechat" style="color: #09B83E;"></i>
+                                        </div>
+                                        <div class="social-name">WeChat</div>
+                                        <div class="social-status status-coming-soon">Próximamente</div>
+                                    </div>
+                                </label>
+
+                                <label class="social-card">
+                                    <input type="radio" name="social" value="kakaotalk">
+                                    <div class="social-content">
+                                        <div class="social-icon-wrapper" style="background-color: #FEE50015; border-color: #FEE50040;">
+                                            <div class="kakao-icon-onboard">
+                                                <svg viewBox="0 0 24 24" class="kakao-bubble-onboard">
+                                                    <path d="M12 3C6.48 3 2 6.58 2 11c0 2.91 1.88 5.45 4.68 6.94l-1.19 4.37c-.09.34.23.63.55.49l5.11-2.29c.27.02.55.03.85.03 5.52 0 10-3.58 10-8C22 6.58 17.52 3 12 3z"/>
+                                                </svg>
+                                                <span class="kakao-text-onboard">TALK</span>
+                                            </div>
+                                        </div>
+                                        <div class="social-name">KakaoTalk</div>
+                                        <div class="social-status status-coming-soon">Próximamente</div>
+                                    </div>
+                                </label>
+
+                                <label class="social-card">
+                                    <input type="radio" name="social" value="line">
+                                    <div class="social-content">
+                                        <div class="social-icon-wrapper" style="background-color: #00B90015; border-color: #00B90040;">
+                                            <i class="lni lni-line" style="color: #00B900;"></i>
+                                        </div>
+                                        <div class="social-name">Line</div>
+                                        <div class="social-status status-coming-soon">Próximamente</div>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div class="action-buttons">
+                                <button type="button" id="btnStep1" class="btn btn-next" disabled>
+                                    Continuar
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M5 12h14"/>
+                                        <path d="m12 5 7 7-7 7"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- PASO 2: Subir Documento -->
+                        <div id="step2" class="step">
+                            <div class="step-header">
+                                <div class="step-icon">
+                                    <i class="lni lni-cloud-upload"></i>
+                                </div>
+                                <h2 class="step-title">Sube tu Documento</h2>
+                                <p class="step-description">Proporciona información sobre tu negocio para entrenar a la IA</p>
+                            </div>
+
+                            <div class="upload-section">
+                                <div id="uploadArea" class="upload-area">
+                                    <div class="upload-icon">
+                                        <i class="lni lni-cloud-upload"></i>
+                                    </div>
+                                    <h3>Arrastra tu documento aquí</h3>
+                                    <p>o haz clic para seleccionar un archivo</p>
+                                    <input type="file" id="metaDocument" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png" hidden>
+                                    <button type="button" id="btnSelectFile" class="btn-select-file">
+                                        Seleccionar Archivo
+                                    </button>
+                                    <div class="upload-help">Formatos soportados: PDF, DOC, DOCX, TXT, JPG, PNG (Máx. 10MB)</div>
+                                </div>
+
+                                <div id="filePreview" class="file-preview" style="display: none;">
+                                    <div class="file-icon">
+                                        <i class="lni lni-files"></i>
+                                    </div>
+                                    <div class="file-details">
+                                        <div class="file-name" id="fileName"></div>
+                                        <div class="file-size" id="fileSize"></div>
+                                    </div>
+                                    <button type="button" id="btnRemoveFile" class="btn-remove-file">
+                                        <i class="lni lni-trash-can"></i>
+                                    </button>
+                                </div>
+
+                                <div id="uploadProgress" class="upload-progress" style="display: none;">
+                                    <div class="progress-bar-container">
+                                        <div class="progress-fill" id="progressBar"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="action-buttons">
+                                <button type="button" id="btnBackStep2" class="btn btn-back">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M19 12H5"/>
+                                        <path d="m12 19-7-7 7-7"/>
+                                    </svg>
+                                    Atrás
+                                </button>
+                                <button type="button" id="btnStep2" class="btn btn-next" disabled>
+                                    Continuar
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M5 12h14"/>
+                                        <path d="m12 5 7 7-7 7"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- PASO 3: Configuración -->
+                        <div id="step3" class="step">
+                            <div class="step-header">
+                                <div class="step-icon">
+                                    <i class="lni lni-cog"></i>
+                                </div>
+                                <h2 class="step-title">Configuración del Agente</h2>
+                                <p class="step-description">Personaliza el comportamiento y características de tu agente</p>
+                            </div>
+
+                            <!-- Información Básica -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="lni lni-information"></i>
+                                    Información Básica
+                                </h3>
+                                
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Nombre del Agente
+                                            <span class="form-label-required">*</span>
+                                        </label>
+                                        <input type="text" id="agentName" class="form-input" placeholder="Ej: Asistente Virtual" required>
+                                        <span class="form-help">Este nombre identificará a tu agente en el dashboard</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group phone-input-group">
+                                    <div class="phone-prefix">
+                                        <label class="form-label">Código País</label>
+                                        <div class="country-code-wrapper">
+                                            <select id="countryCode" class="form-select">
+                                                <option value="+52">+52 (México)</option>
+                                                <option value="+1">+1 (USA/Canadá)</option>
+                                                <option value="+34">+34 (España)</option>
+                                                <option value="+54">+54 (Argentina)</option>
+                                            </select>
+                                            <div class="country-dropdown" id="countryDropdown">
+                                                <div class="country-option" data-value="+52">+52 (México)</div>
+                                                <div class="country-option" data-value="+1">+1 (USA/Canadá)</div>
+                                                <div class="country-option" data-value="+34">+34 (España)</div>
+                                                <div class="country-option" data-value="+54">+54 (Argentina)</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="phone-number">
+                                        <label class="form-label">Número de Teléfono *</label>
+                                        <input type="tel" id="phoneNumber" class="form-input" placeholder="6621234567" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group" style="margin-top: 48px;">
+                                    <label class="form-label">
+                                        ¿En qué idiomas hablará el agente?
+                                        <span class="form-label-required">*</span>
+                                    </label>
+                                    <span class="form-help">Selecciona al menos un idioma para tu agente</span>
+                                    <div class="language-checkboxes">
+                                        <label class="language-checkbox-item">
+                                            <input type="checkbox" name="language" value="es" class="checkbox-input">
+                                            <span class="language-checkbox-label">🇪🇸 Español</span>
+                                        </label>
+                                        
+                                        <label class="language-checkbox-item">
+                                            <input type="checkbox" name="language" value="en" class="checkbox-input">
+                                            <span class="language-checkbox-label">🇺🇸 Inglés</span>
+                                        </label>
+                                        
+                                        <label class="language-checkbox-item">
+                                            <input type="checkbox" name="language" value="fr" class="checkbox-input">
+                                            <span class="language-checkbox-label">🇫🇷 Francés</span>
+                                        </label>
+                                        
+                                        <label class="language-checkbox-item">
+                                            <input type="checkbox" name="language" value="pt" class="checkbox-input">
+                                            <span class="language-checkbox-label">🇧🇷 Portugués</span>
+                                        </label>
+                                        
+                                        <label class="language-checkbox-item">
+                                            <input type="checkbox" name="language" value="de" class="checkbox-input">
+                                            <span class="language-checkbox-label">🇩🇪 Alemán</span>
+                                        </label>
+                                        
+                                        <label class="language-checkbox-item">
+                                            <input type="checkbox" name="language" value="it" class="checkbox-input">
+                                            <span class="language-checkbox-label">🇮🇹 Italiano</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Personalidad del Agente -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="lni lni-comments"></i>
+                                    Personalidad del Agente
+                                </h3>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Tono de Conversación</label>
+                                    <div class="tone-radio-group">
+                                        <label class="tone-radio-option selected">
+                                            <input type="radio" name="tone" value="formal" checked>
+                                            <div class="tone-icon-wrapper">
+                                                <i class="lni lni-graduation"></i>
+                                            </div>
+                                            <div class="tone-radio-label">
+                                                <strong>Formal</strong>
+                                                <span>Profesional y cortés</span>
+                                            </div>
+                                        </label>
+                                        
+                                        <label class="tone-radio-option">
+                                            <input type="radio" name="tone" value="friendly">
+                                            <div class="tone-icon-wrapper">
+                                                <i class="lni lni-heart"></i>
+                                            </div>
+                                            <div class="tone-radio-label">
+                                                <strong>Amigable</strong>
+                                                <span>Cercano y cálido</span>
+                                            </div>
+                                        </label>
+                                        
+                                        <label class="tone-radio-option">
+                                            <input type="radio" name="tone" value="casual">
+                                            <div class="tone-icon-wrapper">
+                                                <i class="lni lni-hand"></i>
+                                            </div>
+                                            <div class="tone-radio-label">
+                                                <strong>Casual</strong>
+                                                <span>Relajado e informal</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group" style="margin-top: 48px;">
+                                    <label class="form-label">Instrucciones Especiales (Opcional)</label>
+                                    <span class="form-help">Proporciona directrices específicas sobre cómo debe comportarse tu agente</span>
+                                    
+                                    <div class="rich-editor">
+                                        <div class="editor-toolbar">
+                                            <button type="button" class="editor-btn" id="boldBtn" title="Negrita">
+                                                <i class="lni lni-text-format"></i>
+                                            </button>
+                                            <button type="button" class="editor-btn" id="italicBtn" title="Cursiva">
+                                                <i class="lni lni-italic"></i>
+                                            </button>
+                                            <button type="button" class="editor-btn" id="underlineBtn" title="Subrayado">
+                                                <i class="lni lni-underline"></i>
+                                            </button>
+                                            <button type="button" class="editor-btn" id="listBtn" title="Lista">
+                                                <i class="lni lni-list"></i>
+                                            </button>
+                                        </div>
+                                        <div class="editor-content" 
+                                             id="editorContent" 
+                                             contenteditable="true" 
+                                             data-placeholder="Ej: Siempre mencionar las promociones vigentes al inicio de la conversación...">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Capacidades del Agente -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="lni lni-checkmark-circle"></i>
+                                    Capacidades del Agente
+                                </h3>
+                                
+                                <div class="checkbox-group">
+                                    <label class="capability-checkbox-item">
+                                        <input type="checkbox" id="capability-appointments" class="checkbox-input" checked>
+                                        <span class="capability-checkbox-label">Agendar citas y reservaciones</span>
+                                    </label>
+                                    
+                                    <label class="capability-checkbox-item">
+                                        <input type="checkbox" id="capability-faq" class="checkbox-input" checked>
+                                        <span class="capability-checkbox-label">Responder preguntas frecuentes</span>
+                                    </label>
+                                    
+                                    <label class="capability-checkbox-item">
+                                        <input type="checkbox" id="capability-products" class="checkbox-input">
+                                        <span class="capability-checkbox-label">Información de productos/servicios</span>
+                                    </label>
+                                    
+                                    <label class="capability-checkbox-item">
+                                        <input type="checkbox" id="capability-support" class="checkbox-input">
+                                        <span class="capability-checkbox-label">Soporte técnico básico</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="action-buttons">
+                                <button type="button" id="btnBackStep3" class="btn btn-back">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M19 12H5"/>
+                                        <path d="m12 19-7-7 7-7"/>
+                                    </svg>
+                                    Atrás
+                                </button>
+                                <button type="button" id="btnStep3" class="btn btn-next">
+                                    Continuar
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M5 12h14"/>
+                                        <path d="m12 5 7 7-7 7"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- PASO 4: Resumen -->
+                        <div id="step4" class="step">
+                            <div class="step-header">
+                                <div class="step-icon">
+                                    <i class="lni lni-checkmark-circle"></i>
+                                </div>
+                                <h2 class="step-title">Resumen de Configuración</h2>
+                                <p class="step-description">Revisa la información antes de crear tu agente</p>
+                            </div>
+
+                            <div class="summary-card">
+                                <div id="summaryContainer"></div>
+                            </div>
+
+                            <div class="action-buttons">
+                                <button type="button" id="btnBackStep4" class="btn btn-back">
+                                    <svg class="lucide" viewBox="0 0 24 24">
+                                        <path d="M19 12H5"/>
+                                        <path d="m12 19-7-7 7-7"/>
+                                    </svg>
+                                    Atrás
+                                </button>
+                                <button type="button" id="btnCreateAgent" class="btn btn-next">
+                                    <i class="lni lni-rocket"></i>
+                                    Crear Agente
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Creación -->
+    <div id="creatingModal" class="overlay creating-modal">
+        <div class="creating-content">
+            <div class="creating-icon-wrapper">
+                <div class="creating-icon robot-icon">
+                    <i class="lni lni-bot"></i>
+                </div>
+                <div class="pulse-ring"></div>
+                <div class="pulse-ring"></div>
+                <div class="pulse-ring"></div>
+            </div>
+            
+            <h2 class="creating-title">Creando tu Agente</h2>
+            <p class="creating-subtitle">Configurando servidor y desplegando el bot</p>
+            
+            <div class="agent-info">
+                <div class="agent-info-label">Agente</div>
+                <div class="agent-info-value" id="agentNameDisplay">Mi Agente</div>
+            </div>
+            
+            <div class="status-info">
+                <div class="current-status">
+                    <i class="lni lni-cog status-icon" id="currentStatusIcon"></i>
+                    <span class="status-text" id="currentStatusText">Iniciando creación...</span>
+                </div>
+                
+                <div class="status-steps" id="statusStepsContainer">
+                    <div class="status-step active">
+                        <div class="status-step-indicator"></div>
+                        <div class="status-step-text"><i class="lni lni-apartment"></i> Creando servidor</div>
+                    </div>
+                    <div class="status-step">
+                        <div class="status-step-indicator"></div>
+                        <div class="status-step-text"><i class="lni lni-cog"></i> Inicializando sistema</div>
+                    </div>
+                    <div class="status-step">
+                        <div class="status-step-indicator"></div>
+                        <div class="status-step-text"><i class="lni lni-bot"></i> Desplegando bot</div>
+                    </div>
+                    <div class="status-step">
+                        <div class="status-step-indicator"></div>
+                        <div class="status-step-text"><i class="lni lni-checkmark"></i> Completado</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="progress-section">
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="creationProgressBar"></div>
+                </div>
+                
+                <div class="time-info">
+                    <div class="time-item">
+                        <div class="time-label">Transcurrido</div>
+                        <div class="time-value" id="timeElapsed">0:00</div>
+                    </div>
+                    <div class="time-item">
+                        <div class="time-label">Estimado</div>
+                        <div class="time-value" id="timeRemaining">~12:00</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="creating-note">
+                <div class="creating-note-icon"><i class="lni lni-information"></i></div>
+                <p class="creating-note-text">
+                    Este proceso toma 10-15 minutos. Puedes cerrar esta ventana, recibirás una notificación cuando esté listo.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Éxito -->
+    <div id="successModal" class="overlay creating-modal">
+        <div class="creating-content success-modal-content">
+            <div class="success-icon-large"><i class="lni lni-checkmark-circle" style="color: #10b981;"></i></div>
+            <h2 class="success-title">¡Agente Creado!</h2>
+            <p class="success-subtitle">Tu agente de IA está listo y funcionando</p>
+            
+            <div class="agent-details-box">
+                <div class="agent-detail-item">
+                    <span class="agent-detail-label">Nombre:</span>
+                    <span class="agent-detail-value" id="finalAgentName">Mi Agente</span>
+                </div>
+                <div class="agent-detail-item">
+                    <span class="agent-detail-label">Servidor IP:</span>
+                    <span class="agent-detail-value" id="finalAgentIP">0.0.0.0</span>
+                </div>
+                <div class="agent-detail-item">
+                    <span class="agent-detail-label">Estado:</span>
+                    <span class="agent-detail-value" style="color: #10b981;"><i class="lni lni-circle-fill" style="font-size: 8px;"></i> Activo</span>
+                </div>
+            </div>
+            
+            <button type="button" id="btnGoToDashboard" class="btn btn-next" style="width: 100%; justify-content: center;">
+                <i class="lni lni-dashboard"></i>
+                Ir al Dashboard
+            </button>
+            
+            <div class="creating-note" style="margin-top: 20px;">
+                <div class="creating-note-icon"><i class="lni lni-bulb"></i></div>
+                <p class="creating-note-text">
+                    Configura las credenciales de Meta WhatsApp API en el dashboard para comenzar.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/onboarding.js"></script>
+</body>
+</html>
