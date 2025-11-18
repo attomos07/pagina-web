@@ -404,7 +404,6 @@ function nextStep() {
   updateStepDisplay();
   updateProgressBar();
 
-  // Generar campos dinámicos cuando se entra al paso 3
   if (currentStep === 3 && (userBusinessType === 'clinica-dental' || userBusinessType === 'peluqueria')) {
     setTimeout(() => {
       generateDynamicFields();
@@ -1466,7 +1465,7 @@ async function createAgent() {
   document.getElementById('creatingModal').classList.add('show');
   
   let elapsedSeconds = 0;
-  const maxSeconds = 900;
+  const maxSeconds = 1200; // 20 minutos
   
   const timerInterval = setInterval(() => {
     elapsedSeconds++;
@@ -1479,6 +1478,7 @@ async function createAgent() {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify({
         name: agentData.name,
         phoneNumber: agentData.phoneNumber,
@@ -1495,34 +1495,52 @@ async function createAgent() {
       
       document.getElementById('agentNameDisplay').textContent = data.agent.name;
       
+      // Polling para verificar el estado
       const checkInterval = setInterval(async () => {
         try {
-          const statusResp = await fetch(`/api/agents/${agentId}`);
+          const statusResp = await fetch(`/api/agents/${agentId}`, {
+            credentials: 'include'
+          });
+          
+          if (!statusResp.ok) {
+            console.error('Error al verificar estado:', statusResp.status);
+            return;
+          }
+          
           const statusData = await statusResp.json();
           
-          updateCreationStatus(statusData.agent.serverStatus);
+          console.log('Estado actual:', statusData.agent.deployStatus);
           
-          if (statusData.agent.serverStatus === 'running') {
+          // Actualizar UI con el estado correcto
+          updateCreationStatus(statusData.agent.deployStatus);
+          
+          // Verificar si el despliegue está completo
+          if (statusData.agent.deployStatus === 'running') {
             clearInterval(checkInterval);
             clearInterval(timerInterval);
             
+            // Mostrar modal de éxito
             document.getElementById('creatingModal').classList.remove('show');
             document.getElementById('successModal').classList.add('show');
             
             document.getElementById('finalAgentName').textContent = statusData.agent.name;
-            document.getElementById('finalAgentIP').textContent = statusData.agent.serverIp;
             
-          } else if (statusData.agent.serverStatus === 'error') {
+            // Obtener información del usuario para mostrar IP del servidor
+            const userResp = await fetch('/api/me', { credentials: 'include' });
+            const userData = await userResp.json();
+            document.getElementById('finalAgentIP').textContent = userData.user.sharedServerIp || 'N/A';
+            
+          } else if (statusData.agent.deployStatus === 'error') {
             clearInterval(checkInterval);
             clearInterval(timerInterval);
             
             document.getElementById('creatingModal').classList.remove('show');
-            alert('Error al crear el servidor. Por favor contacta a soporte.');
+            alert('Error al crear el agente. Por favor contacta a soporte.');
           }
         } catch (error) {
           console.error('Error verificando estado:', error);
         }
-      }, 5000);
+      }, 5000); // Verificar cada 5 segundos
       
     } else {
       clearInterval(timerInterval);
@@ -1551,7 +1569,7 @@ function updateTimer(elapsed, max) {
   const estimatedSeconds = (max - elapsed) % 60;
   const timeRemainingEl = document.getElementById('timeRemaining');
   if (timeRemainingEl) {
-    timeRemainingEl.textContent = `~${estimatedMinutes}:${estimatedSeconds.toString().padStart(2, '0')} restantes`;
+    timeRemainingEl.textContent = `~${estimatedMinutes}:${estimatedSeconds.toString().padStart(2, '0')}`;
   }
   
   const progressBar = document.getElementById('creationProgressBar');
@@ -1562,18 +1580,28 @@ function updateTimer(elapsed, max) {
 
 function updateCreationStatus(status) {
   const statusMessages = {
+    'pending': {
+      text: 'Preparando creación...',
+      icon: 'lni-hourglass',
+      step: 0
+    },
     'creating': {
-      text: 'Creando servidor en Hetzner...',
+      text: 'Creando infraestructura...',
       icon: 'lni-apartment',
       step: 1
     },
     'provisioning': {
-      text: 'Servidor creado, inicializando...',
+      text: 'Inicializando sistema operativo...',
       icon: 'lni-cog',
       step: 2
     },
+    'initializing': {
+      text: 'Instalando dependencias...',
+      icon: 'lni-package',
+      step: 2
+    },
     'deploying': {
-      text: 'Instalando y configurando el bot...',
+      text: 'Desplegando y configurando bot...',
       icon: 'lni-bot',
       step: 3
     },
@@ -1589,7 +1617,7 @@ function updateCreationStatus(status) {
     }
   };
   
-  const statusInfo = statusMessages[status] || statusMessages['creating'];
+  const statusInfo = statusMessages[status] || statusMessages['pending'];
   
   const statusTextEl = document.getElementById('currentStatusText');
   if (statusTextEl) {
@@ -1606,7 +1634,7 @@ function updateCreationStatus(status) {
 
 function updateStatusSteps(currentStep) {
   const steps = [
-    { icon: 'lni-apartment', text: 'Creando servidor' },
+    { icon: 'lni-apartment', text: 'Creando infraestructura' },
     { icon: 'lni-cog', text: 'Inicializando sistema' },
     { icon: 'lni-bot', text: 'Desplegando bot' },
     { icon: 'lni-checkmark', text: 'Completado' }
