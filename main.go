@@ -130,9 +130,14 @@ func main() {
 		c.HTML(200, "dashboard.html", nil)
 	})
 
-	// My Agents (requiere autenticación) - NUEVA PÁGINA
+	// My Agents (requiere autenticación)
 	router.GET("/my-agents", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "my-agents.html", nil)
+	})
+
+	// Appointments (requiere autenticación) - NUEVA PÁGINA
+	router.GET("/appointments", middleware.AuthRequired(), func(c *gin.Context) {
+		c.HTML(200, "appointments.html", nil)
 	})
 
 	// Login page
