@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/profile.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="profile-layout">
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <div class="header-content">
+                            <h1 class="page-title">
+                                <i class="lni lni-user"></i>
+                                Mi Perfil
+                            </h1>
+                            <p class="page-subtitle">Administra la información de tu negocio</p>
+                        </div>
+                        <button class="btn-save" id="saveProfileBtn" style="display: none;">
+                            <i class="lni lni-checkmark"></i>
+                            <span>Guardar Cambios</span>
+                        </button>
+                    </div>
+
+                    <!-- Profile Content Grid -->
+                    <div class="profile-grid">
+                        <!-- Business Information Card -->
+                        <div class="profile-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-briefcase"></i>
+                                    <h2>Información del Negocio</h2>
+                                </div>
+                                <button class="btn-edit" data-section="business">
+                                    <i class="lni lni-pencil"></i>
+                                </button>
+                            </div>
+                            <div class="card-content">
+                                <div class="info-group">
+                                    <label class="info-label">Nombre del Negocio</label>
+                                    <div class="info-display" id="businessNameDisplay">---</div>
+                                    <input type="text" class="info-input" id="businessNameInput" style="display: none;">
+                                </div>
+
+                                <div class="info-group">
+                                    <label class="info-label">Giro del Negocio</label>
+                                    <div class="info-display" id="businessTypeDisplay">---</div>
+                                    <div class="custom-select-wrapper" id="businessTypeWrapper" style="display: none;">
+                                        <input type="text" 
+                                               class="info-input form-select" 
+                                               id="businessTypeInput" 
+                                               placeholder="Selecciona tu giro"
+                                               readonly>
+                                        <i class="lni lni-chevron-down select-arrow"></i>
+                                        <div class="select-dropdown" id="businessTypeDropdown">
+                                            <div class="select-search-container">
+                                                <i class="lni lni-search-alt search-icon"></i>
+                                                <input type="text" 
+                                                       class="select-search" 
+                                                       id="businessTypeSearch"
+                                                       placeholder="Buscar giro..."
+                                                       autocomplete="off">
+                                            </div>
+                                            <div class="select-options-container" id="businessTypeOptions">
+                                                <div class="select-option" data-value="clinica-dental">
+                                                    <i class="lni lni-hospital"></i>
+                                                    <span>Clínica Dental</span>
+                                                </div>
+                                                <div class="select-option" data-value="peluqueria">
+                                                    <i class="lni lni-cut"></i>
+                                                    <span>Peluquería / Salón de Belleza</span>
+                                                </div>
+                                                <div class="select-option" data-value="restaurante">
+                                                    <i class="lni lni-restaurant"></i>
+                                                    <span>Restaurante</span>
+                                                </div>
+                                                <div class="select-option" data-value="pizzeria">
+                                                    <i class="lni lni-pizza"></i>
+                                                    <span>Pizzería</span>
+                                                </div>
+                                                <div class="select-option" data-value="escuela">
+                                                    <i class="lni lni-graduation"></i>
+                                                    <span>Escuela / Educación</span>
+                                                </div>
+                                                <div class="select-option" data-value="gym">
+                                                    <i class="lni lni-dumbbell"></i>
+                                                    <span>Gimnasio / Fitness</span>
+                                                </div>
+                                                <div class="select-option" data-value="spa">
+                                                    <i class="lni lni-leaf"></i>
+                                                    <span>Spa / Wellness</span>
+                                                </div>
+                                                <div class="select-option" data-value="consultorio">
+                                                    <i class="lni lni-heart-monitor"></i>
+                                                    <span>Consultorio Médico</span>
+                                                </div>
+                                                <div class="select-option" data-value="veterinaria">
+                                                    <i class="lni lni-bug"></i>
+                                                    <span>Veterinaria</span>
+                                                </div>
+                                                <div class="select-option" data-value="hotel">
+                                                    <i class="lni lni-home"></i>
+                                                    <span>Hotel / Hospedaje</span>
+                                                </div>
+                                                <div class="select-option" data-value="tienda">
+                                                    <i class="lni lni-cart"></i>
+                                                    <span>Tienda / Retail</span>
+                                                </div>
+                                                <div class="select-option" data-value="agencia">
+                                                    <i class="lni lni-briefcase"></i>
+                                                    <span>Agencia / Servicios</span>
+                                                </div>
+                                                <div class="select-option" data-value="otro">
+                                                    <i class="lni lni-more"></i>
+                                                    <span>Otro</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="info-group full-width">
+                                    <label class="info-label">Descripción del Negocio</label>
+                                    <div class="info-display" id="descriptionDisplay">---</div>
+                                    <textarea class="info-textarea" id="descriptionInput" rows="4" placeholder="Describe tu negocio..." style="display: none;"></textarea>
+                                </div>
+
+                                <div class="info-group">
+                                    <label class="info-label">Sitio Web</label>
+                                    <div class="info-display" id="websiteDisplay">---</div>
+                                    <input type="url" class="info-input" id="websiteInput" placeholder="https://tusitio.com" style="display: none;">
+                                </div>
+
+                                <div class="info-group">
+                                    <label class="info-label">Email de Contacto</label>
+                                    <div class="info-display" id="emailDisplay">---</div>
+                                    <input type="email" class="info-input" id="emailInput" placeholder="contacto@negocio.com" style="display: none;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Location Information Card -->
+                        <div class="profile-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-map-marker"></i>
+                                    <h2>Ubicación</h2>
+                                </div>
+                                <button class="btn-edit" data-section="location">
+                                    <i class="lni lni-pencil"></i>
+                                </button>
+                            </div>
+                            <div class="card-content">
+                                <div class="info-group full-width">
+                                    <label class="info-label">Dirección Completa</label>
+                                    <div class="info-display" id="addressDisplay">---</div>
+                                    <input type="text" class="info-input" id="addressInput" placeholder="Calle Principal #123" style="display: none;">
+                                </div>
+
+                                <div class="info-group">
+                                    <label class="info-label">Entre Calles</label>
+                                    <div class="info-display" id="betweenStreetsDisplay">---</div>
+                                    <input type="text" class="info-input" id="betweenStreetsInput" placeholder="Av. Uno y Calle Dos" style="display: none;">
+                                </div>
+
+                                <div class="info-group">
+                                    <label class="info-label">Número Exterior / Interior</label>
+                                    <div class="info-display" id="numberDisplay">---</div>
+                                    <input type="text" class="info-input" id="numberInput" placeholder="Ej: 123 Int. A" style="display: none;">
+                                </div>
+
+                                <div class="info-group">
+                                    <label class="info-label">Colonia</label>
+                                    <div class="info-display" id="neighborhoodDisplay">---</div>
+                                    <input type="text" class="info-input" id="neighborhoodInput" placeholder="Nombre de la colonia" style="display: none;">
+                                </div>
+
+                                <div class="info-group">
+                                    <label class="info-label">Ciudad</label>
+                                    <div class="info-display" id="cityDisplay">---</div>
+                                    <input type="text" class="info-input" id="cityInput" placeholder="Ciudad" style="display: none;">
+                                </div>
+
+                                <div class="info-group">
+                                    <label class="info-label">Estado/Provincia</label>
+                                    <div class="info-display" id="stateDisplay">---</div>
+                                    <input type="text" class="info-input" id="stateInput" placeholder="Estado" style="display: none;">
+                                </div>
+
+                                <div class="info-group">
+                                    <label class="info-label">País</label>
+                                    <div class="info-display" id="countryDisplay">---</div>
+                                    <input type="text" class="info-input" id="countryInput" placeholder="País" style="display: none;">
+                                </div>
+
+                                <div class="info-group">
+                                    <label class="info-label">Código Postal</label>
+                                    <div class="info-display" id="postalCodeDisplay">---</div>
+                                    <input type="text" class="info-input" id="postalCodeInput" placeholder="12345" style="display: none;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Social Media Card -->
+                        <div class="profile-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-share-alt"></i>
+                                    <h2>Redes Sociales</h2>
+                                </div>
+                                <button class="btn-edit" data-section="social">
+                                    <i class="lni lni-pencil"></i>
+                                </button>
+                            </div>
+                            <div class="card-content">
+                                <div class="info-group full-width">
+                                    <label class="info-label">
+                                        <i class="lni lni-facebook-filled" style="color: #1877f2;"></i>
+                                        Facebook
+                                    </label>
+                                    <div class="info-display" id="facebookDisplay">---</div>
+                                    <input type="url" class="info-input" id="facebookInput" placeholder="https://facebook.com/tunegocio" style="display: none;">
+                                </div>
+
+                                <div class="info-group full-width">
+                                    <label class="info-label">
+                                        <i class="lni lni-instagram-filled" style="color: #E4405F;"></i>
+                                        Instagram
+                                    </label>
+                                    <div class="info-display" id="instagramDisplay">---</div>
+                                    <input type="url" class="info-input" id="instagramInput" placeholder="https://instagram.com/tunegocio" style="display: none;">
+                                </div>
+
+                                <div class="info-group full-width">
+                                    <label class="info-label">
+                                        <i class="lni lni-twitter-filled" style="color: #1DA1F2;"></i>
+                                        Twitter / X
+                                    </label>
+                                    <div class="info-display" id="twitterDisplay">---</div>
+                                    <input type="url" class="info-input" id="twitterInput" placeholder="https://twitter.com/tunegocio" style="display: none;">
+                                </div>
+
+                                <div class="info-group full-width">
+                                    <label class="info-label">
+                                        <i class="lni lni-linkedin-original" style="color: #0A66C2;"></i>
+                                        LinkedIn
+                                    </label>
+                                    <div class="info-display" id="linkedinDisplay">---</div>
+                                    <input type="url" class="info-input" id="linkedinInput" placeholder="https://linkedin.com/company/tunegocio" style="display: none;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/profile.js"></script>
+</body>
+</html>
