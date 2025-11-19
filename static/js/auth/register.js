@@ -49,16 +49,12 @@ function validateRegisterField(field) {
     clearFieldError(field);
 
     switch (fieldName) {
-        case 'firstName':
-        case 'lastName':
+        case 'businessName':
             if (!value) {
-                errorMessage = 'Este campo es requerido';
+                errorMessage = 'El nombre del negocio es requerido';
                 isValid = false;
             } else if (value.length < 2) {
                 errorMessage = 'Debe tener al menos 2 caracteres';
-                isValid = false;
-            } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) {
-                errorMessage = 'Solo se permiten letras';
                 isValid = false;
             }
             break;
@@ -192,10 +188,10 @@ function initRegisterForm() {
     
     registerForm.addEventListener('submit', handleRegisterSubmit);
     
-    const firstNameField = document.getElementById('firstName');
-    if (firstNameField) {
+    const businessNameField = document.getElementById('businessName');
+    if (businessNameField) {
         setTimeout(() => {
-            firstNameField.focus();
+            businessNameField.focus();
         }, 500);
     }
 }
@@ -208,7 +204,7 @@ async function handleRegisterSubmit(e) {
     
     // Validar todos los campos requeridos
     let isValid = true;
-    const requiredFields = ['firstName', 'lastName', 'email', 'password', 'businessType'];
+    const requiredFields = ['businessName', 'email', 'password', 'businessType'];
     
     requiredFields.forEach(fieldName => {
         const field = form.querySelector(`[name="${fieldName}"]`);
@@ -238,11 +234,9 @@ async function handleRegisterSubmit(e) {
     const businessTypeValue = businessTypeInput.getAttribute('data-value') || businessTypeInput.value;
     
     const data = {
-        firstName: formData.get('firstName'),
-        lastName: formData.get('lastName'),
+        businessName: formData.get('businessName'),
         email: formData.get('email'),
         password: formData.get('password'),
-        company: formData.get('company') || '',
         businessType: businessTypeValue
     };
     
@@ -286,7 +280,7 @@ function handleRegisterSuccess(data) {
     
     trackRegisterEvent('register_success', {
         method: 'email',
-        has_company: !!data.user.company
+        business_type: data.user?.businessType || 'unknown'
     });
     
     // Redirigir al dashboard
@@ -503,13 +497,6 @@ function initAutoFormat() {
             this.value = this.value.replace(/\s/g, '').toLowerCase();
         });
     }
-
-    const nameInputs = document.querySelectorAll('#firstName, #lastName');
-    nameInputs.forEach(input => {
-        input.addEventListener('input', function() {
-            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
-        });
-    });
 }
 
 // ============================================
@@ -861,7 +848,7 @@ window.addEventListener('error', function(e) {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && e.target.classList.contains('form-input')) {
         const form = e.target.closest('form');
-        if (form && e.target.id !== 'company') {
+        if (form && e.target.id !== 'businessName') {
             e.preventDefault();
             form.querySelector('.auth-btn').click();
         }

@@ -258,7 +258,7 @@ body {
 }
 
 /* ============================================
-   SOCIAL LOGIN BUTTONS - LOGIN
+   SOCIAL LOGIN BUTTONS - INLINE VERSION
    ============================================ */
 
 .social-login {
@@ -266,6 +266,13 @@ body {
     flex-direction: column;
     gap: 0.75rem;
     margin-bottom: 1.5rem;
+}
+
+/* NUEVA CLASE PARA BOTONES INLINE */
+.social-login-inline {
+    flex-direction: row;
+    justify-content: center;
+    gap: 1.5rem;
 }
 
 .social-btn {
@@ -284,6 +291,23 @@ body {
     font-size: 0.95rem;
 }
 
+/* BOTONES SOLO CON ICONOS */
+.social-icon-btn {
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    font-size: 1.5rem;
+}
+
+.social-icon-btn svg {
+    width: 28px;
+    height: 28px;
+}
+
+.social-icon-btn i {
+    font-size: 28px;
+}
+
 .social-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
@@ -296,8 +320,11 @@ body {
 
 .google-btn:hover {
     background: var(--google-blue);
-    color: white;
     box-shadow: 0 8px 25px rgba(66, 133, 244, 0.3);
+}
+
+.google-btn:hover svg path {
+    fill: white;
 }
 
 .facebook-btn {
@@ -400,7 +427,7 @@ body {
     opacity: 0.5;
 }
 
-/* Password toggle */
+/* Password toggle - FIX PARA QUE NO DESAPAREZCA Y NO MUESTRE OUTLINE AZUL */
 .password-toggle {
     position: absolute;
     right: 1rem;
@@ -412,11 +439,22 @@ body {
     padding: 0.25rem;
     transition: all 0.3s ease;
     z-index: 2;
+    outline: none !important; /* QUITAR OUTLINE AZUL */
 }
 
 .password-toggle:hover {
     opacity: 1;
     color: var(--primary-cyan);
+}
+
+.password-toggle:focus {
+    outline: none !important; /* QUITAR OUTLINE AZUL AL HACER CLICK */
+    box-shadow: none !important;
+}
+
+.password-toggle:active {
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 /* Form validation */
@@ -697,6 +735,11 @@ body {
     .form-footer {
         font-size: 0.85rem;
     }
+    
+    .social-icon-btn {
+        width: 50px;
+        height: 50px;
+    }
 }
 
 /* ============================================
@@ -709,6 +752,5 @@ html {
 
 button:focus,
 input:focus {
-    outline: 2px solid var(--primary-cyan);
-    outline-offset: 2px;
+    outline: none !important;
 }
