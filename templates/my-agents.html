@@ -41,7 +41,7 @@
                                 </svg>
                                 Mis Agentes
                             </h1>
-                            <p class="page-description">Administra todos tus agentes de IA en un solo lugar</p>
+                            <p class="page-description">Administra todos tus agentes de IA por plataforma</p>
                         </div>
                         <a href="/onboarding" class="btn-primary">
                             <i class="lni lni-plus"></i>
@@ -89,7 +89,7 @@
                     <!-- Empty State -->
                     <div class="empty-state" id="emptyState" style="display: none;">
                         <div class="empty-icon">
-                            <svg class="custom-bot-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <line x1="32" y1="8" x2="32" y2="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
                                 <circle cx="32" cy="6" r="2.5" fill="currentColor"/>
                                 <rect x="18" y="14" width="28" height="24" rx="6" stroke="currentColor" stroke-width="2.5" fill="none"/>
@@ -113,8 +113,24 @@
                         </a>
                     </div>
 
-                    <!-- Agents Grid -->
-                    <div class="agents-grid" id="agentsGrid"></div>
+                    <!-- Agents Table -->
+                    <div class="agents-table-container" id="agentsTableContainer" style="display: none;">
+                        <table class="agents-table">
+                            <thead>
+                                <tr>
+                                    <th>Agente</th>
+                                    <th>Plataforma</th>
+                                    <th>Estado</th>
+                                    <th>Teléfono</th>
+                                    <th>Fecha de Creación</th>
+                                    <th style="width: 100px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="agentsTableBody">
+                                <!-- Rows will be inserted here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,19 +1,28 @@
-// My Agents Page functionality
+// My Agents Page functionality - Table Version
 
 // Inicializar página
 document.addEventListener('DOMContentLoaded', function() {
     loadAgents();
+    
+    // Cerrar dropdown al hacer clic fuera
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.action-btn-menu')) {
+            closeAllDropdowns();
+        }
+    });
 });
 
 // Cargar agentes
 async function loadAgents() {
     const loading = document.getElementById('loading');
     const emptyState = document.getElementById('emptyState');
-    const grid = document.getElementById('agentsGrid');
+    const tableContainer = document.getElementById('agentsTableContainer');
+    const tbody = document.getElementById('agentsTableBody');
     
     loading.style.display = 'block';
     emptyState.style.display = 'none';
-    grid.innerHTML = '';
+    tableContainer.style.display = 'none';
+    tbody.innerHTML = '';
 
     try {
         const response = await fetch('/api/agents');
@@ -27,16 +36,30 @@ async function loadAgents() {
             return;
         }
 
+        // Expandir agentes por plataforma
+        const agentPlatforms = [];
+        data.agents.forEach(agent => {
+            const platforms = agent.platforms || ['whatsapp'];
+            platforms.forEach(platform => {
+                agentPlatforms.push({
+                    ...agent,
+                    currentPlatform: platform
+                });
+            });
+        });
+
         const activeCount = data.agents.filter(a => a.deployStatus === 'running').length;
         const totalCount = data.agents.length;
         const platformsCount = countUniquePlatforms(data.agents);
         
         updateStats(activeCount, totalCount, platformsCount);
 
-        data.agents.forEach(agent => {
-            const card = createAgentCard(agent);
-            grid.appendChild(card);
+        agentPlatforms.forEach(agentPlatform => {
+            const row = createAgentRow(agentPlatform);
+            tbody.appendChild(row);
         });
+
+        tableContainer.style.display = 'block';
 
     } catch (error) {
         console.error('Error loading agents:', error);
@@ -60,243 +83,274 @@ function countUniquePlatforms(agents) {
         if (agent.platforms) {
             agent.platforms.forEach(p => platforms.add(p));
         } else {
-            platforms.add('whatsapp'); // Default
+            platforms.add('whatsapp');
         }
     });
     return platforms.size;
 }
 
-// Crear tarjeta de agente
-function createAgentCard(agent) {
-    const card = document.createElement('div');
-    card.className = 'agent-card';
+// Crear fila de agente
+function createAgentRow(agentPlatform) {
+    const tr = document.createElement('tr');
     
-    const statusClass = agent.deployStatus === 'running' ? 'status-active' : 
-                       agent.deployStatus === 'deploying' ? 'status-pending' :
-                       agent.deployStatus === 'error' ? 'status-error' : 'status-inactive';
+    const statusClass = agentPlatform.deployStatus === 'running' ? 'status-active' : 
+                       agentPlatform.deployStatus === 'deploying' ? 'status-pending' :
+                       agentPlatform.deployStatus === 'error' ? 'status-error' : 'status-inactive';
     
-    const statusText = agent.deployStatus === 'running' ? 'Activo' : 
-                      agent.deployStatus === 'deploying' ? 'Desplegando' :
-                      agent.deployStatus === 'error' ? 'Error' : 'Inactivo';
+    const statusText = agentPlatform.deployStatus === 'running' ? 'Activo' : 
+                      agentPlatform.deployStatus === 'deploying' ? 'Desplegando' :
+                      agentPlatform.deployStatus === 'error' ? 'Error' : 'Inactivo';
     
-    // Obtener plataformas del agente (por defecto WhatsApp si no hay)
-    const platforms = agent.platforms || ['whatsapp'];
-    const platformsHTML = generatePlatformsHTML(platforms);
+    const platformData = getPlatformData(agentPlatform.currentPlatform);
     
-    card.innerHTML = `
-        <div class="agent-header">
-            <div class="agent-title">
-                <h3>${agent.name}</h3>
-                <div class="agent-phone">
-                    <i class="lni lni-phone"></i>
-                    <span>${agent.phoneNumber || 'Sin número'}</span>
+    tr.innerHTML = `
+        <td>
+            <div class="agent-name-cell">
+                <div class="agent-avatar">
+                    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="24" y1="6" x2="24" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="24" cy="5" r="1.5" fill="currentColor"/>
+                        <rect x="14" y="10" width="20" height="16" rx="4" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <circle cx="19" cy="16" r="2" fill="currentColor"/>
+                        <circle cx="29" cy="16" r="2" fill="currentColor"/>
+                        <path d="M 18 21 Q 24 23 30 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    </svg>
+                </div>
+                <div class="agent-info-text">
+                    <span class="agent-name-text">${agentPlatform.name}</span>
+                    <span class="agent-business-type">${agentPlatform.businessType || 'General'}</span>
                 </div>
             </div>
-            <div class="agent-status ${statusClass}">
-                <i class="lni lni-circle-fill" style="font-size: 8px;"></i>
+        </td>
+        <td>
+            <div class="platform-cell">
+                ${generatePlatformIcon(platformData)}
+                <span class="platform-name">${platformData.name}</span>
+            </div>
+        </td>
+        <td>
+            <span class="status-badge ${statusClass}">
+                <i class="lni lni-circle-fill"></i>
                 ${statusText}
+            </span>
+        </td>
+        <td>
+            <div class="phone-number">
+                <i class="lni lni-phone"></i>
+                <span>${agentPlatform.phoneNumber || 'Sin número'}</span>
             </div>
-        </div>
-        
-        <div class="agent-info">
-            <div class="info-item">
-                <span class="info-label">Tipo de Negocio</span>
-                <span class="info-value">${agent.businessType || 'General'}</span>
+        </td>
+        <td>${new Date(agentPlatform.createdAt).toLocaleDateString('es-ES', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+        })}</td>
+        <td>
+            <div class="actions-cell">
+                <button class="action-btn action-btn-view" onclick="viewAgent('${agentPlatform.id}')" title="Ver detalles">
+                    <i class="lni lni-eye"></i>
+                </button>
+                <button class="action-btn action-btn-menu" onclick="toggleDropdown(event, '${agentPlatform.id}', '${agentPlatform.currentPlatform}')" title="Más opciones">
+                    <i class="lni lni-more-alt"></i>
+                    <div class="dropdown-menu" id="dropdown-${agentPlatform.id}-${agentPlatform.currentPlatform}">
+                        <button class="dropdown-item" onclick="editAgentPlatform('${agentPlatform.id}', '${agentPlatform.currentPlatform}', '${agentPlatform.name}')">
+                            <i class="lni lni-pencil"></i>
+                            Editar Configuración
+                        </button>
+                        <button class="dropdown-item" onclick="viewAnalytics('${agentPlatform.id}', '${agentPlatform.currentPlatform}')">
+                            <i class="lni lni-bar-chart"></i>
+                            Ver Analíticas
+                        </button>
+                        <button class="dropdown-item" onclick="duplicatePlatform('${agentPlatform.id}', '${agentPlatform.currentPlatform}')">
+                            <i class="lni lni-files"></i>
+                            Duplicar Configuración
+                        </button>
+                        <button class="dropdown-item dropdown-item-delete" onclick="deletePlatform('${agentPlatform.id}', '${agentPlatform.currentPlatform}', '${agentPlatform.name}')">
+                            <i class="lni lni-trash-can"></i>
+                            Eliminar Plataforma
+                        </button>
+                    </div>
+                </button>
             </div>
-            <div class="info-item">
-                <span class="info-label">Conversaciones</span>
-                <span class="info-value">0</span>
-            </div>
-            <div class="info-item info-item-platforms">
-                <span class="info-label">Plataformas</span>
-                <div class="platforms-container">
-                    ${platformsHTML}
-                </div>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Creado</span>
-                <span class="info-value">${new Date(agent.createdAt).toLocaleDateString()}</span>
-            </div>
-        </div>
-        
-        <div class="agent-actions">
-            <button class="agent-btn agent-btn-view" onclick="viewAgent('${agent.id}')">
-                <i class="lni lni-eye"></i>
-                Ver Detalles
-            </button>
-            <button class="agent-btn agent-btn-add-platform" onclick="addPlatform('${agent.id}')" title="Agregar plataforma">
-                <i class="lni lni-plus"></i>
-                <span>Plataforma</span>
-            </button>
-            <button class="agent-btn agent-btn-delete" onclick="deleteAgent('${agent.id}', '${agent.name}')">
-                <i class="lni lni-trash-can"></i>
-            </button>
-        </div>
+        </td>
     `;
     
-    return card;
+    return tr;
 }
 
-// Generar HTML de plataformas con sus logos
-function generatePlatformsHTML(platforms) {
-    const platformIcons = {
-        'whatsapp': { type: 'icon', icon: 'lni-whatsapp', color: '#25D366', name: 'WhatsApp' },
-        'instagram': { type: 'icon', icon: 'lni-instagram', color: '#E4405F', name: 'Instagram' },
-        'facebook': { type: 'icon', icon: 'lni-facebook-messenger', color: '#0084FF', name: 'Messenger' },
-        'telegram': { type: 'icon', icon: 'lni-telegram', color: '#0088cc', name: 'Telegram' },
-        'wechat': { type: 'icon', icon: 'lni-wechat', color: '#09B83E', name: 'WeChat' },
-        'kakaotalk': { type: 'svg', color: '#FFE812', name: 'KakaoTalk' },
-        'line': { type: 'icon', icon: 'lni-line', color: '#00B900', name: 'Line' }
+// Obtener datos de plataforma
+function getPlatformData(platform) {
+    const platforms = {
+        'whatsapp': { icon: 'lni-whatsapp', color: '#25D366', name: 'WhatsApp' },
+        'instagram': { icon: 'lni-instagram', color: '#E4405F', name: 'Instagram' },
+        'facebook': { icon: 'lni-facebook-messenger', color: '#0084FF', name: 'Messenger' },
+        'telegram': { icon: 'lni-telegram', color: '#0088cc', name: 'Telegram' },
+        'wechat': { icon: 'lni-wechat', color: '#09B83E', name: 'WeChat' },
+        'kakaotalk': { svg: true, color: '#FFE812', name: 'KakaoTalk' },
+        'line': { icon: 'lni-line', color: '#00B900', name: 'Line' }
     };
     
-    return platforms.map(platform => {
-        const platformData = platformIcons[platform.toLowerCase()] || platformIcons['whatsapp'];
-        
-        if (platformData.type === 'svg' && platform.toLowerCase() === 'kakaotalk') {
-            return `
-                <div class="platform-badge" style="background-color: ${platformData.color}15; border-color: ${platformData.color}40;" title="${platformData.name}">
-                    <div class="kakao-icon-badge">
-                        <svg viewBox="0 0 24 24" class="kakao-bubble-badge">
-                            <path d="M12 3C6.48 3 2 6.58 2 11c0 2.91 1.88 5.45 4.68 6.94l-1.19 4.37c-.09.34.23.63.55.49l5.11-2.29c.27.02.55.03.85.03 5.52 0 10-3.58 10-8C22 6.58 17.52 3 12 3z"/>
-                        </svg>
-                        <span class="kakao-text-badge">TALK</span>
-                    </div>
-                </div>
-            `;
-        }
-        
-        return `
-            <div class="platform-badge" style="background-color: ${platformData.color}15; border-color: ${platformData.color}40;" title="${platformData.name}">
-                <i class="lni ${platformData.icon}" style="color: ${platformData.color};"></i>
-            </div>
-        `;
-    }).join('');
+    return platforms[platform.toLowerCase()] || platforms['whatsapp'];
 }
 
-// Funciones de agente
+// Generar icono de plataforma
+function generatePlatformIcon(platformData) {
+    if (platformData.svg && platformData.name === 'KakaoTalk') {
+        return `
+            <div class="platform-icon-wrapper" style="background-color: ${platformData.color}15; border-color: ${platformData.color}40;">
+                <div class="kakao-icon">
+                    <svg viewBox="0 0 24 24" class="kakao-bubble">
+                        <path d="M12 3C6.48 3 2 6.58 2 11c0 2.91 1.88 5.45 4.68 6.94l-1.19 4.37c-.09.34.23.63.55.49l5.11-2.29c.27.02.55.03.85.03 5.52 0 10-3.58 10-8C22 6.58 17.52 3 12 3z"/>
+                    </svg>
+                    <span class="kakao-text">TALK</span>
+                </div>
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="platform-icon-wrapper" style="background-color: ${platformData.color}15; border-color: ${platformData.color}40;">
+            <i class="lni ${platformData.icon}" style="color: ${platformData.color};"></i>
+        </div>
+    `;
+}
+
+// Toggle dropdown
+function toggleDropdown(event, agentId, platform) {
+    event.stopPropagation();
+    
+    const dropdownId = `dropdown-${agentId}-${platform}`;
+    const dropdown = document.getElementById(dropdownId);
+    
+    // Cerrar otros dropdowns
+    closeAllDropdowns();
+    
+    // Toggle actual dropdown
+    if (dropdown) {
+        dropdown.classList.toggle('active');
+    }
+}
+
+// Cerrar todos los dropdowns
+function closeAllDropdowns() {
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        menu.classList.remove('active');
+    });
+}
+
+// Ver agente
 function viewAgent(id) {
     window.location.href = `/agents/${id}`;
 }
 
-async function addPlatform(id) {
-    // Crear modal para seleccionar plataforma
+// Editar configuración de plataforma
+function editAgentPlatform(agentId, platform, agentName) {
+    closeAllDropdowns();
+    
     const modal = document.createElement('div');
-    modal.className = 'platform-modal';
+    modal.className = 'edit-modal';
     modal.innerHTML = `
-        <div class="platform-modal-overlay" onclick="closePlatformModal()"></div>
-        <div class="platform-modal-content">
-            <div class="platform-modal-header">
-                <h3>Agregar Plataforma</h3>
-                <button class="platform-modal-close" onclick="closePlatformModal()">
+        <div class="edit-modal-overlay" onclick="closeEditModal()"></div>
+        <div class="edit-modal-content">
+            <div class="edit-modal-header">
+                <h3>Editar ${getPlatformData(platform).name}</h3>
+                <button class="edit-modal-close" onclick="closeEditModal()">
                     <i class="lni lni-close"></i>
                 </button>
             </div>
-            <div class="platform-modal-body">
-                <p class="platform-modal-description">Selecciona la plataforma donde quieres activar este agente:</p>
-                <div class="platform-options">
-                    <div class="platform-option" onclick="selectPlatform('${id}', 'whatsapp')">
-                        <div class="platform-option-icon" style="background-color: #25D36615; border-color: #25D36640;">
-                            <i class="lni lni-whatsapp" style="color: #25D366;"></i>
-                        </div>
-                        <span class="platform-option-name">WhatsApp</span>
-                    </div>
-                    <div class="platform-option" onclick="selectPlatform('${id}', 'instagram')">
-                        <div class="platform-option-icon" style="background-color: #E4405F15; border-color: #E4405F40;">
-                            <i class="lni lni-instagram" style="color: #E4405F;"></i>
-                        </div>
-                        <span class="platform-option-name">Instagram</span>
-                    </div>
-                    <div class="platform-option" onclick="selectPlatform('${id}', 'facebook')">
-                        <div class="platform-option-icon" style="background-color: #0084FF15; border-color: #0084FF40;">
-                            <i class="lni lni-facebook-messenger" style="color: #0084FF;"></i>
-                        </div>
-                        <span class="platform-option-name">Messenger</span>
-                    </div>
-                    <div class="platform-option" onclick="selectPlatform('${id}', 'telegram')">
-                        <div class="platform-option-icon" style="background-color: #0088cc15; border-color: #0088cc40;">
-                            <i class="lni lni-telegram" style="color: #0088cc;"></i>
-                        </div>
-                        <span class="platform-option-name">Telegram</span>
-                    </div>
-                    <div class="platform-option" onclick="selectPlatform('${id}', 'wechat')">
-                        <div class="platform-option-icon" style="background-color: #09B83E15; border-color: #09B83E40;">
-                            <i class="lni lni-wechat" style="color: #09B83E;"></i>
-                        </div>
-                        <span class="platform-option-name">WeChat</span>
-                    </div>
-                    <div class="platform-option" onclick="selectPlatform('${id}', 'kakaotalk')">
-                        <div class="platform-option-icon" style="background-color: #FEE50015; border-color: #FEE50040;">
-                            <div class="kakao-icon-dashboard">
-                                <svg viewBox="0 0 24 24" class="kakao-bubble-dashboard">
-                                    <path d="M12 3C6.48 3 2 6.58 2 11c0 2.91 1.88 5.45 4.68 6.94l-1.19 4.37c-.09.34.23.63.55.49l5.11-2.29c.27.02.55.03.85.03 5.52 0 10-3.58 10-8C22 6.58 17.52 3 12 3z"/>
-                                </svg>
-                                <span class="kakao-text-dashboard">TALK</span>
-                            </div>
-                        </div>
-                        <span class="platform-option-name">KakaoTalk</span>
-                    </div>
-                    <div class="platform-option" onclick="selectPlatform('${id}', 'line')">
-                        <div class="platform-option-icon" style="background-color: #00B90015; border-color: #00B90040;">
-                            <i class="lni lni-line" style="color: #00B900;"></i>
-                        </div>
-                        <span class="platform-option-name">Line</span>
-                    </div>
+            <form class="edit-form" onsubmit="saveAgentPlatformConfig(event, '${agentId}', '${platform}')">
+                <div class="form-group">
+                    <label class="form-label">Nombre del Agente</label>
+                    <input type="text" class="form-input" value="${agentName}" disabled>
                 </div>
-            </div>
+                <div class="form-group">
+                    <label class="form-label">Mensaje de Bienvenida</label>
+                    <textarea class="form-textarea" name="welcomeMessage" placeholder="Escribe el mensaje de bienvenida..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Número de Contacto</label>
+                    <input type="text" class="form-input" name="phoneNumber" placeholder="+52 123 456 7890">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Horario de Atención</label>
+                    <input type="text" class="form-input" name="schedule" placeholder="Lun-Vie 9:00-18:00">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="form-btn form-btn-cancel" onclick="closeEditModal()">
+                        <i class="lni lni-close"></i>
+                        Cancelar
+                    </button>
+                    <button type="submit" class="form-btn form-btn-save">
+                        <i class="lni lni-checkmark"></i>
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
         </div>
     `;
     document.body.appendChild(modal);
     setTimeout(() => modal.classList.add('active'), 10);
 }
 
-function closePlatformModal() {
-    const modal = document.querySelector('.platform-modal');
+// Cerrar modal de edición
+function closeEditModal() {
+    const modal = document.querySelector('.edit-modal');
     if (modal) {
         modal.classList.remove('active');
         setTimeout(() => modal.remove(), 300);
     }
 }
 
-async function selectPlatform(agentId, platform) {
+// Guardar configuración
+async function saveAgentPlatformConfig(event, agentId, platform) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const config = {
+        platform: platform,
+        welcomeMessage: formData.get('welcomeMessage'),
+        phoneNumber: formData.get('phoneNumber'),
+        schedule: formData.get('schedule')
+    };
+    
     try {
-        const response = await fetch(`/api/agents/${agentId}/platforms`, {
-            method: 'POST',
+        const response = await fetch(`/api/agents/${agentId}/platforms/${platform}`, {
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ platform })
+            body: JSON.stringify(config)
         });
         
         if (response.ok) {
-            closePlatformModal();
+            closeEditModal();
+            showNotification('Configuración actualizada exitosamente', 'success');
             loadAgents();
-            showNotification('Plataforma agregada exitosamente', 'success');
         } else {
-            showNotification('Error al agregar la plataforma', 'error');
+            showNotification('Error al actualizar la configuración', 'error');
         }
     } catch (error) {
-        console.error('Error adding platform:', error);
-        showNotification('Error al agregar la plataforma', 'error');
+        console.error('Error updating config:', error);
+        showNotification('Error al actualizar la configuración', 'error');
     }
 }
 
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <i class="lni lni-${type === 'success' ? 'checkmark-circle' : 'warning'}"></i>
-        <span>${message}</span>
-    `;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.classList.add('active'), 10);
-    setTimeout(() => {
-        notification.classList.remove('active');
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
+// Ver analíticas
+function viewAnalytics(agentId, platform) {
+    closeAllDropdowns();
+    showNotification(`Analíticas de ${getPlatformData(platform).name} próximamente`, 'info');
 }
 
-async function deleteAgent(id, name) {
-    // Crear modal de confirmación
+// Duplicar plataforma
+function duplicatePlatform(agentId, platform) {
+    closeAllDropdowns();
+    showNotification(`Función de duplicar próximamente`, 'info');
+}
+
+// Eliminar plataforma
+function deletePlatform(agentId, platform, agentName) {
+    closeAllDropdowns();
+    
     const modal = document.createElement('div');
     modal.className = 'delete-modal';
     modal.innerHTML = `
@@ -306,18 +360,19 @@ async function deleteAgent(id, name) {
                 <div class="delete-modal-icon">
                     <i class="lni lni-warning"></i>
                 </div>
-                <h3>¿Eliminar Agente?</h3>
+                <h3>¿Eliminar Plataforma?</h3>
             </div>
             <p class="delete-modal-description">
-                ¿Estás seguro de que deseas eliminar <span class="delete-modal-agent-name">"${name}"</span>? 
-                Esta acción no se puede deshacer y se perderán todos los datos asociados.
+                ¿Estás seguro de que deseas eliminar <span class="delete-modal-agent-name">${getPlatformData(platform).name}</span> 
+                de <span class="delete-modal-agent-name">"${agentName}"</span>? 
+                Esta acción no se puede deshacer.
             </p>
             <div class="delete-modal-actions">
                 <button class="delete-modal-btn delete-modal-btn-cancel" onclick="closeDeleteModal()">
                     <i class="lni lni-close"></i>
                     Cancelar
                 </button>
-                <button class="delete-modal-btn delete-modal-btn-confirm" onclick="confirmDeleteAgent('${id}')">
+                <button class="delete-modal-btn delete-modal-btn-confirm" onclick="confirmDeletePlatform('${agentId}', '${platform}')">
                     <i class="lni lni-trash-can"></i>
                     Eliminar
                 </button>
@@ -328,6 +383,7 @@ async function deleteAgent(id, name) {
     setTimeout(() => modal.classList.add('active'), 10);
 }
 
+// Cerrar modal de eliminación
 function closeDeleteModal() {
     const modal = document.querySelector('.delete-modal');
     if (modal) {
@@ -336,21 +392,38 @@ function closeDeleteModal() {
     }
 }
 
-async function confirmDeleteAgent(id) {
+// Confirmar eliminación
+async function confirmDeletePlatform(agentId, platform) {
     try {
-        const response = await fetch(`/api/agents/${id}`, {
+        const response = await fetch(`/api/agents/${agentId}/platforms/${platform}`, {
             method: 'DELETE'
         });
         
         if (response.ok) {
             closeDeleteModal();
-            showNotification('Agente eliminado exitosamente', 'success');
+            showNotification('Plataforma eliminada exitosamente', 'success');
             loadAgents();
         } else {
-            showNotification('Error al eliminar el agente', 'error');
+            showNotification('Error al eliminar la plataforma', 'error');
         }
     } catch (error) {
-        console.error('Error deleting agent:', error);
-        showNotification('Error al eliminar el agente', 'error');
+        console.error('Error deleting platform:', error);
+        showNotification('Error al eliminar la plataforma', 'error');
     }
+}
+
+// Mostrar notificación
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <i class="lni lni-${type === 'success' ? 'checkmark-circle' : type === 'error' ? 'warning' : 'information'}"></i>
+        <span>${message}</span>
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.classList.add('active'), 10);
+    setTimeout(() => {
+        notification.classList.remove('active');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
