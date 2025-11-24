@@ -132,7 +132,7 @@ body {
     width: auto;
 }
 
-/* Stats Cards */
+/* Stats Cards - Circular Ring with Glow Animation */
 .agents-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -150,6 +150,24 @@ body {
     align-items: center;
     gap: 1.5rem;
     transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.03) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.stat-card:hover::before {
+    opacity: 1;
 }
 
 .stat-card:hover {
@@ -158,23 +176,75 @@ body {
 }
 
 .stat-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 100px;
+    height: 100px;
+    position: relative;
     flex-shrink: 0;
 }
 
-.stat-icon i {
+/* Circular Ring SVG - Complete Circle with Neon Glow */
+.stat-icon svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.stat-icon circle {
+    fill: none;
+    stroke-width: 6;
+    stroke-linecap: round;
+}
+
+.stat-icon .circle-bg {
+    stroke: #e5e7eb;
+    opacity: 0.3;
+}
+
+.stat-icon .circle-progress {
+    stroke: url(#gradient);
+    stroke-dasharray: 283;
+    stroke-dashoffset: 0;
+    filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.8)) 
+            drop-shadow(0 0 12px rgba(6, 182, 212, 0.6)) 
+            drop-shadow(0 0 18px rgba(6, 182, 212, 0.4));
+    animation: neon-pulse 2s ease-in-out infinite;
+}
+
+@keyframes neon-pulse {
+    0%, 100% {
+        filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.8)) 
+                drop-shadow(0 0 12px rgba(6, 182, 212, 0.6)) 
+                drop-shadow(0 0 18px rgba(6, 182, 212, 0.4));
+        opacity: 1;
+    }
+    50% {
+        filter: drop-shadow(0 0 10px rgba(6, 182, 212, 1)) 
+                drop-shadow(0 0 20px rgba(6, 182, 212, 0.8)) 
+                drop-shadow(0 0 30px rgba(6, 182, 212, 0.6))
+                drop-shadow(0 0 40px rgba(6, 182, 212, 0.4));
+        opacity: 0.95;
+    }
+}
+
+/* Center Icon */
+.stat-icon-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.stat-icon-content i {
     font-size: 32px;
     color: #06b6d4;
+    display: block;
 }
 
 .stat-content {
     flex: 1;
+    position: relative;
+    z-index: 1;
 }
 
 .stat-value {
@@ -239,7 +309,7 @@ body {
     font-size: 0.95rem;
 }
 
-/* Agent Name Cell */
+/* Agent Name Cell - Circular Avatar */
 .agent-name-cell {
     display: flex;
     align-items: center;
@@ -247,20 +317,21 @@ body {
 }
 
 .agent-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
     background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     box-shadow: 0 2px 8px rgba(6, 182, 212, 0.15);
+    border: 2px solid white;
 }
 
 .agent-avatar svg {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     color: #06b6d4;
 }
 
@@ -377,6 +448,7 @@ body {
     transition: all 0.2s ease;
     background: #f3f4f6;
     color: #6b7280;
+    position: relative;
 }
 
 .action-btn:hover {
@@ -410,18 +482,19 @@ body {
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
     border: 1px solid #e5e7eb;
-    min-width: 200px;
+    min-width: 220px;
     z-index: 1000;
     opacity: 0;
+    visibility: hidden;
     transform: translateY(-10px);
-    pointer-events: none;
     transition: all 0.2s ease;
+    overflow: hidden;
 }
 
 .dropdown-menu.active {
     opacity: 1;
+    visibility: visible;
     transform: translateY(0);
-    pointer-events: all;
 }
 
 .dropdown-item {
@@ -438,6 +511,11 @@ body {
     font-size: 0.95rem;
     font-weight: 500;
     color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
 }
 
 .dropdown-item:first-child {

@@ -102,6 +102,7 @@ function createAgentRow(agentPlatform) {
                       agentPlatform.deployStatus === 'error' ? 'Error' : 'Inactivo';
     
     const platformData = getPlatformData(agentPlatform.currentPlatform);
+    const dropdownId = `dropdown-${agentPlatform.id}-${agentPlatform.currentPlatform}`;
     
     tr.innerHTML = `
         <td>
@@ -147,33 +148,74 @@ function createAgentRow(agentPlatform) {
         })}</td>
         <td>
             <div class="actions-cell">
-                <button class="action-btn action-btn-view" onclick="viewAgent('${agentPlatform.id}')" title="Ver detalles">
+                <button class="action-btn action-btn-view" title="Ver detalles">
                     <i class="lni lni-eye"></i>
                 </button>
-                <button class="action-btn action-btn-menu" onclick="toggleDropdown(event, '${agentPlatform.id}', '${agentPlatform.currentPlatform}')" title="Más opciones">
-                    <i class="lni lni-more-alt"></i>
-                    <div class="dropdown-menu" id="dropdown-${agentPlatform.id}-${agentPlatform.currentPlatform}">
-                        <button class="dropdown-item" onclick="editAgentPlatform('${agentPlatform.id}', '${agentPlatform.currentPlatform}', '${agentPlatform.name}')">
+                <div style="position: relative;">
+                    <button class="action-btn action-btn-menu" data-dropdown="${dropdownId}" title="Más opciones">
+                        <i class="lni lni-more-alt"></i>
+                    </button>
+                    <div class="dropdown-menu" id="${dropdownId}">
+                        <button class="dropdown-item" data-action="edit">
                             <i class="lni lni-pencil"></i>
                             Editar Configuración
                         </button>
-                        <button class="dropdown-item" onclick="viewAnalytics('${agentPlatform.id}', '${agentPlatform.currentPlatform}')">
+                        <button class="dropdown-item" data-action="analytics">
                             <i class="lni lni-bar-chart"></i>
                             Ver Analíticas
                         </button>
-                        <button class="dropdown-item" onclick="duplicatePlatform('${agentPlatform.id}', '${agentPlatform.currentPlatform}')">
+                        <button class="dropdown-item" data-action="duplicate">
                             <i class="lni lni-files"></i>
                             Duplicar Configuración
                         </button>
-                        <button class="dropdown-item dropdown-item-delete" onclick="deletePlatform('${agentPlatform.id}', '${agentPlatform.currentPlatform}', '${agentPlatform.name}')">
+                        <button class="dropdown-item dropdown-item-delete" data-action="delete">
                             <i class="lni lni-trash-can"></i>
                             Eliminar Plataforma
                         </button>
                     </div>
-                </button>
+                </div>
             </div>
         </td>
     `;
+    
+    // Agregar event listeners después de crear el elemento
+    const viewBtn = tr.querySelector('.action-btn-view');
+    viewBtn.addEventListener('click', () => viewAgent(agentPlatform.id));
+    
+    const menuBtn = tr.querySelector('.action-btn-menu');
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dropdown = document.getElementById(dropdownId);
+        closeAllDropdowns();
+        if (dropdown) {
+            dropdown.classList.add('active');
+        }
+    });
+    
+    // Event listeners para las opciones del dropdown
+    const editBtn = tr.querySelector('[data-action="edit"]');
+    editBtn.addEventListener('click', () => {
+        closeAllDropdowns();
+        editAgentPlatform(agentPlatform.id, agentPlatform.currentPlatform, agentPlatform.name);
+    });
+    
+    const analyticsBtn = tr.querySelector('[data-action="analytics"]');
+    analyticsBtn.addEventListener('click', () => {
+        closeAllDropdowns();
+        viewAnalytics(agentPlatform.id, agentPlatform.currentPlatform);
+    });
+    
+    const duplicateBtn = tr.querySelector('[data-action="duplicate"]');
+    duplicateBtn.addEventListener('click', () => {
+        closeAllDropdowns();
+        duplicatePlatform(agentPlatform.id, agentPlatform.currentPlatform);
+    });
+    
+    const deleteBtn = tr.querySelector('[data-action="delete"]');
+    deleteBtn.addEventListener('click', () => {
+        closeAllDropdowns();
+        deletePlatform(agentPlatform.id, agentPlatform.currentPlatform, agentPlatform.name);
+    });
     
     return tr;
 }
@@ -213,22 +255,6 @@ function generatePlatformIcon(platformData) {
             <i class="lni ${platformData.icon}" style="color: ${platformData.color};"></i>
         </div>
     `;
-}
-
-// Toggle dropdown
-function toggleDropdown(event, agentId, platform) {
-    event.stopPropagation();
-    
-    const dropdownId = `dropdown-${agentId}-${platform}`;
-    const dropdown = document.getElementById(dropdownId);
-    
-    // Cerrar otros dropdowns
-    closeAllDropdowns();
-    
-    // Toggle actual dropdown
-    if (dropdown) {
-        dropdown.classList.toggle('active');
-    }
 }
 
 // Cerrar todos los dropdowns
