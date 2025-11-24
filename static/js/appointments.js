@@ -53,16 +53,6 @@ function setupEventListeners() {
         renderAppointments();
     });
 
-    // Sync button
-    document.getElementById('syncBtn').addEventListener('click', async function() {
-        this.disabled = true;
-        this.innerHTML = '<i class="lni lni-spinner"></i><span>Sincronizando...</span>';
-        await loadAppointments();
-        this.disabled = false;
-        this.innerHTML = '<i class="lni lni-reload"></i><span>Sincronizar</span>';
-        showNotification('Citas sincronizadas correctamente', 'success');
-    });
-
     // Create appointment button
     document.getElementById('createAppointmentBtn').addEventListener('click', function() {
         showNotification('Función de crear cita próximamente', 'info');
@@ -78,6 +68,12 @@ function setupEventListeners() {
     
     if (nextMonth) {
         nextMonth.addEventListener('click', () => changeMonth(1));
+    }
+
+    // Modal overlay close
+    const modalOverlay = document.querySelector('.modal-overlay');
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', closeAppointmentModal);
     }
 }
 
@@ -214,7 +210,8 @@ function filterAppointments() {
     if (currentFilters.search) {
         filtered = filtered.filter(a => 
             a.client.toLowerCase().includes(currentFilters.search) ||
-            a.service.toLowerCase().includes(currentFilters.search)
+            a.service.toLowerCase().includes(currentFilters.search) ||
+            a.date.includes(currentFilters.search)
         );
     }
     
@@ -477,6 +474,11 @@ function renderCalendar() {
         
         if (dayAppointments.length > 0) {
             dayCell.classList.add('has-appointments');
+            
+            // Click handler para mostrar citas del día
+            dayCell.onclick = () => {
+                showDayAppointments(dateStr, dayAppointments);
+            };
         }
         
         dayCell.innerHTML = `
@@ -484,20 +486,75 @@ function renderCalendar() {
             ${dayAppointments.length > 0 ? `<div class="calendar-day-count">${dayAppointments.length}</div>` : ''}
         `;
         
-        dayCell.onclick = () => {
-            if (dayAppointments.length > 0) {
-                currentFilters.date = 'all';
-                currentFilters.search = dateStr;
-                currentView = 'list';
-                toggleView();
-                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-                document.querySelector('[data-view="list"]').classList.add('active');
-                renderAppointments();
-            }
-        };
-        
         calendarGrid.appendChild(dayCell);
     }
+}
+
+function showDayAppointments(dateStr, dayAppointments) {
+    if (dayAppointments.length === 0) return;
+    
+    const modal = document.getElementById('appointmentModal');
+    const modalBody = document.getElementById('modalBody');
+    const modalTitle = document.getElementById('modalTitle');
+    
+    const date = new Date(dateStr);
+    const formattedDate = date.toLocaleDateString('es-MX', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    
+    modalTitle.textContent = `Citas del ${formattedDate}`;
+    
+    let appointmentsHtml = `
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+    `;
+    
+    dayAppointments.forEach(appointment => {
+        const agent = agents.find(a => a.id === appointment.agentId);
+        const agentName = agent ? agent.name : 'Agente desconocido';
+        
+        appointmentsHtml += `
+            <div style="padding: 1.5rem; background: #f9fafb; border-radius: 12px; border: 2px solid #e5e7eb; cursor: pointer; transition: all 0.3s ease;" 
+                 onclick="closeAppointmentModal(); setTimeout(() => showAppointmentDetails(${JSON.stringify(appointment).replace(/"/g, '&quot;')}), 100);"
+                 onmouseover="this.style.borderColor='#06b6d4'; this.style.background='#ffffff';"
+                 onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='#f9fafb';">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                    <div>
+                        <div style="font-size: 1.125rem; font-weight: 700; color: #1a1a1a; margin-bottom: 0.25rem;">
+                            <i class="lni lni-user"></i> ${appointment.client}
+                        </div>
+                        <div style="font-size: 0.875rem; color: #6b7280; font-weight: 600;">
+                            ${appointment.service}
+                        </div>
+                    </div>
+                    <span class="appointment-status status-${appointment.status}">
+                        ${getStatusText(appointment.status)}
+                    </span>
+                </div>
+                <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.875rem; color: #374151;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="lni lni-clock" style="color: #06b6d4;"></i>
+                        <span>${appointment.time}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="lni lni-timer" style="color: #06b6d4;"></i>
+                        <span>${appointment.duration} min</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="lni lni-phone" style="color: #06b6d4;"></i>
+                        <span>${appointment.phone}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    appointmentsHtml += `</div>`;
+    
+    modalBody.innerHTML = appointmentsHtml;
+    modal.classList.add('active');
 }
 
 function changeMonth(delta) {

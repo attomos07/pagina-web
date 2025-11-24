@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="/static/css/appointments.css">
 </head>
 <body>
+    <!-- Decorative Rings -->
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
     <div class="app-container">
         <!-- Sidebar -->
         {{template "sidebar.html" .}}
@@ -30,10 +38,6 @@
                             <p>Gestiona todas tus citas agendadas</p>
                         </div>
                         <div class="header-actions">
-                            <button class="btn-secondary" id="syncBtn">
-                                <i class="lni lni-reload"></i>
-                                <span>Sincronizar</span>
-                            </button>
                             <button class="btn-primary" id="createAppointmentBtn">
                                 <i class="lni lni-plus"></i>
                                 <span>Nueva Cita</span>
@@ -44,7 +48,7 @@
                     <!-- Stats Cards -->
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);">
+                            <div class="stat-icon cyan">
                                 <i class="lni lni-calendar"></i>
                             </div>
                             <div class="stat-info">
@@ -54,7 +58,7 @@
                         </div>
 
                         <div class="stat-card">
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                            <div class="stat-icon green">
                                 <i class="lni lni-checkmark-circle"></i>
                             </div>
                             <div class="stat-info">
@@ -64,7 +68,7 @@
                         </div>
 
                         <div class="stat-card">
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                            <div class="stat-icon orange">
                                 <i class="lni lni-timer"></i>
                             </div>
                             <div class="stat-info">
@@ -74,7 +78,7 @@
                         </div>
 
                         <div class="stat-card">
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                            <div class="stat-icon purple">
                                 <i class="lni lni-users"></i>
                             </div>
                             <div class="stat-info">
