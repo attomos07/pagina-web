@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     initProfileData();
     initCustomSelect();
+    initLocationDropdowns();
     initSchedule();
     initHolidays();
     initSaveButton();
@@ -15,11 +16,51 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================
+// DATA COLLECTIONS
+// ============================================
+
+const COUNTRIES = [
+    { value: 'mexico', name: 'México', icon: 'lni-flag-mx' },
+    { value: 'usa', name: 'Estados Unidos', icon: 'lni-flag-us' },
+    { value: 'canada', name: 'Canadá', icon: 'lni-flag-ca' },
+    { value: 'spain', name: 'España', icon: 'lni-flag-es' },
+    { value: 'argentina', name: 'Argentina', icon: 'lni-flag-ar' }
+];
+
+const STATES_MEXICO = [
+    'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
+    'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima', 'Durango', 'Guanajuato',
+    'Guerrero', 'Hidalgo', 'Jalisco', 'México', 'Michoacán', 'Morelos', 'Nayarit',
+    'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí',
+    'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas'
+];
+
+const CITIES_SONORA = [
+    'Hermosillo', 'Ciudad Obregón', 'Nogales', 'San Luis Río Colorado', 'Navojoa',
+    'Guaymas', 'Empalme', 'Agua Prieta', 'Caborca', 'Cananea', 'Puerto Peñasco',
+    'Huatabampo', 'Etchojoa', 'Magdalena', 'Santa Ana'
+];
+
+const MONTHS = [
+    { value: '01', name: 'Enero' },
+    { value: '02', name: 'Febrero' },
+    { value: '03', name: 'Marzo' },
+    { value: '04', name: 'Abril' },
+    { value: '05', name: 'Mayo' },
+    { value: '06', name: 'Junio' },
+    { value: '07', name: 'Julio' },
+    { value: '08', name: 'Agosto' },
+    { value: '09', name: 'Septiembre' },
+    { value: '10', name: 'Octubre' },
+    { value: '11', name: 'Noviembre' },
+    { value: '12', name: 'Diciembre' }
+];
+
+// ============================================
 // LOAD PROFILE DATA
 // ============================================
 
 function initProfileData() {
-    // Mock data - En producción esto vendría del backend
     const mockProfile = {
         business: {
             name: '',
@@ -57,27 +98,16 @@ function initProfileData() {
         }
     };
 
-    // Load business data
     setInputValue('businessNameInput', mockProfile.business.name);
     setInputValue('businessTypeInput', mockProfile.business.typeName);
     setInputValue('descriptionInput', mockProfile.business.description);
     setInputValue('websiteInput', mockProfile.business.website);
     setInputValue('emailInput', mockProfile.business.email);
-
-    // Load location data
     setInputValue('addressInput', mockProfile.location.address);
     setInputValue('betweenStreetsInput', mockProfile.location.betweenStreets);
     setInputValue('numberInput', mockProfile.location.number);
     setInputValue('neighborhoodInput', mockProfile.location.neighborhood);
-    setInputValue('cityInput', mockProfile.location.city);
-    setInputValue('stateInput', mockProfile.location.state);
-    setInputValue('countryInput', mockProfile.location.country);
     setInputValue('postalCodeInput', mockProfile.location.postalCode);
-
-    // Load closed days
-    setInputValue('closedDaysInput', mockProfile.closedDays);
-
-    // Load social data
     setInputValue('facebookInput', mockProfile.social.facebook);
     setInputValue('instagramInput', mockProfile.social.instagram);
     setInputValue('twitterInput', mockProfile.social.twitter);
@@ -198,6 +228,150 @@ function initCustomSelect() {
     }
 
     console.log('🎯 Custom select inicializado');
+}
+
+// ============================================
+// LOCATION DROPDOWNS (Country, State, City)
+// ============================================
+
+function initLocationDropdowns() {
+    createLocationDropdown('countryInput', COUNTRIES, 'Selecciona un país');
+    createLocationDropdown('stateInput', STATES_MEXICO.map(s => ({ value: s.toLowerCase().replace(/\s+/g, '-'), name: s })), 'Selecciona un estado');
+    createLocationDropdown('cityInput', CITIES_SONORA.map(c => ({ value: c.toLowerCase().replace(/\s+/g, '-'), name: c })), 'Selecciona una ciudad');
+}
+
+function createLocationDropdown(inputId, options, placeholder) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'custom-select-wrapper';
+    wrapper.id = `${inputId}Wrapper`;
+
+    const displayInput = document.createElement('input');
+    displayInput.type = 'text';
+    displayInput.className = 'info-input form-select';
+    displayInput.id = `${inputId}Display`;
+    displayInput.placeholder = placeholder;
+    displayInput.readOnly = true;
+    displayInput.value = input.value;
+
+    const arrow = document.createElement('i');
+    arrow.className = 'lni lni-chevron-down select-arrow';
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'select-dropdown';
+
+    const searchContainer = document.createElement('div');
+    searchContainer.className = 'select-search-container';
+    searchContainer.innerHTML = `
+        <i class="lni lni-search-alt search-icon"></i>
+        <input type="text" class="select-search" placeholder="Buscar..." autocomplete="off">
+    `;
+
+    const optionsContainer = document.createElement('div');
+    optionsContainer.className = 'select-options-container';
+
+    options.forEach(opt => {
+        const option = document.createElement('div');
+        option.className = 'select-option';
+        option.setAttribute('data-value', opt.value);
+        option.innerHTML = `
+            ${opt.icon ? `<i class="lni ${opt.icon}"></i>` : '<i class="lni lni-map-marker"></i>'}
+            <span>${opt.name}</span>
+        `;
+        optionsContainer.appendChild(option);
+    });
+
+    dropdown.appendChild(searchContainer);
+    dropdown.appendChild(optionsContainer);
+    wrapper.appendChild(displayInput);
+    wrapper.appendChild(arrow);
+    wrapper.appendChild(dropdown);
+
+    input.parentNode.insertBefore(wrapper, input);
+    input.style.display = 'none';
+
+    const searchInput = searchContainer.querySelector('.select-search');
+    const selectOptions = optionsContainer.querySelectorAll('.select-option');
+
+    displayInput.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleLocationDropdown(wrapper, searchInput);
+    });
+
+    searchInput.addEventListener('input', function() {
+        filterLocationOptions(this.value, selectOptions);
+    });
+
+    searchInput.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+
+    selectOptions.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.stopPropagation();
+            selectLocationOption(this, displayInput, input, wrapper, selectOptions);
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) {
+            closeLocationDropdown(wrapper);
+        }
+    });
+}
+
+function toggleLocationDropdown(wrapper, searchInput) {
+    const isActive = wrapper.classList.contains('active');
+    
+    document.querySelectorAll('.custom-select-wrapper.active').forEach(w => {
+        if (w !== wrapper) {
+            w.classList.remove('active');
+        }
+    });
+    
+    if (isActive) {
+        closeLocationDropdown(wrapper);
+    } else {
+        wrapper.classList.add('active');
+        setTimeout(() => searchInput.focus(), 100);
+        searchInput.value = '';
+        const options = wrapper.querySelectorAll('.select-option');
+        options.forEach(opt => opt.classList.remove('hidden'));
+    }
+}
+
+function closeLocationDropdown(wrapper) {
+    wrapper.classList.remove('active');
+    const searchInput = wrapper.querySelector('.select-search');
+    if (searchInput) searchInput.value = '';
+}
+
+function filterLocationOptions(searchTerm, options) {
+    const term = searchTerm.toLowerCase().trim();
+    options.forEach(option => {
+        const text = option.querySelector('span')?.textContent.toLowerCase() || '';
+        if (text.includes(term)) {
+            option.classList.remove('hidden');
+        } else {
+            option.classList.add('hidden');
+        }
+    });
+}
+
+function selectLocationOption(option, displayInput, hiddenInput, wrapper, allOptions) {
+    const value = option.getAttribute('data-value');
+    const text = option.querySelector('span')?.textContent;
+
+    displayInput.value = text;
+    hiddenInput.value = text;
+    hiddenInput.setAttribute('data-value', value);
+
+    allOptions.forEach(opt => opt.classList.remove('selected'));
+    option.classList.add('selected');
+
+    closeLocationDropdown(wrapper);
 }
 
 // ============================================
@@ -426,45 +600,17 @@ function addHoliday() {
     holidayCounter++;
     const id = `holiday-${holidayCounter}`;
     
-    const months = [
-        { value: '01', name: 'Enero' },
-        { value: '02', name: 'Febrero' },
-        { value: '03', name: 'Marzo' },
-        { value: '04', name: 'Abril' },
-        { value: '05', name: 'Mayo' },
-        { value: '06', name: 'Junio' },
-        { value: '07', name: 'Julio' },
-        { value: '08', name: 'Agosto' },
-        { value: '09', name: 'Septiembre' },
-        { value: '10', name: 'Octubre' },
-        { value: '11', name: 'Noviembre' },
-        { value: '12', name: 'Diciembre' }
-    ];
-    
     const div = document.createElement('div');
     div.className = 'holiday-item';
     div.dataset.id = id;
     
-    let monthOptions = '<option value="">Mes</option>';
-    months.forEach(month => {
-        monthOptions += `<option value="${month.value}">${month.name}</option>`;
-    });
-    
-    let dayOptions = '<option value="">Día</option>';
-    for (let i = 1; i <= 31; i++) {
-        const day = String(i).padStart(2, '0');
-        dayOptions += `<option value="${day}">${i}</option>`;
-    }
-    
     div.innerHTML = `
         <div class="holiday-date-selector">
-            <select class="holiday-month-select" data-field="month">
-                ${monthOptions}
-            </select>
-            <select class="holiday-day-select" data-field="day">
-                ${dayOptions}
-            </select>
-            <input type="text" class="holiday-name-input" data-field="name" placeholder="Nombre del día festivo">
+            <div class="holiday-dropdown-group" id="month-${id}"></div>
+            <div class="holiday-dropdown-group" id="day-${id}"></div>
+            <div class="holiday-name-group">
+                <input type="text" class="holiday-name-input" data-field="name" placeholder="Nombre del día festivo">
+            </div>
         </div>
         <button type="button" class="btn-remove-holiday" data-remove="${id}">
             <i class="lni lni-trash-can"></i>
@@ -473,11 +619,114 @@ function addHoliday() {
     
     container.appendChild(div);
     
+    createHolidayDropdown(`month-${id}`, MONTHS, 'Mes', id);
+    
+    const days = [];
+    for (let i = 1; i <= 31; i++) {
+        days.push({ value: String(i).padStart(2, '0'), name: String(i) });
+    }
+    createHolidayDropdown(`day-${id}`, days, 'Día', id);
+    
     div.querySelector('.btn-remove-holiday').addEventListener('click', function() {
         removeHoliday(id);
     });
     
     console.log(`✅ Día festivo agregado: ${id}`);
+}
+
+function createHolidayDropdown(containerId, options, placeholder, holidayId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'custom-select-wrapper';
+
+    const displayInput = document.createElement('input');
+    displayInput.type = 'text';
+    displayInput.className = 'info-input form-select';
+    displayInput.placeholder = placeholder;
+    displayInput.readOnly = true;
+    displayInput.dataset.holidayId = holidayId;
+    displayInput.dataset.field = containerId.includes('month') ? 'month' : 'day';
+
+    const arrow = document.createElement('i');
+    arrow.className = 'lni lni-chevron-down select-arrow';
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'select-dropdown';
+
+    const optionsContainer = document.createElement('div');
+    optionsContainer.className = 'select-options-container';
+
+    options.forEach(opt => {
+        const option = document.createElement('div');
+        option.className = 'select-option';
+        option.setAttribute('data-value', opt.value);
+        option.innerHTML = `
+            <i class="lni lni-calendar"></i>
+            <span>${opt.name}</span>
+        `;
+        optionsContainer.appendChild(option);
+    });
+
+    dropdown.appendChild(optionsContainer);
+    wrapper.appendChild(displayInput);
+    wrapper.appendChild(arrow);
+    wrapper.appendChild(dropdown);
+    container.appendChild(wrapper);
+
+    const selectOptions = optionsContainer.querySelectorAll('.select-option');
+
+    displayInput.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleHolidayDropdown(wrapper);
+    });
+
+    selectOptions.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.stopPropagation();
+            selectHolidayOption(this, displayInput, wrapper, selectOptions);
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) {
+            closeHolidayDropdown(wrapper);
+        }
+    });
+}
+
+function toggleHolidayDropdown(wrapper) {
+    const isActive = wrapper.classList.contains('active');
+    
+    document.querySelectorAll('.custom-select-wrapper.active').forEach(w => {
+        if (w !== wrapper) {
+            w.classList.remove('active');
+        }
+    });
+    
+    if (isActive) {
+        closeHolidayDropdown(wrapper);
+    } else {
+        wrapper.classList.add('active');
+    }
+}
+
+function closeHolidayDropdown(wrapper) {
+    wrapper.classList.remove('active');
+}
+
+function selectHolidayOption(option, displayInput, wrapper, allOptions) {
+    const value = option.getAttribute('data-value');
+    const text = option.querySelector('span')?.textContent;
+
+    displayInput.value = text;
+    displayInput.setAttribute('data-value', value);
+
+    allOptions.forEach(opt => opt.classList.remove('selected'));
+    option.classList.add('selected');
+
+    closeHolidayDropdown(wrapper);
 }
 
 function removeHoliday(id) {
@@ -494,9 +743,13 @@ function collectHolidaysData() {
     const holidays = [];
     
     holidayItems.forEach(item => {
-        const month = item.querySelector('[data-field="month"]').value;
-        const day = item.querySelector('[data-field="day"]').value;
-        const name = item.querySelector('[data-field="name"]').value;
+        const monthInput = item.querySelector('[data-field="month"]');
+        const dayInput = item.querySelector('[data-field="day"]');
+        const nameInput = item.querySelector('[data-field="name"]');
+        
+        const month = monthInput?.getAttribute('data-value');
+        const day = dayInput?.getAttribute('data-value');
+        const name = nameInput?.value;
         
         if (month && day && name) {
             holidays.push({
@@ -527,14 +780,16 @@ async function saveProfile() {
     const saveBtn = document.getElementById('saveProfileBtn');
     const originalText = saveBtn.innerHTML;
     
-    // Show loading state
     saveBtn.innerHTML = `
         <div class="loading-spinner"></div>
         <span>Guardando...</span>
     `;
     saveBtn.disabled = true;
     
-    // Collect all data
+    const countryInput = document.getElementById('countryInput');
+    const stateInput = document.getElementById('stateInput');
+    const cityInput = document.getElementById('cityInput');
+    
     const profileData = {
         business: {
             name: document.getElementById('businessNameInput').value,
@@ -550,9 +805,9 @@ async function saveProfile() {
             betweenStreets: document.getElementById('betweenStreetsInput').value,
             number: document.getElementById('numberInput').value,
             neighborhood: document.getElementById('neighborhoodInput').value,
-            city: document.getElementById('cityInput').value,
-            state: document.getElementById('stateInput').value,
-            country: document.getElementById('countryInput').value,
+            city: cityInput.value,
+            state: stateInput.value,
+            country: countryInput.value,
             postalCode: document.getElementById('postalCodeInput').value
         },
         social: {
@@ -566,7 +821,6 @@ async function saveProfile() {
     console.log('💾 Saving profile data:', profileData);
     
     try {
-        // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         saveBtn.innerHTML = originalText;
@@ -681,7 +935,6 @@ document.head.appendChild(style);
 // ============================================
 
 document.addEventListener('keydown', function(e) {
-    // Ctrl/Cmd + S to save
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         saveProfile();

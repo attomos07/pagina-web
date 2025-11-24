@@ -29,10 +29,6 @@
                             </h1>
                             <p class="page-subtitle">Administra la información de tu negocio</p>
                         </div>
-                        <button class="btn-save" id="saveProfileBtn">
-                            <i class="lni lni-checkmark"></i>
-                            <span>Guardar Cambios</span>
-                        </button>
                     </div>
 
                     <!-- Profile Content Grid -->
@@ -209,19 +205,19 @@
 
                                 <div class="info-group">
                                     <label class="info-label">Ciudad</label>
-                                    <input type="text" class="info-input" id="cityInput">
+                                    <input type="text" class="info-input" id="cityInput" style="display: none;">
                                     <div class="info-example">Ej: Hermosillo</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label">Estado/Provincia</label>
-                                    <input type="text" class="info-input" id="stateInput">
+                                    <input type="text" class="info-input" id="stateInput" style="display: none;">
                                     <div class="info-example">Ej: Sonora</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label">País</label>
-                                    <input type="text" class="info-input" id="countryInput">
+                                    <input type="text" class="info-input" id="countryInput" style="display: none;">
                                     <div class="info-example">Ej: México</div>
                                 </div>
 
@@ -244,7 +240,7 @@
                             <div class="card-content">
                                 <div class="info-group full-width">
                                     <label class="info-label">
-                                        <i class="lni lni-facebook-filled" style="color: #1877f2;"></i>
+                                        <i class="lni lni-facebook-filled"></i>
                                         Facebook
                                     </label>
                                     <input type="url" class="info-input" id="facebookInput">
@@ -253,7 +249,7 @@
 
                                 <div class="info-group full-width">
                                     <label class="info-label">
-                                        <i class="lni lni-instagram-filled" style="color: #E4405F;"></i>
+                                        <i class="lni lni-instagram-filled"></i>
                                         Instagram
                                     </label>
                                     <input type="url" class="info-input" id="instagramInput">
@@ -262,7 +258,7 @@
 
                                 <div class="info-group full-width">
                                     <label class="info-label">
-                                        <i class="lni lni-twitter-filled" style="color: #1DA1F2;"></i>
+                                        <i class="lni lni-twitter-filled"></i>
                                         Twitter / X
                                     </label>
                                     <input type="url" class="info-input" id="twitterInput">
@@ -271,7 +267,7 @@
 
                                 <div class="info-group full-width">
                                     <label class="info-label">
-                                        <i class="lni lni-linkedin-original" style="color: #0A66C2;"></i>
+                                        <i class="lni lni-linkedin-original"></i>
                                         LinkedIn
                                     </label>
                                     <input type="url" class="info-input" id="linkedinInput">
@@ -284,6 +280,12 @@
             </div>
         </div>
     </div>
+
+    <!-- Fixed Save Button (Bottom Right) -->
+    <button class="btn-save" id="saveProfileBtn">
+        <i class="lni lni-checkmark"></i>
+        <span>Guardar Cambios</span>
+    </button>
 
     <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/profile.js"></script>
