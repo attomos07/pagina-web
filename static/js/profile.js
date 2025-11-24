@@ -6,214 +6,91 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🔧 Profile JS cargado correctamente');
     
     initProfileData();
-    initEditButtons();
     initCustomSelect();
+    initSchedule();
+    initHolidays();
     initSaveButton();
     
     console.log('✅ Profile funcionalidades inicializadas');
 });
 
 // ============================================
-// LOAD PROFILE DATA (Mock Data)
+// LOAD PROFILE DATA
 // ============================================
 
 function initProfileData() {
     // Mock data - En producción esto vendría del backend
     const mockProfile = {
         business: {
-            name: 'Mi Negocio Ejemplo',
-            type: 'peluqueria',
-            typeName: 'Peluquería / Salón de Belleza',
-            description: 'Somos un salón de belleza especializado en cortes modernos y tratamientos capilares de alta calidad.',
-            website: 'https://minegocio.com',
-            email: 'contacto@minegocio.com'
+            name: '',
+            type: '',
+            typeName: '',
+            description: '',
+            website: '',
+            email: ''
         },
+        schedule: {
+            monday: { isOpen: true, open: '09:00', close: '20:00' },
+            tuesday: { isOpen: true, open: '09:00', close: '20:00' },
+            wednesday: { isOpen: true, open: '09:00', close: '20:00' },
+            thursday: { isOpen: true, open: '09:00', close: '20:00' },
+            friday: { isOpen: true, open: '09:00', close: '20:00' },
+            saturday: { isOpen: true, open: '10:00', close: '18:00' },
+            sunday: { isOpen: false, open: '09:00', close: '20:00' }
+        },
+        closedDays: '',
         location: {
-            address: 'Calle Principal #123',
-            betweenStreets: 'Entre Av. Uno y Calle Dos',
-            number: '123 Int. A',
-            neighborhood: 'Centro',
-            city: 'Hermosillo',
-            state: 'Sonora',
-            country: 'México',
-            postalCode: '83000'
+            address: '',
+            betweenStreets: '',
+            number: '',
+            neighborhood: '',
+            city: '',
+            state: '',
+            country: '',
+            postalCode: ''
         },
         social: {
-            facebook: 'https://facebook.com/minegocio',
-            instagram: 'https://instagram.com/minegocio',
+            facebook: '',
+            instagram: '',
             twitter: '',
             linkedin: ''
         }
     };
 
     // Load business data
-    setDisplayValue('businessNameDisplay', mockProfile.business.name);
-    setDisplayValue('businessTypeDisplay', mockProfile.business.typeName);
-    setDisplayValue('descriptionDisplay', mockProfile.business.description);
-    setDisplayValue('websiteDisplay', mockProfile.business.website);
-    setDisplayValue('emailDisplay', mockProfile.business.email);
+    setInputValue('businessNameInput', mockProfile.business.name);
+    setInputValue('businessTypeInput', mockProfile.business.typeName);
+    setInputValue('descriptionInput', mockProfile.business.description);
+    setInputValue('websiteInput', mockProfile.business.website);
+    setInputValue('emailInput', mockProfile.business.email);
 
     // Load location data
-    setDisplayValue('addressDisplay', mockProfile.location.address);
-    setDisplayValue('betweenStreetsDisplay', mockProfile.location.betweenStreets);
-    setDisplayValue('numberDisplay', mockProfile.location.number);
-    setDisplayValue('neighborhoodDisplay', mockProfile.location.neighborhood);
-    setDisplayValue('cityDisplay', mockProfile.location.city);
-    setDisplayValue('stateDisplay', mockProfile.location.state);
-    setDisplayValue('countryDisplay', mockProfile.location.country);
-    setDisplayValue('postalCodeDisplay', mockProfile.location.postalCode);
+    setInputValue('addressInput', mockProfile.location.address);
+    setInputValue('betweenStreetsInput', mockProfile.location.betweenStreets);
+    setInputValue('numberInput', mockProfile.location.number);
+    setInputValue('neighborhoodInput', mockProfile.location.neighborhood);
+    setInputValue('cityInput', mockProfile.location.city);
+    setInputValue('stateInput', mockProfile.location.state);
+    setInputValue('countryInput', mockProfile.location.country);
+    setInputValue('postalCodeInput', mockProfile.location.postalCode);
+
+    // Load closed days
+    setInputValue('closedDaysInput', mockProfile.closedDays);
 
     // Load social data
-    setDisplayValue('facebookDisplay', mockProfile.social.facebook);
-    setDisplayValue('instagramDisplay', mockProfile.social.instagram);
-    setDisplayValue('twitterDisplay', mockProfile.social.twitter || '---');
-    setDisplayValue('linkedinDisplay', mockProfile.social.linkedin || '---');
+    setInputValue('facebookInput', mockProfile.social.facebook);
+    setInputValue('instagramInput', mockProfile.social.instagram);
+    setInputValue('twitterInput', mockProfile.social.twitter);
+    setInputValue('linkedinInput', mockProfile.social.linkedin);
 
     console.log('📊 Profile data loaded:', mockProfile);
 }
 
-function setDisplayValue(elementId, value) {
+function setInputValue(elementId, value) {
     const element = document.getElementById(elementId);
     if (element) {
-        element.textContent = value || '---';
+        element.value = value || '';
     }
-}
-
-// ============================================
-// EDIT BUTTONS FUNCTIONALITY
-// ============================================
-
-let activeSection = null;
-let originalValues = {};
-
-function initEditButtons() {
-    const editButtons = document.querySelectorAll('.btn-edit');
-    
-    editButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const section = this.getAttribute('data-section');
-            
-            if (activeSection === section) {
-                // Cancel editing
-                cancelEdit(section);
-            } else {
-                // Start editing
-                if (activeSection) {
-                    cancelEdit(activeSection);
-                }
-                startEdit(section, this);
-            }
-        });
-    });
-}
-
-function startEdit(section, button) {
-    activeSection = section;
-    button.classList.add('active');
-    button.querySelector('i').className = 'lni lni-close';
-    
-    // Save original values
-    originalValues = {};
-    
-    const fields = getSectionFields(section);
-    fields.forEach(field => {
-        const displayElement = document.getElementById(field.display);
-        const inputElement = document.getElementById(field.input);
-        
-        if (displayElement && inputElement) {
-            originalValues[field.input] = displayElement.textContent;
-            inputElement.value = displayElement.textContent === '---' ? '' : displayElement.textContent;
-            displayElement.style.display = 'none';
-            inputElement.style.display = 'block';
-            
-            // Handle custom select
-            if (field.input === 'businessTypeInput') {
-                const wrapper = document.getElementById('businessTypeWrapper');
-                if (wrapper) {
-                    wrapper.style.display = 'block';
-                }
-            }
-        }
-    });
-    
-    // Show save button
-    const saveBtn = document.getElementById('saveProfileBtn');
-    if (saveBtn) {
-        saveBtn.style.display = 'flex';
-    }
-    
-    console.log(`✏️ Editing section: ${section}`);
-}
-
-function cancelEdit(section) {
-    const button = document.querySelector(`.btn-edit[data-section="${section}"]`);
-    if (button) {
-        button.classList.remove('active');
-        button.querySelector('i').className = 'lni lni-pencil';
-    }
-    
-    const fields = getSectionFields(section);
-    fields.forEach(field => {
-        const displayElement = document.getElementById(field.display);
-        const inputElement = document.getElementById(field.input);
-        
-        if (displayElement && inputElement) {
-            // Restore original value
-            displayElement.textContent = originalValues[field.input] || '---';
-            displayElement.style.display = 'block';
-            inputElement.style.display = 'none';
-            
-            // Handle custom select
-            if (field.input === 'businessTypeInput') {
-                const wrapper = document.getElementById('businessTypeWrapper');
-                if (wrapper) {
-                    wrapper.style.display = 'none';
-                    wrapper.classList.remove('active');
-                }
-            }
-        }
-    });
-    
-    activeSection = null;
-    originalValues = {};
-    
-    // Hide save button if no active sections
-    const saveBtn = document.getElementById('saveProfileBtn');
-    if (saveBtn) {
-        saveBtn.style.display = 'none';
-    }
-    
-    console.log(`❌ Cancelled editing section: ${section}`);
-}
-
-function getSectionFields(section) {
-    const fieldMaps = {
-        business: [
-            { display: 'businessNameDisplay', input: 'businessNameInput' },
-            { display: 'businessTypeDisplay', input: 'businessTypeInput' },
-            { display: 'descriptionDisplay', input: 'descriptionInput' },
-            { display: 'websiteDisplay', input: 'websiteInput' },
-            { display: 'emailDisplay', input: 'emailInput' }
-        ],
-        location: [
-            { display: 'addressDisplay', input: 'addressInput' },
-            { display: 'betweenStreetsDisplay', input: 'betweenStreetsInput' },
-            { display: 'numberDisplay', input: 'numberInput' },
-            { display: 'neighborhoodDisplay', input: 'neighborhoodInput' },
-            { display: 'cityDisplay', input: 'cityInput' },
-            { display: 'stateDisplay', input: 'stateInput' },
-            { display: 'countryDisplay', input: 'countryInput' },
-            { display: 'postalCodeDisplay', input: 'postalCodeInput' }
-        ],
-        social: [
-            { display: 'facebookDisplay', input: 'facebookInput' },
-            { display: 'instagramDisplay', input: 'instagramInput' },
-            { display: 'twitterDisplay', input: 'twitterInput' },
-            { display: 'linkedinDisplay', input: 'linkedinInput' }
-        ]
-    };
-    
-    return fieldMaps[section] || [];
 }
 
 // ============================================
@@ -324,6 +201,317 @@ function initCustomSelect() {
 }
 
 // ============================================
+// SCHEDULE FUNCTIONALITY
+// ============================================
+
+function initSchedule() {
+    const days = [
+        { name: 'Lunes', key: 'monday' },
+        { name: 'Martes', key: 'tuesday' },
+        { name: 'Miércoles', key: 'wednesday' },
+        { name: 'Jueves', key: 'thursday' },
+        { name: 'Viernes', key: 'friday' },
+        { name: 'Sábado', key: 'saturday' },
+        { name: 'Domingo', key: 'sunday' }
+    ];
+
+    const scheduleList = document.getElementById('scheduleList');
+    if (!scheduleList) return;
+    
+    scheduleList.innerHTML = '';
+    
+    days.forEach(day => {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'schedule-day';
+        dayDiv.innerHTML = `
+            <div class="day-name">${day.name}</div>
+            <div class="day-toggle">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="day-${day.key}" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">Abierto</span>
+            </div>
+            <div class="day-times">
+                <input type="time" class="time-input" id="time-${day.key}-open" value="09:00" style="display: none;">
+                <span class="time-separator">-</span>
+                <input type="time" class="time-input" id="time-${day.key}-close" value="20:00" style="display: none;">
+            </div>
+        `;
+        scheduleList.appendChild(dayDiv);
+
+        const checkbox = dayDiv.querySelector(`#day-${day.key}`);
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                dayDiv.classList.remove('closed');
+            } else {
+                dayDiv.classList.add('closed');
+            }
+        });
+        
+        const openInput = dayDiv.querySelector(`#time-${day.key}-open`);
+        const closeInput = dayDiv.querySelector(`#time-${day.key}-close`);
+        createTimePicker(openInput, '09:00');
+        createTimePicker(closeInput, '20:00');
+    });
+}
+
+function createTimePicker(input, defaultValue = '09:00') {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'time-picker-wrapper';
+    
+    const convert24to12 = (time24) => {
+        const [hours24, minutes] = time24.split(':');
+        const h = parseInt(hours24);
+        const period = h >= 12 ? 'PM' : 'AM';
+        const hours12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
+        return { hours: String(hours12).padStart(2, '0'), minutes, period };
+    };
+    
+    const convert12to24 = (hours12, minutes, period) => {
+        let h = parseInt(hours12);
+        if (period === 'AM' && h === 12) h = 0;
+        if (period === 'PM' && h !== 12) h += 12;
+        return `${String(h).padStart(2, '0')}:${minutes}`;
+    };
+    
+    const initialTime = convert24to12(defaultValue);
+    
+    const display = document.createElement('div');
+    display.className = 'time-input-display';
+    display.innerHTML = `
+        <span class="time-display-value">${initialTime.hours}:${initialTime.minutes} ${initialTime.period}</span>
+        <i class="lni lni-chevron-down" style="font-size: 14px; color: #06b6d4;"></i>
+    `;
+    
+    const dropdown = document.createElement('div');
+    dropdown.className = 'time-dropdown';
+    
+    const content = document.createElement('div');
+    content.className = 'time-dropdown-content';
+    
+    const hourColumn = document.createElement('div');
+    hourColumn.className = 'time-column';
+    hourColumn.innerHTML = '<div class="time-column-title">Hora</div><div class="time-scroll" id="hours"></div>';
+    
+    const minuteColumn = document.createElement('div');
+    minuteColumn.className = 'time-column';
+    minuteColumn.innerHTML = '<div class="time-column-title">Min</div><div class="time-scroll" id="minutes"></div>';
+    
+    const periodColumn = document.createElement('div');
+    periodColumn.className = 'time-column';
+    periodColumn.innerHTML = '<div class="time-column-title">Periodo</div><div class="time-scroll" id="period"></div>';
+    
+    const hourScroll = hourColumn.querySelector('#hours');
+    const minuteScroll = minuteColumn.querySelector('#minutes');
+    const periodScroll = periodColumn.querySelector('#period');
+    
+    for (let i = 1; i <= 12; i++) {
+        const hour = String(i).padStart(2, '0');
+        const option = document.createElement('div');
+        option.className = 'time-option';
+        option.textContent = hour;
+        option.dataset.value = hour;
+        hourScroll.appendChild(option);
+    }
+    
+    [0, 15, 30, 45].forEach(min => {
+        const minute = String(min).padStart(2, '0');
+        const option = document.createElement('div');
+        option.className = 'time-option';
+        option.textContent = minute;
+        option.dataset.value = minute;
+        minuteScroll.appendChild(option);
+    });
+    
+    ['AM', 'PM'].forEach(p => {
+        const option = document.createElement('div');
+        option.className = 'time-option';
+        option.textContent = p;
+        option.dataset.value = p;
+        periodScroll.appendChild(option);
+    });
+    
+    content.appendChild(hourColumn);
+    content.appendChild(minuteColumn);
+    content.appendChild(periodColumn);
+    dropdown.appendChild(content);
+    wrapper.appendChild(display);
+    wrapper.appendChild(dropdown);
+    
+    input.parentNode.insertBefore(wrapper, input);
+    input.style.display = 'none';
+    input.value = defaultValue;
+    
+    let selectedHour = initialTime.hours;
+    let selectedMinute = initialTime.minutes;
+    let selectedPeriod = initialTime.period;
+    
+    hourScroll.querySelector(`[data-value="${selectedHour}"]`).classList.add('selected');
+    minuteScroll.querySelector(`[data-value="${selectedMinute}"]`).classList.add('selected');
+    periodScroll.querySelector(`[data-value="${selectedPeriod}"]`).classList.add('selected');
+    
+    display.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const isOpen = dropdown.classList.contains('show');
+        
+        document.querySelectorAll('.time-dropdown.show').forEach(d => d.classList.remove('show'));
+        document.querySelectorAll('.time-input-display.active').forEach(d => d.classList.remove('active'));
+        
+        if (!isOpen) {
+            dropdown.classList.add('show');
+            display.classList.add('active');
+        }
+    });
+    
+    hourScroll.addEventListener('click', function(e) {
+        if (e.target.classList.contains('time-option')) {
+            hourScroll.querySelectorAll('.time-option').forEach(o => o.classList.remove('selected'));
+            e.target.classList.add('selected');
+            selectedHour = e.target.dataset.value;
+            updateTime();
+        }
+    });
+    
+    minuteScroll.addEventListener('click', function(e) {
+        if (e.target.classList.contains('time-option')) {
+            minuteScroll.querySelectorAll('.time-option').forEach(o => o.classList.remove('selected'));
+            e.target.classList.add('selected');
+            selectedMinute = e.target.dataset.value;
+            updateTime();
+        }
+    });
+    
+    periodScroll.addEventListener('click', function(e) {
+        if (e.target.classList.contains('time-option')) {
+            periodScroll.querySelectorAll('.time-option').forEach(o => o.classList.remove('selected'));
+            e.target.classList.add('selected');
+            selectedPeriod = e.target.dataset.value;
+            updateTime();
+        }
+    });
+    
+    function updateTime() {
+        const displayTime = `${selectedHour}:${selectedMinute} ${selectedPeriod}`;
+        display.querySelector('.time-display-value').textContent = displayTime;
+        input.value = convert12to24(selectedHour, selectedMinute, selectedPeriod);
+    }
+    
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) {
+            dropdown.classList.remove('show');
+            display.classList.remove('active');
+        }
+    });
+}
+
+// ============================================
+// HOLIDAYS FUNCTIONALITY
+// ============================================
+
+let holidayCounter = 0;
+
+function initHolidays() {
+    const btnAddHoliday = document.getElementById('btnAddHoliday');
+    
+    if (btnAddHoliday) {
+        btnAddHoliday.addEventListener('click', addHoliday);
+    }
+}
+
+function addHoliday() {
+    const container = document.getElementById('holidaysList');
+    if (!container) return;
+    
+    holidayCounter++;
+    const id = `holiday-${holidayCounter}`;
+    
+    const months = [
+        { value: '01', name: 'Enero' },
+        { value: '02', name: 'Febrero' },
+        { value: '03', name: 'Marzo' },
+        { value: '04', name: 'Abril' },
+        { value: '05', name: 'Mayo' },
+        { value: '06', name: 'Junio' },
+        { value: '07', name: 'Julio' },
+        { value: '08', name: 'Agosto' },
+        { value: '09', name: 'Septiembre' },
+        { value: '10', name: 'Octubre' },
+        { value: '11', name: 'Noviembre' },
+        { value: '12', name: 'Diciembre' }
+    ];
+    
+    const div = document.createElement('div');
+    div.className = 'holiday-item';
+    div.dataset.id = id;
+    
+    let monthOptions = '<option value="">Mes</option>';
+    months.forEach(month => {
+        monthOptions += `<option value="${month.value}">${month.name}</option>`;
+    });
+    
+    let dayOptions = '<option value="">Día</option>';
+    for (let i = 1; i <= 31; i++) {
+        const day = String(i).padStart(2, '0');
+        dayOptions += `<option value="${day}">${i}</option>`;
+    }
+    
+    div.innerHTML = `
+        <div class="holiday-date-selector">
+            <select class="holiday-month-select" data-field="month">
+                ${monthOptions}
+            </select>
+            <select class="holiday-day-select" data-field="day">
+                ${dayOptions}
+            </select>
+            <input type="text" class="holiday-name-input" data-field="name" placeholder="Nombre del día festivo">
+        </div>
+        <button type="button" class="btn-remove-holiday" data-remove="${id}">
+            <i class="lni lni-trash-can"></i>
+        </button>
+    `;
+    
+    container.appendChild(div);
+    
+    div.querySelector('.btn-remove-holiday').addEventListener('click', function() {
+        removeHoliday(id);
+    });
+    
+    console.log(`✅ Día festivo agregado: ${id}`);
+}
+
+function removeHoliday(id) {
+    const element = document.querySelector(`[data-id="${id}"]`);
+    if (element) {
+        element.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => element.remove(), 300);
+        console.log(`🗑️ Día festivo eliminado: ${id}`);
+    }
+}
+
+function collectHolidaysData() {
+    const holidayItems = document.querySelectorAll('.holiday-item');
+    const holidays = [];
+    
+    holidayItems.forEach(item => {
+        const month = item.querySelector('[data-field="month"]').value;
+        const day = item.querySelector('[data-field="day"]').value;
+        const name = item.querySelector('[data-field="name"]').value;
+        
+        if (month && day && name) {
+            holidays.push({
+                month: month,
+                day: day,
+                name: name,
+                date: `${day}/${month}`
+            });
+        }
+    });
+    
+    return holidays;
+}
+
+// ============================================
 // SAVE BUTTON FUNCTIONALITY
 // ============================================
 
@@ -336,8 +524,6 @@ function initSaveButton() {
 }
 
 async function saveProfile() {
-    if (!activeSection) return;
-    
     const saveBtn = document.getElementById('saveProfileBtn');
     const originalText = saveBtn.innerHTML;
     
@@ -348,65 +534,41 @@ async function saveProfile() {
     `;
     saveBtn.disabled = true;
     
-    // Collect data
-    const fields = getSectionFields(activeSection);
-    const data = {};
-    
-    fields.forEach(field => {
-        const inputElement = document.getElementById(field.input);
-        if (inputElement) {
-            let value = inputElement.value.trim();
-            
-            // Special handling for businessType
-            if (field.input === 'businessTypeInput') {
-                data.businessType = inputElement.getAttribute('data-value');
-                data.businessTypeName = value;
-            } else {
-                const fieldName = field.input.replace('Input', '');
-                data[fieldName] = value || null;
-            }
+    // Collect all data
+    const profileData = {
+        business: {
+            name: document.getElementById('businessNameInput').value,
+            type: document.getElementById('businessTypeInput').getAttribute('data-value'),
+            description: document.getElementById('descriptionInput').value,
+            website: document.getElementById('websiteInput').value,
+            email: document.getElementById('emailInput').value
+        },
+        schedule: collectScheduleData(),
+        holidays: collectHolidaysData(),
+        location: {
+            address: document.getElementById('addressInput').value,
+            betweenStreets: document.getElementById('betweenStreetsInput').value,
+            number: document.getElementById('numberInput').value,
+            neighborhood: document.getElementById('neighborhoodInput').value,
+            city: document.getElementById('cityInput').value,
+            state: document.getElementById('stateInput').value,
+            country: document.getElementById('countryInput').value,
+            postalCode: document.getElementById('postalCodeInput').value
+        },
+        social: {
+            facebook: document.getElementById('facebookInput').value,
+            instagram: document.getElementById('instagramInput').value,
+            twitter: document.getElementById('twitterInput').value,
+            linkedin: document.getElementById('linkedinInput').value
         }
-    });
+    };
     
-    console.log('💾 Saving data:', { section: activeSection, data });
+    console.log('💾 Saving profile data:', profileData);
     
     try {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Update display values
-        fields.forEach(field => {
-            const displayElement = document.getElementById(field.display);
-            const inputElement = document.getElementById(field.input);
-            
-            if (displayElement && inputElement) {
-                const newValue = inputElement.value.trim();
-                displayElement.textContent = newValue || '---';
-                displayElement.style.display = 'block';
-                inputElement.style.display = 'none';
-                
-                // Handle custom select
-                if (field.input === 'businessTypeInput') {
-                    const wrapper = document.getElementById('businessTypeWrapper');
-                    if (wrapper) {
-                        wrapper.style.display = 'none';
-                        wrapper.classList.remove('active');
-                    }
-                }
-            }
-        });
-        
-        // Reset button state
-        const button = document.querySelector(`.btn-edit[data-section="${activeSection}"]`);
-        if (button) {
-            button.classList.remove('active');
-            button.querySelector('i').className = 'lni lni-pencil';
-        }
-        
-        activeSection = null;
-        originalValues = {};
-        
-        saveBtn.style.display = 'none';
         saveBtn.innerHTML = originalText;
         saveBtn.disabled = false;
         
@@ -421,6 +583,25 @@ async function saveProfile() {
         
         showNotification('❌ Error al guardar los cambios', 'error');
     }
+}
+
+function collectScheduleData() {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const schedule = {};
+    
+    days.forEach(day => {
+        const checkbox = document.getElementById(`day-${day}`);
+        const openInput = document.getElementById(`time-${day}-open`);
+        const closeInput = document.getElementById(`time-${day}-close`);
+        
+        schedule[day] = {
+            isOpen: checkbox ? checkbox.checked : false,
+            open: openInput ? openInput.value : '09:00',
+            close: closeInput ? closeInput.value : '20:00'
+        };
+    });
+    
+    return schedule;
 }
 
 // ============================================
@@ -500,20 +681,12 @@ document.head.appendChild(style);
 // ============================================
 
 document.addEventListener('keydown', function(e) {
-    // ESC to cancel editing
-    if (e.key === 'Escape' && activeSection) {
-        cancelEdit(activeSection);
-    }
-    
     // Ctrl/Cmd + S to save
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        if (activeSection) {
-            saveProfile();
-        }
+        saveProfile();
     }
 });
 
 console.log('⌨️ Keyboard shortcuts initialized:');
-console.log('  - ESC: Cancelar edición');
 console.log('  - Ctrl/Cmd + S: Guardar cambios');

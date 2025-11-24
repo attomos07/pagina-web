@@ -29,7 +29,7 @@
                             </h1>
                             <p class="page-subtitle">Administra la información de tu negocio</p>
                         </div>
-                        <button class="btn-save" id="saveProfileBtn" style="display: none;">
+                        <button class="btn-save" id="saveProfileBtn">
                             <i class="lni lni-checkmark"></i>
                             <span>Guardar Cambios</span>
                         </button>
@@ -44,25 +44,20 @@
                                     <i class="lni lni-briefcase"></i>
                                     <h2>Información del Negocio</h2>
                                 </div>
-                                <button class="btn-edit" data-section="business">
-                                    <i class="lni lni-pencil"></i>
-                                </button>
                             </div>
                             <div class="card-content">
                                 <div class="info-group">
                                     <label class="info-label">Nombre del Negocio</label>
-                                    <div class="info-display" id="businessNameDisplay">---</div>
-                                    <input type="text" class="info-input" id="businessNameInput" style="display: none;">
+                                    <input type="text" class="info-input" id="businessNameInput">
+                                    <div class="info-example">Ej: Mi Negocio Ejemplo</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label">Giro del Negocio</label>
-                                    <div class="info-display" id="businessTypeDisplay">---</div>
-                                    <div class="custom-select-wrapper" id="businessTypeWrapper" style="display: none;">
+                                    <div class="custom-select-wrapper" id="businessTypeWrapper">
                                         <input type="text" 
                                                class="info-input form-select" 
                                                id="businessTypeInput" 
-                                               placeholder="Selecciona tu giro"
                                                readonly>
                                         <i class="lni lni-chevron-down select-arrow"></i>
                                         <div class="select-dropdown" id="businessTypeDropdown">
@@ -130,24 +125,51 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="info-example">Ej: Peluquería / Salón de Belleza</div>
                                 </div>
 
                                 <div class="info-group full-width">
                                     <label class="info-label">Descripción del Negocio</label>
-                                    <div class="info-display" id="descriptionDisplay">---</div>
-                                    <textarea class="info-textarea" id="descriptionInput" rows="4" placeholder="Describe tu negocio..." style="display: none;"></textarea>
+                                    <textarea class="info-textarea" id="descriptionInput" rows="4"></textarea>
+                                    <div class="info-example">Ej: Somos un salón de belleza especializado en cortes modernos...</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label">Sitio Web</label>
-                                    <div class="info-display" id="websiteDisplay">---</div>
-                                    <input type="url" class="info-input" id="websiteInput" placeholder="https://tusitio.com" style="display: none;">
+                                    <input type="url" class="info-input" id="websiteInput">
+                                    <div class="info-example">Ej: https://minegocio.com</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label">Email de Contacto</label>
-                                    <div class="info-display" id="emailDisplay">---</div>
-                                    <input type="email" class="info-input" id="emailInput" placeholder="contacto@negocio.com" style="display: none;">
+                                    <input type="email" class="info-input" id="emailInput">
+                                    <div class="info-example">Ej: contacto@minegocio.com</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Schedule Card -->
+                        <div class="profile-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-calendar"></i>
+                                    <h2>Horario de Atención</h2>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <div class="schedule-list" id="scheduleList"></div>
+                                
+                                <div class="info-group full-width" style="margin-top: 32px;">
+                                    <label class="info-label">
+                                        <i class="lni lni-calendar"></i>
+                                        Días Festivos / Inhábiles
+                                    </label>
+                                    <button type="button" class="btn-add-holiday" id="btnAddHoliday">
+                                        <i class="lni lni-plus"></i>
+                                        Agregar Día Festivo
+                                    </button>
+                                    <div class="holidays-list" id="holidaysList"></div>
+                                    <div class="info-example">Los días festivos agregados serán días en que el negocio permanecerá cerrado</div>
                                 </div>
                             </div>
                         </div>
@@ -159,57 +181,54 @@
                                     <i class="lni lni-map-marker"></i>
                                     <h2>Ubicación</h2>
                                 </div>
-                                <button class="btn-edit" data-section="location">
-                                    <i class="lni lni-pencil"></i>
-                                </button>
                             </div>
                             <div class="card-content">
                                 <div class="info-group full-width">
                                     <label class="info-label">Dirección Completa</label>
-                                    <div class="info-display" id="addressDisplay">---</div>
-                                    <input type="text" class="info-input" id="addressInput" placeholder="Calle Principal #123" style="display: none;">
+                                    <input type="text" class="info-input" id="addressInput">
+                                    <div class="info-example">Ej: Calle Principal #123</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label">Entre Calles</label>
-                                    <div class="info-display" id="betweenStreetsDisplay">---</div>
-                                    <input type="text" class="info-input" id="betweenStreetsInput" placeholder="Av. Uno y Calle Dos" style="display: none;">
+                                    <input type="text" class="info-input" id="betweenStreetsInput">
+                                    <div class="info-example">Ej: Entre Av. Uno y Calle Dos</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label">Número Exterior / Interior</label>
-                                    <div class="info-display" id="numberDisplay">---</div>
-                                    <input type="text" class="info-input" id="numberInput" placeholder="Ej: 123 Int. A" style="display: none;">
+                                    <input type="text" class="info-input" id="numberInput">
+                                    <div class="info-example">Ej: 123 Int. A</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label">Colonia</label>
-                                    <div class="info-display" id="neighborhoodDisplay">---</div>
-                                    <input type="text" class="info-input" id="neighborhoodInput" placeholder="Nombre de la colonia" style="display: none;">
+                                    <input type="text" class="info-input" id="neighborhoodInput">
+                                    <div class="info-example">Ej: Centro</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label">Ciudad</label>
-                                    <div class="info-display" id="cityDisplay">---</div>
-                                    <input type="text" class="info-input" id="cityInput" placeholder="Ciudad" style="display: none;">
+                                    <input type="text" class="info-input" id="cityInput">
+                                    <div class="info-example">Ej: Hermosillo</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label">Estado/Provincia</label>
-                                    <div class="info-display" id="stateDisplay">---</div>
-                                    <input type="text" class="info-input" id="stateInput" placeholder="Estado" style="display: none;">
+                                    <input type="text" class="info-input" id="stateInput">
+                                    <div class="info-example">Ej: Sonora</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label">País</label>
-                                    <div class="info-display" id="countryDisplay">---</div>
-                                    <input type="text" class="info-input" id="countryInput" placeholder="País" style="display: none;">
+                                    <input type="text" class="info-input" id="countryInput">
+                                    <div class="info-example">Ej: México</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label class="info-label">Código Postal</label>
-                                    <div class="info-display" id="postalCodeDisplay">---</div>
-                                    <input type="text" class="info-input" id="postalCodeInput" placeholder="12345" style="display: none;">
+                                    <input type="text" class="info-input" id="postalCodeInput">
+                                    <div class="info-example">Ej: 83000</div>
                                 </div>
                             </div>
                         </div>
@@ -221,9 +240,6 @@
                                     <i class="lni lni-share-alt"></i>
                                     <h2>Redes Sociales</h2>
                                 </div>
-                                <button class="btn-edit" data-section="social">
-                                    <i class="lni lni-pencil"></i>
-                                </button>
                             </div>
                             <div class="card-content">
                                 <div class="info-group full-width">
@@ -231,8 +247,8 @@
                                         <i class="lni lni-facebook-filled" style="color: #1877f2;"></i>
                                         Facebook
                                     </label>
-                                    <div class="info-display" id="facebookDisplay">---</div>
-                                    <input type="url" class="info-input" id="facebookInput" placeholder="https://facebook.com/tunegocio" style="display: none;">
+                                    <input type="url" class="info-input" id="facebookInput">
+                                    <div class="info-example">Ej: https://facebook.com/minegocio</div>
                                 </div>
 
                                 <div class="info-group full-width">
@@ -240,8 +256,8 @@
                                         <i class="lni lni-instagram-filled" style="color: #E4405F;"></i>
                                         Instagram
                                     </label>
-                                    <div class="info-display" id="instagramDisplay">---</div>
-                                    <input type="url" class="info-input" id="instagramInput" placeholder="https://instagram.com/tunegocio" style="display: none;">
+                                    <input type="url" class="info-input" id="instagramInput">
+                                    <div class="info-example">Ej: https://instagram.com/minegocio</div>
                                 </div>
 
                                 <div class="info-group full-width">
@@ -249,8 +265,8 @@
                                         <i class="lni lni-twitter-filled" style="color: #1DA1F2;"></i>
                                         Twitter / X
                                     </label>
-                                    <div class="info-display" id="twitterDisplay">---</div>
-                                    <input type="url" class="info-input" id="twitterInput" placeholder="https://twitter.com/tunegocio" style="display: none;">
+                                    <input type="url" class="info-input" id="twitterInput">
+                                    <div class="info-example">Ej: https://twitter.com/minegocio</div>
                                 </div>
 
                                 <div class="info-group full-width">
@@ -258,8 +274,8 @@
                                         <i class="lni lni-linkedin-original" style="color: #0A66C2;"></i>
                                         LinkedIn
                                     </label>
-                                    <div class="info-display" id="linkedinDisplay">---</div>
-                                    <input type="url" class="info-input" id="linkedinInput" placeholder="https://linkedin.com/company/tunegocio" style="display: none;">
+                                    <input type="url" class="info-input" id="linkedinInput">
+                                    <div class="info-example">Ej: https://linkedin.com/company/minegocio</div>
                                 </div>
                             </div>
                         </div>
