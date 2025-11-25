@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="/static/css/my-agents.css">
 </head>
 <body>
+    <!-- Decorative Rings -->
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
     <div class="app-container">
         <!-- Sidebar -->
         {{template "sidebar.html" .}}
@@ -49,23 +57,11 @@
                         </a>
                     </div>
 
-                    <!-- Stats Cards with Glowing Ring Animation -->
+                    <!-- Stats Cards with Rotating Dashed Rings -->
                     <div class="agents-stats">
                         <div class="stat-card">
-                            <div class="stat-icon">
-                                <svg>
-                                    <defs>
-                                        <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
-                                            <stop offset="100%" style="stop-color:#0891b2;stop-opacity:1" />
-                                        </linearGradient>
-                                    </defs>
-                                    <circle class="circle-bg" cx="50" cy="50" r="45"></circle>
-                                    <circle class="circle-progress" cx="50" cy="50" r="45"></circle>
-                                </svg>
-                                <div class="stat-icon-content">
-                                    <i class="lni lni-checkmark-circle"></i>
-                                </div>
+                            <div class="stat-icon blue">
+                                <i class="lni lni-checkmark-circle"></i>
                             </div>
                             <div class="stat-content">
                                 <div class="stat-value" id="activeAgentsCount">0</div>
@@ -73,20 +69,8 @@
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon">
-                                <svg>
-                                    <defs>
-                                        <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
-                                            <stop offset="100%" style="stop-color:#0891b2;stop-opacity:1" />
-                                        </linearGradient>
-                                    </defs>
-                                    <circle class="circle-bg" cx="50" cy="50" r="45"></circle>
-                                    <circle class="circle-progress" cx="50" cy="50" r="45" style="stroke: url(#gradient2)"></circle>
-                                </svg>
-                                <div class="stat-icon-content">
-                                    <i class="lni lni-archive"></i>
-                                </div>
+                            <div class="stat-icon pink">
+                                <i class="lni lni-archive"></i>
                             </div>
                             <div class="stat-content">
                                 <div class="stat-value" id="totalAgentsCount">0</div>
@@ -94,20 +78,8 @@
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon">
-                                <svg>
-                                    <defs>
-                                        <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
-                                            <stop offset="100%" style="stop-color:#0891b2;stop-opacity:1" />
-                                        </linearGradient>
-                                    </defs>
-                                    <circle class="circle-bg" cx="50" cy="50" r="45"></circle>
-                                    <circle class="circle-progress" cx="50" cy="50" r="45" style="stroke: url(#gradient3)"></circle>
-                                </svg>
-                                <div class="stat-icon-content">
-                                    <i class="lni lni-network"></i>
-                                </div>
+                            <div class="stat-icon indigo">
+                                <i class="lni lni-network"></i>
                             </div>
                             <div class="stat-content">
                                 <div class="stat-value" id="platformsCount">0</div>
