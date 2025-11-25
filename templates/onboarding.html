@@ -28,16 +28,11 @@
                             
                             <div class="progress-step">
                                 <div class="step-circle">2</div>
-                                <div class="step-label">Documento</div>
-                            </div>
-                            
-                            <div class="progress-step">
-                                <div class="step-circle">3</div>
                                 <div class="step-label">Configuración</div>
                             </div>
                             
                             <div class="progress-step">
-                                <div class="step-circle">4</div>
+                                <div class="step-circle">3</div>
                                 <div class="step-label">Resumen</div>
                             </div>
                         </div>
@@ -146,70 +141,8 @@
                             </div>
                         </div>
 
-                        <!-- PASO 2: Subir Documento -->
+                        <!-- PASO 2: Configuración -->
                         <div id="step2" class="step">
-                            <div class="step-header">
-                                <div class="step-icon">
-                                    <i class="lni lni-cloud-upload"></i>
-                                </div>
-                                <h2 class="step-title">Sube tu Documento</h2>
-                                <p class="step-description">Proporciona información sobre tu negocio para entrenar a la IA</p>
-                            </div>
-
-                            <div class="upload-section">
-                                <div id="uploadArea" class="upload-area">
-                                    <div class="upload-icon">
-                                        <i class="lni lni-cloud-upload"></i>
-                                    </div>
-                                    <h3>Arrastra tu documento aquí</h3>
-                                    <p>o haz clic para seleccionar un archivo</p>
-                                    <input type="file" id="metaDocument" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png" hidden>
-                                    <button type="button" id="btnSelectFile" class="btn-select-file">
-                                        Seleccionar Archivo
-                                    </button>
-                                    <div class="upload-help">Formatos soportados: PDF, DOC, DOCX, TXT, JPG, PNG (Máx. 10MB)</div>
-                                </div>
-
-                                <div id="filePreview" class="file-preview" style="display: none;">
-                                    <div class="file-icon">
-                                        <i class="lni lni-files"></i>
-                                    </div>
-                                    <div class="file-details">
-                                        <div class="file-name" id="fileName"></div>
-                                        <div class="file-size" id="fileSize"></div>
-                                    </div>
-                                    <button type="button" id="btnRemoveFile" class="btn-remove-file">
-                                        <i class="lni lni-trash-can"></i>
-                                    </button>
-                                </div>
-
-                                <div id="uploadProgress" class="upload-progress" style="display: none;">
-                                    <div class="progress-bar-container">
-                                        <div class="progress-fill" id="progressBar"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="action-buttons">
-                                <button type="button" id="btnBackStep2" class="btn btn-back">
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M19 12H5"/>
-                                        <path d="m12 19-7-7 7-7"/>
-                                    </svg>
-                                    Atrás
-                                </button>
-                                <button type="button" id="btnStep2" class="btn btn-next" disabled>
-                                    Continuar
-                                    <svg class="lucide" viewBox="0 0 24 24">
-                                        <path d="M5 12h14"/>
-                                        <path d="m12 5 7 7-7 7"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- PASO 3: Configuración -->
-                        <div id="step3" class="step">
                             <div class="step-header">
                                 <div class="step-icon">
                                     <i class="lni lni-cog"></i>
@@ -404,14 +337,14 @@
                             </div>
 
                             <div class="action-buttons">
-                                <button type="button" id="btnBackStep3" class="btn btn-back">
+                                <button type="button" id="btnBackStep2" class="btn btn-back">
                                     <svg class="lucide" viewBox="0 0 24 24">
                                         <path d="M19 12H5"/>
                                         <path d="m12 19-7-7 7-7"/>
                                     </svg>
                                     Atrás
                                 </button>
-                                <button type="button" id="btnStep3" class="btn btn-next">
+                                <button type="button" id="btnStep2" class="btn btn-next">
                                     Continuar
                                     <svg class="lucide" viewBox="0 0 24 24">
                                         <path d="M5 12h14"/>
@@ -421,8 +354,8 @@
                             </div>
                         </div>
 
-                        <!-- PASO 4: Resumen -->
-                        <div id="step4" class="step">
+                        <!-- PASO 3: Resumen -->
+                        <div id="step3" class="step">
                             <div class="step-header">
                                 <div class="step-icon">
                                     <i class="lni lni-checkmark-circle"></i>
@@ -436,7 +369,7 @@
                             </div>
 
                             <div class="action-buttons">
-                                <button type="button" id="btnBackStep4" class="btn btn-back">
+                                <button type="button" id="btnBackStep3" class="btn btn-back">
                                     <svg class="lucide" viewBox="0 0 24 24">
                                         <path d="M19 12H5"/>
                                         <path d="m12 19-7-7 7-7"/>
