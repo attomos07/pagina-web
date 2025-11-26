@@ -1038,3 +1038,163 @@ button:focus,
 input:focus {
     outline: none !important;
 }
+
+/* ============================================
+   PHONE INPUT SEPARADO - COPIAR Y PEGAR AL FINAL DE register.css
+   ============================================ */
+
+/* Wrapper principal del teléfono */
+.phone-input-wrapper {
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+/* Contenedor del código de país (LADA) */
+.phone-code-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    width: 110px;
+}
+
+.phone-code-container i {
+    position: absolute;
+    left: 1rem;
+    color: #374151;
+    opacity: 0.6;
+    font-size: 1.1rem;
+    z-index: 2;
+}
+
+.phone-code-input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 2.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    background: #ffffff;
+    color: #374151;
+    text-align: center;
+}
+
+.phone-code-input:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+    transform: translateY(-1px);
+}
+
+.phone-code-container:focus-within i {
+    color: #06b6d4;
+    opacity: 1;
+}
+
+.phone-code-input::placeholder {
+    color: #374151;
+    opacity: 0.5;
+    font-weight: 500;
+}
+
+/* Contenedor del número de teléfono */
+.phone-number-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.phone-number-container i {
+    position: absolute;
+    left: 1rem;
+    color: #374151;
+    opacity: 0.6;
+    font-size: 1.1rem;
+    z-index: 2;
+}
+
+.phone-number-input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 2.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background: #ffffff;
+    color: #374151;
+}
+
+.phone-number-input:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+    transform: translateY(-1px);
+}
+
+.phone-number-container:focus-within i {
+    color: #06b6d4;
+    opacity: 1;
+}
+
+.phone-number-input::placeholder {
+    color: #374151;
+    opacity: 0.5;
+}
+
+/* Mensaje de ayuda */
+.phone-hint {
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    display: block;
+    line-height: 1.4;
+}
+
+/* Estados de error y éxito para inputs de teléfono */
+.phone-code-input.error,
+.phone-number-input.error {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.phone-code-input.success,
+.phone-number-input.success {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Animación al enfocar */
+.phone-code-container i,
+.phone-number-container i {
+    transition: all 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .phone-input-wrapper {
+        gap: 0.5rem;
+    }
+    
+    .phone-code-container {
+        width: 95px;
+    }
+    
+    .phone-code-input,
+    .phone-number-input {
+        padding: 0.75rem 0.875rem 0.75rem 2.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .phone-hint {
+        font-size: 0.8rem;
+    }
+}
+
+/* Fix para que ambos inputs tengan la misma altura */
+.phone-code-input,
+.phone-number-input {
+    height: 48px;
+}

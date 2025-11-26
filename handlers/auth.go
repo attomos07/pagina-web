@@ -13,11 +13,10 @@ import (
 )
 
 type RegisterRequest struct {
-	FirstName    string `json:"firstName" binding:"required"`
-	LastName     string `json:"lastName" binding:"required"`
+	BusinessName string `json:"businessName" binding:"required"`
+	PhoneNumber  string `json:"phoneNumber" binding:"required"`
 	Email        string `json:"email" binding:"required,email"`
 	Password     string `json:"password" binding:"required,min=8"`
-	Company      string `json:"company"`
 	BusinessType string `json:"businessType" binding:"required"`
 }
 
@@ -39,6 +38,7 @@ func Register(c *gin.Context) {
 	}
 
 	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
+	req.PhoneNumber = strings.TrimSpace(req.PhoneNumber)
 
 	// Verificar si el email ya existe
 	var existingUser models.User
@@ -51,14 +51,15 @@ func Register(c *gin.Context) {
 
 	// Crear usuario SIN proyecto GCP (se creará al crear primer agente)
 	user := models.User{
-		FirstName:     req.FirstName,
-		LastName:      req.LastName,
+		FirstName:     req.BusinessName, // Usar BusinessName como FirstName
+		LastName:      "",               // Dejar LastName vacío por ahora
 		Email:         req.Email,
-		Company:       req.Company,
+		Company:       req.BusinessName,
 		BusinessType:  req.BusinessType,
-		ProjectStatus: "pending", // Indica que aún no se ha creado el proyecto
-		GCPProjectID:  nil,       // NULL hasta que se cree el primer agente
-		GeminiAPIKey:  "",        // Vacío hasta que se cree el primer agente
+		PhoneNumber:   req.PhoneNumber, // NUEVO CAMPO
+		ProjectStatus: "pending",       // Indica que aún no se ha creado el proyecto
+		GCPProjectID:  nil,             // NULL hasta que se cree el primer agente
+		GeminiAPIKey:  "",              // Vacío hasta que se cree el primer agente
 	}
 
 	if err := user.HashPassword(req.Password); err != nil {
@@ -77,7 +78,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	log.Printf("✅ [User %d] Usuario creado exitosamente: %s", user.ID, user.Email)
+	log.Printf("✅ [User %d] Usuario creado exitosamente: %s (Tel: %s)", user.ID, user.Email, user.PhoneNumber)
 
 	// Generar token JWT
 	token, err := utils.GenerateToken(user.ID, user.Email)
@@ -101,6 +102,7 @@ func Register(c *gin.Context) {
 			"email":        user.Email,
 			"company":      user.Company,
 			"businessType": user.BusinessType,
+			"phoneNumber":  user.PhoneNumber,
 		},
 		"info": "Tu proyecto de Google Cloud se creará automáticamente cuando crees tu primer agente",
 	})
@@ -158,6 +160,7 @@ func Login(c *gin.Context) {
 			"email":        user.Email,
 			"company":      user.Company,
 			"businessType": user.BusinessType,
+			"phoneNumber":  user.PhoneNumber,
 		},
 	})
 }
@@ -191,6 +194,7 @@ func GetCurrentUser(c *gin.Context) {
 			"email":         user.Email,
 			"company":       user.Company,
 			"businessType":  user.BusinessType,
+			"phoneNumber":   user.PhoneNumber,
 			"projectStatus": user.ProjectStatus,
 		},
 	})

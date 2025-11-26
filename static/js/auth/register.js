@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initSocialRegister();
     initAutoFormat();
     initCustomSelect();
+    initPhoneNumberFormat();
     
     console.log('✅ Register funcionalidades inicializadas');
 });
@@ -59,6 +60,22 @@ function validateRegisterField(field) {
             }
             break;
 
+        case 'phoneNumber':
+            const phoneCodeField = document.getElementById('phoneCode');
+            const phoneCodeValue = phoneCodeField ? phoneCodeField.value.trim() : '';
+            
+            if (!phoneCodeValue) {
+                errorMessage = 'El código de país es requerido';
+                isValid = false;
+            } else if (!value) {
+                errorMessage = 'El número de teléfono es requerido';
+                isValid = false;
+            } else if (!isValidPhoneNumber(phoneCodeValue, value)) {
+                errorMessage = 'Ingresa un número válido (código: +XX, número: 7-15 dígitos)';
+                isValid = false;
+            }
+            break;
+
         case 'email':
             if (!value) {
                 errorMessage = 'El email es requerido';
@@ -97,6 +114,97 @@ function validateRegisterField(field) {
     }
 
     return isValid;
+}
+
+// ============================================
+// FORMATEO DE NÚMERO DE TELÉFONO CON LADA SEPARADA
+// ============================================
+
+function initPhoneNumberFormat() {
+    const phoneCodeInput = document.getElementById('phoneCode');
+    const phoneNumberInput = document.getElementById('phoneNumber');
+    
+    if (!phoneCodeInput || !phoneNumberInput) return;
+
+    // ===== CÓDIGO DE PAÍS (LADA) =====
+    
+    // Auto-agregar "+" al inicio
+    phoneCodeInput.addEventListener('focus', function() {
+        if (!this.value.startsWith('+')) {
+            this.value = '+' + this.value.replace(/\+/g, '');
+        }
+    });
+
+    // Formatear código de país
+    phoneCodeInput.addEventListener('input', function(e) {
+        let value = this.value;
+        
+        // Remover todo excepto números y el primer +
+        value = value.replace(/[^\d+]/g, '');
+        
+        // Asegurar que solo haya un + al inicio
+        if (value.startsWith('+')) {
+            value = '+' + value.substring(1).replace(/\+/g, '');
+        } else {
+            value = '+' + value.replace(/\+/g, '');
+        }
+        
+        // Limitar a 4 caracteres (+XXX)
+        if (value.length > 4) {
+            value = value.substring(0, 4);
+        }
+        
+        this.value = value;
+    });
+
+    // Si borra todo, mantener el +
+    phoneCodeInput.addEventListener('blur', function() {
+        if (this.value === '' || this.value === '+') {
+            this.value = '+52'; // México por defecto
+        }
+    });
+
+    // ===== NÚMERO DE TELÉFONO =====
+    
+    // Formatear número mientras escribe
+    phoneNumberInput.addEventListener('input', function(e) {
+        let value = this.value.replace(/[^\d\s]/g, ''); // Solo números y espacios
+        
+        // Auto-formatear con espacios cada 3 dígitos
+        value = value.replace(/\s/g, ''); // Remover espacios existentes
+        
+        // Aplicar formato: XXX XXX XXXX
+        if (value.length > 6) {
+            value = value.substring(0, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6, 10);
+        } else if (value.length > 3) {
+            value = value.substring(0, 3) + ' ' + value.substring(3);
+        }
+        
+        this.value = value;
+    });
+
+    // Inicializar con código de México
+    if (!phoneCodeInput.value) {
+        phoneCodeInput.value = '+52';
+    }
+
+    console.log('📱 Formateo de número de teléfono con LADA separada inicializado');
+}
+
+function isValidPhoneNumber(phoneCode, phoneNumber) {
+    // Validar código de país
+    const cleanCode = phoneCode.replace(/\s/g, '');
+    const codeRegex = /^\+\d{1,3}$/;
+    
+    if (!codeRegex.test(cleanCode)) {
+        return false;
+    }
+    
+    // Validar número (debe tener al menos 7 dígitos)
+    const cleanNumber = phoneNumber.replace(/\s/g, '');
+    const numberRegex = /^\d{7,15}$/;
+    
+    return numberRegex.test(cleanNumber);
 }
 
 // ============================================
@@ -204,7 +312,14 @@ async function handleRegisterSubmit(e) {
     
     // Validar todos los campos requeridos
     let isValid = true;
-    const requiredFields = ['businessName', 'email', 'password', 'businessType'];
+    const requiredFields = ['businessName', 'phoneNumber', 'email', 'password', 'businessType'];
+    
+    // Validar phoneCode por separado
+    const phoneCodeField = form.querySelector('#phoneCode');
+    if (phoneCodeField && !phoneCodeField.value.trim()) {
+        showFieldError(phoneCodeField, 'Código de país requerido');
+        isValid = false;
+    }
     
     requiredFields.forEach(fieldName => {
         const field = form.querySelector(`[name="${fieldName}"]`);
@@ -233,12 +348,23 @@ async function handleRegisterSubmit(e) {
     const businessTypeInput = document.getElementById('businessType');
     const businessTypeValue = businessTypeInput.getAttribute('data-value') || businessTypeInput.value;
     
+    // Obtener código de país y número por separado
+    const phoneCodeElement = document.getElementById('phoneCode');
+    const phoneCodeValue = phoneCodeElement.value.trim();
+    const phoneNumberValue = formData.get('phoneNumber').replace(/\s/g, '');
+    
+    // Combinar código + número
+    const fullPhoneNumber = phoneCodeValue + phoneNumberValue;
+    
     const data = {
         businessName: formData.get('businessName'),
+        phoneNumber: fullPhoneNumber, // +52664123456
         email: formData.get('email'),
         password: formData.get('password'),
         businessType: businessTypeValue
     };
+    
+    console.log('📤 Datos a enviar:', { ...data, password: '***' });
     
     // Mostrar loading
     const submitBtn = form.querySelector('.auth-btn');
@@ -273,7 +399,7 @@ async function handleRegisterSubmit(e) {
 }
 
 function handleRegisterSuccess(data) {
-    console.log('Registro exitoso:', data);
+    console.log('✅ Registro exitoso:', data);
     
     // Mostrar notificación de éxito con animación iOS
     showNotificationIOS('¡Cuenta creada exitosamente!', 'success');
@@ -558,12 +684,10 @@ function setButtonLoading(button, isLoading) {
 // ============================================
 
 function showNotificationIOS(message, type = 'info') {
-    // Asegurar que los estilos estén cargados
     if (!document.getElementById('notification-ios-styles')) {
         addNotificationIOSStyles();
     }
     
-    // Crear contenedor si no existe
     let container = document.getElementById('notification-ios-container');
     if (!container) {
         container = document.createElement('div');
@@ -571,7 +695,6 @@ function showNotificationIOS(message, type = 'info') {
         document.body.appendChild(container);
     }
     
-    // Crear notificación
     const notification = document.createElement('div');
     notification.className = `notification-ios notification-ios-${type}`;
     
@@ -585,21 +708,16 @@ function showNotificationIOS(message, type = 'info') {
     `;
     
     container.appendChild(notification);
-    
-    // Forzar reflow para activar animación
     void notification.offsetWidth;
     
-    // Activar animación de entrada
     requestAnimationFrame(() => {
         notification.classList.add('notification-ios-show');
     });
     
-    // Remover después de 2500ms con animación de salida
     setTimeout(() => {
         notification.classList.remove('notification-ios-show');
         notification.classList.add('notification-ios-hide');
         
-        // Remover del DOM después de la animación
         setTimeout(() => {
             if (notification.parentElement) {
                 notification.parentElement.removeChild(notification);
@@ -642,7 +760,6 @@ function addNotificationIOSStyles() {
     const styles = document.createElement('style');
     styles.id = 'notification-ios-styles';
     styles.textContent = `
-        /* Contenedor de notificaciones */
         #notification-ios-container {
             position: fixed;
             top: 120px;
@@ -656,7 +773,6 @@ function addNotificationIOSStyles() {
             gap: 12px;
         }
         
-        /* Notificación base */
         .notification-ios {
             background: #10B981;
             box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
@@ -672,7 +788,6 @@ function addNotificationIOSStyles() {
             transform: translateY(-50px) scale(0.9);
         }
         
-        /* Variantes de color */
         .notification-ios-success {
             background: #10B981;
             box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
@@ -693,7 +808,6 @@ function addNotificationIOSStyles() {
             box-shadow: 0 8px 24px rgba(6, 182, 212, 0.35);
         }
         
-        /* Contenido */
         .notification-ios-content {
             display: flex;
             align-items: center;
@@ -701,7 +815,6 @@ function addNotificationIOSStyles() {
             gap: 12px;
         }
         
-        /* Icono */
         .notification-ios-icon {
             flex-shrink: 0;
             display: flex;
@@ -711,7 +824,6 @@ function addNotificationIOSStyles() {
             height: 26px;
         }
         
-        /* Mensaje */
         .notification-ios-message {
             color: white;
             font-weight: 700;
@@ -720,7 +832,6 @@ function addNotificationIOSStyles() {
             line-height: 1.4;
         }
         
-        /* Animación de entrada - iOS style */
         @keyframes notificationSlideIn {
             0% {
                 opacity: 0;
@@ -736,7 +847,6 @@ function addNotificationIOSStyles() {
             }
         }
         
-        /* Animación de salida - iOS style */
         @keyframes notificationSlideOut {
             0% {
                 opacity: 1;
@@ -752,7 +862,6 @@ function addNotificationIOSStyles() {
             }
         }
         
-        /* Animación del icono */
         @keyframes iconBounce {
             0% {
                 transform: rotate(0deg) scale(1);
@@ -774,7 +883,6 @@ function addNotificationIOSStyles() {
             }
         }
         
-        /* Aplicar animaciones */
         .notification-ios-show {
             animation: notificationSlideIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
@@ -787,7 +895,6 @@ function addNotificationIOSStyles() {
             animation: notificationSlideOut 0.5s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
         }
         
-        /* Responsive */
         @media (max-width: 768px) {
             #notification-ios-container {
                 top: 100px;

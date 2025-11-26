@@ -115,6 +115,39 @@
                             <div class="form-error" id="businessNameError"></div>
                         </div>
 
+                        <!-- NUEVO CAMPO: Número de WhatsApp con LADA separada -->
+                        <div class="form-group">
+                            <label for="phoneNumber" class="form-label">Número de WhatsApp</label>
+                            <div class="phone-input-wrapper">
+                                <!-- Contenedor de LADA -->
+                                <div class="phone-code-container">
+                                    <i class="lni lni-world"></i>
+                                    <input type="text" 
+                                           id="phoneCode" 
+                                           name="phoneCode" 
+                                           class="phone-code-input" 
+                                           placeholder="+52" 
+                                           maxlength="4"
+                                           required>
+                                </div>
+                                
+                                <!-- Contenedor de Número -->
+                                <div class="phone-number-container">
+                                    <i class="lni lni-phone"></i>
+                                    <input type="tel" 
+                                           id="phoneNumber" 
+                                           name="phoneNumber" 
+                                           class="phone-number-input" 
+                                           placeholder="664 123 4567" 
+                                           required>
+                                </div>
+                            </div>
+                            <div class="form-error" id="phoneNumberError"></div>
+                            <small class="phone-hint">
+                                Código de país + número local. Ej: +52 664 123 4567 (México)
+                            </small>
+                        </div>
+
                         <div class="form-group">
                             <label for="email" class="form-label">Email</label>
                             <div class="input-container">

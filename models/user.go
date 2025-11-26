@@ -15,6 +15,7 @@ type User struct {
 	Password     string `gorm:"size:255;not null" json:"-"`
 	Company      string `gorm:"size:255" json:"company"`
 	BusinessType string `gorm:"size:100" json:"businessType"`
+	PhoneNumber  string `gorm:"size:50" json:"phoneNumber"` // NUEVO CAMPO: Número de WhatsApp del negocio
 
 	// Google Cloud Project
 	GCPProjectID  *string `gorm:"size:255;unique" json:"-"`
