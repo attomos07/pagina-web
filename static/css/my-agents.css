@@ -323,42 +323,63 @@ body {
     font-weight: 600;
 }
 
-/* Table Container */
+/* Table Container - Mejorado */
 .agents-table-container {
     background: white;
     border-radius: 24px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-    border: 1px solid #f0f0f0;
-    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
+    overflow: visible !important;
+    position: static !important;
 }
 
 .agents-table {
     width: 100%;
     border-collapse: collapse;
+    overflow: visible !important;
 }
 
 .agents-table thead {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    border-bottom: 2px solid #e2e8f0;
+    border-bottom: 2px solid #cbd5e1;
 }
 
 .agents-table th {
-    padding: 1.25rem 1.5rem;
+    padding: 1.5rem 1.75rem;
     text-align: left;
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: #475569;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
 }
 
 .agents-table tbody tr {
     border-bottom: 1px solid #f1f5f9;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.agents-table tbody tr::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.agents-table tbody tr:hover::before {
+    transform: scaleY(1);
 }
 
 .agents-table tbody tr:hover {
-    background: #f9fafb;
+    background: linear-gradient(90deg, #f0f9ff 0%, #ffffff 100%);
+    box-shadow: 0 2px 8px rgba(6, 182, 212, 0.08);
 }
 
 .agents-table tbody tr:last-child {
@@ -366,47 +387,58 @@ body {
 }
 
 .agents-table td {
-    padding: 1.25rem 1.5rem;
+    padding: 1.5rem 1.75rem;
     color: #1a1a1a;
     font-size: 0.95rem;
+    vertical-align: middle;
+        overflow: visible !important;
+    position: static !important;
 }
 
 /* Agent Name Cell - Circular Avatar */
 .agent-name-cell {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 1.25rem;
 }
 
 .agent-avatar {
-    width: 56px;
-    height: 56px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(6, 182, 212, 0.15);
-    border: 2px solid white;
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
+    border: 3px solid white;
+    transition: all 0.3s ease;
+}
+
+.agents-table tbody tr:hover .agent-avatar {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(6, 182, 212, 0.3);
 }
 
 .agent-avatar svg {
     width: 32px;
     height: 32px;
     color: #06b6d4;
+    margin-top: 8px; /* EMPUJA EL SVG HACIA ABAJO */
 }
 
 .agent-info-text {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.35rem;
 }
 
 .agent-name-text {
     font-weight: 700;
     color: #1a1a1a;
-    font-size: 1rem;
+    font-size: 1.05rem;
+    line-height: 1.2;
 }
 
 .agent-business-type {
@@ -419,193 +451,253 @@ body {
 .platform-cell {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
 }
 
 .platform-icon-wrapper {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px solid;
     flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.agents-table tbody tr:hover .platform-icon-wrapper {
+    transform: rotate(5deg) scale(1.05);
 }
 
 .platform-icon-wrapper i {
-    font-size: 20px;
+    font-size: 22px;
 }
 
 .platform-name {
     font-weight: 600;
     color: #1a1a1a;
+    font-size: 0.95rem;
 }
 
-/* Status Badge */
+/* Status Badge - Mejorado */
 .status-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 10px;
+    gap: 0.6rem;
+    padding: 0.6rem 1.25rem;
+    border-radius: 12px;
     font-size: 0.875rem;
     font-weight: 700;
     white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.agents-table tbody tr:hover .status-badge {
+    transform: scale(1.05);
 }
 
 .status-badge i {
     font-size: 8px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
 .status-active {
     background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
     color: #065f46;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
 }
 
 .status-inactive {
     background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
     color: #991b1b;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
 }
 
 .status-pending {
     background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
     color: #92400e;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
 }
 
 .status-error {
     background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
     color: #991b1b;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
 }
 
 /* Phone Number */
 .phone-number {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
     color: #6b7280;
     font-weight: 500;
+    font-size: 0.95rem;
 }
 
 .phone-number i {
     color: #06b6d4;
+    font-size: 18px;
 }
 
-/* Actions Cell */
+/* Actions Cell - Solo dropdown */
 .actions-cell {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: flex-end;
+    position: static;
+    overflow: visible !important;
 }
 
-.action-btn {
-    width: 36px;
-    height: 36px;
+.action-btn-menu {
+    width: 40px;
+    height: 40px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     background: #f3f4f6;
     color: #6b7280;
     position: relative;
 }
 
-.action-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.action-btn-view {
-    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-    color: #0891b2;
-}
-
-.action-btn-view:hover {
-    background: linear-gradient(135deg, #bae6fd 0%, #7dd3fc 100%);
-}
-
-.action-btn-menu {
-    position: relative;
-}
-
 .action-btn-menu:hover {
-    background: #e5e7eb;
+    background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+    color: #1a1a1a;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* Dropdown Menu */
+.action-btn-menu i {
+    font-size: 20px;
+    transition: transform 0.3s ease;
+}
+
+.action-btn-menu:hover i {
+    transform: rotate(90deg);
+}
+
+/* Dropdown Menu - Efecto Smooth Mejorado */
 .dropdown-menu {
     position: absolute;
-    top: calc(100% + 0.5rem);
+    top: 100%;
     right: 0;
+    margin-top: 0.75rem;
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
     border: 1px solid #e5e7eb;
-    min-width: 220px;
-    z-index: 1000;
+    min-width: 240px;
+    z-index: 99999 !important;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-10px);
-    transition: all 0.2s ease;
-    overflow: hidden;
+    transform: translateY(-20px) scale(0.95);
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    overflow: visible !important;
 }
 
 .dropdown-menu.active {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+}
+
+.dropdown-menu::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    right: 20px;
+    width: 16px;
+    height: 16px;
+    background: white;
+    transform: rotate(45deg);
+    border-left: 1px solid #e5e7eb;
+    border-top: 1px solid #e5e7eb;
+    z-index: -1;
 }
 
 .dropdown-item {
-    padding: 0.875rem 1.25rem;
+    padding: 1rem 1.5rem;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     border: none;
     background: none;
     width: 100%;
     text-align: left;
     font-size: 0.95rem;
-    font-weight: 500;
+    font-weight: 600;
     color: #374151;
     border-bottom: 1px solid #f3f4f6;
+    position: relative;
+    overflow: hidden;
+}
+
+.dropdown-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.dropdown-item:hover::before {
+    transform: scaleY(1);
 }
 
 .dropdown-item:last-child {
     border-bottom: none;
 }
 
-.dropdown-item:first-child {
-    border-radius: 12px 12px 0 0;
-}
-
-.dropdown-item:last-child {
-    border-radius: 0 0 12px 12px;
-}
-
 .dropdown-item:hover {
-    background: #f9fafb;
+    background: linear-gradient(90deg, #f0f9ff 0%, #ffffff 100%);
+    color: #0891b2;
 }
 
 .dropdown-item i {
-    font-size: 18px;
+    font-size: 20px;
     color: #6b7280;
+    transition: all 0.3s ease;
+}
+
+.dropdown-item:hover i {
+    color: #0891b2;
+    transform: scale(1.1);
 }
 
 .dropdown-item-delete {
     color: #dc2626;
 }
 
+.dropdown-item-delete::before {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+
 .dropdown-item-delete:hover {
-    background: #fef2f2;
+    background: linear-gradient(90deg, #fef2f2 0%, #ffffff 100%);
+    color: #dc2626;
 }
 
 .dropdown-item-delete i {
+    color: #dc2626;
+}
+
+.dropdown-item-delete:hover i {
     color: #dc2626;
 }
 

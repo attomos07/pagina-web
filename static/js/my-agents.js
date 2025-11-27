@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Cerrar dropdown al hacer clic fuera
     document.addEventListener('click', function(e) {
-        if (!e.target.closest('.action-btn-menu')) {
+        if (!e.target.closest('.action-btn-menu') && !e.target.closest('.dropdown-menu')) {
             closeAllDropdowns();
         }
     });
@@ -148,51 +148,54 @@ function createAgentRow(agentPlatform) {
         })}</td>
         <td>
             <div class="actions-cell">
-                <button class="action-btn action-btn-view" title="Ver detalles">
-                    <i class="lni lni-eye"></i>
+                <button class="action-btn-menu" data-dropdown="${dropdownId}" title="Más opciones">
+                    <i class="lni lni-more-alt"></i>
                 </button>
-                <div style="position: relative;">
-                    <button class="action-btn action-btn-menu" data-dropdown="${dropdownId}" title="Más opciones">
-                        <i class="lni lni-more-alt"></i>
+                <div class="dropdown-menu" id="${dropdownId}">
+                    <button class="dropdown-item" data-action="view">
+                        <i class="lni lni-eye"></i>
+                        Ver Detalles
                     </button>
-                    <div class="dropdown-menu" id="${dropdownId}">
-                        <button class="dropdown-item" data-action="edit">
-                            <i class="lni lni-pencil"></i>
-                            Editar Configuración
-                        </button>
-                        <button class="dropdown-item" data-action="analytics">
-                            <i class="lni lni-bar-chart"></i>
-                            Ver Analíticas
-                        </button>
-                        <button class="dropdown-item" data-action="duplicate">
-                            <i class="lni lni-files"></i>
-                            Duplicar Configuración
-                        </button>
-                        <button class="dropdown-item dropdown-item-delete" data-action="delete">
-                            <i class="lni lni-trash-can"></i>
-                            Eliminar Plataforma
-                        </button>
-                    </div>
+                    <button class="dropdown-item" data-action="edit">
+                        <i class="lni lni-pencil"></i>
+                        Editar Configuración
+                    </button>
+                    <button class="dropdown-item" data-action="analytics">
+                        <i class="lni lni-bar-chart"></i>
+                        Ver Analíticas
+                    </button>
+                    <button class="dropdown-item" data-action="duplicate">
+                        <i class="lni lni-files"></i>
+                        Duplicar Configuración
+                    </button>
+                    <button class="dropdown-item dropdown-item-delete" data-action="delete">
+                        <i class="lni lni-trash-can"></i>
+                        Eliminar Plataforma
+                    </button>
                 </div>
             </div>
         </td>
     `;
     
-    // Agregar event listeners después de crear el elemento
-    const viewBtn = tr.querySelector('.action-btn-view');
-    viewBtn.addEventListener('click', () => viewAgent(agentPlatform.id));
-    
+    // Agregar event listener para el botón del menú
     const menuBtn = tr.querySelector('.action-btn-menu');
     menuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const dropdown = document.getElementById(dropdownId);
+        const isActive = dropdown.classList.contains('active');
         closeAllDropdowns();
-        if (dropdown) {
+        if (!isActive) {
             dropdown.classList.add('active');
         }
     });
     
     // Event listeners para las opciones del dropdown
+    const viewBtn = tr.querySelector('[data-action="view"]');
+    viewBtn.addEventListener('click', () => {
+        closeAllDropdowns();
+        viewAgent(agentPlatform.id);
+    });
+    
     const editBtn = tr.querySelector('[data-action="edit"]');
     editBtn.addEventListener('click', () => {
         closeAllDropdowns();
