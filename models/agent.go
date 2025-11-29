@@ -104,6 +104,15 @@ type Agent struct {
 	// Estado del agente
 	IsActive bool `gorm:"default:false" json:"isActive"`
 
+	// Credenciales de Chatwoot
+	ChatwootEmail       string `gorm:"size:255" json:"chatwootEmail"`
+	ChatwootPassword    string `gorm:"size:255" json:"-"` // No exponer en JSON
+	ChatwootAccountID   int    `gorm:"default:0" json:"chatwootAccountId"`
+	ChatwootAccountName string `gorm:"size:255" json:"chatwootAccountName"`
+	ChatwootInboxID     int    `gorm:"default:0" json:"chatwootInboxId"`
+	ChatwootInboxName   string `gorm:"size:255" json:"chatwootInboxName"`
+	ChatwootURL         string `gorm:"size:500" json:"chatwootUrl"`
+
 	// Timestamps
 	CreatedAt time.Time      `json:"createdAt"`
 	UpdatedAt time.Time      `json:"updatedAt"`

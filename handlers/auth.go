@@ -37,8 +37,10 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// Limpiar y validar datos
 	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 	req.PhoneNumber = strings.TrimSpace(req.PhoneNumber)
+	req.BusinessName = strings.TrimSpace(req.BusinessName)
 
 	// Verificar si el email ya existe
 	var existingUser models.User
@@ -51,18 +53,23 @@ func Register(c *gin.Context) {
 
 	// Crear usuario SIN proyecto GCP (se creará al crear primer agente)
 	user := models.User{
-		FirstName:     req.BusinessName, // Usar BusinessName como FirstName
-		LastName:      "",               // Dejar LastName vacío por ahora
-		Email:         req.Email,
-		Company:       req.BusinessName,
-		BusinessType:  req.BusinessType,
-		PhoneNumber:   req.PhoneNumber, // NUEVO CAMPO
-		ProjectStatus: "pending",       // Indica que aún no se ha creado el proyecto
-		GCPProjectID:  nil,             // NULL hasta que se cree el primer agente
-		GeminiAPIKey:  "",              // Vacío hasta que se cree el primer agente
+		FirstName:            req.BusinessName, // Usar BusinessName como FirstName
+		LastName:             "",               // Dejar LastName vacío (permitido en el modelo)
+		Email:                req.Email,
+		Company:              req.BusinessName,
+		BusinessType:         req.BusinessType,
+		PhoneNumber:          req.PhoneNumber,
+		ProjectStatus:        "pending", // Indica que aún no se ha creado el proyecto
+		GCPProjectID:         nil,       // NULL hasta que se cree el primer agente
+		GeminiAPIKey:         "",        // Vacío hasta que se cree el primer agente
+		SharedServerStatus:   "pending", // Estado inicial del servidor compartido
+		SharedServerID:       0,         // Sin servidor aún
+		SharedServerIP:       "",        // Sin IP aún
+		SharedServerPassword: "",        // Sin password aún
 	}
 
 	if err := user.HashPassword(req.Password); err != nil {
+		log.Printf("❌ Error al hashear contraseña: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Error al procesar la contraseña",
 		})
@@ -78,20 +85,23 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	log.Printf("✅ [User %d] Usuario creado exitosamente: %s (Tel: %s)", user.ID, user.Email, user.PhoneNumber)
+	log.Printf("✅ [User %d] Usuario creado exitosamente: %s (Tel: %s, Negocio: %s)",
+		user.ID, user.Email, user.PhoneNumber, user.Company)
 
 	// Generar token JWT
 	token, err := utils.GenerateToken(user.ID, user.Email)
 	if err != nil {
+		log.Printf("❌ Error generando token: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Error al generar token",
 		})
 		return
 	}
 
+	// Establecer cookie
 	c.SetCookie("auth_token", token, 3600*24, "/", "", false, true)
 
-	// Respuesta inmediata - SIN mensaje de espera de entorno
+	// Respuesta exitosa
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Cuenta creada exitosamente",
 		"token":   token,

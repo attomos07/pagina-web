@@ -9,13 +9,13 @@ import (
 
 type User struct {
 	ID           uint   `gorm:"primaryKey" json:"id"`
-	FirstName    string `gorm:"size:100;not null" json:"firstName"`
-	LastName     string `gorm:"size:100;not null" json:"lastName"`
+	FirstName    string `gorm:"size:100;not null" json:"firstName"` // REQUERIDO - Se usa BusinessName aquí
+	LastName     string `gorm:"size:100;not null" json:"lastName"`  // REQUERIDO - Se deja vacío por ahora
 	Email        string `gorm:"size:255;uniqueIndex;not null" json:"email"`
 	Password     string `gorm:"size:255;not null" json:"-"`
 	Company      string `gorm:"size:255" json:"company"`
 	BusinessType string `gorm:"size:100" json:"businessType"`
-	PhoneNumber  string `gorm:"size:50" json:"phoneNumber"` // NUEVO CAMPO: Número de WhatsApp del negocio
+	PhoneNumber  string `gorm:"size:50" json:"phoneNumber"` // Número de WhatsApp del negocio
 
 	// Google Cloud Project
 	GCPProjectID  *string `gorm:"size:255;unique" json:"-"`

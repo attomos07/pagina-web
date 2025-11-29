@@ -154,7 +154,7 @@ func CreateAgent(c *gin.Context) {
 		// PASO 1: Crear proyecto GCP si es necesario
 		if isFirstAgent {
 			log.Println("\n" + strings.Repeat("═", 80))
-			log.Printf("║ %s ║", centerText("PASO 1/3: GOOGLE CLOUD PROJECT", 76))
+			log.Printf("║ %s ║", centerText("PASO 1/4: GOOGLE CLOUD PROJECT", 76))
 			log.Println(strings.Repeat("═", 80))
 			log.Printf("🎉 [User %d] Primer agente detectado - Creando proyecto GCP\n", user.ID)
 			user.ProjectStatus = "creating"
@@ -198,7 +198,7 @@ func CreateAgent(c *gin.Context) {
 		// PASO 2: Crear servidor compartido si es el primer agente
 		if isFirstAgent {
 			log.Println("\n" + strings.Repeat("═", 80))
-			log.Printf("║ %s ║", centerText("PASO 2/3: INFRAESTRUCTURA CLOUD", 76))
+			log.Printf("║ %s ║", centerText("PASO 2/5: INFRAESTRUCTURA CLOUD", 76))
 			log.Println(strings.Repeat("═", 80))
 			log.Printf("🖥️  [User %d] Creando infraestructura compartida\n", user.ID)
 
@@ -260,7 +260,60 @@ func CreateAgent(c *gin.Context) {
 			log.Printf("========================================")
 		}
 
-		// PASO 3: Desplegar bot en el servidor compartido
+		// PASO 3: Configurar DNS en Cloudflare (solo primer agente)
+		if isFirstAgent {
+			log.Println("\n" + strings.Repeat("═", 80))
+			log.Printf("║ %s ║", centerText("PASO 3/5: CONFIGURAR DNS EN CLOUDFLARE", 76))
+			log.Println(strings.Repeat("═", 80))
+
+			cloudflareService, err := services.NewCloudflareService()
+			if err != nil {
+				log.Printf("⚠️  [User %d] Cloudflare no configurado: %v", user.ID, err)
+				log.Printf("⚠️  Tendrás que configurar el DNS manualmente:")
+				log.Printf("    - Tipo: A")
+				log.Printf("    - Nombre: chat-user%d", user.ID)
+				log.Printf("    - Contenido: %s", user.SharedServerIP)
+				log.Printf("    - Proxy: Activado")
+			} else {
+				if err := cloudflareService.CreateOrUpdateChatwootDNS(user.SharedServerIP, user.ID); err != nil {
+					log.Printf("⚠️  [User %d] Error configurando DNS automáticamente: %v", user.ID, err)
+					log.Printf("⚠️  Configura el DNS manualmente en Cloudflare")
+				} else {
+					log.Printf("✅ [User %d] DNS configurado automáticamente", user.ID)
+					log.Printf("   URL: https://chat-user%d.attomos.com", user.ID)
+				}
+			}
+		}
+
+		// PASO 4: Configurar Chatwoot (solo primer agente)
+		if isFirstAgent {
+			log.Println("\n" + strings.Repeat("═", 80))
+			log.Printf("║ %s ║", centerText("PASO 4/5: CONFIGURAR CHATWOOT", 76))
+			log.Println(strings.Repeat("═", 80))
+
+			chatwootService := services.NewChatwootService(user.SharedServerIP, user.ID)
+
+			credentials, err := chatwootService.CreateAccountAndUser(user, &agent)
+			if err != nil {
+				log.Printf("❌ [Agent %d] Error configurando Chatwoot: %v", agent.ID, err)
+				// No es crítico, continuar con el despliegue
+			} else {
+				// Guardar credenciales en el agente
+				agent.ChatwootEmail = credentials.Email
+				agent.ChatwootPassword = credentials.Password
+				agent.ChatwootAccountID = credentials.AccountID
+				agent.ChatwootAccountName = credentials.AccountName
+				agent.ChatwootInboxID = credentials.InboxID
+				agent.ChatwootInboxName = credentials.InboxName
+				agent.ChatwootURL = credentials.ChatwootURL
+				config.DB.Save(&agent)
+
+				log.Printf("✅ [Agent %d] Chatwoot configurado exitosamente", agent.ID)
+				log.Printf("   URL: %s", credentials.ChatwootURL)
+			}
+		}
+
+		// PASO 5: Desplegar bot en el servidor compartido
 		log.Printf("========================================")
 		log.Printf("🤖 [Agent %d] INICIANDO DESPLIEGUE DEL BOT", agent.ID)
 		log.Printf("   - Puerto: %d", agent.Port)
@@ -313,6 +366,10 @@ func CreateAgent(c *gin.Context) {
 		log.Printf("   - Infraestructura: %s", user.SharedServerIP)
 		log.Printf("   - Puerto: %d", agent.Port)
 		log.Printf("   - Estado: running")
+		if agent.ChatwootEmail != "" {
+			log.Printf("   - Chatwoot: %s", agent.ChatwootURL)
+			log.Printf("   - Chatwoot Email: %s", agent.ChatwootEmail)
+		}
 		log.Printf("========================================")
 	}()
 }
