@@ -252,6 +252,8 @@ func CreateAgent(c *gin.Context) {
 			user.SharedServerStatus = "initializing"
 			config.DB.Save(&user)
 
+			go hetznerService.MonitorCloudInitLogs(user.SharedServerIP, user.SharedServerPassword, 10*time.Minute)
+
 		} else {
 			log.Printf("========================================")
 			log.Printf("ℹ️ [User %d] USANDO INFRAESTRUCTURA COMPARTIDA EXISTENTE", user.ID)
@@ -291,7 +293,7 @@ func CreateAgent(c *gin.Context) {
 			log.Printf("║ %s ║", centerText("PASO 4/5: CONFIGURAR CHATWOOT", 76))
 			log.Println(strings.Repeat("═", 80))
 
-			chatwootService := services.NewChatwootService(user.SharedServerIP, user.ID)
+			chatwootService := services.NewChatwootService(user.SharedServerIP, user.ID, user.SharedServerPassword)
 
 			credentials, err := chatwootService.CreateAccountAndUser(user, &agent)
 			if err != nil {

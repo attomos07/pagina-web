@@ -10,6 +10,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"golang.org/x/crypto/ssh"
 )
 
 // HetznerService maneja la interacción con la API de Hetzner
@@ -67,7 +69,7 @@ func (h *HetznerService) CreateServer(serverName string, userID uint) (*ServerRe
 
 	payload := map[string]interface{}{
 		"name":        fmt.Sprintf("user-%d-server", userID),
-		"server_type": "cx23", // 4GB RAM - suficiente para Docker, Chatwoot y bots
+		"server_type": "cx23",
 		"image":       "ubuntu-22.04",
 		"location":    "nbg1",
 		"ssh_keys":    []string{},
@@ -115,9 +117,8 @@ func (h *HetznerService) CreateServer(serverName string, userID uint) (*ServerRe
 	return &serverResp, nil
 }
 
-// getCloudInitScript genera el script de inicialización CON CHATWOOT
+// getCloudInitScript genera el script de inicialización
 func (h *HetznerService) getCloudInitScript(agentName string, userID uint) string {
-	// Escapar comillas simples en el nombre del agente
 	escapedName := strings.ReplaceAll(agentName, "'", "'\\''")
 
 	return `#cloud-config
@@ -152,6 +153,7 @@ runcmd:
   
   # === FASE 2: INSTALAR DOCKER ===
   - echo "PHASE_2_DOCKER" > /var/log/attomos/status
+  - echo "[$(date)] Instalando Docker..." >> /var/log/attomos/init.log
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
   - echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
   - apt-get update -y >> /var/log/attomos/init.log 2>&1
@@ -159,9 +161,11 @@ runcmd:
   - systemctl enable docker >> /var/log/attomos/init.log 2>&1
   - systemctl start docker >> /var/log/attomos/init.log 2>&1
   - docker --version >> /var/log/attomos/init.log 2>&1
+  - echo "[$(date)] Docker instalado" >> /var/log/attomos/init.log
   
   # === FASE 3: INSTALAR NODE.JS Y PM2 ===
   - echo "PHASE_3_NODEJS" > /var/log/attomos/status
+  - echo "[$(date)] Instalando Node.js..." >> /var/log/attomos/init.log
   - curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
   - echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" > /etc/apt/sources.list.d/nodesource.list
   - apt-get update -y >> /var/log/attomos/init.log 2>&1
@@ -172,14 +176,14 @@ runcmd:
   - npm install -g pm2 >> /var/log/attomos/init.log 2>&1
   - sleep 3
   - pm2 --version >> /var/log/attomos/init.log 2>&1
+  - echo "[$(date)] Node.js instalado" >> /var/log/attomos/init.log
   
   # === FASE 4: CONFIGURAR CHATWOOT ===
   - echo "PHASE_4_CHATWOOT" > /var/log/attomos/status
+  - echo "[$(date)] Configurando Chatwoot..." >> /var/log/attomos/init.log
   - cd /opt/chatwoot
   - |
     cat > docker-compose.yml << 'EOFCOMPOSE'
-    version: '3'
-    
     services:
       postgres:
         image: postgres:12
@@ -214,7 +218,7 @@ runcmd:
           - NODE_ENV=production
           - RAILS_ENV=production
           - INSTALLATION_ENV=docker
-          - SECRET_KEY_BASE=replace_with_random_string_min_30_chars
+          - SECRET_KEY_BASE=replace_with_random_string_min_30_chars_` + h.generateRandomString(32) + `
           - FRONTEND_URL=https://chat-user` + fmt.Sprintf("%d", userID) + `.attomos.com
           - POSTGRES_HOST=postgres
           - POSTGRES_PORT=5432
@@ -243,7 +247,7 @@ runcmd:
           - NODE_ENV=production
           - RAILS_ENV=production
           - INSTALLATION_ENV=docker
-          - SECRET_KEY_BASE=replace_with_random_string_min_30_chars
+          - SECRET_KEY_BASE=replace_with_random_string_min_30_chars_` + h.generateRandomString(32) + `
           - FRONTEND_URL=https://chat-user` + fmt.Sprintf("%d", userID) + `.attomos.com
           - POSTGRES_HOST=postgres
           - POSTGRES_PORT=5432
@@ -263,16 +267,24 @@ runcmd:
     networks:
       chatwoot:
     EOFCOMPOSE
+  - echo "[$(date)] Iniciando Docker Compose..." >> /var/log/attomos/init.log
   - docker compose up -d >> /var/log/attomos/init.log 2>&1
-  - echo "Esperando a que los containers inicien..." >> /var/log/attomos/init.log 2>&1
+  - echo "[$(date)] Esperando 60s para que containers inicien..." >> /var/log/attomos/init.log
+  - sleep 60
+  - echo "[$(date)] Verificando containers..." >> /var/log/attomos/init.log
+  - docker compose ps >> /var/log/attomos/init.log 2>&1
+  - echo "[$(date)] Esperando 30s adicionales..." >> /var/log/attomos/init.log
   - sleep 30
-  - echo "Inicializando base de datos de Chatwoot..." >> /var/log/attomos/init.log 2>&1
-  - docker compose exec -T chatwoot bundle exec rails db:chatwoot_prepare >> /var/log/attomos/init.log 2>&1 || echo "DB already initialized" >> /var/log/attomos/init.log 2>&1
-  - sleep 10
-  - echo "Chatwoot setup completed" >> /var/log/attomos/init.log 2>&1
+  - echo "[$(date)] Inicializando base de datos..." >> /var/log/attomos/init.log
+  - docker compose exec -T chatwoot bundle exec rails db:chatwoot_prepare >> /var/log/attomos/init.log 2>&1 || echo "DB ya inicializada o error (ignorado)" >> /var/log/attomos/init.log 2>&1
+  - sleep 15
+  - echo "[$(date)] Verificando logs de Chatwoot..." >> /var/log/attomos/init.log
+  - docker compose logs chatwoot --tail=50 >> /var/log/attomos/init.log 2>&1
+  - echo "[$(date)] Chatwoot configurado" >> /var/log/attomos/init.log
   
   # === FASE 5: CONFIGURAR NGINX ===
   - echo "PHASE_5_NGINX" > /var/log/attomos/status
+  - echo "[$(date)] Configurando Nginx..." >> /var/log/attomos/init.log
   - |
     cat > /etc/nginx/sites-available/chatwoot << 'EOFNGINX'
     server {
@@ -295,14 +307,18 @@ runcmd:
   - ln -sf /etc/nginx/sites-available/chatwoot /etc/nginx/sites-enabled/
   - nginx -t >> /var/log/attomos/init.log 2>&1
   - systemctl restart nginx >> /var/log/attomos/init.log 2>&1
+  - echo "[$(date)] Nginx configurado" >> /var/log/attomos/init.log
   
   # === FASE 6: FIREWALL ===
   - echo "PHASE_6_FIREWALL" > /var/log/attomos/status
+  - echo "[$(date)] Configurando firewall..." >> /var/log/attomos/init.log
   - ufw --force enable >> /var/log/attomos/init.log 2>&1 || true
   - ufw allow 22/tcp >> /var/log/attomos/init.log 2>&1 || true
   - ufw allow 80/tcp >> /var/log/attomos/init.log 2>&1 || true
   - ufw allow 443/tcp >> /var/log/attomos/init.log 2>&1 || true
+  - ufw allow 3000/tcp >> /var/log/attomos/init.log 2>&1 || true
   - ufw allow 3001:3020/tcp >> /var/log/attomos/init.log 2>&1 || true
+  - echo "[$(date)] Firewall configurado" >> /var/log/attomos/init.log
   
   # === FASE 7: SERVER CONFIG ===
   - echo "PHASE_7_CONFIG" > /var/log/attomos/status
@@ -323,6 +339,7 @@ runcmd:
     command -v pm2 && echo "PM2 OK" || exit 1
     command -v docker && echo "Docker OK" || exit 1
     docker ps | grep chatwoot && echo "Chatwoot OK" || exit 1
+    curl -f http://localhost:3000/api && echo "Chatwoot API OK" || exit 1
     [ -f /var/log/attomos/status ] && cat /var/log/attomos/status
     [ "$(cat /var/log/attomos/status)" = "CLOUD_INIT_COMPLETE" ] && echo "SERVIDOR LISTO PARA DESPLEGAR BOTS" && exit 0
     exit 2
@@ -332,8 +349,108 @@ runcmd:
   # === COMPLETADO ===
   - echo "CLOUD_INIT_COMPLETE" > /var/log/attomos/status
   - date >> /var/log/attomos/init.log
-  - echo "COMPLETADO" >> /var/log/attomos/init.log
+  - echo "[$(date)] COMPLETADO" >> /var/log/attomos/init.log
+  - echo "[$(date)] Verificando Chatwoot final..." >> /var/log/attomos/init.log
+  - curl -v http://localhost:3000/api >> /var/log/attomos/init.log 2>&1 || echo "Chatwoot no responde aún" >> /var/log/attomos/init.log 2>&1
 `
+}
+
+// generateRandomString genera una cadena aleatoria
+func (h *HetznerService) generateRandomString(length int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	result := make([]byte, length)
+	for i := range result {
+		result[i] = charset[i%len(charset)]
+	}
+	return string(result)
+}
+
+// MonitorCloudInitLogs conecta por SSH y muestra los logs en tiempo real
+func (h *HetznerService) MonitorCloudInitLogs(serverIP, password string, duration time.Duration) {
+	fmt.Println("\n╔═══════════════════════════════════════════════════════════════╗")
+	fmt.Println("║           📡 MONITOREANDO LOGS DE INICIALIZACIÓN              ║")
+	fmt.Println("╚═══════════════════════════════════════════════════════════════╝")
+	fmt.Printf("🌐 IP: %s\n", serverIP)
+	fmt.Printf("⏱️  Duración: %v\n\n", duration)
+
+	config := &ssh.ClientConfig{
+		User: "root",
+		Auth: []ssh.AuthMethod{
+			ssh.Password(password),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         30 * time.Second,
+	}
+
+	// Intentar conectar con reintentos
+	var client *ssh.Client
+	var err error
+	maxRetries := 30
+
+	for i := 0; i < maxRetries; i++ {
+		fmt.Printf("[SSH] Intento de conexión %d/%d...\n", i+1, maxRetries)
+		client, err = ssh.Dial("tcp", serverIP+":22", config)
+		if err == nil {
+			fmt.Println("✅ [SSH] Conectado exitosamente\n")
+			break
+		}
+		if i < maxRetries-1 {
+			fmt.Printf("⚠️  Error: %v - Reintentando en 10s...\n", err)
+			time.Sleep(10 * time.Second)
+		}
+	}
+
+	if err != nil {
+		fmt.Printf("❌ [SSH] No se pudo conectar después de %d intentos: %v\n", maxRetries, err)
+		return
+	}
+	defer client.Close()
+
+	// Monitorear logs
+	session, err := client.NewSession()
+	if err != nil {
+		fmt.Printf("❌ Error creando sesión: %v\n", err)
+		return
+	}
+	defer session.Close()
+
+	// Comando para seguir los logs
+	cmd := fmt.Sprintf("timeout %d tail -f /var/log/attomos/init.log 2>/dev/null || tail -100 /var/log/cloud-init-output.log", int(duration.Seconds()))
+
+	stdout, err := session.StdoutPipe()
+	if err != nil {
+		fmt.Printf("❌ Error creando pipe: %v\n", err)
+		return
+	}
+
+	if err := session.Start(cmd); err != nil {
+		fmt.Printf("❌ Error iniciando comando: %v\n", err)
+		return
+	}
+
+	// Leer y mostrar logs en tiempo real
+	fmt.Println("═══════════════════════════════════════════════════════════════")
+	fmt.Println("📜 LOGS DE INICIALIZACIÓN (EN TIEMPO REAL):")
+	fmt.Println("═══════════════════════════════════════════════════════════════\n")
+
+	buf := make([]byte, 1024)
+	for {
+		n, err := stdout.Read(buf)
+		if err != nil {
+			if err != io.EOF {
+				fmt.Printf("\n⚠️  Error leyendo logs: %v\n", err)
+			}
+			break
+		}
+		if n > 0 {
+			fmt.Print(string(buf[:n]))
+		}
+	}
+
+	session.Wait()
+	fmt.Println("\n═══════════════════════════════════════════════════════════════")
+	fmt.Println("📊 FIN DE MONITOREO DE LOGS")
+	fmt.Println("═══════════════════════════════════════════════════════════════\n")
 }
 
 // WaitForServer espera a que el servidor esté en estado "running"

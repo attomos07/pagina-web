@@ -12,13 +12,16 @@ import (
 	"time"
 
 	"attomos/models"
+
+	"golang.org/x/crypto/ssh"
 )
 
 type ChatwootService struct {
-	serverIP   string
-	baseURL    string
-	userID     uint
-	httpClient *http.Client
+	serverIP       string
+	baseURL        string
+	userID         uint
+	httpClient     *http.Client
+	serverPassword string
 }
 
 type ChatwootAccount struct {
@@ -55,15 +58,140 @@ type ChatwootCredentials struct {
 }
 
 // NewChatwootService crea una nueva instancia del servicio
-func NewChatwootService(serverIP string, userID uint) *ChatwootService {
+func NewChatwootService(serverIP string, userID uint, password string) *ChatwootService {
 	return &ChatwootService{
-		serverIP: serverIP,
-		baseURL:  fmt.Sprintf("http://%s:3000", serverIP),
-		userID:   userID,
+		serverIP:       serverIP,
+		baseURL:        fmt.Sprintf("http://%s:3000", serverIP),
+		userID:         userID,
+		serverPassword: password,
 		httpClient: &http.Client{
 			Timeout: 60 * time.Second,
 		},
 	}
+}
+
+// executeSSHCommand ejecuta un comando en el servidor
+func (c *ChatwootService) executeSSHCommand(command string) (string, error) {
+	config := &ssh.ClientConfig{
+		User: "root",
+		Auth: []ssh.AuthMethod{
+			ssh.Password(c.serverPassword),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         30 * time.Second,
+	}
+
+	client, err := ssh.Dial("tcp", c.serverIP+":22", config)
+	if err != nil {
+		return "", fmt.Errorf("error conectando SSH: %v", err)
+	}
+	defer client.Close()
+
+	session, err := client.NewSession()
+	if err != nil {
+		return "", fmt.Errorf("error creando sesión: %v", err)
+	}
+	defer session.Close()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	session.Stdout = &stdout
+	session.Stderr = &stderr
+
+	err = session.Run(command)
+	output := stdout.String()
+	if stderr.String() != "" {
+		output += "\n" + stderr.String()
+	}
+
+	return output, err
+}
+
+// diagnoseChatwootFailure diagnostica por qué Chatwoot no está funcionando
+func (c *ChatwootService) diagnoseChatwootFailure() {
+	fmt.Println("\n╔═══════════════════════════════════════════════════════════════╗")
+	fmt.Println("║           🔍 DIAGNÓSTICO AUTOMÁTICO DE CHATWOOT               ║")
+	fmt.Println("╚═══════════════════════════════════════════════════════════════╝")
+
+	// 1. Verificar si Docker está corriendo
+	fmt.Println("\n1️⃣  VERIFICANDO DOCKER:")
+	fmt.Println("────────────────────────────────────────────────────────────────")
+	dockerStatus, err := c.executeSSHCommand("systemctl is-active docker")
+	if err != nil {
+		fmt.Printf("❌ Docker NO está corriendo: %v\n", err)
+	} else {
+		fmt.Printf("✅ Docker status: %s\n", strings.TrimSpace(dockerStatus))
+	}
+
+	// 2. Ver containers de Docker
+	fmt.Println("\n2️⃣  CONTAINERS DE DOCKER:")
+	fmt.Println("────────────────────────────────────────────────────────────────")
+	containers, _ := c.executeSSHCommand("cd /opt/chatwoot && docker compose ps")
+	fmt.Println(containers)
+
+	// 3. Ver si docker-compose.yml existe
+	fmt.Println("\n3️⃣  VERIFICANDO DOCKER-COMPOSE.YML:")
+	fmt.Println("────────────────────────────────────────────────────────────────")
+	composeExists, _ := c.executeSSHCommand("ls -lh /opt/chatwoot/docker-compose.yml")
+	fmt.Println(composeExists)
+
+	// 4. Ver logs de Chatwoot (últimas 100 líneas)
+	fmt.Println("\n4️⃣  LOGS DE CHATWOOT (últimas 100 líneas):")
+	fmt.Println("────────────────────────────────────────────────────────────────")
+	chatwootLogs, _ := c.executeSSHCommand("cd /opt/chatwoot && docker compose logs chatwoot --tail=100 2>&1")
+	if chatwootLogs == "" {
+		fmt.Println("⚠️  No hay logs de Chatwoot disponibles")
+	} else {
+		fmt.Println(chatwootLogs)
+	}
+
+	// 5. Ver logs de PostgreSQL
+	fmt.Println("\n5️⃣  LOGS DE POSTGRESQL (últimas 50 líneas):")
+	fmt.Println("────────────────────────────────────────────────────────────────")
+	postgresLogs, _ := c.executeSSHCommand("cd /opt/chatwoot && docker compose logs postgres --tail=50 2>&1")
+	if postgresLogs == "" {
+		fmt.Println("⚠️  No hay logs de PostgreSQL disponibles")
+	} else {
+		fmt.Println(postgresLogs)
+	}
+
+	// 6. Ver logs de Redis
+	fmt.Println("\n6️⃣  LOGS DE REDIS (últimas 50 líneas):")
+	fmt.Println("────────────────────────────────────────────────────────────────")
+	redisLogs, _ := c.executeSSHCommand("cd /opt/chatwoot && docker compose logs redis --tail=50 2>&1")
+	if redisLogs == "" {
+		fmt.Println("⚠️  No hay logs de Redis disponibles")
+	} else {
+		fmt.Println(redisLogs)
+	}
+
+	// 7. Ver si el puerto 3000 está escuchando
+	fmt.Println("\n7️⃣  PUERTO 3000:")
+	fmt.Println("────────────────────────────────────────────────────────────────")
+	port3000, _ := c.executeSSHCommand("ss -tlnp | grep :3000 || netstat -tlnp | grep :3000 || echo 'Puerto 3000 NO está escuchando'")
+	fmt.Println(port3000)
+
+	// 8. Intentar curl local
+	fmt.Println("\n8️⃣  TEST CURL LOCAL:")
+	fmt.Println("────────────────────────────────────────────────────────────────")
+	curlTest, _ := c.executeSSHCommand("curl -v http://localhost:3000/api 2>&1")
+	fmt.Println(curlTest)
+
+	// 9. Ver log de inicialización (últimas 100 líneas)
+	fmt.Println("\n9️⃣  LOG DE INICIALIZACIÓN (últimas 100 líneas):")
+	fmt.Println("────────────────────────────────────────────────────────────────")
+	initLog, _ := c.executeSSHCommand("tail -100 /var/log/attomos/init.log 2>&1")
+	fmt.Println(initLog)
+
+	// 10. Ver cloud-init status
+	fmt.Println("\n🔟 CLOUD-INIT STATUS:")
+	fmt.Println("────────────────────────────────────────────────────────────────")
+	cloudInitStatus, _ := c.executeSSHCommand("cloud-init status --long 2>&1")
+	fmt.Println(cloudInitStatus)
+
+	fmt.Println("\n═══════════════════════════════════════════════════════════════")
+	fmt.Println("FIN DEL DIAGNÓSTICO")
+	fmt.Println("═══════════════════════════════════════════════════════════════\n")
 }
 
 // WaitForChatwoot espera a que Chatwoot esté disponible
@@ -72,7 +200,7 @@ func (c *ChatwootService) WaitForChatwoot(maxWaitMinutes int) error {
 	fmt.Println("║              ⏳ ESPERANDO A QUE CHATWOOT INICIE               ║")
 	fmt.Println("╚═══════════════════════════════════════════════════════════════╝")
 	fmt.Printf("\n🔍 URL base: %s\n", c.baseURL)
-	fmt.Printf("⏱️  Timeout: %d minutos\n", maxWaitMinutes)
+	fmt.Printf("⏱️  Timeout: %d minutos\n\n", maxWaitMinutes)
 
 	maxAttempts := maxWaitMinutes * 6 // Cada 10 segundos
 
@@ -86,15 +214,13 @@ func (c *ChatwootService) WaitForChatwoot(maxWaitMinutes int) error {
 
 		if err != nil {
 			fmt.Printf("   ❌ Error de conexión: %v\n", err)
-			fmt.Printf("   💡 Causas posibles:\n")
-			fmt.Printf("      - Chatwoot aún no ha iniciado\n")
-			fmt.Printf("      - Docker containers no están listos\n")
-			fmt.Printf("      - PostgreSQL/Redis iniciando\n")
-		} else {
-			fmt.Printf("   📊 HTTP Status: %d\n", resp.StatusCode)
 
-			// Leer respuesta para más detalles
-			body, _ := io.ReadAll(resp.Body)
+			// Cada 2 minutos, hacer diagnóstico completo
+			if (i+1)%12 == 0 {
+				fmt.Println("\n   🔍 Ejecutando diagnóstico automático...")
+				c.diagnoseChatwootFailure()
+			}
+		} else {
 			resp.Body.Close()
 
 			if resp.StatusCode == 200 {
@@ -102,13 +228,7 @@ func (c *ChatwootService) WaitForChatwoot(maxWaitMinutes int) error {
 				return nil
 			}
 
-			if len(body) > 0 {
-				preview := string(body)
-				if len(preview) > 150 {
-					preview = preview[:150] + "..."
-				}
-				fmt.Printf("   📄 Respuesta: %s\n", preview)
-			}
+			fmt.Printf("   ⚠️  Status code: %d (esperando 200)\n", resp.StatusCode)
 		}
 
 		if i < maxAttempts-1 {
@@ -117,16 +237,9 @@ func (c *ChatwootService) WaitForChatwoot(maxWaitMinutes int) error {
 		}
 	}
 
-	fmt.Printf("\n❌ DIAGNÓSTICO FINAL:\n")
-	fmt.Printf("   • Chatwoot no respondió en %d minutos\n", maxWaitMinutes)
-	fmt.Printf("   • URL intentada: %s/api\n", c.baseURL)
-	fmt.Printf("   • Total de intentos: %d\n", maxAttempts)
-	fmt.Printf("\n💡 PRÓXIMOS PASOS:\n")
-	fmt.Printf("   1. Verifica que el servidor está en 'running'\n")
-	fmt.Printf("   2. SSH al servidor: ssh root@%s\n", c.serverIP)
-	fmt.Printf("   3. Revisa Docker: docker ps\n")
-	fmt.Printf("   4. Revisa logs: docker logs chatwoot-chatwoot-1\n")
-	fmt.Printf("   5. Revisa cloud-init: tail -f /var/log/cloud-init-output.log\n")
+	// Diagnóstico final antes de fallar
+	fmt.Println("\n❌ TIMEOUT ALCANZADO - Ejecutando diagnóstico final...")
+	c.diagnoseChatwootFailure()
 
 	return fmt.Errorf("chatwoot no respondió después de %d minutos", maxWaitMinutes)
 }
@@ -142,37 +255,33 @@ func (c *ChatwootService) CreateAccountAndUser(user *models.User, agent *models.
 		return nil, fmt.Errorf("chatwoot no está disponible: %v", err)
 	}
 
-	// 2. Generar credenciales simples basadas en el negocio
+	// 2. Generar credenciales
 	email, password := c.generateCredentials(user.Company, agent.Name)
-
 	fmt.Printf("\n📧 Email generado: %s\n", email)
 	fmt.Printf("🔑 Password generado: %s\n", password)
 
-	// 3. Crear cuenta (Account)
+	// 3. Crear cuenta
 	accountName := fmt.Sprintf("%s - %s", user.Company, agent.Name)
 	accountID, err := c.createAccount(accountName)
 	if err != nil {
 		return nil, fmt.Errorf("error creando cuenta: %v", err)
 	}
+	fmt.Printf("✅ Cuenta creada: ID=%d\n", accountID)
 
-	fmt.Printf("✅ Cuenta creada: ID=%d, Name=%s\n", accountID, accountName)
-
-	// 4. Crear usuario con acceso a la cuenta
+	// 4. Crear usuario
 	userID, accessToken, err := c.createUser(email, password, user.FirstName+" "+user.LastName, accountID)
 	if err != nil {
 		return nil, fmt.Errorf("error creando usuario: %v", err)
 	}
+	fmt.Printf("✅ Usuario creado: ID=%d\n", userID)
 
-	fmt.Printf("✅ Usuario creado: ID=%d, Email=%s\n", userID, email)
-
-	// 5. Crear inbox de WhatsApp
+	// 5. Crear inbox
 	inboxName := fmt.Sprintf("%s WhatsApp", agent.Name)
 	inboxID, err := c.createWhatsAppInbox(accessToken, accountID, inboxName, agent.PhoneNumber)
 	if err != nil {
 		return nil, fmt.Errorf("error creando inbox: %v", err)
 	}
-
-	fmt.Printf("✅ Inbox creado: ID=%d, Name=%s\n", inboxID, inboxName)
+	fmt.Printf("✅ Inbox creado: ID=%d\n", inboxID)
 
 	credentials := &ChatwootCredentials{
 		Email:       email,
@@ -184,14 +293,11 @@ func (c *ChatwootService) CreateAccountAndUser(user *models.User, agent *models.
 		ChatwootURL: fmt.Sprintf("https://chat-user%d.attomos.com", c.userID),
 	}
 
-	fmt.Println("\n✅ Configuración de Chatwoot completada")
-
 	return credentials, nil
 }
 
-// generateCredentials genera credenciales simples basadas en el negocio
+// generateCredentials genera credenciales simples
 func (c *ChatwootService) generateCredentials(companyName, agentName string) (string, string) {
-	// Email: nombre_empresa_agente@attomos.com
 	emailUser := strings.ToLower(companyName + "_" + agentName)
 	emailUser = strings.ReplaceAll(emailUser, " ", "_")
 	emailUser = strings.Map(func(r rune) rune {
@@ -202,8 +308,6 @@ func (c *ChatwootService) generateCredentials(companyName, agentName string) (st
 	}, emailUser)
 
 	email := emailUser + "@attomos.com"
-
-	// Password: NombreEmpresa123! (capitalizado + 123!)
 	passwordBase := strings.Title(strings.ToLower(companyName))
 	passwordBase = strings.ReplaceAll(passwordBase, " ", "")
 	password := passwordBase + "123!"
@@ -211,21 +315,15 @@ func (c *ChatwootService) generateCredentials(companyName, agentName string) (st
 	return email, password
 }
 
-// createAccount crea una cuenta en Chatwoot usando la API de instalación
+// createAccount crea una cuenta en Chatwoot
 func (c *ChatwootService) createAccount(accountName string) (int, error) {
-	// Usar la API pública de instalación de Chatwoot
 	payload := map[string]interface{}{
 		"account_name": accountName,
-		"email":        "admin@attomos.com", // Email temporal para creación inicial
+		"email":        "admin@attomos.com",
 	}
 
 	jsonData, _ := json.Marshal(payload)
-
-	resp, err := c.httpClient.Post(
-		c.baseURL+"/api/v1/accounts",
-		"application/json",
-		bytes.NewBuffer(jsonData),
-	)
+	resp, err := c.httpClient.Post(c.baseURL+"/api/v1/accounts", "application/json", bytes.NewBuffer(jsonData))
 
 	if err != nil {
 		return 0, err
@@ -248,7 +346,6 @@ func (c *ChatwootService) createAccount(accountName string) (int, error) {
 
 // createUser crea un usuario en Chatwoot
 func (c *ChatwootService) createUser(email, password, name string, accountID int) (int, string, error) {
-	// Crear usuario usando la API de Chatwoot
 	payload := map[string]interface{}{
 		"name":       name,
 		"email":      email,
@@ -258,9 +355,8 @@ func (c *ChatwootService) createUser(email, password, name string, accountID int
 	}
 
 	jsonData, _ := json.Marshal(payload)
-
 	resp, err := c.httpClient.Post(
-		c.baseURL+"/api/v1/accounts/"+fmt.Sprintf("%d", accountID)+"/users",
+		fmt.Sprintf("%s/api/v1/accounts/%d/users", c.baseURL, accountID),
 		"application/json",
 		bytes.NewBuffer(jsonData),
 	)
@@ -281,13 +377,11 @@ func (c *ChatwootService) createUser(email, password, name string, accountID int
 		return 0, "", err
 	}
 
-	// Generar access token (simulado - en producción usar el token real de Chatwoot)
 	accessToken := c.generateAccessToken()
-
 	return result.ID, accessToken, nil
 }
 
-// createWhatsAppInbox crea un inbox de WhatsApp en Chatwoot
+// createWhatsAppInbox crea un inbox de WhatsApp
 func (c *ChatwootService) createWhatsAppInbox(accessToken string, accountID int, inboxName, phoneNumber string) (int, error) {
 	payload := map[string]interface{}{
 		"name": inboxName,
@@ -299,10 +393,9 @@ func (c *ChatwootService) createWhatsAppInbox(accessToken string, accountID int,
 	}
 
 	jsonData, _ := json.Marshal(payload)
-
 	req, err := http.NewRequest(
 		"POST",
-		c.baseURL+"/api/v1/accounts/"+fmt.Sprintf("%d", accountID)+"/inboxes",
+		fmt.Sprintf("%s/api/v1/accounts/%d/inboxes", c.baseURL, accountID),
 		bytes.NewBuffer(jsonData),
 	)
 
@@ -333,7 +426,7 @@ func (c *ChatwootService) createWhatsAppInbox(accessToken string, accountID int,
 	return result.ID, nil
 }
 
-// generateAccessToken genera un token de acceso aleatorio
+// generateAccessToken genera un token aleatorio
 func (c *ChatwootService) generateAccessToken() string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	length := 40
@@ -347,7 +440,7 @@ func (c *ChatwootService) generateAccessToken() string {
 	return string(result)
 }
 
-// GetChatwootURL retorna la URL de Chatwoot para este servicio
+// GetChatwootURL retorna la URL de Chatwoot
 func (c *ChatwootService) GetChatwootURL() string {
 	return fmt.Sprintf("https://chat-user%d.attomos.com", c.userID)
 }
