@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	mathrand "math/rand"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -200,7 +200,7 @@ func (c *ChatwootService) WaitForChatwoot(maxWaitMinutes int) error {
 	fmt.Println("\n╔═══════════════════════════════════════════════════════════════╗")
 	fmt.Println("║              ⏳ ESPERANDO A QUE CHATWOOT INICIE               ║")
 	fmt.Println("╚═══════════════════════════════════════════════════════════════╝")
-	fmt.Printf("\n🔍 URL base: %s\n", c.baseURL)
+	fmt.Printf("\n🔗 URL base: %s\n", c.baseURL)
 	fmt.Printf("⏱️  Timeout: %d minutos\n\n", maxWaitMinutes)
 
 	maxAttempts := maxWaitMinutes * 6 // Cada 10 segundos
@@ -261,28 +261,21 @@ func (c *ChatwootService) CreateAccountAndUser(user *models.User, agent *models.
 	fmt.Printf("\n📧 Email generado: %s\n", email)
 	fmt.Printf("🔑 Password generado: %s\n", password)
 
-	// 3. Crear cuenta
+	// 3. Crear usuario, cuenta e inbox en una sola operación
 	accountName := fmt.Sprintf("%s - %s", user.Company, agent.Name)
-	accountID, err := c.createAccount(accountName)
-	if err != nil {
-		return nil, fmt.Errorf("error creando cuenta: %v", err)
-	}
-	fmt.Printf("✅ Cuenta creada: ID=%d\n", accountID)
-
-	// 4. Crear usuario
-	userID, accessToken, err := c.createUser(email, password, user.FirstName+" "+user.LastName, accountID)
-	if err != nil {
-		return nil, fmt.Errorf("error creando usuario: %v", err)
-	}
-	fmt.Printf("✅ Usuario creado: ID=%d\n", userID)
-
-	// 5. Crear inbox
 	inboxName := fmt.Sprintf("%s WhatsApp", agent.Name)
-	inboxID, err := c.createWhatsAppInbox(accessToken, accountID, inboxName, agent.PhoneNumber)
+	accountID, inboxID, _, err := c.createCompleteSetupViaConsole(
+		email,
+		password,
+		user.FirstName+" "+user.LastName,
+		accountName,
+		inboxName,
+		agent.PhoneNumber,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("error creando inbox: %v", err)
+		return nil, fmt.Errorf("error creando configuración completa: %v", err)
 	}
-	fmt.Printf("✅ Inbox creado: ID=%d\n", inboxID)
+	fmt.Printf("✅ Setup completo: AccountID=%d, InboxID=%d\n", accountID, inboxID)
 
 	credentials := &ChatwootCredentials{
 		Email:       email,
@@ -295,6 +288,154 @@ func (c *ChatwootService) CreateAccountAndUser(user *models.User, agent *models.
 	}
 
 	return credentials, nil
+}
+
+// createCompleteSetupViaConsole crea usuario, cuenta e inbox en una sola operación
+func (c *ChatwootService) createCompleteSetupViaConsole(email, password, name, accountName, inboxName, phoneNumber string) (int, int, string, error) {
+	fmt.Println("\n🔄 Creando setup completo en Chatwoot vía Rails console...")
+	fmt.Printf("   Email: %s\n", email)
+	fmt.Printf("   Name: %s\n", name)
+	fmt.Printf("   Account: %s\n", accountName)
+	fmt.Printf("   Inbox: %s\n", inboxName)
+
+	scriptPath := fmt.Sprintf("/tmp/chatwoot_complete_setup_%d.rb", time.Now().Unix())
+	createFileCmd := fmt.Sprintf(`cat > %s << 'EOFSCRIPT'
+# Crear cuenta
+account = Account.create!(name: '%s')
+
+# Crear usuario
+user = User.create!(
+  email: '%s',
+  password: '%s',
+  password_confirmation: '%s',
+  name: '%s',
+  confirmed_at: Time.now
+)
+
+# Asociar usuario con cuenta como administrador
+AccountUser.create!(account: account, user: user, role: :administrator)
+
+# Crear canal API (WhatsApp) - NO tiene atributo 'name'
+channel = Channel::Api.create!(
+  account: account
+)
+
+# Crear inbox con el nombre
+inbox = Inbox.create!(
+  account: account,
+  channel: channel,
+  name: '%s'
+)
+
+# Agregar el usuario al inbox
+InboxMember.create!(
+  inbox: inbox,
+  user: user
+)
+
+# IMPORTANTE: Marcar onboarding como completado
+# En algunas versiones de Chatwoot el campo se llama diferente
+begin
+  if account.respond_to?(:onboarding_step=)
+    account.update!(onboarding_step: 'completed')
+  elsif account.respond_to?(:onboarding_completed=)
+    account.update!(onboarding_completed: true)
+  end
+rescue => e
+  # Si no existe el campo, no pasa nada
+  puts "ONBOARDING_SKIP: #{e.message}"
+end
+
+# Obtener access token
+access_token = user.access_token.token
+
+# Output
+puts "ACCOUNT_ID:#{account.id}"
+puts "USER_ID:#{user.id}"
+puts "INBOX_ID:#{inbox.id}"
+puts "ACCESS_TOKEN:#{access_token}"
+EOFSCRIPT
+`,
+		scriptPath,
+		strings.ReplaceAll(accountName, "'", "\\'"),
+		strings.ReplaceAll(email, "'", "\\'"),
+		strings.ReplaceAll(password, "'", "\\'"),
+		strings.ReplaceAll(password, "'", "\\'"),
+		strings.ReplaceAll(name, "'", "\\'"),
+		strings.ReplaceAll(inboxName, "'", "\\'"),
+	)
+
+	// Crear el archivo
+	_, err := c.executeSSHCommand(createFileCmd)
+	if err != nil {
+		return 0, 0, "", fmt.Errorf("error creando archivo temporal: %v", err)
+	}
+
+	// Ejecutar el script
+	command := fmt.Sprintf(`cd /opt/chatwoot && docker compose exec -T chatwoot bundle exec rails runner "$(cat %s)"`, scriptPath)
+	output, err := c.executeSSHCommand(command)
+
+	// Limpiar el archivo temporal
+	c.executeSSHCommand(fmt.Sprintf("rm -f %s", scriptPath))
+
+	if err != nil {
+		return 0, 0, "", fmt.Errorf("error ejecutando Rails console: %v\nOutput: %s", err, output)
+	}
+
+	fmt.Printf("\n📥 Output de Rails console:\n%s\n", output)
+
+	// Parsear el output
+	accountID := 0
+	inboxID := 0
+	accessToken := ""
+	lines := strings.Split(output, "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "ACCOUNT_ID:") {
+			idStr := strings.TrimPrefix(line, "ACCOUNT_ID:")
+			accountID, _ = strconv.Atoi(strings.TrimSpace(idStr))
+		}
+		if strings.HasPrefix(line, "INBOX_ID:") {
+			idStr := strings.TrimPrefix(line, "INBOX_ID:")
+			inboxID, _ = strconv.Atoi(strings.TrimSpace(idStr))
+		}
+		if strings.HasPrefix(line, "ACCESS_TOKEN:") {
+			accessToken = strings.TrimSpace(strings.TrimPrefix(line, "ACCESS_TOKEN:"))
+		}
+	}
+
+	if accountID == 0 || inboxID == 0 || accessToken == "" {
+		return 0, 0, "", fmt.Errorf("datos incompletos en output: accountID=%d, inboxID=%d, token=%v", accountID, inboxID, accessToken != "")
+	}
+
+	fmt.Printf("✅ Setup completo exitoso: AccountID=%d, InboxID=%d\n", accountID, inboxID)
+
+	// ===================================================================
+	// ELIMINAR BANDERA DE ONBOARDING DE REDIS (OPCIÓN RECOMENDADA)
+	// ===================================================================
+	// Usa Rails console para manejar el namespace "alfred:" automáticamente
+	fmt.Println("\n🔧 Eliminando bandera de onboarding de Redis vía Rails console...")
+	deleteOnboardingScript := `::Redis::Alfred.delete(::Redis::Alfred::CHATWOOT_INSTALLATION_ONBOARDING)`
+	deleteOnboardingCmd := fmt.Sprintf(`cd /opt/chatwoot && docker compose exec -T chatwoot bundle exec rails runner "%s"`, deleteOnboardingScript)
+	delOutput, err := c.executeSSHCommand(deleteOnboardingCmd)
+	if err != nil {
+		fmt.Printf("⚠️  Error eliminando bandera (no crítico): %v\n", err)
+	} else {
+		fmt.Printf("✅ Bandera de onboarding eliminada: %s\n", strings.TrimSpace(delOutput))
+	}
+
+	// ===================================================================
+	// REINICIAR CONTENEDORES PARA APLICAR CAMBIOS
+	// ===================================================================
+	fmt.Println("\n🔄 Reiniciando contenedores de Chatwoot para recargar configuración...")
+	restartCmd := `cd /opt/chatwoot && docker compose restart`
+	restartOutput, err := c.executeSSHCommand(restartCmd)
+	if err != nil {
+		fmt.Printf("⚠️  Error reiniciando contenedores: %v\n", err)
+	} else {
+		fmt.Printf("✅ Contenedores reiniciados: %s\n", strings.TrimSpace(restartOutput))
+	}
+
+	return accountID, inboxID, accessToken, nil
 }
 
 // generateCredentials genera credenciales con contraseña segura
@@ -310,7 +451,13 @@ func (c *ChatwootService) generateCredentials(companyName, agentName string) (st
 
 	email := emailUser + "@attomos.com"
 
-	// Generar contraseña simple tipo: Chatwoot123!
+	// Generar contraseña que cumpla TODOS los requisitos de Chatwoot:
+	// - Mínimo 6 caracteres
+	// - Al menos 1 mayúscula (A-Z)
+	// - Al menos 1 minúscula (a-z)
+	// - Al menos 1 número (0-9)
+	// - Al menos 1 carácter especial de: !@#$%^&*()_+-=[]{}|"/\.,`<>:;?~'
+
 	baseWord := "Chatwoot"
 	if companyName != "" {
 		// Usar nombre de compañía capitalizado
@@ -320,114 +467,20 @@ func (c *ChatwootService) generateCredentials(companyName, agentName string) (st
 		if len(baseWord) > 8 {
 			baseWord = baseWord[:8]
 		}
+		// Asegurar que empiece con mayúscula
+		if len(baseWord) > 0 && baseWord[0] >= 'a' && baseWord[0] <= 'z' {
+			baseWord = string(baseWord[0]-32) + baseWord[1:]
+		}
 	}
 
-	password := baseWord + "123!"
+	// Formato: BaseWord123@#
+	// Esto garantiza: mayúscula inicial, minúsculas, números, y caracteres especiales válidos
+	password := baseWord + "123@#"
 
 	return email, password
 }
 
-// generateSecurePassword genera una contraseña que cumple con los requisitos de Chatwoot
-func (c *ChatwootService) generateSecurePassword() string {
-	const (
-		uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-		lowercase = "abcdefghijklmnopqrstuvwxyz"
-		numbers   = "0123456789"
-		special   = "#$"
-	)
-
-	mathrand.Seed(time.Now().UnixNano())
-
-	// Asegurar al menos un carácter de cada tipo
-	password := []byte{
-		uppercase[mathrand.Intn(len(uppercase))],
-		lowercase[mathrand.Intn(len(lowercase))],
-		numbers[mathrand.Intn(len(numbers))],
-		special[mathrand.Intn(len(special))],
-	}
-
-	// Completar hasta 12 caracteres con caracteres aleatorios
-	allChars := uppercase + lowercase + numbers + special
-	for i := 0; i < 8; i++ {
-		password = append(password, allChars[mathrand.Intn(len(allChars))])
-	}
-
-	// Mezclar para que no sea predecible
-	for i := len(password) - 1; i > 0; i-- {
-		j := mathrand.Intn(i + 1)
-		password[i], password[j] = password[j], password[i]
-	}
-
-	return string(password)
-}
-
-// createAccount crea una cuenta en Chatwoot
-func (c *ChatwootService) createAccount(accountName string) (int, error) {
-	payload := map[string]interface{}{
-		"account_name": accountName,
-		"email":        "admin@attomos.com",
-	}
-
-	jsonData, _ := json.Marshal(payload)
-	resp, err := c.httpClient.Post(c.baseURL+"/api/v1/accounts", "application/json", bytes.NewBuffer(jsonData))
-
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-
-	body, _ := io.ReadAll(resp.Body)
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return 0, fmt.Errorf("error HTTP %d: %s", resp.StatusCode, string(body))
-	}
-
-	var result ChatwootAccount
-	if err := json.Unmarshal(body, &result); err != nil {
-		return 0, err
-	}
-
-	return result.ID, nil
-}
-
-// createUser crea un usuario en Chatwoot
-func (c *ChatwootService) createUser(email, password, name string, accountID int) (int, string, error) {
-	payload := map[string]interface{}{
-		"name":       name,
-		"email":      email,
-		"password":   password,
-		"account_id": accountID,
-		"role":       "administrator",
-	}
-
-	jsonData, _ := json.Marshal(payload)
-	resp, err := c.httpClient.Post(
-		fmt.Sprintf("%s/api/v1/accounts/%d/users", c.baseURL, accountID),
-		"application/json",
-		bytes.NewBuffer(jsonData),
-	)
-
-	if err != nil {
-		return 0, "", err
-	}
-	defer resp.Body.Close()
-
-	body, _ := io.ReadAll(resp.Body)
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return 0, "", fmt.Errorf("error HTTP %d: %s", resp.StatusCode, string(body))
-	}
-
-	var result ChatwootUser
-	if err := json.Unmarshal(body, &result); err != nil {
-		return 0, "", err
-	}
-
-	accessToken := c.generateAccessToken()
-	return result.ID, accessToken, nil
-}
-
-// createWhatsAppInbox crea un inbox de WhatsApp
+// createWhatsAppInbox crea un inbox de WhatsApp (MÉTODO LEGACY - ya no se usa)
 func (c *ChatwootService) createWhatsAppInbox(accessToken string, accountID int, inboxName, phoneNumber string) (int, error) {
 	payload := map[string]interface{}{
 		"name": inboxName,
@@ -489,4 +542,124 @@ func (c *ChatwootService) generateAccessToken() string {
 // GetChatwootURL retorna la URL de Chatwoot
 func (c *ChatwootService) GetChatwootURL() string {
 	return fmt.Sprintf("https://chat-user%d.attomos.com", c.userID)
+}
+
+// InvestigateChatwootOnboarding investiga la estructura y configuración de Chatwoot
+func (c *ChatwootService) InvestigateChatwootOnboarding() error {
+	fmt.Println("\n╔═══════════════════════════════════════════════════════════════╗")
+	fmt.Println("║           🔍 INVESTIGANDO CHATWOOT ONBOARDING                  ║")
+	fmt.Println("╚═══════════════════════════════════════════════════════════════╝")
+
+	scriptPath := fmt.Sprintf("/tmp/chatwoot_investigate_%d.rb", time.Now().Unix())
+	createFileCmd := fmt.Sprintf(`cat > %s << 'EOFSCRIPT'
+puts "═══════════════════════════════════════════════════════════"
+puts "VERSIÓN DE CHATWOOT"
+puts "═══════════════════════════════════════════════════════════"
+begin
+  version = Chatwoot.config[:version] rescue 'unknown'
+  puts "Version: #{version}"
+rescue => e
+  puts "Error getting version: #{e.message}"
+end
+
+puts "\n═══════════════════════════════════════════════════════════"
+puts "COLUMNAS DE LA TABLA ACCOUNTS"
+puts "═══════════════════════════════════════════════════════════"
+Account.column_names.sort.each do |col|
+  puts "- #{col}"
+end
+
+puts "\n═══════════════════════════════════════════════════════════"
+puts "VERIFICAR CUENTA CON ID=1"
+puts "═══════════════════════════════════════════════════════════"
+account = Account.find_by(id: 1)
+if account
+  puts "Account encontrada: #{account.name}"
+  puts "Atributos que contienen 'onboard' o 'setup':"
+  account.attributes.select { |k, v| k.to_s.match?(/onboard|setup|install/i) }.each do |key, value|
+    puts "  #{key}: #{value.inspect}"
+  end
+end
+
+puts "\n═══════════════════════════════════════════════════════════"
+puts "VERIFICAR REDIS - INSTALLATION ONBOARDING"
+puts "═══════════════════════════════════════════════════════════"
+begin
+  redis_value = Redis::Alfred.get(Redis::Alfred::CHATWOOT_INSTALLATION_ONBOARDING)
+  puts "Redis CHATWOOT_INSTALLATION_ONBOARDING: #{redis_value.inspect}"
+rescue => e
+  puts "Error checking Redis: #{e.message}"
+end
+
+puts "\n═══════════════════════════════════════════════════════════"
+puts "BUSCAR CONTROLADOR DE INSTALLATION"
+puts "═══════════════════════════════════════════════════════════"
+begin
+  if defined?(Installation::OnboardingController)
+    puts "Installation::OnboardingController existe"
+  else
+    puts "Installation::OnboardingController NO existe"
+  end
+  
+  if defined?(Super::OnboardingController)
+    puts "Super::OnboardingController existe"
+  else
+    puts "Super::OnboardingController NO existe"
+  end
+rescue => e
+  puts "Error: #{e.message}"
+end
+
+puts "\n═══════════════════════════════════════════════════════════"
+puts "VERIFICAR USUARIO CON ID=1"
+puts "═══════════════════════════════════════════════════════════"
+user = User.find_by(id: 1)
+if user
+  puts "User encontrado: #{user.email}"
+  puts "Confirmed: #{user.confirmed_at.present?}"
+  puts "Super Admin: #{user.super_admin? rescue 'método no existe'}"
+  puts "Accounts count: #{user.accounts.count}"
+  puts "Account IDs: #{user.accounts.pluck(:id)}"
+end
+
+puts "\n═══════════════════════════════════════════════════════════"
+puts "VERIFICAR TODAS LAS KEYS DE REDIS RELACIONADAS"
+puts "═══════════════════════════════════════════════════════════"
+begin
+  redis = Redis.new(url: ENV['REDIS_URL'] || 'redis://redis:6379')
+  keys = redis.keys('*ONBOARD*') + redis.keys('*onboard*') + redis.keys('*INSTALL*') + redis.keys('*install*')
+  if keys.any?
+    keys.each do |key|
+      value = redis.get(key)
+      puts "#{key}: #{value}"
+    end
+  else
+    puts "No se encontraron keys relacionadas con onboarding"
+  end
+rescue => e
+  puts "Error checking Redis keys: #{e.message}"
+end
+EOFSCRIPT
+`, scriptPath)
+
+	// Crear el archivo
+	_, err := c.executeSSHCommand(createFileCmd)
+	if err != nil {
+		return fmt.Errorf("error creando archivo temporal: %v", err)
+	}
+
+	// Ejecutar el script
+	command := fmt.Sprintf(`cd /opt/chatwoot && docker compose exec -T chatwoot bundle exec rails runner "$(cat %s)"`, scriptPath)
+	output, err := c.executeSSHCommand(command)
+
+	// Limpiar el archivo temporal
+	c.executeSSHCommand(fmt.Sprintf("rm -f %s", scriptPath))
+
+	if err != nil {
+		return fmt.Errorf("error ejecutando investigación: %v\nOutput: %s", err, output)
+	}
+
+	fmt.Printf("\n📥 RESULTADO DE LA INVESTIGACIÓN:\n%s\n", output)
+
+	return nil
 }
