@@ -151,51 +151,44 @@ func CreateAgent(c *gin.Context) {
 
 		isFirstAgent := agentCount == 0
 
-		// PASO 1: Crear proyecto GCP si es necesario
+		// PASO 1: Crear proyecto GCP si es necesario (NO BLOQUEANTE)
 		if isFirstAgent {
 			log.Println("\n" + strings.Repeat("═", 80))
-			log.Printf("║ %s ║", centerText("PASO 1/4: GOOGLE CLOUD PROJECT", 76))
+			log.Printf("║ %s ║", centerText("PASO 1/5: GOOGLE CLOUD PROJECT", 76))
 			log.Println(strings.Repeat("═", 80))
-			log.Printf("🎉 [User %d] Primer agente detectado - Creando proyecto GCP\n", user.ID)
+			log.Printf("🎉 [User %d] Primer agente detectado - Intentando crear proyecto GCP\n", user.ID)
 			user.ProjectStatus = "creating"
 			config.DB.Save(&user)
 
 			gca, err := services.NewGoogleCloudAutomation()
 			if err != nil {
-				log.Printf("❌ [User %d] Error inicializando GCP: %v", user.ID, err)
+				log.Printf("⚠️ [User %d] Error inicializando GCP (NO CRÍTICO): %v", user.ID, err)
 				user.ProjectStatus = "error"
-				agent.DeployStatus = "error"
 				config.DB.Save(&user)
-				config.DB.Save(&agent)
-				return
+				// NO RETORNAR - CONTINUAR CON EL PROCESO
+			} else {
+				projectID, apiKey, err := gca.CreateProjectForUser(user.ID, user.Email)
+				if err != nil {
+					log.Printf("⚠️ [User %d] Error creando proyecto GCP (NO CRÍTICO): %v", user.ID, err)
+					user.ProjectStatus = "error"
+					config.DB.Save(&user)
+					// NO RETORNAR - CONTINUAR CON EL PROCESO
+				} else {
+					projectIDCopy := projectID
+					user.GCPProjectID = &projectIDCopy
+					user.GeminiAPIKey = apiKey
+					user.ProjectStatus = "ready"
+
+					if err := config.DB.Save(&user).Error; err != nil {
+						log.Printf("⚠️ [User %d] Error guardando proyecto (NO CRÍTICO): %v", user.ID, err)
+					} else {
+						log.Printf("🎉 [User %d] Proyecto GCP listo: %s", user.ID, projectID)
+					}
+				}
 			}
-
-			projectID, apiKey, err := gca.CreateProjectForUser(user.ID, user.Email)
-			if err != nil {
-				log.Printf("❌ [User %d] Error creando proyecto: %v", user.ID, err)
-				user.ProjectStatus = "error"
-				agent.DeployStatus = "error"
-				config.DB.Save(&user)
-				config.DB.Save(&agent)
-				return
-			}
-
-			projectIDCopy := projectID
-			user.GCPProjectID = &projectIDCopy
-			user.GeminiAPIKey = apiKey
-			user.ProjectStatus = "ready"
-
-			if err := config.DB.Save(&user).Error; err != nil {
-				log.Printf("❌ [User %d] Error guardando proyecto: %v", user.ID, err)
-				agent.DeployStatus = "error"
-				config.DB.Save(&agent)
-				return
-			}
-
-			log.Printf("🎉 [User %d] Proyecto GCP listo: %s", user.ID, projectID)
 		}
 
-		// PASO 2: Crear servidor compartido si es el primer agente
+		// PASO 2: Crear servidor compartido si es el primer agente (CRÍTICO)
 		if isFirstAgent {
 			log.Println("\n" + strings.Repeat("═", 80))
 			log.Printf("║ %s ║", centerText("PASO 2/5: INFRAESTRUCTURA CLOUD", 76))
@@ -207,12 +200,12 @@ func CreateAgent(c *gin.Context) {
 
 			hetznerService, err := services.NewHetznerService()
 			if err != nil {
-				log.Printf("❌ [User %d] Error inicializando servicio: %v", user.ID, err)
+				log.Printf("❌ [User %d] Error inicializando servicio Hetzner: %v", user.ID, err)
 				user.SharedServerStatus = "error"
 				agent.DeployStatus = "error"
 				config.DB.Save(&user)
 				config.DB.Save(&agent)
-				return
+				return // ESTE SÍ ES CRÍTICO
 			}
 
 			serverName := fmt.Sprintf("attomos-user-%d", user.ID)
@@ -223,7 +216,7 @@ func CreateAgent(c *gin.Context) {
 				agent.DeployStatus = "error"
 				config.DB.Save(&user)
 				config.DB.Save(&agent)
-				return
+				return // ESTE SÍ ES CRÍTICO
 			}
 
 			user.SharedServerID = serverResp.Server.ID
@@ -244,7 +237,7 @@ func CreateAgent(c *gin.Context) {
 				agent.DeployStatus = "error"
 				config.DB.Save(&user)
 				config.DB.Save(&agent)
-				return
+				return // ESTE SÍ ES CRÍTICO
 			}
 
 			log.Printf("✅ [User %d] Infraestructura en estado 'running'", user.ID)
@@ -262,7 +255,7 @@ func CreateAgent(c *gin.Context) {
 			log.Printf("========================================")
 		}
 
-		// PASO 3: Configurar DNS en Cloudflare (solo primer agente)
+		// PASO 3: Configurar DNS en Cloudflare (NO BLOQUEANTE)
 		if isFirstAgent {
 			log.Println("\n" + strings.Repeat("═", 80))
 			log.Printf("║ %s ║", centerText("PASO 3/5: CONFIGURAR DNS EN CLOUDFLARE", 76))
@@ -270,7 +263,7 @@ func CreateAgent(c *gin.Context) {
 
 			cloudflareService, err := services.NewCloudflareService()
 			if err != nil {
-				log.Printf("⚠️  [User %d] Cloudflare no configurado: %v", user.ID, err)
+				log.Printf("⚠️  [User %d] Cloudflare no configurado (NO CRÍTICO): %v", user.ID, err)
 				log.Printf("⚠️  Tendrás que configurar el DNS manualmente:")
 				log.Printf("    - Tipo: A")
 				log.Printf("    - Nombre: chat-user%d", user.ID)
@@ -278,7 +271,7 @@ func CreateAgent(c *gin.Context) {
 				log.Printf("    - Proxy: Activado")
 			} else {
 				if err := cloudflareService.CreateOrUpdateChatwootDNS(user.SharedServerIP, user.ID); err != nil {
-					log.Printf("⚠️  [User %d] Error configurando DNS automáticamente: %v", user.ID, err)
+					log.Printf("⚠️  [User %d] Error configurando DNS (NO CRÍTICO): %v", user.ID, err)
 					log.Printf("⚠️  Configura el DNS manualmente en Cloudflare")
 				} else {
 					log.Printf("✅ [User %d] DNS configurado automáticamente", user.ID)
@@ -287,7 +280,7 @@ func CreateAgent(c *gin.Context) {
 			}
 		}
 
-		// PASO 4: Configurar Chatwoot (solo primer agente)
+		// PASO 4: Configurar Chatwoot (NO BLOQUEANTE)
 		if isFirstAgent {
 			log.Println("\n" + strings.Repeat("═", 80))
 			log.Printf("║ %s ║", centerText("PASO 4/5: CONFIGURAR CHATWOOT", 76))
@@ -297,8 +290,9 @@ func CreateAgent(c *gin.Context) {
 
 			credentials, err := chatwootService.CreateAccountAndUser(user, &agent)
 			if err != nil {
-				log.Printf("❌ [Agent %d] Error configurando Chatwoot: %v", agent.ID, err)
-				// No es crítico, continuar con el despliegue
+				log.Printf("⚠️ [Agent %d] Error configurando Chatwoot (NO CRÍTICO): %v", agent.ID, err)
+				log.Printf("⚠️ Puedes configurar Chatwoot manualmente después")
+				// NO RETORNAR - CONTINUAR CON EL DESPLIEGUE
 			} else {
 				// Guardar credenciales en el agente
 				agent.ChatwootEmail = credentials.Email
@@ -315,7 +309,7 @@ func CreateAgent(c *gin.Context) {
 			}
 		}
 
-		// PASO 5: Desplegar bot en el servidor compartido
+		// PASO 5: Desplegar bot en el servidor compartido (CRÍTICO)
 		log.Printf("========================================")
 		log.Printf("🤖 [Agent %d] INICIANDO DESPLIEGUE DEL BOT", agent.ID)
 		log.Printf("   - Puerto: %d", agent.Port)
@@ -333,7 +327,7 @@ func CreateAgent(c *gin.Context) {
 			log.Printf("❌ [Agent %d] Error conectando: %v", agent.ID, err)
 			agent.DeployStatus = "error"
 			config.DB.Save(&agent)
-			return
+			return // ESTE SÍ ES CRÍTICO
 		}
 		defer deployService.Close()
 
@@ -348,7 +342,7 @@ func CreateAgent(c *gin.Context) {
 			log.Printf("Error: %v", err)
 			agent.DeployStatus = "error"
 			config.DB.Save(&agent)
-			return
+			return // ESTE SÍ ES CRÍTICO
 		}
 
 		// Actualizar servidor a "ready" si es primer agente y fue exitoso
@@ -371,6 +365,13 @@ func CreateAgent(c *gin.Context) {
 		if agent.ChatwootEmail != "" {
 			log.Printf("   - Chatwoot: %s", agent.ChatwootURL)
 			log.Printf("   - Chatwoot Email: %s", agent.ChatwootEmail)
+		} else {
+			log.Printf("   ⚠️ Chatwoot no configurado (puedes hacerlo manualmente)")
+		}
+		if user.GCPProjectID != nil && *user.GCPProjectID != "" {
+			log.Printf("   - Proyecto GCP: %s", *user.GCPProjectID)
+		} else {
+			log.Printf("   ⚠️ Proyecto GCP no creado (puedes hacerlo manualmente)")
 		}
 		log.Printf("========================================")
 	}()

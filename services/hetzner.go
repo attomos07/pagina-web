@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -119,8 +118,6 @@ func (h *HetznerService) CreateServer(serverName string, userID uint) (*ServerRe
 
 // getCloudInitScript genera el script de inicialización
 func (h *HetznerService) getCloudInitScript(agentName string, userID uint) string {
-	escapedName := strings.ReplaceAll(agentName, "'", "'\\''")
-
 	return `#cloud-config
 
 chpasswd:
@@ -186,32 +183,47 @@ runcmd:
     cat > docker-compose.yml << 'EOFCOMPOSE'
     services:
       postgres:
-        image: postgres:12
+        image: pgvector/pgvector:pg16
+        container_name: chatwoot-postgres
         restart: always
         volumes:
-          - ./data/postgres:/var/lib/postgresql/data
+          - postgres_data:/var/lib/postgresql/data
         environment:
-          - POSTGRES_DB=chatwoot
+          - POSTGRES_DB=chatwoot_production
           - POSTGRES_USER=postgres
           - POSTGRES_PASSWORD=chatwoot_postgres_password
         networks:
           - chatwoot
+        healthcheck:
+          test: ["CMD-SHELL", "pg_isready -U postgres"]
+          interval: 10s
+          timeout: 5s
+          retries: 5
     
       redis:
         image: redis:alpine
+        container_name: chatwoot-redis
         restart: always
         command: ["sh", "-c", "redis-server --requirepass chatwoot_redis_password"]
         volumes:
-          - ./data/redis:/data
+          - redis_data:/data
         networks:
           - chatwoot
+        healthcheck:
+          test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+          interval: 10s
+          timeout: 5s
+          retries: 5
     
       chatwoot:
         image: chatwoot/chatwoot:latest
+        container_name: chatwoot-app
         restart: always
         depends_on:
-          - postgres
-          - redis
+          postgres:
+            condition: service_healthy
+          redis:
+            condition: service_healthy
         ports:
           - "3000:3000"
         environment:
@@ -222,7 +234,7 @@ runcmd:
           - FRONTEND_URL=https://chat-user` + fmt.Sprintf("%d", userID) + `.attomos.com
           - POSTGRES_HOST=postgres
           - POSTGRES_PORT=5432
-          - POSTGRES_DATABASE=chatwoot
+          - POSTGRES_DATABASE=chatwoot_production
           - POSTGRES_USERNAME=postgres
           - POSTGRES_PASSWORD=chatwoot_postgres_password
           - REDIS_URL=redis://:chatwoot_redis_password@redis:6379
@@ -230,19 +242,35 @@ runcmd:
           - MAILER_SENDER_EMAIL=noreply@attomos.com
           - SMTP_DOMAIN=attomos.com
           - ACTIVE_STORAGE_SERVICE=local
+          - FORCE_SSL=false
+          - ENABLE_ACCOUNT_SIGNUP=true
+          - USE_INBOX_AVATAR_FOR_BOT=false
         volumes:
-          - ./data/storage:/app/storage
+          - chatwoot_storage:/app/storage
         networks:
           - chatwoot
-        entrypoint: docker/entrypoints/rails.sh
-        command: ['bundle', 'exec', 'rails', 's', '-p', '3000', '-b', '0.0.0.0']
+        command: >
+          sh -c "bundle exec rails db:chatwoot_prepare && 
+                 bundle exec rails db:migrate &&
+                 bundle exec rails s -p 3000 -b 0.0.0.0"
+        healthcheck:
+          test: ["CMD-SHELL", "curl -f http://localhost:3000/api || exit 1"]
+          interval: 30s
+          timeout: 10s
+          retries: 5
+          start_period: 180s
     
       sidekiq:
         image: chatwoot/chatwoot:latest
+        container_name: chatwoot-sidekiq
         restart: always
         depends_on:
-          - postgres
-          - redis
+          postgres:
+            condition: service_healthy
+          redis:
+            condition: service_healthy
+          chatwoot:
+            condition: service_started
         environment:
           - NODE_ENV=production
           - RAILS_ENV=production
@@ -251,33 +279,31 @@ runcmd:
           - FRONTEND_URL=https://chat-user` + fmt.Sprintf("%d", userID) + `.attomos.com
           - POSTGRES_HOST=postgres
           - POSTGRES_PORT=5432
-          - POSTGRES_DATABASE=chatwoot
+          - POSTGRES_DATABASE=chatwoot_production
           - POSTGRES_USERNAME=postgres
           - POSTGRES_PASSWORD=chatwoot_postgres_password
           - REDIS_URL=redis://:chatwoot_redis_password@redis:6379
           - REDIS_PASSWORD=chatwoot_redis_password
-          - MAILER_SENDER_EMAIL=noreply@attomos.com
-          - SMTP_DOMAIN=attomos.com
         volumes:
-          - ./data/storage:/app/storage
+          - chatwoot_storage:/app/storage
         networks:
           - chatwoot
-        command: ['bundle', 'exec', 'sidekiq', '-C', 'config/sidekiq.yml']
+        command: bundle exec sidekiq -C config/sidekiq.yml
     
     networks:
       chatwoot:
+        name: chatwoot
+    
+    volumes:
+      postgres_data:
+      redis_data:
+      chatwoot_storage:
     EOFCOMPOSE
-  - echo "[$(date)] Iniciando Docker Compose..." >> /var/log/attomos/init.log
+  - echo "[$(date)] docker-compose.yml creado" >> /var/log/attomos/init.log
   - docker compose up -d >> /var/log/attomos/init.log 2>&1
-  - echo "[$(date)] Esperando 60s para que containers inicien..." >> /var/log/attomos/init.log
-  - sleep 60
-  - echo "[$(date)] Verificando containers..." >> /var/log/attomos/init.log
+  - echo "[$(date)] Esperando 180 segundos para que Chatwoot inicie..." >> /var/log/attomos/init.log
+  - sleep 180
   - docker compose ps >> /var/log/attomos/init.log 2>&1
-  - echo "[$(date)] Esperando 30s adicionales..." >> /var/log/attomos/init.log
-  - sleep 30
-  - echo "[$(date)] Inicializando base de datos..." >> /var/log/attomos/init.log
-  - docker compose exec -T chatwoot bundle exec rails db:chatwoot_prepare >> /var/log/attomos/init.log 2>&1 || echo "DB ya inicializada o error (ignorado)" >> /var/log/attomos/init.log 2>&1
-  - sleep 15
   - echo "[$(date)] Verificando logs de Chatwoot..." >> /var/log/attomos/init.log
   - docker compose logs chatwoot --tail=50 >> /var/log/attomos/init.log 2>&1
   - echo "[$(date)] Chatwoot configurado" >> /var/log/attomos/init.log
@@ -295,7 +321,7 @@ runcmd:
             proxy_pass http://localhost:3000;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection 'upgrade';
+            proxy_set_header Connection "upgrade";
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -305,25 +331,24 @@ runcmd:
     }
     EOFNGINX
   - ln -sf /etc/nginx/sites-available/chatwoot /etc/nginx/sites-enabled/
+  - rm -f /etc/nginx/sites-enabled/default
   - nginx -t >> /var/log/attomos/init.log 2>&1
-  - systemctl restart nginx >> /var/log/attomos/init.log 2>&1
+  - systemctl reload nginx >> /var/log/attomos/init.log 2>&1
   - echo "[$(date)] Nginx configurado" >> /var/log/attomos/init.log
   
-  # === FASE 6: FIREWALL ===
+  # === FASE 6: CONFIGURAR FIREWALL ===
   - echo "PHASE_6_FIREWALL" > /var/log/attomos/status
   - echo "[$(date)] Configurando firewall..." >> /var/log/attomos/init.log
-  - ufw --force enable >> /var/log/attomos/init.log 2>&1 || true
-  - ufw allow 22/tcp >> /var/log/attomos/init.log 2>&1 || true
-  - ufw allow 80/tcp >> /var/log/attomos/init.log 2>&1 || true
-  - ufw allow 443/tcp >> /var/log/attomos/init.log 2>&1 || true
-  - ufw allow 3000/tcp >> /var/log/attomos/init.log 2>&1 || true
-  - ufw allow 3001:3020/tcp >> /var/log/attomos/init.log 2>&1 || true
+  - ufw --force enable >> /var/log/attomos/init.log 2>&1
+  - ufw allow 22 >> /var/log/attomos/init.log 2>&1
+  - ufw allow 80 >> /var/log/attomos/init.log 2>&1
+  - ufw allow 443 >> /var/log/attomos/init.log 2>&1
+  - ufw allow 3000 >> /var/log/attomos/init.log 2>&1
+  - ufw allow 3001:3020/tcp >> /var/log/attomos/init.log 2>&1
   - echo "[$(date)] Firewall configurado" >> /var/log/attomos/init.log
   
-  # === FASE 7: SERVER CONFIG ===
-  - echo "PHASE_7_CONFIG" > /var/log/attomos/status
-  - echo "export USER_ID=` + fmt.Sprintf("%d", userID) + `" >> /root/.bashrc
-  - echo "export SERVER_NAME='` + escapedName + `'" >> /root/.bashrc
+  # === FASE 7: OPTIMIZACIONES DEL SISTEMA ===
+  - echo "PHASE_7_OPTIMIZATIONS" > /var/log/attomos/status
   - echo "fs.file-max = 100000" >> /etc/sysctl.conf
   - echo "net.core.somaxconn = 1024" >> /etc/sysctl.conf
   - sysctl -p >> /var/log/attomos/init.log 2>&1 || true

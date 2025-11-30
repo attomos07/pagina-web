@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	mathrand "math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -296,7 +297,7 @@ func (c *ChatwootService) CreateAccountAndUser(user *models.User, agent *models.
 	return credentials, nil
 }
 
-// generateCredentials genera credenciales simples
+// generateCredentials genera credenciales con contraseña segura
 func (c *ChatwootService) generateCredentials(companyName, agentName string) (string, string) {
 	emailUser := strings.ToLower(companyName + "_" + agentName)
 	emailUser = strings.ReplaceAll(emailUser, " ", "_")
@@ -308,11 +309,56 @@ func (c *ChatwootService) generateCredentials(companyName, agentName string) (st
 	}, emailUser)
 
 	email := emailUser + "@attomos.com"
-	passwordBase := strings.Title(strings.ToLower(companyName))
-	passwordBase = strings.ReplaceAll(passwordBase, " ", "")
-	password := passwordBase + "123!"
+
+	// Generar contraseña simple tipo: Chatwoot123!
+	baseWord := "Chatwoot"
+	if companyName != "" {
+		// Usar nombre de compañía capitalizado
+		baseWord = strings.Title(strings.ToLower(companyName))
+		baseWord = strings.ReplaceAll(baseWord, " ", "")
+		// Limitar a 8 caracteres
+		if len(baseWord) > 8 {
+			baseWord = baseWord[:8]
+		}
+	}
+
+	password := baseWord + "123!"
 
 	return email, password
+}
+
+// generateSecurePassword genera una contraseña que cumple con los requisitos de Chatwoot
+func (c *ChatwootService) generateSecurePassword() string {
+	const (
+		uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		lowercase = "abcdefghijklmnopqrstuvwxyz"
+		numbers   = "0123456789"
+		special   = "#$"
+	)
+
+	mathrand.Seed(time.Now().UnixNano())
+
+	// Asegurar al menos un carácter de cada tipo
+	password := []byte{
+		uppercase[mathrand.Intn(len(uppercase))],
+		lowercase[mathrand.Intn(len(lowercase))],
+		numbers[mathrand.Intn(len(numbers))],
+		special[mathrand.Intn(len(special))],
+	}
+
+	// Completar hasta 12 caracteres con caracteres aleatorios
+	allChars := uppercase + lowercase + numbers + special
+	for i := 0; i < 8; i++ {
+		password = append(password, allChars[mathrand.Intn(len(allChars))])
+	}
+
+	// Mezclar para que no sea predecible
+	for i := len(password) - 1; i > 0; i-- {
+		j := mathrand.Intn(i + 1)
+		password[i], password[j] = password[j], password[i]
+	}
+
+	return string(password)
 }
 
 // createAccount crea una cuenta en Chatwoot

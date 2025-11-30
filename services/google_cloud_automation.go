@@ -149,6 +149,7 @@ func (gca *GoogleCloudAutomation) CreateProjectForUser(userID uint, userEmail st
 
 	_, err := gca.projectsService.Create(project).Do()
 	if err != nil {
+		log.Printf("⚠️ [User %d] Error creando proyecto (continuando sin GCP): %v", userID, err)
 		return "", "", fmt.Errorf("error creando proyecto: %v", err)
 	}
 
@@ -156,23 +157,29 @@ func (gca *GoogleCloudAutomation) CreateProjectForUser(userID uint, userEmail st
 
 	// 2. Esperar a que esté activo
 	if err := gca.waitForProjectReady(projectID, userID); err != nil {
-		return "", "", err
+		log.Printf("⚠️ [User %d] Proyecto no está listo (continuando): %v", userID, err)
+		return projectID, "", err
 	}
 
-	// 3. Vincular billing
+	// 3. Vincular billing (NO BLOQUEANTE)
 	if err := gca.linkBilling(projectID, userID); err != nil {
-		return "", "", err
+		log.Printf("⚠️ [User %d] Error vinculando billing (NO CRÍTICO): %v", userID, err)
+		// NO RETORNAR - CONTINUAR
 	}
 
-	// 4. Habilitar APIs necesarias
+	// 4. Habilitar APIs necesarias (NO BLOQUEANTE)
 	if err := gca.enableAPIs(projectID, userID); err != nil {
-		return "", "", err
+		log.Printf("⚠️ [User %d] Error habilitando APIs (NO CRÍTICO): %v", userID, err)
+		// NO RETORNAR - CONTINUAR
 	}
 
-	// 5. Crear API Key de Gemini
+	// 5. Crear API Key de Gemini (NO BLOQUEANTE)
 	apiKey, err := gca.createAPIKey(projectID, userID)
 	if err != nil {
-		return "", "", err
+		log.Printf("⚠️ [User %d] Error creando API Key (NO CRÍTICO): %v", userID, err)
+		log.Printf("ℹ️ [User %d] Puedes crear la API Key manualmente en Google Cloud Console", userID)
+		// NO RETORNAR - CONTINUAR SIN API KEY
+		return projectID, "", nil
 	}
 
 	log.Printf("🎉 [User %d] Proyecto completo con API Key", userID)
@@ -191,6 +198,10 @@ func (gca *GoogleCloudAutomation) waitForProjectReady(projectID string, userID u
 		if err == nil && proj.State == "ACTIVE" {
 			log.Printf("✅ [User %d] Proyecto activo", userID)
 			return nil
+		}
+
+		if err != nil {
+			log.Printf("⚠️ [User %d] Error verificando proyecto (intento %d/%d): %v", userID, i+1, maxRetries, err)
 		}
 
 		if i < maxRetries-1 {
@@ -214,6 +225,7 @@ func (gca *GoogleCloudAutomation) linkBilling(projectID string, userID uint) err
 	_, err := projectsService.UpdateBillingInfo(projectName, billingInfo).Do()
 
 	if err != nil {
+		log.Printf("⚠️ [User %d] Error vinculando billing (NO CRÍTICO): %v", userID, err)
 		return fmt.Errorf("error vinculando billing: %v", err)
 	}
 
@@ -229,6 +241,7 @@ func (gca *GoogleCloudAutomation) enableAPIs(projectID string, userID uint) erro
 		"generativelanguage.googleapis.com", // Gemini API
 	}
 
+	hasErrors := false
 	for _, api := range apis {
 		serviceName := fmt.Sprintf("projects/%s/services/%s", projectID, api)
 
@@ -236,14 +249,19 @@ func (gca *GoogleCloudAutomation) enableAPIs(projectID string, userID uint) erro
 			&serviceusage.EnableServiceRequest{}).Do()
 
 		if err != nil && !isAlreadyEnabledError(err) {
-			log.Printf("⚠️ [User %d] Error habilitando %s: %v", userID, api, err)
+			log.Printf("⚠️ [User %d] Error habilitando %s (NO CRÍTICO): %v", userID, api, err)
+			hasErrors = true
 		}
 	}
 
-	// Esperar a que las APIs estén completamente activas
-	time.Sleep(10 * time.Second)
+	if !hasErrors {
+		// Esperar a que las APIs estén completamente activas
+		time.Sleep(10 * time.Second)
+		log.Printf("✅ [User %d] APIs habilitadas", userID)
+	} else {
+		log.Printf("⚠️ [User %d] Algunas APIs no se habilitaron (puedes hacerlo manualmente)", userID)
+	}
 
-	log.Printf("✅ [User %d] APIs habilitadas", userID)
 	return nil
 }
 
@@ -267,6 +285,7 @@ func (gca *GoogleCloudAutomation) createAPIKey(projectID string, userID uint) (s
 	// Crear la key
 	op, err := gca.apiKeysService.Projects.Locations.Keys.Create(parent, keyRequest).Do()
 	if err != nil {
+		log.Printf("⚠️ [User %d] Error creando API key (NO CRÍTICO): %v", userID, err)
 		return "", fmt.Errorf("error creando API key: %v", err)
 	}
 
@@ -289,10 +308,12 @@ func (gca *GoogleCloudAutomation) createAPIKey(projectID string, userID uint) (s
 
 		listResp, err := gca.apiKeysService.Projects.Locations.Keys.List(parent).Do()
 		if err != nil {
+			log.Printf("⚠️ [User %d] Error listando API keys (NO CRÍTICO): %v", userID, err)
 			return "", fmt.Errorf("error listando API keys: %v", err)
 		}
 
 		if len(listResp.Keys) == 0 {
+			log.Printf("⚠️ [User %d] No se encontró ninguna API key después de crearla", userID)
 			return "", fmt.Errorf("no se encontró ninguna API key después de crearla")
 		}
 
@@ -305,10 +326,12 @@ func (gca *GoogleCloudAutomation) createAPIKey(projectID string, userID uint) (s
 	// Usar GetKeyString para obtener el valor de la API Key
 	keyStringResp, err := gca.apiKeysService.Projects.Locations.Keys.GetKeyString(keyName).Do()
 	if err != nil {
+		log.Printf("⚠️ [User %d] Error obteniendo KeyString (NO CRÍTICO): %v", userID, err)
 		return "", fmt.Errorf("error obteniendo KeyString: %v", err)
 	}
 
 	if keyStringResp.KeyString == "" {
+		log.Printf("⚠️ [User %d] La API key fue creada pero no tiene KeyString", userID)
 		return "", fmt.Errorf("la API key fue creada pero no tiene KeyString")
 	}
 
