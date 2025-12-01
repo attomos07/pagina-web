@@ -108,6 +108,8 @@ func main() {
 		// Usuario
 		protected.GET("/me", handlers.GetCurrentUser)
 		protected.GET("/project-status", handlers.GetProjectStatus)
+		protected.PUT("/user/password", handlers.UpdatePassword)
+		protected.DELETE("/user/account", handlers.DeleteAccount)
 
 		// Agentes
 		protected.POST("/agents", handlers.CreateAgent)
@@ -135,7 +137,7 @@ func main() {
 		c.HTML(200, "my-agents.html", nil)
 	})
 
-	// Appointments (requiere autenticación) - NUEVA PÁGINA
+	// Appointments (requiere autenticación)
 	router.GET("/appointments", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "appointments.html", nil)
 	})

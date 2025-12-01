@@ -276,81 +276,85 @@
             background: #e5e7eb;
         }
 
-        /* Support Section */
-        .support-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1.5rem;
-        }
-
-        .support-option {
-            padding: 1.5rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 16px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            background: white;
-        }
-
-        .support-option:hover {
-            border-color: #06b6d4;
-            background: #f9fafb;
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .support-option-header {
+        /* WhatsApp Support */
+        .whatsapp-support {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
+            gap: 2rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #86efac;
+            border-radius: 20px;
+            margin-top: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
         }
 
-        .support-option-icon {
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(8, 145, 178, 0.05) 100%);
+        .whatsapp-support:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(34, 197, 94, 0.2);
+            border-color: #22c55e;
+        }
+
+        .whatsapp-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #06b6d4;
-            font-size: 28px;
+            color: white;
+            font-size: 40px;
             flex-shrink: 0;
+            box-shadow: 0 8px 20px rgba(34, 197, 94, 0.3);
             transition: all 0.3s ease;
         }
 
-        .support-option:hover .support-option-icon {
-            transform: scale(1.1);
+        .whatsapp-support:hover .whatsapp-icon {
+            transform: scale(1.1) rotate(5deg);
         }
 
-        .support-option-title {
-            font-size: 1.125rem;
+        .whatsapp-content {
+            flex: 1;
+        }
+
+        .whatsapp-title {
+            font-size: 1.5rem;
             font-weight: 700;
-            color: #1a1a1a;
+            color: #166534;
+            margin-bottom: 0.5rem;
         }
 
-        .support-option-description {
-            font-size: 0.875rem;
-            color: #6b7280;
+        .whatsapp-description {
+            font-size: 1rem;
+            color: #15803d;
             line-height: 1.6;
+            margin-bottom: 1rem;
         }
 
-        .support-option-link {
+        .whatsapp-number {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            margin-top: 1rem;
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #06b6d4;
-            text-decoration: none;
-            transition: gap 0.3s ease;
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #14532d;
+            background: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .support-option-link:hover {
-            gap: 0.75rem;
+        .whatsapp-arrow {
+            margin-left: auto;
+            font-size: 2rem;
+            color: #22c55e;
+            transition: transform 0.3s ease;
+        }
+
+        .whatsapp-support:hover .whatsapp-arrow {
+            transform: translateX(8px);
         }
 
         /* Danger Zone */
@@ -405,36 +409,62 @@
 
         /* Success Message */
         .success-message {
+            display: none;
             padding: 1rem 1.5rem;
-            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-            border: 2px solid #6ee7b7;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
+            border: 2px solid #10b981;
             border-radius: 12px;
-            display: flex;
             align-items: center;
-            gap: 1rem;
-            margin-top: 1rem;
-            animation: slideIn 0.3s ease;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            color: #065f46;
+            font-weight: 600;
+            animation: slideInFromTop 0.5s ease-out;
         }
 
         .success-message i {
             font-size: 1.5rem;
-            color: #065f46;
+            color: #10b981;
         }
 
-        .success-message span {
-            font-size: 0.875rem;
+        /* Error Message */
+        .error-message {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            color: #991b1b;
             font-weight: 600;
-            color: #065f46;
+            margin-top: 1.5rem;
+            animation: slideInFromTop 0.5s ease-out;
         }
 
-        @keyframes slideIn {
+        .error-message i {
+            font-size: 1.5rem;
+            color: #ef4444;
+        }
+
+        /* Animations */
+        @keyframes slideInFromTop {
             from {
                 opacity: 0;
-                transform: translateY(-10px);
+                transform: translateY(-20px);
             }
             to {
                 opacity: 1;
                 transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
             }
         }
 
@@ -451,6 +481,172 @@
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
+        }
+
+        /* Confirmation Modal Styles */
+        .confirmation-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirmation-modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .confirmation-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+        }
+
+        .confirmation-modal-content {
+            position: relative;
+            background: white;
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+            animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .confirmation-modal-icon {
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ef4444;
+            font-size: 48px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .confirmation-modal-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .confirmation-modal-description {
+            font-size: 1rem;
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .confirmation-modal-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        /* Success Modal Styles */
+        .success-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10001;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success-modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .success-modal-content {
+            position: relative;
+            background: white;
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+            text-align: center;
+            animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .success-modal-icon {
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #10b981;
+            font-size: 48px;
+            animation: checkmarkAnimation 0.6s ease-out;
+        }
+
+        @keyframes checkmarkAnimation {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .success-modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-modal-description {
+            font-size: 1rem;
+            color: #6b7280;
+            margin-bottom: 1.5rem;
         }
 
         /* Modal */
@@ -553,8 +749,14 @@
                 font-size: 1.75rem;
             }
 
-            .support-options {
-                grid-template-columns: 1fr;
+            .whatsapp-support {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .whatsapp-arrow {
+                margin: 0;
+                transform: rotate(90deg);
             }
 
             .modal-content {
@@ -598,28 +800,16 @@
 
                             <form id="passwordForm">
                                 <div class="form-group">
-                                    <label class="form-label" for="currentPassword">Contraseña Actual</label>
-                                    <input 
-                                        type="password" 
-                                        id="currentPassword" 
-                                        class="form-input" 
-                                        placeholder="Ingresa tu contraseña actual"
-                                        required
-                                    >
-                                </div>
-
-                                <div class="form-group">
                                     <label class="form-label" for="newPassword">Nueva Contraseña</label>
                                     <input 
                                         type="password" 
                                         id="newPassword" 
-                                        class="form-input" 
-                                        placeholder="Ingresa tu nueva contraseña"
+                                        class="form-input"
                                         required
                                     >
                                     <div class="form-description">
                                         <i class="lni lni-information"></i>
-                                        <span>La contraseña debe tener al menos 8 caracteres e incluir mayúsculas, minúsculas, números y caracteres especiales</span>
+                                        <span>Mínimo 8 caracteres, incluyendo mayúsculas, minúsculas, números y símbolos</span>
                                     </div>
                                 </div>
 
@@ -628,8 +818,7 @@
                                     <input 
                                         type="password" 
                                         id="confirmPassword" 
-                                        class="form-input" 
-                                        placeholder="Confirma tu nueva contraseña"
+                                        class="form-input"
                                         required
                                     >
                                 </div>
@@ -643,10 +832,15 @@
                                     <i class="lni lni-checkmark-circle"></i>
                                     <span>¡Contraseña actualizada exitosamente!</span>
                                 </div>
+
+                                <div id="passwordError" class="error-message" style="display: none;">
+                                    <i class="lni lni-cross-circle"></i>
+                                    <span id="passwordErrorText">Error al actualizar la contraseña</span>
+                                </div>
                             </form>
                         </div>
 
-                        <!-- Support -->
+                        <!-- Support - Solo WhatsApp -->
                         <div class="settings-card">
                             <div class="settings-card-header">
                                 <div class="settings-card-icon">
@@ -654,74 +848,25 @@
                                 </div>
                                 <div class="settings-card-title">
                                     <h2>Soporte</h2>
-                                    <p>Obtén ayuda y contacta a nuestro equipo de soporte</p>
+                                    <p>Contáctanos directamente por WhatsApp</p>
                                 </div>
                             </div>
 
-                            <div class="support-options">
-                                <div class="support-option" onclick="window.open('https://help.attomos.com', '_blank')">
-                                    <div class="support-option-header">
-                                        <div class="support-option-icon">
-                                            <i class="lni lni-book"></i>
-                                        </div>
-                                        <div class="support-option-title">Centro de Ayuda</div>
-                                    </div>
-                                    <div class="support-option-description">
-                                        Explora nuestra documentación completa y guías
-                                    </div>
-                                    <a href="#" class="support-option-link">
-                                        <span>Visitar Centro de Ayuda</span>
-                                        <i class="lni lni-arrow-right"></i>
-                                    </a>
+                            <div class="whatsapp-support" onclick="window.open('https://wa.me/526621234567?text=Hola,%20necesito%20ayuda%20con%20Attomos', '_blank')">
+                                <div class="whatsapp-icon">
+                                    <i class="lni lni-whatsapp"></i>
                                 </div>
-
-                                <div class="support-option" onclick="window.location.href='mailto:support@attomos.com'">
-                                    <div class="support-option-header">
-                                        <div class="support-option-icon">
-                                            <i class="lni lni-envelope"></i>
-                                        </div>
-                                        <div class="support-option-title">Soporte por Email</div>
+                                <div class="whatsapp-content">
+                                    <div class="whatsapp-title">Soporte por WhatsApp</div>
+                                    <div class="whatsapp-description">
+                                        Nuestro equipo está disponible para ayudarte con cualquier duda o problema
                                     </div>
-                                    <div class="support-option-description">
-                                        Envíanos un correo y responderemos en 24 horas
+                                    <div class="whatsapp-number">
+                                        <i class="lni lni-phone"></i>
+                                        <span>+52 662 123 4567</span>
                                     </div>
-                                    <a href="#" class="support-option-link">
-                                        <span>Enviar Email</span>
-                                        <i class="lni lni-arrow-right"></i>
-                                    </a>
                                 </div>
-
-                                <div class="support-option" onclick="window.open('https://chat.attomos.com', '_blank')">
-                                    <div class="support-option-header">
-                                        <div class="support-option-icon">
-                                            <i class="lni lni-comments"></i>
-                                        </div>
-                                        <div class="support-option-title">Chat en Vivo</div>
-                                    </div>
-                                    <div class="support-option-description">
-                                        Chatea con nuestro equipo de soporte en tiempo real
-                                    </div>
-                                    <a href="#" class="support-option-link">
-                                        <span>Iniciar Chat</span>
-                                        <i class="lni lni-arrow-right"></i>
-                                    </a>
-                                </div>
-
-                                <div class="support-option" onclick="window.open('https://community.attomos.com', '_blank')">
-                                    <div class="support-option-header">
-                                        <div class="support-option-icon">
-                                            <i class="lni lni-users"></i>
-                                        </div>
-                                        <div class="support-option-title">Comunidad</div>
-                                    </div>
-                                    <div class="support-option-description">
-                                        Conéctate con otros usuarios y comparte experiencias
-                                    </div>
-                                    <a href="#" class="support-option-link">
-                                        <span>Unirse a la Comunidad</span>
-                                        <i class="lni lni-arrow-right"></i>
-                                    </a>
-                                </div>
+                                <i class="lni lni-arrow-right whatsapp-arrow"></i>
                             </div>
                         </div>
 
@@ -774,8 +919,7 @@
                 <input 
                     type="text" 
                     id="confirmDelete" 
-                    class="form-input" 
-                    placeholder="Escribe ELIMINAR"
+                    class="form-input"
                 >
             </div>
             <div class="modal-actions">
@@ -791,27 +935,85 @@
         </div>
     </div>
 
+    <!-- Confirmation Modal (Última advertencia) -->
+    <div class="confirmation-modal" id="finalConfirmationModal">
+        <div class="confirmation-modal-overlay" onclick="closeFinalConfirmation()"></div>
+        <div class="confirmation-modal-content">
+            <div class="confirmation-modal-icon">
+                <i class="lni lni-warning"></i>
+            </div>
+            <h3 class="confirmation-modal-title">Esta es tu última advertencia</h3>
+            <p class="confirmation-modal-description">
+                Tu cuenta será eliminada permanentemente. Esta acción no se puede deshacer.
+            </p>
+            <div class="confirmation-modal-actions">
+                <button class="btn btn-secondary" onclick="closeFinalConfirmation()" style="flex: 1;">
+                    <i class="lni lni-close"></i>
+                    <span>Cancelar</span>
+                </button>
+                <button class="btn btn-danger" onclick="executeDelete()" style="flex: 1;">
+                    <i class="lni lni-trash-can"></i>
+                    <span>Sí, eliminar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="success-modal" id="deleteSuccessModal">
+        <div class="confirmation-modal-overlay"></div>
+        <div class="success-modal-content">
+            <div class="success-modal-icon">
+                <i class="lni lni-checkmark-circle"></i>
+            </div>
+            <h3 class="success-modal-title">Tu cuenta ha sido eliminada</h3>
+            <p class="success-modal-description">
+                Redirigiendo a la página de inicio de sesión...
+            </p>
+        </div>
+    </div>
+
     <script>
+        // Helper function to show messages with smooth animation
+        function showMessage(element, duration = 5000) {
+            element.style.display = 'flex';
+            element.style.animation = 'slideInFromTop 0.5s ease-out';
+            
+            setTimeout(() => {
+                element.style.animation = 'fadeOut 0.5s ease-out';
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 500);
+            }, duration);
+        }
+
         // Password Form Handling
         document.getElementById('passwordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const currentPassword = document.getElementById('currentPassword').value;
             const newPassword = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             const submitBtn = e.target.querySelector('button[type="submit"]');
             const successMessage = document.getElementById('passwordSuccess');
+            const errorMessage = document.getElementById('passwordError');
+            const errorText = document.getElementById('passwordErrorText');
+            
+            // Hide any previous messages
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
             
             // Validate passwords match
             if (newPassword !== confirmPassword) {
-                alert('Las contraseñas nuevas no coinciden');
+                errorText.textContent = 'Las contraseñas nuevas no coinciden';
+                showMessage(errorMessage);
                 return;
             }
             
             // Validate password strength
             const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
             if (!passwordRegex.test(newPassword)) {
-                alert('La contraseña no cumple con los requisitos de seguridad');
+                errorText.textContent = 'La contraseña no cumple con los requisitos de seguridad';
+                showMessage(errorMessage);
                 return;
             }
             
@@ -825,30 +1027,28 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
+                    credentials: 'include',
                     body: JSON.stringify({
-                        currentPassword,
                         newPassword
                     })
                 });
                 
+                const data = await response.json();
+                
                 if (response.ok) {
-                    // Show success message
-                    successMessage.style.display = 'flex';
+                    // Show success message with animation
+                    showMessage(successMessage);
                     
                     // Clear form
                     e.target.reset();
-                    
-                    // Hide success message after 5 seconds
-                    setTimeout(() => {
-                        successMessage.style.display = 'none';
-                    }, 5000);
                 } else {
-                    const error = await response.json();
-                    alert(error.message || 'Error al actualizar la contraseña');
+                    errorText.textContent = data.error || 'Error al actualizar la contraseña';
+                    showMessage(errorMessage);
                 }
             } catch (error) {
                 console.error('Error updating password:', error);
-                alert('Ocurrió un error al actualizar la contraseña');
+                errorText.textContent = 'Ocurrió un error al actualizar la contraseña';
+                showMessage(errorMessage);
             } finally {
                 // Reset button state
                 submitBtn.classList.remove('loading');
@@ -874,34 +1074,56 @@
                 return;
             }
             
-            const confirmed = confirm('Esta es tu última advertencia. Tu cuenta será eliminada permanentemente. ¿Continuar?');
-            
-            if (!confirmed) {
-                return;
-            }
+            // Cerrar el primer modal y mostrar el de confirmación final
+            closeDeleteModal();
+            showFinalConfirmation();
+        }
+
+        function showFinalConfirmation() {
+            document.getElementById('finalConfirmationModal').classList.add('active');
+        }
+
+        function closeFinalConfirmation() {
+            document.getElementById('finalConfirmationModal').classList.remove('active');
+        }
+        
+        async function executeDelete() {
+            // Cerrar modal de confirmación
+            closeFinalConfirmation();
             
             try {
                 const response = await fetch('/api/user/account', {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    credentials: 'include'
                 });
                 
                 if (response.ok) {
-                    alert('Tu cuenta ha sido eliminada');
-                    window.location.href = '/login';
+                    // Mostrar modal de éxito
+                    showDeleteSuccess();
+                    
+                    // Esperar 2 segundos antes de redirigir
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
                 } else {
                     const error = await response.json();
-                    alert(error.message || 'Error al eliminar la cuenta');
+                    alert(error.error || 'Error al eliminar la cuenta');
                 }
             } catch (error) {
                 console.error('Error deleting account:', error);
                 alert('Ocurrió un error al eliminar la cuenta');
             }
         }
+
+        function showDeleteSuccess() {
+            document.getElementById('deleteSuccessModal').classList.add('active');
+        }
         
         // Close modal on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeDeleteModal();
+                closeFinalConfirmation();
             }
         });
     </script>
