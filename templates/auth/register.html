@@ -84,8 +84,9 @@
                             <label for="businessName" class="form-label">Nombre del Negocio</label>
                             <div class="input-container">
                                 <i class="lni lni-briefcase input-icon"></i>
-                                <input type="text" id="businessName" name="businessName" class="form-input" placeholder="Ej: Mi Restaurante" required>
+                                <input type="text" id="businessName" name="businessName" class="form-input" required>
                             </div>
+                            <small class="input-hint">Ej: Mi Restaurante</small>
                             <div class="form-error" id="businessNameError"></div>
                         </div>
 
@@ -100,7 +101,6 @@
                                            id="phoneCode" 
                                            name="phoneCode" 
                                            class="phone-code-input" 
-                                           placeholder="+52" 
                                            maxlength="4"
                                            required>
                                 </div>
@@ -112,22 +112,22 @@
                                            id="phoneNumber" 
                                            name="phoneNumber" 
                                            class="phone-number-input" 
-                                           placeholder="664 123 4567" 
                                            required>
                                 </div>
                             </div>
-                            <div class="form-error" id="phoneNumberError"></div>
                             <small class="phone-hint">
                                 Código de país + número local. Ej: +52 664 123 4567 (México)
                             </small>
+                            <div class="form-error" id="phoneNumberError"></div>
                         </div>
 
                         <div class="form-group">
                             <label for="email" class="form-label">Email</label>
                             <div class="input-container">
                                 <i class="lni lni-envelope input-icon"></i>
-                                <input type="email" id="email" name="email" class="form-input" placeholder="tu@email.com" required>
+                                <input type="email" id="email" name="email" class="form-input" required>
                             </div>
+                            <small class="input-hint">tu@email.com</small>
                             <div class="form-error" id="emailError"></div>
                         </div>
 
@@ -140,7 +140,6 @@
                                            id="businessType" 
                                            name="businessType" 
                                            class="form-input form-select" 
-                                           placeholder="Selecciona tu giro de negocio" 
                                            readonly
                                            required>
                                     <i class="lni lni-chevron-down select-arrow"></i>
@@ -214,6 +213,7 @@
                                     </div>
                                 </div>
                             </div>
+                            <small class="input-hint">Selecciona tu giro de negocio</small>
                             <div class="form-error" id="businessTypeError"></div>
                         </div>
 
@@ -221,11 +221,12 @@
                             <label for="password" class="form-label">Contraseña</label>
                             <div class="input-container">
                                 <i class="lni lni-lock input-icon"></i>
-                                <input type="password" id="password" name="password" class="form-input" placeholder="Mínimo 8 caracteres" required>
+                                <input type="password" id="password" name="password" class="form-input" required>
                                 <button type="button" class="password-toggle" onclick="togglePassword('password')">
                                     <i class="lni lni-eye" id="passwordToggleIcon"></i>
                                 </button>
                             </div>
+                            <small class="input-hint">Mínimo 8 caracteres</small>
                             <div class="form-error" id="passwordError"></div>
                             <div class="password-strength" id="passwordStrength">
                                 <div class="strength-meter">

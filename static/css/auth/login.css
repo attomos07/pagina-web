@@ -473,9 +473,19 @@ body {
     opacity: 1;
 }
 
+/* QUITAR PLACEHOLDER DENTRO DEL INPUT */
 .form-input::placeholder {
+    color: transparent;
+}
+
+/* NUEVO: Placeholder como hint debajo del input */
+.input-hint {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
     color: var(--gray-text);
-    opacity: 0.5;
+    opacity: 0.6;
+    line-height: 1.4;
 }
 
 /* Password toggle - FIX PARA QUE NO DESAPAREZCA Y NO MUESTRE OUTLINE AZUL */

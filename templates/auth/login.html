@@ -84,8 +84,9 @@
                             <label for="email" class="form-label">Email</label>
                             <div class="input-container">
                                 <i class="lni lni-envelope input-icon"></i>
-                                <input type="email" id="email" name="email" class="form-input" placeholder="tu@email.com" required>
+                                <input type="email" id="email" name="email" class="form-input" required>
                             </div>
+                            <small class="input-hint">tu@email.com</small>
                             <div class="form-error" id="emailError"></div>
                         </div>
 
@@ -93,11 +94,12 @@
                             <label for="password" class="form-label">Contraseña</label>
                             <div class="input-container">
                                 <i class="lni lni-lock input-icon"></i>
-                                <input type="password" id="password" name="password" class="form-input" placeholder="Tu contraseña" required>
+                                <input type="password" id="password" name="password" class="form-input" required>
                                 <button type="button" class="password-toggle" onclick="togglePassword('password')">
                                     <i class="lni lni-eye" id="passwordToggleIcon"></i>
                                 </button>
                             </div>
+                            <small class="input-hint">Tu contraseña</small>
                             <div class="form-error" id="passwordError"></div>
                         </div>
 

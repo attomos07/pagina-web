@@ -477,9 +477,20 @@ body {
     opacity: 1;
 }
 
+/* QUITAR PLACEHOLDER DENTRO DEL INPUT */
 .form-input::placeholder {
+    color: transparent;
+}
+
+/* NUEVO: Placeholder como hint debajo del input */
+.input-hint {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
     color: var(--gray-text);
-    opacity: 0.5;
+    opacity: 0.6;
+    line-height: 1.4;
+    font-style: italic;
 }
 
 /* Password toggle */
@@ -905,9 +916,7 @@ body {
 }
 
 .phone-code-input::placeholder {
-    color: #374151;
-    opacity: 0.5;
-    font-weight: 500;
+    color: transparent;
 }
 
 .phone-number-container {
@@ -950,8 +959,7 @@ body {
 }
 
 .phone-number-input::placeholder {
-    color: #374151;
-    opacity: 0.5;
+    color: transparent;
 }
 
 .phone-hint {
@@ -960,6 +968,7 @@ body {
     margin-top: 0.5rem;
     display: block;
     line-height: 1.4;
+    font-style: italic;
 }
 
 .phone-code-input.error,
