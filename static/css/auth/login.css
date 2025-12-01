@@ -486,6 +486,7 @@ body {
     color: var(--gray-text);
     opacity: 0.6;
     line-height: 1.4;
+    font-style: italic;
 }
 
 /* Password toggle - FIX PARA QUE NO DESAPAREZCA Y NO MUESTRE OUTLINE AZUL */
@@ -516,6 +517,11 @@ body {
 .password-toggle:active {
     outline: none !important;
     box-shadow: none !important;
+}
+
+/* Ajustar padding del input cuando tiene toggle button */
+input[type="password"].form-input {
+    padding-right: 3rem;
 }
 
 /* Form validation */
