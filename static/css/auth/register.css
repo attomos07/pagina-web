@@ -1,5 +1,5 @@
 /* ============================================
-   REGISTER PAGE CSS - PALETA CYAN
+   REGISTER PAGE CSS - DISEÑO ORBITAL SATURNO MINIMALISTA
    ============================================ */
 
 /* Variables CSS */
@@ -35,7 +35,7 @@ body {
 }
 
 /* ============================================
-   AUTH CONTAINER - REGISTER
+   AUTH CONTAINER - REGISTER CON DISEÑO ORBITAL
    ============================================ */
 
 .auth-container {
@@ -44,8 +44,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 100px 0 50px 0;
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(34, 211, 238, 0.05) 100%);
+    padding: 100px 2rem 50px 2rem;
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.03) 0%, rgba(34, 211, 238, 0.03) 100%);
 }
 
 .auth-background {
@@ -61,7 +61,7 @@ body {
 .auth-shape {
     position: absolute;
     border-radius: 50%;
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(34, 211, 238, 0.1));
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(34, 211, 238, 0.08));
     animation: float 6s ease-in-out infinite;
 }
 
@@ -101,131 +101,177 @@ body {
 .auth-content {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    max-width: 1200px;
+    max-width: 1300px;
     width: 100%;
     margin: 0 auto;
-    background: var(--white);
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    gap: 4rem;
     position: relative;
     z-index: 1;
-    min-height: 600px;
+    align-items: center;
 }
 
 /* ============================================
-   AUTH INFO SECTION (LEFT SIDE) - REGISTER
+   DISEÑO ORBITAL - SATURNO Y SUS ANILLOS (SIN CONTENEDOR AZUL)
    ============================================ */
 
-.auth-info {
-    background: linear-gradient(135deg, var(--primary-cyan), var(--secondary-cyan));
-    color: white;
-    padding: 3rem;
-    display: flex;
-    align-items: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.auth-info::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
-    opacity: 0.3;
-}
-
-.auth-info-content {
-    position: relative;
-    z-index: 1;
-    animation: fadeInLeft 0.8s ease-out;
-}
-
-.auth-info-title {
-    font-size: 2.5rem;
-    font-weight: 900;
-    margin-bottom: 1rem;
-    line-height: 1.2;
-}
-
-.auth-info-subtitle {
-    font-size: 1.2rem;
-    opacity: 0.9;
-    margin-bottom: 2.5rem;
-    line-height: 1.6;
-}
-
-.auth-features {
-    margin-bottom: 2.5rem;
-}
-
-.auth-feature {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    animation: fadeInLeft 0.8s ease-out;
-}
-
-.auth-feature:nth-child(1) { animation-delay: 0.2s; }
-.auth-feature:nth-child(2) { animation-delay: 0.4s; }
-.auth-feature:nth-child(3) { animation-delay: 0.6s; }
-
-.feature-icon {
-    width: 50px;
-    height: 50px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
+.orbital-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
-    flex-shrink: 0;
+    position: relative;
+    padding: 2rem;
 }
 
-.feature-content h3 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
+.orbital-system {
+    position: relative;
+    width: 500px;
+    height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.feature-content p {
-    font-size: 0.95rem;
-    opacity: 0.8;
-    margin: 0;
+/* Planeta central (Saturno) - MÁS GRANDE PARA IMAGEN */
+.planet-core {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(34, 211, 238, 0.05));
+    border-radius: 50%;
+    border: 3px solid rgba(6, 182, 212, 0.2);
+    box-shadow: 
+        0 0 40px rgba(6, 182, 212, 0.3),
+        0 0 80px rgba(6, 182, 212, 0.2),
+        inset 0 0 40px rgba(6, 182, 212, 0.1);
+    animation: pulse 4s ease-in-out infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    overflow: hidden;
 }
 
-.auth-stats {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-    margin-top: 2rem;
+/* Imagen dentro del planeta */
+.planet-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
-.stat-item {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 1.25rem;
-    border-radius: 12px;
-    text-align: center;
-    animation: fadeInLeft 0.8s ease-out;
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 
+            0 0 40px rgba(6, 182, 212, 0.3),
+            0 0 80px rgba(6, 182, 212, 0.2),
+            inset 0 0 40px rgba(6, 182, 212, 0.1);
+    }
+    50% {
+        transform: scale(1.03);
+        box-shadow: 
+            0 0 50px rgba(6, 182, 212, 0.4),
+            0 0 100px rgba(6, 182, 212, 0.3),
+            inset 0 0 50px rgba(6, 182, 212, 0.15);
+    }
 }
 
-.stat-item:nth-child(1) { animation-delay: 0.8s; }
-.stat-item:nth-child(2) { animation-delay: 1s; }
-
-.stat-number {
-    font-size: 2rem;
-    font-weight: 900;
-    display: block;
-    margin-bottom: 0.25rem;
+/* Órbitas (Anillos) */
+.orbit {
+    position: absolute;
+    border: 2px solid rgba(6, 182, 212, 0.15);
+    border-radius: 50%;
+    animation: rotate-orbit linear infinite;
 }
 
-.stat-label {
-    font-size: 0.9rem;
-    opacity: 0.8;
+.orbit-1 {
+    width: 280px;
+    height: 280px;
+    animation-duration: 10s;
+}
+
+.orbit-2 {
+    width: 360px;
+    height: 360px;
+    animation-duration: 15s;
+    border-color: rgba(6, 182, 212, 0.12);
+}
+
+.orbit-3 {
+    width: 440px;
+    height: 440px;
+    animation-duration: 20s;
+    border-color: rgba(6, 182, 212, 0.1);
+}
+
+@keyframes rotate-orbit {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Satélites orbitando */
+.satellite {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, var(--primary-cyan), var(--secondary-cyan));
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.6);
+    top: 50%;
+    left: 50%;
+    margin: -8px 0 0 -8px;
+}
+
+/* Satélite 1 - Órbita 1 */
+.orbit-1 .satellite {
+    animation: orbit-satellite-1 10s linear infinite;
+}
+
+@keyframes orbit-satellite-1 {
+    from {
+        transform: rotate(0deg) translateX(140px) rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg) translateX(140px) rotate(-360deg);
+    }
+}
+
+/* Satélite 2 - Órbita 2 */
+.orbit-2 .satellite {
+    animation: orbit-satellite-2 15s linear infinite;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0 0 -7px;
+}
+
+@keyframes orbit-satellite-2 {
+    from {
+        transform: rotate(120deg) translateX(180px) rotate(-120deg);
+    }
+    to {
+        transform: rotate(480deg) translateX(180px) rotate(-480deg);
+    }
+}
+
+/* Satélite 3 - Órbita 3 */
+.orbit-3 .satellite {
+    animation: orbit-satellite-3 20s linear infinite;
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+}
+
+@keyframes orbit-satellite-3 {
+    from {
+        transform: rotate(240deg) translateX(220px) rotate(-240deg);
+    }
+    to {
+        transform: rotate(600deg) translateX(220px) rotate(-600deg);
+    }
 }
 
 /* ============================================
@@ -233,10 +279,10 @@ body {
    ============================================ */
 
 .auth-form-container {
-    padding: 3rem;
-    display: flex;
-    align-items: center;
     background: var(--white);
+    padding: 3rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
 }
 
 .auth-form-content {
@@ -273,7 +319,6 @@ body {
     margin-bottom: 1.5rem;
 }
 
-/* NUEVA CLASE PARA BOTONES INLINE */
 .social-login-inline {
     flex-direction: row;
     justify-content: center;
@@ -296,7 +341,6 @@ body {
     font-size: 0.95rem;
 }
 
-/* BOTONES SOLO CON ICONOS */
 .social-icon-btn {
     width: 56px;
     height: 56px;
@@ -438,7 +482,7 @@ body {
     opacity: 0.5;
 }
 
-/* Password toggle - FIX PARA QUE NO DESAPAREZCA Y NO MUESTRE OUTLINE AZUL */
+/* Password toggle */
 .password-toggle {
     position: absolute;
     right: 1rem;
@@ -450,7 +494,7 @@ body {
     padding: 0.25rem;
     transition: all 0.3s ease;
     z-index: 2;
-    outline: none !important; /* QUITAR OUTLINE AZUL */
+    outline: none !important;
 }
 
 .password-toggle:hover {
@@ -459,7 +503,7 @@ body {
 }
 
 .password-toggle:focus {
-    outline: none !important; /* QUITAR OUTLINE AZUL AL HACER CLICK */
+    outline: none !important;
     box-shadow: none !important;
 }
 
@@ -550,10 +594,9 @@ body {
     user-select: none;
 }
 
-/* FIX: MOVER LA FLECHA MÁS A LA DERECHA */
 .select-arrow {
     position: absolute;
-    right: 1rem; /* ANTES ERA 3rem, AHORA MÁS CERCA DEL BORDE */
+    right: 1rem;
     top: 50%;
     transform: translateY(-50%);
     color: var(--gray-text);
@@ -601,19 +644,14 @@ body {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border-gray);
     z-index: 10;
-}
-
-.select-search-container {
-    position: relative;
     display: flex;
     align-items: center;
 }
 
-/* FIX: ICONO DE LUPA MÁS A LA DERECHA */
 .search-icon {
     position: absolute;
-    right: 1rem; /* MOVER A LA DERECHA */
-    left: auto; /* QUITAR POSICIÓN IZQUIERDA */
+    right: 1rem;
+    left: auto;
     color: var(--gray-text);
     opacity: 0.6;
     font-size: 1rem;
@@ -622,7 +660,7 @@ body {
 
 .select-search {
     width: 100%;
-    padding: 0.625rem 2.5rem 0.625rem 0.875rem; /* AJUSTAR PADDING */
+    padding: 0.625rem 2.5rem 0.625rem 0.875rem;
     border: 2px solid var(--border-gray);
     border-radius: 8px;
     font-size: 0.9rem;
@@ -757,7 +795,6 @@ body {
     font-weight: 500;
 }
 
-/* Hidden class for filtered options */
 .select-option.hidden {
     display: none !important;
 }
@@ -816,6 +853,135 @@ body {
 
 .checkbox-label a:hover {
     text-decoration: underline;
+}
+
+/* Phone Input */
+.phone-input-wrapper {
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.phone-code-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    width: 110px;
+}
+
+.phone-code-container i {
+    position: absolute;
+    left: 1rem;
+    color: #374151;
+    opacity: 0.6;
+    font-size: 1.1rem;
+    z-index: 2;
+}
+
+.phone-code-input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 2.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    background: #ffffff;
+    color: #374151;
+    text-align: center;
+}
+
+.phone-code-input:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+    transform: translateY(-1px);
+}
+
+.phone-code-container:focus-within i {
+    color: #06b6d4;
+    opacity: 1;
+}
+
+.phone-code-input::placeholder {
+    color: #374151;
+    opacity: 0.5;
+    font-weight: 500;
+}
+
+.phone-number-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.phone-number-container i {
+    position: absolute;
+    left: 1rem;
+    color: #374151;
+    opacity: 0.6;
+    font-size: 1.1rem;
+    z-index: 2;
+}
+
+.phone-number-input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 2.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background: #ffffff;
+    color: #374151;
+}
+
+.phone-number-input:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+    transform: translateY(-1px);
+}
+
+.phone-number-container:focus-within i {
+    color: #06b6d4;
+    opacity: 1;
+}
+
+.phone-number-input::placeholder {
+    color: #374151;
+    opacity: 0.5;
+}
+
+.phone-hint {
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    display: block;
+    line-height: 1.4;
+}
+
+.phone-code-input.error,
+.phone-number-input.error {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.phone-code-input.success,
+.phone-number-input.success {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.phone-code-container i,
+.phone-number-container i {
+    transition: all 0.3s ease;
+}
+
+.phone-code-input,
+.phone-number-input {
+    height: 48px;
 }
 
 /* ============================================
@@ -896,19 +1062,8 @@ body {
 }
 
 /* ============================================
-   ANIMATIONS - REGISTER
+   ANIMATIONS
    ============================================ */
-
-@keyframes fadeInLeft {
-    from {
-        opacity: 0;
-        transform: translateX(-30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
 
 @keyframes fadeInRight {
     from {
@@ -927,16 +1082,37 @@ body {
 
 @media (max-width: 1024px) {
     .auth-content {
-        max-width: 900px;
+        max-width: 1100px;
+        gap: 3rem;
     }
 
-    .auth-info,
+    .orbital-system {
+        width: 400px;
+        height: 400px;
+    }
+
+    .planet-core {
+        width: 160px;
+        height: 160px;
+    }
+
+    .orbit-1 {
+        width: 240px;
+        height: 240px;
+    }
+
+    .orbit-2 {
+        width: 310px;
+        height: 310px;
+    }
+
+    .orbit-3 {
+        width: 380px;
+        height: 380px;
+    }
+
     .auth-form-container {
-        padding: 2.5rem 2rem;
-    }
-
-    .auth-info-title {
-        font-size: 2rem;
+        padding: 2.5rem;
     }
 
     .auth-title {
@@ -953,14 +1129,16 @@ body {
         grid-template-columns: 1fr;
         max-width: 500px;
         margin: 0 auto;
+        gap: 0;
     }
 
-    .auth-info {
+    .orbital-container {
         display: none;
     }
 
     .auth-form-container {
         padding: 2rem 1.5rem;
+        box-shadow: none;
     }
 
     .auth-title {
@@ -976,11 +1154,6 @@ body {
         font-size: 0.9rem;
         padding: 0.75rem;
     }
-
-    .auth-stats {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
 }
 
 @media (max-width: 480px) {
@@ -988,18 +1161,9 @@ body {
         padding: 70px 0.5rem 10px 0.5rem;
     }
 
-    .auth-content {
-        border-radius: 12px;
-        max-width: 100%;
-    }
-
-    .auth-info,
     .auth-form-container {
         padding: 1.5rem 1rem;
-    }
-
-    .auth-info-title {
-        font-size: 1.5rem;
+        border-radius: 12px;
     }
 
     .auth-title {
@@ -1024,156 +1188,7 @@ body {
         width: 50px;
         height: 50px;
     }
-}
 
-/* ============================================
-   UTILITIES
-   ============================================ */
-
-html {
-    scroll-behavior: smooth;
-}
-
-button:focus,
-input:focus {
-    outline: none !important;
-}
-
-/* ============================================
-   PHONE INPUT SEPARADO - COPIAR Y PEGAR AL FINAL DE register.css
-   ============================================ */
-
-/* Wrapper principal del teléfono */
-.phone-input-wrapper {
-    display: flex;
-    gap: 0.75rem;
-    width: 100%;
-}
-
-/* Contenedor del código de país (LADA) */
-.phone-code-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-    width: 110px;
-}
-
-.phone-code-container i {
-    position: absolute;
-    left: 1rem;
-    color: #374151;
-    opacity: 0.6;
-    font-size: 1.1rem;
-    z-index: 2;
-}
-
-.phone-code-input {
-    width: 100%;
-    padding: 0.875rem 1rem 0.875rem 2.75rem;
-    border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    background: #ffffff;
-    color: #374151;
-    text-align: center;
-}
-
-.phone-code-input:focus {
-    outline: none;
-    border-color: #06b6d4;
-    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
-    transform: translateY(-1px);
-}
-
-.phone-code-container:focus-within i {
-    color: #06b6d4;
-    opacity: 1;
-}
-
-.phone-code-input::placeholder {
-    color: #374151;
-    opacity: 0.5;
-    font-weight: 500;
-}
-
-/* Contenedor del número de teléfono */
-.phone-number-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-    flex: 1;
-}
-
-.phone-number-container i {
-    position: absolute;
-    left: 1rem;
-    color: #374151;
-    opacity: 0.6;
-    font-size: 1.1rem;
-    z-index: 2;
-}
-
-.phone-number-input {
-    width: 100%;
-    padding: 0.875rem 1rem 0.875rem 2.75rem;
-    border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    font-size: 0.95rem;
-    transition: all 0.3s ease;
-    background: #ffffff;
-    color: #374151;
-}
-
-.phone-number-input:focus {
-    outline: none;
-    border-color: #06b6d4;
-    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
-    transform: translateY(-1px);
-}
-
-.phone-number-container:focus-within i {
-    color: #06b6d4;
-    opacity: 1;
-}
-
-.phone-number-input::placeholder {
-    color: #374151;
-    opacity: 0.5;
-}
-
-/* Mensaje de ayuda */
-.phone-hint {
-    color: #6b7280;
-    font-size: 0.85rem;
-    margin-top: 0.5rem;
-    display: block;
-    line-height: 1.4;
-}
-
-/* Estados de error y éxito para inputs de teléfono */
-.phone-code-input.error,
-.phone-number-input.error {
-    border-color: #ef4444;
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-}
-
-.phone-code-input.success,
-.phone-number-input.success {
-    border-color: #10b981;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-}
-
-/* Animación al enfocar */
-.phone-code-container i,
-.phone-number-container i {
-    transition: all 0.3s ease;
-}
-
-/* Responsive */
-@media (max-width: 480px) {
     .phone-input-wrapper {
         gap: 0.5rem;
     }
@@ -1193,8 +1208,15 @@ input:focus {
     }
 }
 
-/* Fix para que ambos inputs tengan la misma altura */
-.phone-code-input,
-.phone-number-input {
-    height: 48px;
+/* ============================================
+   UTILITIES
+   ============================================ */
+
+html {
+    scroll-behavior: smooth;
+}
+
+button:focus,
+input:focus {
+    outline: none !important;
 }
