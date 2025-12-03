@@ -148,7 +148,7 @@ body {
    ============================================ */
 
 .social-platforms-section {
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    background: #ffffff;
     padding: 80px 20px;
     position: relative;
 }
@@ -181,11 +181,12 @@ body {
 
 .social-platform-item {
     background: white;
-    border-radius: 20px;
-    padding: 30px 20px;
+    border-radius: 50%;
+    padding: 40px 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 15px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
     transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
@@ -196,6 +197,8 @@ body {
     transform: translateY(30px);
     animation: fadeInUp 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
     border: 2px solid transparent;
+    width: 150px;
+    height: 150px;
 }
 
 .social-platform-item:nth-child(1) { animation-delay: 0.1s; }
@@ -239,7 +242,7 @@ body {
 .social-platform-icon {
     width: 60px;
     height: 60px;
-    border-radius: 14px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -313,7 +316,7 @@ body {
     justify-content: center;
     width: 60px;
     height: 60px;
-    border-radius: 14px;
+    border-radius: 50%;
     border: 2px solid;
     transition: all 0.3s ease;
 }
@@ -631,7 +634,7 @@ body {
     max-width: 1400px;
     margin: 80px auto;
     padding: 80px 20px;
-    background: #f9fafb;
+    background: #ffffff;
 }
 
 .pricing-header {
@@ -753,7 +756,8 @@ input:checked + .toggle-slider:before {
 .popular-badge {
     position: absolute;
     top: -12px;
-    right: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
     padding: 0.5rem 1.25rem;
     background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
     color: white;
