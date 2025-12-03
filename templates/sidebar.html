@@ -63,11 +63,16 @@
                 </a>
             </li>
             <li class="menu-item">
-                <a href="/messages" class="menu-button">
+                <a href="#" id="messagesLink" class="menu-button" data-loading="true">
                     <div class="icon-wrapper">
                         <svg class="lucide" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     </div>
-                    <span class="text-label">Mensajes</span>
+                    <span class="text-label">
+                        <span class="messages-text">Mensajes</span>
+                        <span class="messages-loading" style="display: none;">
+                            <span class="loading-dots">...</span>
+                        </span>
+                    </span>
                 </a>
             </li>
             <li class="menu-item">
@@ -107,12 +112,50 @@
     </div>
 </div>
 
+<style>
+    /* Loading dots animation */
+    .loading-dots {
+        display: inline-block;
+        animation: loadingDots 1.5s infinite;
+    }
+
+    @keyframes loadingDots {
+        0%, 20% { content: '.'; }
+        40% { content: '..'; }
+        60%, 100% { content: '...'; }
+    }
+
+    /* Disabled state for messages link */
+    #messagesLink[data-loading="true"] {
+        opacity: 0.6;
+        cursor: wait;
+    }
+
+    #messagesLink[data-disabled="true"] {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    #messagesLink[data-disabled="true"]:hover {
+        background: transparent;
+    }
+
+    #messagesLink[data-disabled="true"]:hover::before {
+        width: 0;
+        height: 0;
+    }
+</style>
+
 <script>
     // Sidebar hover functionality
     const sidebar = document.getElementById('sidebar');
     const pinBtn = document.getElementById('pinBtn');
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileOverlay = document.getElementById('mobileOverlay');
+    const messagesLink = document.getElementById('messagesLink');
+    const messagesText = messagesLink.querySelector('.messages-text');
+    const messagesLoading = messagesLink.querySelector('.messages-loading');
+    
     let isPinned = false;
     let isMobile = window.innerWidth <= 768;
 
@@ -124,6 +167,158 @@
         sidebar.classList.remove('collapsed');
         pinBtn.classList.add('active');
     }
+
+    // Load Chatwoot info on page load
+    async function loadChatwootInfo() {
+        try {
+            messagesLink.setAttribute('data-loading', 'true');
+            messagesText.style.display = 'none';
+            messagesLoading.style.display = 'inline';
+
+            const response = await fetch('/api/chatwoot/info', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al cargar información de Chatwoot');
+            }
+
+            const data = await response.json();
+
+            // Restore text
+            messagesText.style.display = 'inline';
+            messagesLoading.style.display = 'none';
+            messagesLink.removeAttribute('data-loading');
+
+            if (data.hasChatwoot && data.chatwootUrl) {
+                // Chatwoot está disponible - actualizar el enlace
+                messagesLink.href = data.chatwootUrl;
+                messagesLink.target = '_blank';
+                messagesLink.rel = 'noopener noreferrer';
+                messagesLink.removeAttribute('data-disabled');
+                
+                // Agregar indicador visual de que es un enlace externo
+                const iconWrapper = messagesLink.querySelector('.icon-wrapper');
+                iconWrapper.innerHTML = `
+                    <svg class="lucide" viewBox="0 0 24 24" style="color: #10b981;">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        <circle cx="17" cy="8" r="2" fill="currentColor"/>
+                    </svg>
+                `;
+                
+                console.log('✅ Chatwoot disponible:', data.chatwootUrl);
+            } else {
+                // Chatwoot no está disponible - deshabilitar enlace
+                messagesLink.href = '#';
+                messagesLink.removeAttribute('target');
+                messagesLink.removeAttribute('rel');
+                messagesLink.setAttribute('data-disabled', 'true');
+                
+                // Agregar event listener para mostrar mensaje
+                messagesLink.addEventListener('click', (e) => {
+                    if (messagesLink.getAttribute('data-disabled') === 'true') {
+                        e.preventDefault();
+                        showChatwootNotAvailableMessage();
+                    }
+                });
+
+                console.log('ℹ️ Chatwoot no disponible aún');
+            }
+        } catch (error) {
+            console.error('Error cargando información de Chatwoot:', error);
+            
+            // En caso de error, deshabilitar el enlace
+            messagesText.style.display = 'inline';
+            messagesLoading.style.display = 'none';
+            messagesLink.removeAttribute('data-loading');
+            messagesLink.href = '#';
+            messagesLink.setAttribute('data-disabled', 'true');
+            
+            messagesLink.addEventListener('click', (e) => {
+                if (messagesLink.getAttribute('data-disabled') === 'true') {
+                    e.preventDefault();
+                    showChatwootNotAvailableMessage();
+                }
+            });
+        }
+    }
+
+    // Show message when Chatwoot is not available
+    function showChatwootNotAvailableMessage() {
+        // Crear un toast notification simple
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+            max-width: 400px;
+        `;
+        
+        toast.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <svg style="width: 24px; height: 24px; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="16" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 4px;">Chatwoot no disponible</div>
+                    <div style="font-size: 14px; opacity: 0.9;">Crea tu primer agente para activar el panel de mensajes</div>
+                </div>
+            </div>
+        `;
+
+        // Add animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        document.body.appendChild(toast);
+
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => {
+                document.body.removeChild(toast);
+                document.head.removeChild(style);
+            }, 300);
+        }, 4000);
+    }
+
+    // Load Chatwoot info on page load
+    loadChatwootInfo();
 
     // Pin button functionality (desktop only)
     pinBtn.addEventListener('click', (e) => {
@@ -190,11 +385,11 @@
         document.body.style.overflow = '';
     }
 
-    // Close mobile sidebar when clicking on a link
+    // Close mobile sidebar when clicking on a link (except disabled messages link)
     const menuLinks = sidebar.querySelectorAll('.menu-button');
     menuLinks.forEach(link => {
-        link.addEventListener('click', () => {
-            if (isMobile) {
+        link.addEventListener('click', (e) => {
+            if (isMobile && link.getAttribute('data-disabled') !== 'true') {
                 closeMobileSidebar();
             }
         });

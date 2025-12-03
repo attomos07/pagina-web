@@ -121,6 +121,9 @@ func main() {
 
 		// Billing
 		protected.GET("/billing/data", handlers.GetBillingData)
+
+		// Chatwoot
+		protected.GET("/chatwoot/info", handlers.GetChatwootInfo)
 	}
 
 	// ============================================
