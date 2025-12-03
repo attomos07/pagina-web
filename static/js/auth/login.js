@@ -80,43 +80,35 @@ function validateLoginField(field) {
 }
 
 // ============================================
-// TOGGLE DE CONTRASEÑAS
+// TOGGLE DE CONTRASEÑAS (CORREGIDO)
 // ============================================
 
 function initPasswordToggle() {
-    const passwordToggle = document.querySelector('.password-toggle');
+    // Seleccionamos específicamente el botón dentro del contenedor de password
+    const passwordToggleBtn = document.querySelector('.password-toggle');
     
-    if (passwordToggle) {
-        passwordToggle.addEventListener('click', function() {
+    if (passwordToggleBtn) {
+        // Remover listeners anteriores para evitar duplicados si se reinicia el script
+        const newBtn = passwordToggleBtn.cloneNode(true);
+        passwordToggleBtn.parentNode.replaceChild(newBtn, passwordToggleBtn);
+        
+        newBtn.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevenir comportamiento por defecto
+            e.stopPropagation(); // Prevenir burbujeo
+            
             const passwordField = document.getElementById('password');
             const icon = document.getElementById('passwordToggleIcon');
             
             if (passwordField && icon) {
                 if (passwordField.type === 'password') {
                     passwordField.type = 'text';
-                    icon.className = 'lni lni-eye-off';
+                    icon.className = 'lni lni-eye-off'; // Ojo tachado (ocultar)
                 } else {
                     passwordField.type = 'password';
-                    icon.className = 'lni lni-eye';
+                    icon.className = 'lni lni-eye'; // Ojo normal (mostrar)
                 }
             }
         });
-    }
-}
-
-// Función global para toggle (llamada desde HTML)
-function togglePassword(fieldId) {
-    const field = document.getElementById(fieldId);
-    const icon = document.getElementById(fieldId + 'ToggleIcon');
-    
-    if (field && icon) {
-        if (field.type === 'password') {
-            field.type = 'text';
-            icon.className = 'lni lni-eye-off';
-        } else {
-            field.type = 'password';
-            icon.className = 'lni lni-eye';
-        }
     }
 }
 
