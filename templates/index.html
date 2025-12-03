@@ -16,37 +16,30 @@
     <!-- Navbar -->
     {{template "partials/navbar.html" .}}
 
-    <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="hero-container">
-            <!-- Átomo superior derecha (azul fuerte) -->
-            <div id="atome-top-right" class="atome-decoration atome-blue-strong">
-                <div class="atome-wrap">
-                    <div class="circle circle_0"></div>
-                    <div class="circle circle_1"></div>
-                    <div class="circle circle_2"></div>
-                    <div class="circle circle_3"></div>
-                </div>
-            </div>
-
-            <!-- Contenido centrado -->
-            <div class="hero-content">
-                <h1 class="hero-title">Automatiza tu negocio con Agentes de IA</h1>
-                <p class="hero-subtitle">Disponible 24/7, listo en minutos y sin escribir una línea de código.</p>
-                <button class="hero-btn">Crear mi Agente</button>
-            </div>
-
-            <!-- Átomo inferior izquierda (azul marino) -->
-            <div id="atome-bottom-left" class="atome-decoration atome-blue-dark">
-                <div class="atome-wrap">
-                    <div class="circle circle_0"></div>
-                    <div class="circle circle_1"></div>
-                    <div class="circle circle_2"></div>
-                    <div class="circle circle_3"></div>
+  <!-- Hero Section -->
+<section class="hero-section">
+    <!-- Canvas de partículas animadas -->
+    <canvas id="particles-canvas"></canvas>
+    
+    <div class="hero-container">
+        <div class="hero-content-wrapper">
+            <div class="hero-text-content">
+                <h1 class="hero-title">
+                    Automatiza tu negocio con <span class="highlight">Agentes de IA</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Crea Agentes inteligentes para WhatsApp, Messenger, Instagram y más. Disponible 24/7, listo en minutos y sin escribir una línea de código.
+                </p>
+                <div class="hero-buttons">
+                    <button class="hero-btn hero-btn-primary">
+                        <i class="lni lni-rocket"></i>
+                        Crear mi Agente
+                    </button>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
     <!-- Sección de Redes Sociales -->
     <section class="social-platforms-section">

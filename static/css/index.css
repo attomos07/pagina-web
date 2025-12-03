@@ -1657,3 +1657,182 @@ input:checked + .toggle-slider:before {
 .social-platform-icon.kakaotalk {
     background: linear-gradient(135deg, #FFE812 0%, #FAD201 100%);
 }
+
+/* ============================================
+   HERO SECTION - CENTRADO CON PARTÍCULAS
+   ============================================ */
+
+/* Canvas de partículas */
+#particles-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Hero Section Principal */
+.hero-section {
+    background: #ffffff;
+    padding: 140px 20px 100px 20px;
+    min-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-container {
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+    text-align: center;
+}
+
+.hero-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+}
+
+/* Contenido de texto */
+.hero-text-content {
+    /* Removida animación fadeInUp para permitir typewriter */
+}
+
+.hero-title {
+    font-size: 64px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.1;
+    margin-bottom: 24px;
+}
+
+.hero-title .highlight {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-subtitle {
+    font-size: 20px;
+    color: #6b7280;
+    margin: 0 auto 40px auto;
+    line-height: 1.6;
+    max-width: 700px;
+    opacity: 0;
+    animation: fadeInUp 1s cubic-bezier(0.23, 1, 0.32, 1) 1.5s forwards;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeInUp 1s cubic-bezier(0.23, 1, 0.32, 1) 1.8s forwards;
+}
+
+.hero-btn {
+    padding: 18px 36px;
+    border-radius: 16px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: none;
+}
+
+.hero-btn-primary {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    color: white;
+    box-shadow: 0 8px 30px rgba(6, 182, 212, 0.3);
+}
+
+.hero-btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(6, 182, 212, 0.4);
+}
+
+.hero-btn-secondary {
+    background: white;
+    color: #06b6d4;
+    border: 2px solid #06b6d4;
+}
+
+.hero-btn-secondary:hover {
+    background: rgba(6, 182, 212, 0.05);
+    transform: translateY(-3px);
+}
+
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 120px 20px 80px 20px;
+        min-height: 80vh;
+    }
+
+    .hero-title {
+        font-size: 42px;
+    }
+
+    .hero-subtitle {
+        font-size: 18px;
+    }
+
+    .hero-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .hero-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 16px 32px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-section {
+        padding: 100px 20px 60px 20px;
+    }
+
+    .hero-title {
+        font-size: 36px;
+    }
+
+    .hero-subtitle {
+        font-size: 16px;
+    }
+
+    .hero-btn {
+        padding: 14px 28px;
+        font-size: 16px;
+    }
+}
+

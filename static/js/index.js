@@ -27,57 +27,54 @@ document.addEventListener('DOMContentLoaded', function() {
 // TYPEWRITER EFFECT FOR HERO TITLE
 // ============================================
 function initTypewriterEffect() {
-    const heroTitle = document.querySelector('.hero-title');
+    const heroTitle = document.querySelector('.hero-title-text');
     
     if (!heroTitle) {
         console.log('⚠️ Hero title no encontrado');
         return;
     }
     
-    const originalText = heroTitle.textContent;
-    heroTitle.textContent = '';
-    heroTitle.style.opacity = '1';
-    
-    // Agregar el cursor parpadeante
-    const cursor = document.createElement('span');
-    cursor.className = 'typewriter-cursor';
-    cursor.textContent = '|';
-    heroTitle.appendChild(cursor);
-    
-    // Agregar estilos para el cursor
-    const style = document.createElement('style');
-    style.textContent = `
-        .typewriter-cursor {
-            animation: blink 0.7s infinite;
-            margin-left: 2px;
-        }
-        
-        @keyframes blink {
-            0%, 49% { opacity: 1; }
-            50%, 100% { opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
-    
-    let charIndex = 0;
-    const typingSpeed = 100; // Velocidad más lenta (era 50ms, ahora 100ms)
-    
-    function typeNextChar() {
-        if (charIndex < originalText.length) {
-            // Insertar el carácter antes del cursor
-            const textNode = document.createTextNode(originalText.charAt(charIndex));
-            heroTitle.insertBefore(textNode, cursor);
-            charIndex++;
-            setTimeout(typeNextChar, typingSpeed);
-        }
+    // Crear estilos para el cursor si no existen
+    if (!document.getElementById('typewriter-styles')) {
+        const style = document.createElement('style');
+        style.id = 'typewriter-styles';
+        style.textContent = `
+            .typewriter-cursor {
+                animation: blink 0.7s infinite;
+                margin-left: 2px;
+                color: #06b6d4;
+            }
+            
+            @keyframes blink {
+                0%, 49% { opacity: 1; }
+                50%, 100% { opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
     }
     
-    // Iniciar el efecto después de un pequeño delay
-    setTimeout(typeNextChar, 800);
-    
+const originalText = heroTitle.innerHTML.trim();
+heroTitle.innerHTML = '';
+const textContainer = document.createElement('span');
+heroTitle.appendChild(textContainer);
+const cursor = document.createElement('span');
+cursor.className = 'typewriter-cursor';
+cursor.textContent = '|';
+heroTitle.appendChild(cursor);
+let charIndex = 0;
+const typingSpeed = 80;
+function typeNextChar() {
+    if (charIndex < originalText.length) {
+        textContainer.innerHTML = originalText.substring(0, charIndex + 1);
+        charIndex++;
+        setTimeout(typeNextChar, typingSpeed);
+    } else {
+        setTimeout(() => cursor.remove(), 1000);
+    }
+}
+setTimeout(typeNextChar, 500);
     console.log('✅ Efecto typewriter inicializado');
 }
-
 // ============================================
 // FADE-IN ANIMATION FOR ALL SECTIONS
 // ============================================
@@ -1013,4 +1010,266 @@ if (typeof module !== 'undefined' && module.exports) {
         trackWhatsAppClick,
         isMobileDevice
     };
+}
+
+// ============================================
+// HERO SECTION - ANIMACIONES Y EFECTOS
+// ============================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    initParticles();
+    initHeroButtons();
+    initTypewriterEffect();
+});
+
+// ============================================
+// TYPEWRITER EFFECT FOR HERO TITLE
+// ============================================
+function initTypewriterEffect() {
+    const heroTitle = document.querySelector('.hero-title');
+    
+    if (!heroTitle) {
+        console.log('⚠️ Hero title no encontrado');
+        return;
+    }
+    
+    // Obtener el texto original
+    const originalText = heroTitle.innerHTML;
+    
+    // Limpiar el título
+    heroTitle.innerHTML = '';
+    
+    // Crear contenedor para el texto
+    const textContainer = document.createElement('span');
+    heroTitle.appendChild(textContainer);
+    
+    // Agregar el cursor parpadeante
+    const cursor = document.createElement('span');
+    cursor.style.cssText = 'animation: blink 0.7s infinite; margin-left: 2px; color: #06b6d4;';
+    cursor.textContent = '|';
+    heroTitle.appendChild(cursor);
+    
+    // Agregar estilos para el cursor si no existen
+    if (!document.getElementById('typewriter-styles')) {
+        const style = document.createElement('style');
+        style.id = 'typewriter-styles';
+        style.textContent = `
+            @keyframes blink {
+                0%, 49% { opacity: 1; }
+                50%, 100% { opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    let charIndex = 0;
+    const typingSpeed = 80;
+    
+    function typeNextChar() {
+        if (charIndex < originalText.length) {
+            textContainer.innerHTML = originalText.substring(0, charIndex + 1);
+            charIndex++;
+            setTimeout(typeNextChar, typingSpeed);
+        }
+    }
+    
+    // Iniciar el efecto después de un pequeño delay
+    setTimeout(typeNextChar, 500);
+    
+    console.log('✅ Efecto typewriter inicializado');
+    console.log('Texto original:', originalText);
+}
+
+// ============================================
+// SISTEMA DE PARTÍCULAS ANIMADAS - FONDO BLANCO
+// ============================================
+function initParticles() {
+    const canvas = document.getElementById('particles-canvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let mouse = { x: null, y: null, radius: 150 };
+
+    // Configurar canvas
+    canvas.width = canvas.parentElement.offsetWidth;
+    canvas.height = canvas.parentElement.offsetHeight;
+
+    // Eventos de mouse
+    canvas.parentElement.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+    });
+
+    canvas.parentElement.addEventListener('mouseout', () => {
+        mouse.x = null;
+        mouse.y = null;
+    });
+
+    // Redimensionar canvas
+    window.addEventListener('resize', () => {
+        canvas.width = canvas.parentElement.offsetWidth;
+        canvas.height = canvas.parentElement.offsetHeight;
+        init();
+    });
+
+    // Clase Partícula
+    class Particle {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.size = Math.random() * 2.5 + 1.5;
+            this.vx = (Math.random() - 0.5) * 0.5;
+            this.vy = (Math.random() - 0.5) * 0.5;
+            
+            // Colores cyan/blue más visibles en fondo blanco
+            const colors = [
+                'rgba(6, 182, 212, ',      // cyan principal
+                'rgba(8, 145, 178, ',      // cyan oscuro
+                'rgba(34, 211, 238, ',     // cyan claro
+                'rgba(14, 165, 233, '      // sky blue
+            ];
+            this.color = colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        draw() {
+            ctx.fillStyle = this.color + '0.9)';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Añadir brillo más visible
+            ctx.fillStyle = this.color + '0.5)';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size + 3, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+
+            // Rebote en bordes
+            if (this.x < -10) this.x = canvas.width + 10;
+            if (this.x > canvas.width + 10) this.x = -10;
+            if (this.y < -10) this.y = canvas.height + 10;
+            if (this.y > canvas.height + 10) this.y = -10;
+
+            // Interacción con mouse
+            if (mouse.x != null && mouse.y != null) {
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < mouse.radius) {
+                    let force = (mouse.radius - distance) / mouse.radius;
+                    let angle = Math.atan2(dy, dx);
+                    this.vx -= Math.cos(angle) * force * 0.3;
+                    this.vy -= Math.sin(angle) * force * 0.3;
+                }
+            }
+
+            // Límite de velocidad
+            const maxSpeed = 1.2;
+            const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            if (speed > maxSpeed) {
+                this.vx = (this.vx / speed) * maxSpeed;
+                this.vy = (this.vy / speed) * maxSpeed;
+            }
+
+            // Fricción
+            this.vx *= 0.98;
+            this.vy *= 0.98;
+
+            // Movimiento aleatorio mínimo
+            if (Math.abs(this.vx) < 0.1) this.vx += (Math.random() - 0.5) * 0.08;
+            if (Math.abs(this.vy) < 0.1) this.vy += (Math.random() - 0.5) * 0.08;
+        }
+    }
+
+    // Inicializar partículas
+    function init() {
+        particles = [];
+        const numberOfParticles = Math.floor((canvas.width * canvas.height) / 10000);
+        
+        for (let i = 0; i < numberOfParticles; i++) {
+            let x = Math.random() * canvas.width;
+            let y = Math.random() * canvas.height;
+            particles.push(new Particle(x, y));
+        }
+    }
+
+    // Conectar partículas cercanas
+    function connect() {
+        for (let a = 0; a < particles.length; a++) {
+            for (let b = a + 1; b < particles.length; b++) {
+                let dx = particles[a].x - particles[b].x;
+                let dy = particles[a].y - particles[b].y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 120) {
+                    let opacity = 1 - (distance / 120);
+                    
+                    // Líneas más visibles en fondo blanco
+                    ctx.strokeStyle = `rgba(6, 182, 212, ${opacity * 0.5})`;
+                    ctx.lineWidth = opacity * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(particles[a].x, particles[a].y);
+                    ctx.lineTo(particles[b].x, particles[b].y);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+
+    // Animar
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        for (let i = 0; i < particles.length; i++) {
+            particles[i].update();
+            particles[i].draw();
+        }
+        
+        connect();
+        requestAnimationFrame(animate);
+    }
+
+    init();
+    animate();
+    
+    console.log('✅ Sistema de partículas inicializado (fondo blanco)');
+}
+
+// ============================================
+// BOTONES DEL HERO
+// ============================================
+function initHeroButtons() {
+    const primaryBtn = document.querySelector('.hero-btn-primary');
+    
+    if (primaryBtn) {
+        primaryBtn.addEventListener('click', function() {
+            console.log('🚀 Crear mi Agente clickeado');
+            
+            // Animación de click
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = 'translateY(-3px)';
+            }, 150);
+            
+            // Scroll a la sección de plataformas
+            const platformsSection = document.querySelector('.social-platforms-section');
+            if (platformsSection) {
+                platformsSection.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    }
+    
+    console.log('✅ Botones del hero inicializados');
 }
