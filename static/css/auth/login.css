@@ -1,5 +1,5 @@
 /* ============================================
-   LOGIN PAGE CSS - DISEÑO ORBITAL SATURNO MINIMALISTA
+   LOGIN PAGE CSS - DISEÑO ÁTOMO ANIMADO
    ============================================ */
 
 /* Variables CSS - Actualizadas con paleta cyan */
@@ -35,7 +35,7 @@ body {
 }
 
 /* ============================================
-   AUTH CONTAINER - LOGIN CON DISEÑO ORBITAL
+   AUTH CONTAINER - LOGIN CON DISEÑO ÁTOMO
    ============================================ */
 
 .auth-container {
@@ -111,7 +111,7 @@ body {
 }
 
 /* ============================================
-   DISEÑO ORBITAL - SATURNO Y SUS ANILLOS (SIN CONTENEDOR AZUL)
+   DISEÑO ÁTOMO ANIMADO
    ============================================ */
 
 .orbital-container {
@@ -122,155 +122,306 @@ body {
     padding: 2rem;
 }
 
-.orbital-system {
-    position: relative;
-    width: 500px;
+#atome {
+    perspective: 1000px;
+    perspective-origin: 50% 50%;
     height: 500px;
+    width: 500px;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* Planeta central (Saturno) - MÁS GRANDE PARA IMAGEN */
-.planet-core {
+.atome-wrap {
+    height: 300px;
+    width: 300px;
+    margin: auto;
     position: absolute;
-    width: 200px;
-    height: 200px;
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(34, 211, 238, 0.05));
-    border-radius: 50%;
-    border: 3px solid rgba(6, 182, 212, 0.2);
-    box-shadow: 
-        0 0 40px rgba(6, 182, 212, 0.3),
-        0 0 80px rgba(6, 182, 212, 0.2),
-        inset 0 0 40px rgba(6, 182, 212, 0.1);
-    animation: pulse 4s ease-in-out infinite;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    overflow: hidden;
+    transform-style: preserve-3d;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    animation: turn 8s infinite;
+    animation-timing-function: linear;
 }
 
-/* Imagen dentro del planeta */
-.planet-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-}
-
-@keyframes pulse {
-    0%, 100% {
-        transform: scale(1);
-        box-shadow: 
-            0 0 40px rgba(6, 182, 212, 0.3),
-            0 0 80px rgba(6, 182, 212, 0.2),
-            inset 0 0 40px rgba(6, 182, 212, 0.1);
-    }
-    50% {
-        transform: scale(1.03);
-        box-shadow: 
-            0 0 50px rgba(6, 182, 212, 0.4),
-            0 0 100px rgba(6, 182, 212, 0.3),
-            inset 0 0 50px rgba(6, 182, 212, 0.15);
-    }
-}
-
-/* Órbitas (Anillos) */
-.orbit {
+.atome-wrap:after,
+.atome-wrap:before {
+    content: '';
     position: absolute;
-    border: 2px solid rgba(6, 182, 212, 0.15);
-    border-radius: 50%;
-    animation: rotate-orbit linear infinite;
-}
-
-.orbit-1 {
-    width: 280px;
-    height: 280px;
-    animation-duration: 10s;
-}
-
-.orbit-2 {
-    width: 360px;
-    height: 360px;
-    animation-duration: 15s;
-    border-color: rgba(6, 182, 212, 0.12);
-}
-
-.orbit-3 {
-    width: 440px;
-    height: 440px;
-    animation-duration: 20s;
-    border-color: rgba(6, 182, 212, 0.1);
-}
-
-@keyframes rotate-orbit {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* Satélites orbitando */
-.satellite {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    background: linear-gradient(135deg, var(--primary-cyan), var(--secondary-cyan));
-    border-radius: 50%;
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.6);
+    height: 8px;
+    width: 8px;
+    border-radius: 100%;
+    background-color: #fff;
+    box-shadow: 0 0 10px #000,
+                0 0 15px #64FFF9, 
+                0 0 30px #64FFF9;
     top: 50%;
     left: 50%;
-    margin: -8px 0 0 -8px;
+    margin-top: -4px;
+    margin-left: -4px;
 }
 
-/* Satélite 1 - Órbita 1 */
-.orbit-1 .satellite {
-    animation: orbit-satellite-1 10s linear infinite;
+.atome-wrap:before {
+    transform: rotateX(90deg);
 }
 
-@keyframes orbit-satellite-1 {
-    from {
-        transform: rotate(0deg) translateX(140px) rotate(0deg);
+.circle {
+    height: 300px;
+    width: 300px;
+    position: absolute;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    border-radius: 100%;
+    border: dashed 1.5px rgba(6, 182, 212, 0.3);
+    animation-timing-function: linear;
+}
+
+.circle:before {
+    content: '';
+    position: absolute;
+    height: 4px;
+    width: 8px;
+    border-radius: 100%;
+    background-color: #fff;
+    box-shadow: 0 0 10px #C1FFFD, 
+                0 0 15px #7CFFFF, 
+                0 0 30px #36FFFF, 
+                0 0 40px #0FF;
+    animation: electrons 3s infinite;
+    animation-timing-function: linear;
+}
+
+.circle:after {
+    content: '';
+    position: absolute;
+    height: 8px;
+    width: 8px;
+    border-radius: 100%;
+    background-color: #fff;
+    top: 50%;
+    left: 50%;
+    margin-top: -4px;
+    margin-left: -4px;
+    box-shadow: 0 0 10px #000, 
+                0 0 15px #64FFF9, 
+                0 0 30px #0FF;
+}
+
+.circle_0 {
+    transform: translateZ(0px) rotateY(0deg) rotateX(0deg);
+    animation: rotate_0 1.8s infinite;
+    animation-timing-function: linear;
+    height: 450px;
+    width: 450px;
+    top: -75px;
+    left: -75px;
+}
+
+.circle_0:before {
+    top: 50%;
+    left: 0;
+    margin-left: -3px;
+    margin-top: 0;
+    height: 8px;
+    width: 3px;
+}
+
+.circle_1 {
+    transform: translateZ(0px) rotateY(90deg) rotateX(0deg);
+    animation: rotate_1 1.8s infinite;
+    animation-timing-function: linear;
+    height: 450px;
+    width: 450px;
+    top: -75px;
+    left: -75px;
+}
+
+.circle_1:before {
+    top: 50%;
+    right: 0;
+    margin-right: -2px;
+    margin-top: 0px;
+    width: 3px;
+    height: 8px;	
+}
+
+.circle_2 {
+    transform: translateZ(0px) rotateY(45deg) rotateX(0deg);			
+    animation: rotate_2 1.2s infinite;
+    animation-timing-function: linear;
+}
+
+.circle_2:before {
+    top: 50%;
+    right: 0;
+    margin-right: -3px;
+    margin-top: 0;
+    height: 8px;
+    width: 3px;
+}
+
+.circle_3 {
+    transform: translateZ(0px) rotateY(135deg) rotateX(0deg);
+    animation: rotate_3 1.2s infinite;
+    animation-timing-function: linear;
+}
+
+.circle_3:before {
+    bottom: 50%;
+    right: 0;
+    margin-right: -3px;
+    margin-bottom: 0;
+    height: 8px;
+    width: 3px;
+}
+
+.circle_4 {
+    transform: rotateX(90deg) rotateY(-30deg) translateZ(0px) translateY(0px);
+    animation: rotate_4 0.5s infinite;
+    animation-timing-function: linear;
+    height: 150px;
+    width: 150px;
+    top: 75px;
+    left: 75px;
+}
+
+.circle_4:before {
+    top: 50%;
+    left: 0;
+    margin-left: -3px;
+    margin-top: 0;
+    height: 8px;
+    width: 3px;
+}
+
+.circle_5 {
+    transform: rotateX(90deg) rotateY(45deg) translateZ(0px) translateY(0px);
+    animation: rotate_5 0.5s infinite;
+    animation-timing-function: linear;
+    height: 150px;
+    width: 150px;
+    top: 75px;
+    left: 75px;
+}
+
+.circle_5:before {
+    top: 50%;
+    right: 0;
+    margin-right: -2px;
+    margin-top: 0px;
+    width: 3px;
+    height: 8px;
+}
+
+@keyframes turn {
+    0%   { transform: rotateX(0deg) rotateZ(0deg); }
+    100% { transform: rotateX(360deg) rotateZ(360deg); }
+}
+
+@keyframes electrons {
+    0%   {
+        transform: rotateY(0deg); 
+        opacity: 1;
     }
-    to {
-        transform: rotate(360deg) translateX(140px) rotate(-360deg);
+    50% {
+        transform: rotateY(180deg); 
+        opacity: 0.2;
+    }
+    100% {
+        transform: rotateY(360deg);
+        opacity: 1;
     }
 }
 
-/* Satélite 2 - Órbita 2 */
-.orbit-2 .satellite {
-    animation: orbit-satellite-2 15s linear infinite;
-    width: 14px;
-    height: 14px;
-    margin: -7px 0 0 -7px;
-}
-
-@keyframes orbit-satellite-2 {
-    from {
-        transform: rotate(120deg) translateX(180px) rotate(-120deg);
+@keyframes rotate_0 {
+    0%   {
+        transform: translateZ(0px) rotateY(0deg) rotateX(0deg) rotateZ(0deg);
+        border: dashed 1.5px rgba(6, 182, 212, 0.2);
     }
-    to {
-        transform: rotate(480deg) translateX(180px) rotate(-480deg);
+    50% {
+        transform: translateZ(0px) rotateY(0deg) rotateX(0deg) rotateZ(180deg);
+        border: dashed 1.5px rgba(6, 182, 212, 1);
+    }
+    100% {
+        transform: translateZ(0px) rotateY(0deg) rotateX(0deg) rotateZ(360deg);
+        border: dashed 1.5px rgba(6, 182, 212, 0.2);
     }
 }
 
-/* Satélite 3 - Órbita 3 */
-.orbit-3 .satellite {
-    animation: orbit-satellite-3 20s linear infinite;
-    width: 12px;
-    height: 12px;
-    margin: -6px 0 0 -6px;
+@keyframes rotate_1 {
+    0%   {
+        transform: translateZ(0px) rotateY(90deg) rotateX(0deg) rotateZ(0deg);
+        border: dashed 1.5px rgba(6, 182, 212, 0.2);
+    }
+    50% {
+        transform: translateZ(0px) rotateY(90deg) rotateX(0deg) rotateZ(-180deg);
+        border: dashed 1.5px rgba(6, 182, 212, 1);
+    }
+    100% {
+        transform: translateZ(0px) rotateY(90deg) rotateX(0deg) rotateZ(-360deg);
+        border: dashed 1.5px rgba(6, 182, 212, 0.2);
+    }
 }
 
-@keyframes orbit-satellite-3 {
-    from {
-        transform: rotate(240deg) translateX(220px) rotate(-240deg);
+@keyframes rotate_2 {
+    0%   {
+        transform: translateZ(0px) rotateY(0deg) rotateX(135deg) rotateZ(0deg);
+        border: dashed 1.5px rgba(6, 182, 212, 0.2);
     }
-    to {
-        transform: rotate(600deg) translateX(220px) rotate(-600deg);
+    50% {
+        transform: translateZ(0px) rotateY(0deg) rotateX(135deg) rotateZ(180deg);
+        border: dashed 1.5px rgba(6, 182, 212, 1);
+    }
+    100% {
+        transform: translateZ(0px) rotateY(0deg) rotateX(135deg) rotateZ(360deg);
+        border: dashed 1.5px rgba(6, 182, 212, 0.2);
+    }
+}
+
+@keyframes rotate_3 {
+    0%   {
+        transform: translateZ(0px) rotateY(0deg) rotateX(45deg) rotateZ(0deg);
+        border: dashed 1.5px rgba(6, 182, 212, 0.2);
+    }
+    50%   {
+        transform: translateZ(0px) rotateY(0deg) rotateX(45deg) rotateZ(-180deg);
+        border: dashed 1.5px rgba(6, 182, 212, 1);
+    }
+    100% {
+        transform: translateZ(0px) rotateY(0deg) rotateX(45deg) rotateZ(-360deg);
+        border: dashed 1.5px rgba(6, 182, 212, 0.2);
+    }
+}
+
+@keyframes rotate_4 {
+    0%   {
+        transform: rotateX(90deg) rotateY(-30deg) translateZ(0px) translateY(0px) rotateZ(0deg);
+        border: dashed 1.5px rgba(6, 182, 212, 1);
+    }
+    50%   {
+        transform: rotateX(90deg) rotateY(-30deg) translateZ(0px) translateY(0px) rotateZ(180deg);
+        border: dashed 1.5px rgba(6, 182, 212, 0.2);
+    }
+    100% {
+        transform: rotateX(90deg) rotateY(-30deg) translateZ(0px) translateY(0px) rotateZ(360deg);
+        border: dashed 1.5px rgba(6, 182, 212, 1);
+    }
+}
+
+@keyframes rotate_5 {
+    0%   {
+        transform: rotateX(90deg) rotateY(45deg) translateZ(0px) translateY(0px) rotateZ(0deg);
+        border: dashed 1.5px rgba(6, 182, 212, 1);
+    }
+    50%   {
+        transform: rotateX(90deg) rotateY(45deg) translateZ(0px) translateY(0px) rotateZ(-180deg);
+        border: dashed 1.5px rgba(6, 182, 212, 0.2);
+    }
+    100% {
+        transform: rotateX(90deg) rotateY(45deg) translateZ(0px) translateY(0px) rotateZ(-360deg);
+        border: dashed 1.5px rgba(6, 182, 212, 1);
     }
 }
 
@@ -707,29 +858,35 @@ input[type="password"].form-input {
         gap: 3rem;
     }
 
-    .orbital-system {
-        width: 400px;
+    #atome {
         height: 400px;
+        width: 400px;
     }
 
-    .planet-core {
-        width: 160px;
-        height: 160px;
+    .atome-wrap {
+        height: 250px;
+        width: 250px;
     }
 
-    .orbit-1 {
-        width: 240px;
-        height: 240px;
+    .circle {
+        height: 250px;
+        width: 250px;
     }
 
-    .orbit-2 {
-        width: 310px;
-        height: 310px;
-    }
-
-    .orbit-3 {
-        width: 380px;
+    .circle_0,
+    .circle_1 {
         height: 380px;
+        width: 380px;
+        top: -65px;
+        left: -65px;
+    }
+
+    .circle_4,
+    .circle_5 {
+        height: 120px;
+        width: 120px;
+        top: 65px;
+        left: 65px;
     }
 
     .auth-form-container {
