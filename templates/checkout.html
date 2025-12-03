@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/checkout.css">
+</head>
+<body>
+    <!-- Logo Header Animado -->
+    <header class="checkout-header">
+        <div class="logo-container">
+            <h1>ATTOMOS</h1>
+            <svg id="svg">
+                <circle id="base" />
+                <path id="ring" />
+                <path id="second" />
+                <path id="third" />
+            </svg>
+        </div>
+    </header>
+
+    <!-- Main Checkout Container -->
+    <div class="checkout-container">
+        <!-- Left Side - Order Summary -->
+        <div class="order-summary">
+            <div class="summary-header">
+                <h2 class="summary-title">
+                    <i class="lni lni-cart"></i>
+                    Resumen de Compra
+                </h2>
+            </div>
+
+            <!-- Selected Plan Card -->
+            <div class="selected-plan-card">
+                <div class="plan-badge">Plan Seleccionado</div>
+                <h3 class="plan-name" id="selectedPlanName">Plan Neutrón</h3>
+                <div class="plan-billing-period">
+                    <span class="billing-label">Período de facturación:</span>
+                    <span class="billing-value" id="billingPeriod">Mensual</span>
+                </div>
+            </div>
+
+            <!-- Price Breakdown -->
+            <div class="price-breakdown">
+                <div class="price-item">
+                    <span class="price-label">Subtotal</span>
+                    <span class="price-value" id="subtotal">$255.00</span>
+                </div>
+                <div class="price-item">
+                    <span class="price-label">IVA (16%)</span>
+                    <span class="price-value" id="tax">$40.80</span>
+                </div>
+                <div class="price-separator"></div>
+                <div class="price-item total">
+                    <span class="price-label">Total a Pagar</span>
+                    <span class="price-value" id="total">$295.80</span>
+                </div>
+            </div>
+
+            <!-- Features Included -->
+            <div class="features-included">
+                <h4 class="features-title">Incluye:</h4>
+                <ul class="features-list" id="planFeatures">
+                    <li>
+                        <i class="lni lni-checkmark-circle"></i>
+                        <span>3 Chatbots incluidos</span>
+                    </li>
+                    <li>
+                        <i class="lni lni-checkmark-circle"></i>
+                        <span>10,000 mensajes/mes</span>
+                    </li>
+                    <li>
+                        <i class="lni lni-checkmark-circle"></i>
+                        <span>Todas las plataformas</span>
+                    </li>
+                    <li>
+                        <i class="lni lni-checkmark-circle"></i>
+                        <span>Soporte prioritario</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Security Badge -->
+            <div class="security-badge">
+                <i class="lni lni-lock"></i>
+                <span>Pago 100% seguro y encriptado</span>
+            </div>
+        </div>
+
+        <!-- Right Side - Payment Form -->
+        <div class="payment-section">
+            <div class="payment-header">
+                <h2 class="payment-title">Información de Pago</h2>
+                <div class="payment-methods">
+                    <img src="/static/images/visa.svg" alt="Visa" class="payment-logo">
+                    <img src="/static/images/mastercard.svg" alt="Mastercard" class="payment-logo">
+                    <img src="/static/images/amex.svg" alt="American Express" class="payment-logo">
+                </div>
+            </div>
+
+            <form id="paymentForm" class="payment-form">
+                <!-- Billing Information -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="lni lni-user"></i>
+                        Información de Facturación
+                    </h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-input" id="fullName" required placeholder="Juan Pérez">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Email *</label>
+                            <input type="email" class="form-input" id="email" required placeholder="juan@ejemplo.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" class="form-input" id="phone" placeholder="6621234567">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">País *</label>
+                            <select class="form-select" id="country" required>
+                                <option value="">Selecciona un país</option>
+                                <option value="MX" selected>México</option>
+                                <option value="US">Estados Unidos</option>
+                                <option value="CA">Canadá</option>
+                                <option value="ES">España</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Código Postal *</label>
+                            <input type="text" class="form-input" id="postalCode" required placeholder="83000">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="lni lni-credit-cards"></i>
+                        Método de Pago
+                    </h3>
+
+                    <div class="payment-method-selector">
+                        <label class="payment-method-option active">
+                            <input type="radio" name="paymentMethod" value="card" checked>
+                            <div class="method-content">
+                                <i class="lni lni-credit-cards"></i>
+                                <span>Tarjeta de Crédito/Débito</span>
+                            </div>
+                        </label>
+                        <label class="payment-method-option">
+                            <input type="radio" name="paymentMethod" value="paypal">
+                            <div class="method-content">
+                                <i class="lni lni-paypal"></i>
+                                <span>PayPal</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Card Details -->
+                    <div id="cardDetails" class="card-details">
+                        <div class="form-group">
+                            <label class="form-label">Número de Tarjeta *</label>
+                            <div class="card-input-wrapper">
+                                <input type="text" 
+                                       class="form-input card-input" 
+                                       id="cardNumber" 
+                                       required 
+                                       placeholder="1234 5678 9012 3456"
+                                       maxlength="19">
+                                <div class="card-brand-icon" id="cardBrand"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Fecha de Expiración *</label>
+                                <input type="text" 
+                                       class="form-input" 
+                                       id="cardExpiry" 
+                                       required 
+                                       placeholder="MM/AA"
+                                       maxlength="5">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">CVV *</label>
+                                <input type="text" 
+                                       class="form-input" 
+                                       id="cardCVV" 
+                                       required 
+                                       placeholder="123"
+                                       maxlength="4">
+                                <div class="cvv-info">
+                                    <i class="lni lni-information"></i>
+                                    <div class="cvv-tooltip">3 dígitos en el reverso de tu tarjeta</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Nombre en la Tarjeta *</label>
+                            <input type="text" class="form-input" id="cardName" required placeholder="JUAN PEREZ">
+                        </div>
+                    </div>
+
+                    <!-- PayPal Option -->
+                    <div id="paypalDetails" class="paypal-details" style="display: none;">
+                        <div class="paypal-info">
+                            <i class="lni lni-paypal" style="font-size: 3rem; color: #0070ba;"></i>
+                            <p>Serás redirigido a PayPal para completar tu pago de forma segura.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Terms & Conditions -->
+                <div class="form-section">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="termsAccepted" required>
+                        <span>Acepto los <a href="/terms" target="_blank">términos y condiciones</a> y la <a href="/privacy" target="_blank">política de privacidad</a></span>
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn-submit" id="submitButton">
+                    <i class="lni lni-lock"></i>
+                    <span>Realizar Pago Seguro</span>
+                </button>
+
+                <!-- Cancel Link -->
+                <a href="/plans" class="cancel-link">
+                    <i class="lni lni-arrow-left"></i>
+                    Volver a Planes
+                </a>
+            </form>
+
+            <!-- Trust Badges -->
+            <div class="trust-badges">
+                <div class="trust-item">
+                    <i class="lni lni-shield"></i>
+                    <span>SSL Seguro</span>
+                </div>
+                <div class="trust-item">
+                    <i class="lni lni-lock"></i>
+                    <span>Encriptación 256-bit</span>
+                </div>
+                <div class="trust-item">
+                    <i class="lni lni-checkmark-circle"></i>
+                    <span>PCI Compliant</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Modal -->
+    <div id="processingModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="processing-animation">
+                <div class="spinner"></div>
+            </div>
+            <h3 class="processing-title">Procesando tu pago...</h3>
+            <p class="processing-text">Por favor espera, no cierres esta ventana.</p>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal-overlay">
+        <div class="modal-content success-modal">
+            <div class="success-icon">
+                <i class="lni lni-checkmark-circle"></i>
+            </div>
+            <h3 class="success-title">¡Pago Exitoso!</h3>
+            <p class="success-text">Tu suscripción ha sido activada correctamente.</p>
+            <button class="btn-success" onclick="window.location.href='/dashboard'">
+                Ir al Dashboard
+            </button>
+        </div>
+    </div>
+
+    <script src="/static/js/checkout.js"></script>
+</body>
+</html>

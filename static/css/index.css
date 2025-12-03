@@ -56,10 +56,7 @@ body {
     gap: 40px;
 }
 
-/* Contenido de texto */
-.hero-text-content {
-    /* Sin animación fadeInUp para permitir typewriter */
-}
+
 
 .hero-title {
     font-size: 64px;
@@ -316,7 +313,7 @@ body {
     justify-content: center;
     width: 60px;
     height: 60px;
-    border-radius: 50%;
+    border-radius: 60%;
     border: 2px solid;
     transition: all 0.3s ease;
 }
