@@ -5,11 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Facturación - Attomos</title>
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/static/css/sidebar.css">
-    <link rel="stylesheet" href="/static/css/userbar.css">
     <link rel="stylesheet" href="/static/css/billing.css">
 </head>
 <body>
+    <!-- Decorative Rings -->
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
     <div class="app-container">
         <!-- Sidebar -->
         {{template "sidebar.html" .}}
@@ -25,12 +31,15 @@
                     <!-- Page Header -->
                     <div class="page-header">
                         <div class="header-content">
-                            <h1 class="page-title">Historial de Pagos</h1>
+                            <h1 class="page-title">
+                                <i class="lni lni-credit-cards"></i>
+                                Historial de Pagos
+                            </h1>
                             <p class="page-subtitle">Gestiona y revisa todas tus transacciones</p>
                         </div>
                         <a href="/plans" class="change-plan-btn">
                             <i class="lni lni-layers"></i>
-                            Cambiar Plan
+                            <span>Cambiar Plan</span>
                         </a>
                     </div>
 
@@ -43,7 +52,7 @@
                             </div>
                             <div class="summary-content">
                                 <div class="summary-label">Total Pagado</div>
-                                <div class="summary-value">$15.00 MXN</div>
+                                <div class="summary-value">$15.00</div>
                             </div>
                         </div>
 
@@ -65,7 +74,7 @@
                             </div>
                             <div class="summary-content">
                                 <div class="summary-label">Último Pago</div>
-                                <div class="summary-value">08 Oct 2025</div>
+                                <div class="summary-value">08 Oct</div>
                             </div>
                         </div>
                     </div>
@@ -126,10 +135,18 @@
                             
                             <!-- Filter Tabs -->
                             <div class="filter-tabs">
-                                <button class="filter-tab active" data-filter="all">Todos</button>
-                                <button class="filter-tab" data-filter="completed">Completados</button>
-                                <button class="filter-tab" data-filter="pending">Pendientes</button>
-                                <button class="filter-tab" data-filter="failed">Fallidos</button>
+                                <button class="filter-tab active" data-filter="all">
+                                    <span>Todos</span>
+                                </button>
+                                <button class="filter-tab" data-filter="completed">
+                                    <span>Completados</span>
+                                </button>
+                                <button class="filter-tab" data-filter="pending">
+                                    <span>Pendientes</span>
+                                </button>
+                                <button class="filter-tab" data-filter="failed">
+                                    <span>Fallidos</span>
+                                </button>
                             </div>
                         </div>
 
@@ -215,10 +232,10 @@
                                     <div class="invoice-amount">$15.00 MXN</div>
                                 </div>
                                 <div class="invoice-actions">
-                                    <button class="invoice-action-btn view">
+                                    <button class="invoice-action-btn view" title="Ver factura">
                                         <i class="lni lni-eye"></i>
                                     </button>
-                                    <button class="invoice-action-btn download">
+                                    <button class="invoice-action-btn download" title="Descargar">
                                         <i class="lni lni-download"></i>
                                     </button>
                                 </div>

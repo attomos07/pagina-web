@@ -72,14 +72,29 @@ function renderAgentsTable(agents) {
 
 // Crear fila de agente
 function createAgentRow(agent) {
-    const initials = getInitials(agent.name);
     const phone = agent.phoneNumber || 'Sin número';
     const statusBadge = getStatusBadge(agent);
     
     return `<tr data-agent-id="${agent.id}">
     <td>
         <div class="agent-name-cell">
-            <div class="agent-avatar">${initials}</div>
+            <div class="agent-avatar">
+                <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="24" y1="6" x2="24" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="24" cy="5" r="1.5" fill="currentColor"/>
+                    <rect x="14" y="10" width="20" height="16" rx="4" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <circle cx="19" cy="16" r="2" fill="currentColor"/>
+                    <circle cx="29" cy="16" r="2" fill="currentColor"/>
+                    <path d="M 18 21 Q 24 23 30 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    <rect x="16" y="26" width="16" height="12" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <circle cx="24" cy="31" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    <circle cx="24" cy="31" r="0.8" fill="currentColor"/>
+                    <rect x="10" y="28" width="4" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <rect x="34" y="28" width="4" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <rect x="18" y="38" width="4" height="4" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <rect x="26" y="38" width="4" height="4" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
+                </svg>
+            </div>
             <div class="agent-info">
                 <div class="agent-name">${escapeHtml(agent.name)}</div>
                 <div class="agent-id">ID: ${agent.id}</div>
@@ -121,14 +136,6 @@ function createAgentRow(agent) {
         </div>
     </td>
 </tr>`;
-}
-
-// Obtener iniciales del nombre
-function getInitials(name) {
-    if (!name) return '?';
-    const words = name.trim().split(' ');
-    if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
-    return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
 
 // Obtener badge de estado
