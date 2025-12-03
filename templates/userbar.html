@@ -68,8 +68,9 @@
                 <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop" alt="Perfil">
             </div>
             <div class="profile-info">
-                <div class="company-name">Mi Empresa</div>
-                <div class="business-type">Negocio</div>
+                <!-- Los datos se cargarán dinámicamente desde JavaScript -->
+                <div class="company-name">Cargando...</div>
+                <div class="business-type">...</div>
             </div>
         </div>
 
@@ -173,119 +174,5 @@
     </div>
 </div>
 
-<script>
-    // Check if mobile
-    let isMobile = window.innerWidth <= 768;
-
-    // Notification functionality
-    const notificationBtn = document.getElementById('notificationBtn');
-    const notificationPanel = document.getElementById('notificationPanel');
-    const markAllBtn = document.getElementById('markAllBtn');
-    const notificationBadge = document.getElementById('notificationBadge');
-
-    // Mobile: Tap to toggle notifications
-    if (isMobile) {
-        notificationBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            notificationPanel.classList.toggle('mobile-active');
-        });
-
-        // Close notification panel when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!notificationPanel.contains(e.target) && !notificationBtn.contains(e.target)) {
-                notificationPanel.classList.remove('mobile-active');
-            }
-        });
-    }
-
-    // Mark all notifications as read
-    markAllBtn.addEventListener('click', () => {
-        const unreadItems = document.querySelectorAll('.notification-item.unread');
-        unreadItems.forEach(item => {
-            item.classList.remove('unread');
-        });
-        notificationBadge.classList.add('hidden');
-    });
-
-    // Mark individual notification as read on click
-    document.querySelectorAll('.notification-item').forEach(item => {
-        item.addEventListener('click', function() {
-            if (this.classList.contains('unread')) {
-                this.classList.remove('unread');
-                updateBadgeCount();
-            }
-        });
-    });
-
-    function updateBadgeCount() {
-        const unreadCount = document.querySelectorAll('.notification-item.unread').length;
-        if (unreadCount > 0) {
-            notificationBadge.textContent = unreadCount;
-            notificationBadge.classList.remove('hidden');
-        } else {
-            notificationBadge.classList.add('hidden');
-        }
-    }
-
-    // Userbar functionality
-    const userbar = document.getElementById('userbar');
-    const profileSection = document.getElementById('profileSection');
-    const userDropdown = document.getElementById('userDropdown');
-
-    // Mobile: Tap to toggle userbar menu
-    if (isMobile) {
-        profileSection.addEventListener('click', (e) => {
-            e.stopPropagation();
-            userbar.classList.toggle('mobile-menu-active');
-        });
-
-        // Close userbar menu when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!userbar.contains(e.target)) {
-                userbar.classList.remove('mobile-menu-active');
-            }
-        });
-
-        // Close menu when clicking on a link
-        const userMenuLinks = userDropdown.querySelectorAll('.menu-button');
-        userMenuLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                userbar.classList.remove('mobile-menu-active');
-            });
-        });
-    }
-
-    // Handle window resize
-    window.addEventListener('resize', () => {
-        const wasMobile = isMobile;
-        isMobile = window.innerWidth <= 768;
-
-        // Reset states when switching between mobile/desktop
-        if (wasMobile !== isMobile) {
-            notificationPanel.classList.remove('mobile-active');
-            userbar.classList.remove('mobile-menu-active');
-        }
-    });
-
-    // Logout functionality
-    const userbarLogoutBtn = document.getElementById('userbarLogoutBtn');
-    userbarLogoutBtn.addEventListener('click', async () => {
-        try {
-            const response = await fetch('/api/logout', {
-                method: 'POST',
-                credentials: 'include'
-            });
-
-            if (response.ok) {
-                localStorage.removeItem('sidebarPinned');
-                window.location.href = '/login';
-            } else {
-                console.error('Error al cerrar sesión');
-                alert('Error al cerrar sesión. Por favor intenta de nuevo.');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error al cerrar sesión. Por favor intenta de nuevo.');
-        }
-    });
-</script>
+<!-- Userbar JavaScript -->
+<script src="/static/js/userbar.js"></script>
