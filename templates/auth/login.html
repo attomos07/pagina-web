@@ -5,18 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.title}} - Iniciar Sesión</title>
-    <!-- LineIcons CSS -->
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
-    <!-- CSS Files -->
     <link rel="stylesheet" href="/static/css/partials/navbar.css">
     <link rel="stylesheet" href="/static/css/partials/footer.css">
     <link rel="stylesheet" href="/static/css/auth/login.css">
 </head>
 <body>
-    <!-- Navbar -->
     {{template "partials/navbar.html" .}}
 
-    <!-- Main Auth Container -->
     <div class="auth-container">
         <div class="auth-background">
             <div class="auth-shape auth-shape-1"></div>
@@ -25,7 +21,6 @@
         </div>
 
         <div class="auth-content">
-            <!-- Left Side - Átomo Animado -->
             <div class="orbital-container">
                 <div id="atome">
                     <div class="atome-wrap">
@@ -39,7 +34,6 @@
                 </div>
             </div>
 
-            <!-- Right Side - Login Form -->
             <div class="auth-form-container">
                 <div class="auth-form-content">
                     <div class="auth-header">
@@ -47,7 +41,6 @@
                         <p class="auth-subtitle">Ingresa tus credenciales para acceder a tu cuenta</p>
                     </div>
 
-                    <!-- Social Login - SOLO ICONOS EN UNA FILA -->
                     <div class="social-login social-login-inline">
                         <button class="social-btn social-icon-btn google-btn" onclick="loginWithGoogle()" title="Iniciar sesión con Google">
                             <svg width="24" height="24" viewBox="0 0 24 24">
@@ -67,7 +60,6 @@
                         <span>o continúa con email</span>
                     </div>
 
-                    <!-- Login Form -->
                     <form class="auth-form" id="loginForm">
                         <div class="form-group">
                             <label for="email" class="form-label">Email</label>
@@ -84,7 +76,7 @@
                             <div class="input-container">
                                 <i class="lni lni-lock input-icon"></i>
                                 <input type="password" id="password" name="password" class="form-input" required>
-                                <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                                <button type="button" class="password-toggle" title="Mostrar/Ocultar contraseña">
                                     <i class="lni lni-eye" id="passwordToggleIcon"></i>
                                 </button>
                             </div>
@@ -118,10 +110,8 @@
         </div>
     </div>
 
-    <!-- Footer -->
     {{template "partials/footer.html" .}}
 
-    <!-- JavaScript -->
     <script src="/static/js/index.js"></script>
     <script src="/static/js/auth/login.js"></script>
 </body>

@@ -80,43 +80,38 @@ function validateLoginField(field) {
 }
 
 // ============================================
-// TOGGLE DE CONTRASEÑAS
+// TOGGLE DE CONTRASEÑAS (CORREGIDO)
 // ============================================
 
 function initPasswordToggle() {
-    const passwordToggle = document.querySelector('.password-toggle');
+    const passwordToggleBtn = document.querySelector('.password-toggle');
     
-    if (passwordToggle) {
-        passwordToggle.addEventListener('click', function() {
+    if (passwordToggleBtn) {
+        // Usamos replaceChild para eliminar cualquier event listener previo duplicado
+        const newBtn = passwordToggleBtn.cloneNode(true);
+        passwordToggleBtn.parentNode.replaceChild(newBtn, passwordToggleBtn);
+        
+        newBtn.addEventListener('click', function(e) {
+            e.preventDefault(); // Evitar comportamientos extraños
+            
             const passwordField = document.getElementById('password');
-            const icon = document.getElementById('passwordToggleIcon');
+            const icon = newBtn.querySelector('i'); // Buscamos el icono dentro del botón
             
             if (passwordField && icon) {
                 if (passwordField.type === 'password') {
+                    // MOSTRAR CONTRASEÑA
                     passwordField.type = 'text';
-                    icon.className = 'lni lni-eye-off';
+                    // IMPORTANTE: Usamos 'lni-eye-slash' en lugar de 'eye-off'
+                    // Si este icono no aparece, tu versión de LineIcons no lo tiene.
+                    // En ese caso, prueba cambiar esta línea por: icon.className = 'lni lni-lock';
+                    icon.className = 'lni lni-eye-slash'; 
                 } else {
+                    // OCULTAR CONTRASEÑA
                     passwordField.type = 'password';
                     icon.className = 'lni lni-eye';
                 }
             }
         });
-    }
-}
-
-// Función global para toggle (llamada desde HTML)
-function togglePassword(fieldId) {
-    const field = document.getElementById(fieldId);
-    const icon = document.getElementById(fieldId + 'ToggleIcon');
-    
-    if (field && icon) {
-        if (field.type === 'password') {
-            field.type = 'text';
-            icon.className = 'lni lni-eye-off';
-        } else {
-            field.type = 'password';
-            icon.className = 'lni lni-eye';
-        }
     }
 }
 
