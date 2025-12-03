@@ -323,6 +323,322 @@ body {
     font-weight: 600;
 }
 
+/* Agents Table */
+.agents-table-container {
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid #f0f0f0;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.table-header {
+    padding: 2rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.table-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.table-title i {
+    color: #06b6d4;
+}
+
+.agents-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.agents-table thead {
+    background: linear-gradient(to bottom, #fafafa, #ffffff);
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.agents-table th {
+    padding: 1.25rem 2rem;
+    text-align: left;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.agents-table th:last-child {
+    text-align: right;
+}
+
+.agents-table tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+    transition: all 0.2s ease;
+    /* Removed pseudo-element causing misalignment */
+}
+
+.agents-table tbody tr:hover {
+    background: rgba(6, 182, 212, 0.03); /* Lighter clean hover effect */
+}
+
+.agents-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.agents-table td {
+    padding: 1.5rem 2rem;
+    color: #1a1a1a;
+    font-size: 0.95rem;
+    vertical-align: middle;
+}
+
+/* Agent Name Cell */
+.agent-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.agent-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.125rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.agent-avatar::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transform: rotate(45deg);
+}
+
+.agent-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.agent-name {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 1rem;
+}
+
+.agent-id {
+    font-size: 0.8125rem;
+    color: #9ca3af;
+}
+
+/* Platform Badge */
+.platform-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: rgba(37, 211, 102, 0.1);
+    color: #25d366;
+    white-space: nowrap;
+}
+
+.platform-badge i {
+    font-size: 1.125rem;
+}
+
+/* Phone Number */
+.phone-number {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6b7280;
+}
+
+.phone-number i {
+    color: #06b6d4;
+    font-size: 1.125rem;
+}
+
+/* Status Badge */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-badge.active {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.status-badge.inactive {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.status-badge.pending {
+    background: rgba(251, 191, 36, 0.1);
+    color: #fbbf24;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Actions Menu */
+.actions-cell {
+    text-align: right;
+}
+
+.actions-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.actions-trigger {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #6b7280;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 1.25rem;
+}
+
+.actions-trigger:hover {
+    background: #f9fafb;
+    border-color: #06b6d4;
+    color: #06b6d4;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15);
+}
+
+.actions-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    min-width: 180px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border: 1px solid #f0f0f0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100;
+    overflow: hidden;
+}
+
+.actions-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    padding: 0.875rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #374151;
+    text-decoration: none;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+
+.dropdown-item i {
+    font-size: 1.125rem;
+    width: 20px;
+    flex-shrink: 0;
+}
+
+.dropdown-item:hover {
+    background: linear-gradient(90deg, rgba(6, 182, 212, 0.08), rgba(6, 182, 212, 0.02));
+    color: #06b6d4;
+}
+
+.dropdown-item.edit:hover {
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.02));
+    color: #3b82f6;
+}
+
+.dropdown-item.edit i {
+    color: #3b82f6;
+}
+
+.dropdown-item.pause:hover {
+    background: linear-gradient(90deg, rgba(251, 191, 36, 0.08), rgba(251, 191, 36, 0.02));
+    color: #fbbf24;
+}
+
+.dropdown-item.pause i {
+    color: #fbbf24;
+}
+
+.dropdown-item.delete {
+    border-top: 1px solid #f0f0f0;
+}
+
+.dropdown-item.delete:hover {
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.02));
+    color: #ef4444;
+}
+
+.dropdown-item.delete i {
+    color: #ef4444;
+}
+
 /* Empty State */
 .empty-state {
     text-align: center;
@@ -367,7 +683,41 @@ body {
     margin-right: auto;
 }
 
+/* Loading State */
+.loading-row {
+    text-align: center;
+    padding: 3rem 2rem;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 48px;
+    height: 48px;
+    border: 4px solid #f0f0f0;
+    border-top-color: #06b6d4;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-text {
+    margin-top: 1rem;
+    color: #6b7280;
+    font-size: 0.9375rem;
+}
+
 /* Responsive */
+@media (max-width: 1024px) {
+    .agents-table-container {
+        overflow-x: auto;
+    }
+}
+
 @media (max-width: 768px) {
     .app-container {
         flex-direction: column;
@@ -399,5 +749,14 @@ body {
     .agents-stats {
         grid-template-columns: 1fr;
         gap: 1.5rem;
+    }
+
+    .agents-table th,
+    .agents-table td {
+        padding: 1rem;
+    }
+
+    .table-header {
+        padding: 1.5rem;
     }
 }

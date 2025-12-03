@@ -88,6 +88,36 @@
                         </div>
                     </div>
 
+                    <!-- Agents Table -->
+                    <div class="agents-table-container" id="agentsTableContainer" style="display: none;">
+                        <div class="table-header">
+                            <h2 class="table-title">
+                                <i class="lni lni-list"></i>
+                                Lista de Agentes
+                            </h2>
+                        </div>
+                        <table class="agents-table">
+                            <thead>
+                                <tr>
+                                    <th>Agente</th>
+                                    <th>Plataforma</th>
+                                    <th>Número</th>
+                                    <th>Estado</th>
+                                    <th style="text-align: right;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="agentsTableBody">
+                                <!-- Los agentes se cargarán aquí dinámicamente -->
+                                <tr class="loading-row">
+                                    <td colspan="5">
+                                        <div class="loading-spinner"></div>
+                                        <div class="loading-text">Cargando agentes...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
                     <!-- Empty State -->
                     <div class="empty-state" id="emptyState">
                         <div class="empty-icon">
