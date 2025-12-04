@@ -65,18 +65,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function handleUpgrade(plan) {
-    // Aquí iría la lógica para actualizar el plan
     console.log('Upgrading to plan:', plan);
     
-    // Mostrar confirmación
-    if (confirm(`¿Deseas actualizar tu plan a ${plan}?`)) {
-        // Redirigir a la página de checkout o procesamiento
-        window.location.href = `/checkout?plan=${plan}`;
-    }
+    // Redirigir directamente sin confirmación
+    window.location.href = `/checkout?plan=${plan}`;
 }
 
 function handleContactSales() {
-    // Aquí iría la lógica para contactar ventas
     console.log('Contact sales clicked');
     
     // Redirigir a formulario de contacto o abrir modal

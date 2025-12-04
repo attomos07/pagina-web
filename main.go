@@ -195,6 +195,11 @@ func main() {
 		c.HTML(200, "plans.html", nil)
 	})
 
+	// Checkout (requiere autenticación) - NUEVA RUTA
+	router.GET("/checkout", middleware.AuthRequired(), func(c *gin.Context) {
+		c.HTML(200, "checkout.html", nil)
+	})
+
 	// Settings (requiere autenticación)
 	router.GET("/settings", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "settings.html", nil)
