@@ -1,13 +1,16 @@
 // ============================================
-// CHECKOUT JAVASCRIPT
+// CHECKOUT JAVASCRIPT - CON STRIPE ELEMENTS
 // ============================================
+
+// NOTA: Reemplaza 'TU_PUBLISHABLE_KEY' con tu clave pública de Stripe
+const STRIPE_PUBLISHABLE_KEY = 'pk_test_51...'; // <-- COLOCA TU CLAVE AQUÍ
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🛒 Checkout page loaded');
     
     initLogoAnimation();
     initPaymentMethodToggle();
-    initCardFormatting();
+    initStripeElements();
     initFormValidation();
     initPaymentForm();
     loadPlanDetails();
@@ -107,71 +110,84 @@ function initPaymentMethodToggle() {
 }
 
 // ============================================
-// CARD FORMATTING
+// STRIPE ELEMENTS INITIALIZATION
 // ============================================
 
-function initCardFormatting() {
-    const cardNumberInput = document.getElementById('cardNumber');
-    const cardExpiryInput = document.getElementById('cardExpiry');
-    const cardCVVInput = document.getElementById('cardCVV');
-    const cardBrandIcon = document.getElementById('cardBrand');
+let stripe;
+let cardElement;
+let cardData = {
+    complete: false,
+    empty: true
+};
 
-    // Format card number
-    if (cardNumberInput) {
-        cardNumberInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\s/g, '');
-            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
-            e.target.value = formattedValue;
-
-            // Detect card brand
-            detectCardBrand(value, cardBrandIcon);
-        });
-    }
-
-    // Format expiry date
-    if (cardExpiryInput) {
-        cardExpiryInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length >= 2) {
-                value = value.slice(0, 2) + '/' + value.slice(2, 4);
+function initStripeElements() {
+    // Inicializar Stripe
+    stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+    
+    // Crear elementos con tema personalizado
+    const elements = stripe.elements({
+        appearance: {
+            theme: 'stripe',
+            variables: {
+                colorPrimary: '#06b6d4',
+                colorBackground: '#ffffff',
+                colorText: '#1a1a1a',
+                colorDanger: '#ef4444',
+                fontFamily: 'Inter, sans-serif',
+                spacingUnit: '4px',
+                borderRadius: '10px'
             }
-            e.target.value = value;
-        });
-    }
+        }
+    });
 
-    // CVV only numbers
-    if (cardCVVInput) {
-        cardCVVInput.addEventListener('input', function(e) {
-            e.target.value = e.target.value.replace(/\D/g, '');
-        });
-    }
-}
+    // Crear elemento de tarjeta
+    cardElement = elements.create('card', {
+        style: {
+            base: {
+                fontSize: '16px',
+                color: '#1a1a1a',
+                fontFamily: 'Inter, sans-serif',
+                '::placeholder': {
+                    color: '#9ca3af'
+                }
+            },
+            invalid: {
+                color: '#ef4444'
+            }
+        }
+    });
 
-function detectCardBrand(number, iconElement) {
-    if (!iconElement) return;
+    // Montar el elemento
+    cardElement.mount('#card-element');
 
-    const firstDigit = number.charAt(0);
-    const firstTwoDigits = number.slice(0, 2);
+    // Eventos del elemento
+    const stripeContainer = document.getElementById('stripe-container');
+    const errorElement = document.getElementById('card-errors');
 
-    let brand = '';
-    let color = '#06b6d4';
+    cardElement.on('focus', () => {
+        stripeContainer.classList.add('focused');
+    });
 
-    if (firstDigit === '4') {
-        brand = 'VISA';
-        color = '#1434CB';
-    } else if (['51', '52', '53', '54', '55'].includes(firstTwoDigits)) {
-        brand = 'MC';
-        color = '#EB001B';
-    } else if (['34', '37'].includes(firstTwoDigits)) {
-        brand = 'AMEX';
-        color = '#006FCF';
-    }
+    cardElement.on('blur', () => {
+        stripeContainer.classList.remove('focused');
+    });
 
-    if (brand) {
-        iconElement.innerHTML = `<span style="font-weight: 800; color: ${color}; font-size: 0.75rem;">${brand}</span>`;
-    } else {
-        iconElement.innerHTML = '';
-    }
+    cardElement.on('change', (event) => {
+        cardData.complete = event.complete || false;
+        cardData.empty = event.empty !== false;
+
+        if (event.error) {
+            errorElement.innerHTML = `<i class="lni lni-warning"></i> ${event.error.message}`;
+            errorElement.classList.add('active');
+        } else {
+            errorElement.textContent = '';
+            errorElement.classList.remove('active');
+        }
+
+        checkFormCompletion();
+    });
+
+    console.log('✅ Stripe Elements initialized');
 }
 
 // ============================================
@@ -190,8 +206,15 @@ function initFormValidation() {
             if (this.classList.contains('error')) {
                 validateInput(this);
             }
+            checkFormCompletion();
         });
     });
+
+    // Validar checkbox de términos
+    const termsCheckbox = document.getElementById('termsAccepted');
+    if (termsCheckbox) {
+        termsCheckbox.addEventListener('change', checkFormCompletion);
+    }
 }
 
 function validateInput(input) {
@@ -210,29 +233,6 @@ function validateInput(input) {
         }
     }
 
-    if (input.id === 'cardNumber' && value) {
-        const cardNumber = value.replace(/\s/g, '');
-        if (cardNumber.length < 13 || cardNumber.length > 19) {
-            showError(input, 'Número de tarjeta inválido');
-            return false;
-        }
-    }
-
-    if (input.id === 'cardExpiry' && value) {
-        const parts = value.split('/');
-        if (parts.length !== 2 || parts[0].length !== 2 || parts[1].length !== 2) {
-            showError(input, 'Formato inválido (MM/AA)');
-            return false;
-        }
-    }
-
-    if (input.id === 'cardCVV' && value) {
-        if (value.length < 3 || value.length > 4) {
-            showError(input, 'CVV inválido');
-            return false;
-        }
-    }
-
     clearError(input);
     return true;
 }
@@ -243,14 +243,12 @@ function showError(input, message) {
     
     let errorMsg = input.parentElement.querySelector('.error-message');
     if (!errorMsg) {
-        errorMsg = document.createElement('span');
+        errorMsg = document.createElement('div');
         errorMsg.className = 'error-message';
-        errorMsg.style.color = '#ef4444';
-        errorMsg.style.fontSize = '0.875rem';
-        errorMsg.style.marginTop = '0.25rem';
         input.parentElement.appendChild(errorMsg);
     }
-    errorMsg.textContent = message;
+    errorMsg.innerHTML = `<i class="lni lni-warning"></i> ${message}`;
+    errorMsg.classList.add('active');
 }
 
 function clearError(input) {
@@ -259,8 +257,28 @@ function clearError(input) {
     
     const errorMsg = input.parentElement.querySelector('.error-message');
     if (errorMsg) {
-        errorMsg.remove();
+        errorMsg.classList.remove('active');
     }
+}
+
+// Verificar si el formulario está completo
+function checkFormCompletion() {
+    const fullName = document.getElementById('fullName')?.value.trim();
+    const email = document.getElementById('email')?.value.trim();
+    const country = document.getElementById('country')?.value;
+    const postalCode = document.getElementById('postalCode')?.value.trim();
+    const termsAccepted = document.getElementById('termsAccepted')?.checked;
+    
+    const submitButton = document.getElementById('submitButton');
+    
+    const isFormComplete = fullName && email && country && postalCode && 
+                          cardData.complete && termsAccepted;
+    
+    if (submitButton) {
+        submitButton.disabled = !isFormComplete;
+    }
+    
+    return isFormComplete;
 }
 
 // ============================================
@@ -274,58 +292,91 @@ function initPaymentForm() {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // Validate all required fields
+            console.log('📝 Form submitted');
+            
+            // Validar todos los campos requeridos
             const requiredInputs = form.querySelectorAll('[required]');
             let isValid = true;
             
             requiredInputs.forEach(input => {
-                if (!validateInput(input)) {
+                if (input.type !== 'checkbox' && !validateInput(input)) {
                     isValid = false;
                 }
             });
             
             if (!isValid) {
                 alert('Por favor completa todos los campos requeridos correctamente.');
+                const firstError = form.querySelector('.error');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
                 return;
             }
             
-            // Show processing modal
+            // Verificar que la tarjeta esté completa
+            if (!cardData.complete) {
+                alert('Por favor completa los datos de tu tarjeta.');
+                return;
+            }
+            
+            // Mostrar modal de procesamiento
             showProcessingModal();
             
-            // Simulate payment processing
+            // Procesar el pago
             await processPayment();
         });
     }
 }
 
-function showProcessingModal() {
-    const modal = document.getElementById('processingModal');
-    if (modal) {
-        modal.classList.add('show');
-    }
-}
-
-function hideProcessingModal() {
-    const modal = document.getElementById('processingModal');
-    if (modal) {
-        modal.classList.remove('show');
-    }
-}
-
-function showSuccessModal() {
-    const modal = document.getElementById('successModal');
-    if (modal) {
-        modal.classList.add('show');
-    }
-}
-
 async function processPayment() {
     try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        console.log('💳 Creating payment method...');
         
-        // Here you would make actual payment API call
-        // const response = await fetch('/api/process-payment', {...});
+        // Obtener datos del formulario
+        const fullName = document.getElementById('fullName').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const country = document.getElementById('country').value;
+        const postalCode = document.getElementById('postalCode').value.trim();
+        
+        // Crear método de pago con Stripe
+        const { paymentMethod, error: pmError } = await stripe.createPaymentMethod({
+            type: 'card',
+            card: cardElement,
+            billing_details: {
+                name: fullName,
+                email: email,
+                phone: phone,
+                address: {
+                    country: country,
+                    postal_code: postalCode
+                }
+            }
+        });
+
+        if (pmError) {
+            hideProcessingModal();
+            console.error('Payment method error:', pmError);
+            alert(`Error: ${pmError.message}`);
+            return;
+        }
+
+        console.log('✅ Payment method created:', paymentMethod.id);
+        
+        // Aquí harías la llamada a tu backend para procesar el pago
+        // const response = await fetch('/api/process-payment', {
+        //     method: 'POST',
+        //     headers: { 'Content-Type': 'application/json' },
+        //     body: JSON.stringify({
+        //         paymentMethodId: paymentMethod.id,
+        //         amount: getTotalAmount(),
+        //         email: email,
+        //         name: fullName
+        //     })
+        // });
+        
+        // Simular procesamiento (reemplazar con llamada real)
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
         hideProcessingModal();
         showSuccessModal();
@@ -339,12 +390,46 @@ async function processPayment() {
     }
 }
 
+function getTotalAmount() {
+    const totalText = document.getElementById('total')?.textContent || '$0.00';
+    const amount = parseFloat(totalText.replace(/[^0-9.]/g, ''));
+    return Math.round(amount * 100); // Convertir a centavos
+}
+
+// ============================================
+// MODALS
+// ============================================
+
+function showProcessingModal() {
+    const modal = document.getElementById('processingModal');
+    if (modal) {
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function hideProcessingModal() {
+    const modal = document.getElementById('processingModal');
+    if (modal) {
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+}
+
+function showSuccessModal() {
+    const modal = document.getElementById('successModal');
+    if (modal) {
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
 // ============================================
 // LOAD PLAN DETAILS
 // ============================================
 
 function loadPlanDetails() {
-    // Get plan from URL params
+    // Obtener plan desde URL params
     const urlParams = new URLSearchParams(window.location.search);
     const plan = urlParams.get('plan') || 'neutron';
     
@@ -371,7 +456,7 @@ function loadPlanDetails() {
         },
         electron: {
             name: 'Plan Electrón',
-            price: 0,
+            price: 799,
             features: [
                 'Chatbots ilimitados',
                 'Mensajes ilimitados',
@@ -383,24 +468,27 @@ function loadPlanDetails() {
     
     const selectedPlan = plans[plan] || plans.neutron;
     
-    // Update UI
-    document.getElementById('selectedPlanName').textContent = selectedPlan.name;
+    // Actualizar UI
+    const planNameElement = document.getElementById('selectedPlanName');
+    if (planNameElement) {
+        planNameElement.textContent = selectedPlan.name;
+    }
     
     if (selectedPlan.price > 0) {
         const subtotal = selectedPlan.price;
         const tax = subtotal * 0.16;
         const total = subtotal + tax;
         
-        document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
-        document.getElementById('tax').textContent = `$${tax.toFixed(2)}`;
-        document.getElementById('total').textContent = `$${total.toFixed(2)}`;
-    } else {
-        document.getElementById('subtotal').textContent = 'Personalizado';
-        document.getElementById('tax').textContent = '-';
-        document.getElementById('total').textContent = 'Contactar';
+        const subtotalElement = document.getElementById('subtotal');
+        const taxElement = document.getElementById('tax');
+        const totalElement = document.getElementById('total');
+        
+        if (subtotalElement) subtotalElement.textContent = `$${subtotal.toFixed(2)} MXN`;
+        if (taxElement) taxElement.textContent = `$${tax.toFixed(2)} MXN`;
+        if (totalElement) totalElement.textContent = `$${total.toFixed(2)} MXN`;
     }
     
-    // Update features
+    // Actualizar features
     const featuresList = document.getElementById('planFeatures');
     if (featuresList) {
         featuresList.innerHTML = selectedPlan.features.map(feature => `
@@ -410,6 +498,34 @@ function loadPlanDetails() {
             </li>
         `).join('');
     }
+    
+    console.log('📋 Plan details loaded:', selectedPlan.name);
 }
 
-console.log('✅ Checkout JS initialized');
+// ============================================
+// KEYBOARD NAVIGATION
+// ============================================
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        hideProcessingModal();
+    }
+});
+
+// Navegación con Enter entre campos
+document.querySelectorAll('.form-input, .form-select').forEach(input => {
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && this.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            const formInputs = Array.from(document.querySelectorAll('.form-input, .form-select'));
+            const currentIndex = formInputs.indexOf(this);
+            if (currentIndex < formInputs.length - 1) {
+                formInputs[currentIndex + 1].focus();
+            }
+        }
+    });
+});
+
+console.log('✅ Checkout JS initialized with Stripe Elements');
+console.log('🔒 Security: PCI compliant payment processing');
+console.log('💳 Ready to accept payments');

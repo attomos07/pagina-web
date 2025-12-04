@@ -6,6 +6,7 @@
     <title>Checkout - Attomos</title>
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/checkout.css">
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
     <!-- Logo Header Animado -->
@@ -168,50 +169,17 @@
                         </label>
                     </div>
 
-                    <!-- Card Details -->
+                    <!-- Card Details with Stripe Elements -->
                     <div id="cardDetails" class="card-details">
-                        <div class="form-group">
-                            <label class="form-label">Número de Tarjeta *</label>
-                            <div class="card-input-wrapper">
-                                <input type="text" 
-                                       class="form-input card-input" 
-                                       id="cardNumber" 
-                                       required 
-                                       placeholder="1234 5678 9012 3456"
-                                       maxlength="19">
-                                <div class="card-brand-icon" id="cardBrand"></div>
-                            </div>
+                        <div class="card-info-note">
+                            <i class="lni lni-lock"></i>
+                            <span>Ingresa los datos de tu tarjeta de forma segura</span>
                         </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Fecha de Expiración *</label>
-                                <input type="text" 
-                                       class="form-input" 
-                                       id="cardExpiry" 
-                                       required 
-                                       placeholder="MM/AA"
-                                       maxlength="5">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">CVV *</label>
-                                <input type="text" 
-                                       class="form-input" 
-                                       id="cardCVV" 
-                                       required 
-                                       placeholder="123"
-                                       maxlength="4">
-                                <div class="cvv-info">
-                                    <i class="lni lni-information"></i>
-                                    <div class="cvv-tooltip">3 dígitos en el reverso de tu tarjeta</div>
-                                </div>
-                            </div>
+                        <div class="stripe-container" id="stripe-container">
+                            <div id="card-element"></div>
                         </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Nombre en la Tarjeta *</label>
-                            <input type="text" class="form-input" id="cardName" required placeholder="JUAN PEREZ">
-                        </div>
+                        <div class="error-message" id="card-errors"></div>
                     </div>
 
                     <!-- PayPal Option -->
@@ -232,7 +200,7 @@
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" class="btn-submit" id="submitButton">
+                <button type="submit" class="btn-submit" id="submitButton" disabled>
                     <i class="lni lni-lock"></i>
                     <span>Realizar Pago Seguro</span>
                 </button>
