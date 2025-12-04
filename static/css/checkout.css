@@ -12,7 +12,7 @@
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: #ffffff;
     min-height: 100vh;
     padding: 2rem 0;
 }
@@ -147,10 +147,11 @@ circle#base {
     background: white;
     border-radius: 20px;
     padding: 2rem;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     height: fit-content;
     position: sticky;
     top: 2rem;
+    border: 1px solid #e5e7eb;
 }
 
 .summary-header {
@@ -321,7 +322,8 @@ circle#base {
     background: white;
     border-radius: 20px;
     padding: 2.5rem;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
 }
 
 .payment-header {
@@ -440,6 +442,145 @@ circle#base {
 }
 
 /* ============================================
+   CARD INPUT CONTAINER (SIMPLIFICADO)
+   ============================================ */
+
+.card-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.card-container::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.card-brand-logo {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.card-brand-logo.show {
+    opacity: 1;
+}
+
+.card-brand-logo img {
+    height: 100%;
+    width: auto;
+    filter: brightness(0) invert(1);
+}
+
+.card-chip {
+    width: 50px;
+    height: 40px;
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-chip::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.1) 2px,
+        rgba(0,0,0,0.1) 4px
+    );
+    border-radius: 4px;
+}
+
+.card-number-display {
+    font-family: 'Courier New', monospace;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: white;
+    letter-spacing: 0.15em;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    min-height: 36px;
+}
+
+.card-details-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.card-holder-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.card-expiry-cvv {
+    display: flex;
+    gap: 2rem;
+    font-family: 'Courier New', monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.card-expiry-label,
+.card-cvv-label {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+    font-family: 'Inter', sans-serif;
+}
+
+/* ============================================
+   HIDDEN INPUTS SECTION
+   ============================================ */
+
+.hidden-card-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.hidden-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+}
+
+/* ============================================
    PAYMENT METHOD SELECTOR
    ============================================ */
 
@@ -486,57 +627,6 @@ circle#base {
     border-color: #06b6d4;
     background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
     color: #06b6d4;
-}
-
-/* ============================================
-   CARD INPUT STYLES
-   ============================================ */
-
-.card-input-wrapper {
-    position: relative;
-}
-
-.card-brand-icon {
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 40px;
-    height: 25px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.cvv-info {
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: help;
-}
-
-.cvv-info i {
-    color: #9ca3af;
-    font-size: 1.125rem;
-}
-
-.cvv-tooltip {
-    display: none;
-    position: absolute;
-    right: 0;
-    top: calc(100% + 0.5rem);
-    background: #1a1a1a;
-    color: white;
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
-    font-size: 0.75rem;
-    white-space: nowrap;
-    z-index: 10;
-}
-
-.cvv-info:hover .cvv-tooltip {
-    display: block;
 }
 
 /* ============================================
@@ -845,6 +935,16 @@ circle#base {
     .modal-content {
         margin: 1rem;
         padding: 2rem;
+    }
+    
+    .card-number-display {
+        font-size: 1.25rem;
+    }
+    
+    .card-details-row {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
     }
 }
 
