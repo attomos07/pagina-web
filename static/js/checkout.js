@@ -1,5 +1,5 @@
 // ============================================
-// CHECKOUT JAVASCRIPT - CON STRIPE ELEMENTS
+// CHECKOUT JAVASCRIPT - CON STRIPE ELEMENTS Y ANIMACIÓN DE ERROR
 // ============================================
 
 // NOTA: Reemplaza 'TU_PUBLISHABLE_KEY' con tu clave pública de Stripe
@@ -166,6 +166,7 @@ function initStripeElements() {
 
     cardElement.on('focus', () => {
         stripeContainer.classList.add('focused');
+        stripeContainer.classList.remove('error');
     });
 
     cardElement.on('blur', () => {
@@ -179,9 +180,11 @@ function initStripeElements() {
         if (event.error) {
             errorElement.innerHTML = `<i class="lni lni-warning"></i> ${event.error.message}`;
             errorElement.classList.add('active');
+            stripeContainer.classList.add('error');
         } else {
             errorElement.textContent = '';
             errorElement.classList.remove('active');
+            stripeContainer.classList.remove('error');
         }
 
         checkFormCompletion();
@@ -191,7 +194,7 @@ function initStripeElements() {
 }
 
 // ============================================
-// FORM VALIDATION
+// FORM VALIDATION CON ANIMACIÓN DE ERROR
 // ============================================
 
 function initFormValidation() {
@@ -199,7 +202,9 @@ function initFormValidation() {
 
     inputs.forEach(input => {
         input.addEventListener('blur', function() {
-            validateInput(this);
+            if (this.hasAttribute('required')) {
+                validateInput(this);
+            }
         });
 
         input.addEventListener('input', function() {
@@ -238,22 +243,31 @@ function validateInput(input) {
 }
 
 function showError(input, message) {
+    // Agregar clase de error con animación shake
     input.classList.add('error');
-    input.style.borderColor = '#ef4444';
     
-    let errorMsg = input.parentElement.querySelector('.error-message');
-    if (!errorMsg) {
-        errorMsg = document.createElement('div');
-        errorMsg.className = 'error-message';
-        input.parentElement.appendChild(errorMsg);
+    // Mostrar mensaje de error
+    const errorMsg = input.parentElement.querySelector('.error-message');
+    if (errorMsg) {
+        errorMsg.innerHTML = `<i class="lni lni-warning"></i> ${message}`;
+        errorMsg.classList.add('active');
     }
-    errorMsg.innerHTML = `<i class="lni lni-warning"></i> ${message}`;
-    errorMsg.classList.add('active');
+    
+    // Remover la clase después de la animación para poder repetirla
+    setTimeout(() => {
+        input.classList.remove('error');
+    }, 500);
+    
+    // Agregar la clase nuevamente para mantener el borde rojo
+    setTimeout(() => {
+        if (!input.value.trim() && input.hasAttribute('required')) {
+            input.classList.add('error');
+        }
+    }, 510);
 }
 
 function clearError(input) {
     input.classList.remove('error');
-    input.style.borderColor = '';
     
     const errorMsg = input.parentElement.querySelector('.error-message');
     if (errorMsg) {
@@ -297,18 +311,22 @@ function initPaymentForm() {
             // Validar todos los campos requeridos
             const requiredInputs = form.querySelectorAll('[required]');
             let isValid = true;
+            let firstErrorField = null;
             
             requiredInputs.forEach(input => {
                 if (input.type !== 'checkbox' && !validateInput(input)) {
                     isValid = false;
+                    if (!firstErrorField) {
+                        firstErrorField = input;
+                    }
                 }
             });
             
             if (!isValid) {
                 alert('Por favor completa todos los campos requeridos correctamente.');
-                const firstError = form.querySelector('.error');
-                if (firstError) {
-                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (firstErrorField) {
+                    firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstErrorField.focus();
                 }
                 return;
             }
@@ -316,6 +334,11 @@ function initPaymentForm() {
             // Verificar que la tarjeta esté completa
             if (!cardData.complete) {
                 alert('Por favor completa los datos de tu tarjeta.');
+                const stripeContainer = document.getElementById('stripe-container');
+                stripeContainer.classList.add('error');
+                setTimeout(() => {
+                    stripeContainer.classList.remove('error');
+                }, 500);
                 return;
             }
             
@@ -528,4 +551,5 @@ document.querySelectorAll('.form-input, .form-select').forEach(input => {
 
 console.log('✅ Checkout JS initialized with Stripe Elements');
 console.log('🔒 Security: PCI compliant payment processing');
-console.log('💳 Ready to accept payments');
+console.log('💳 Features: Error animation, field validation');
+console.log('🎨 Ready to accept payments');
