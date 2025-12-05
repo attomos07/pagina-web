@@ -1,9 +1,21 @@
 // ============================================
-// CHECKOUT JAVASCRIPT - CON STRIPE ELEMENTS Y DROPDOWN DE PAÍSES
+// CHECKOUT JAVASCRIPT - CON STRIPE ELEMENTS, LADA DINÁMICA Y DROPDOWN SMOOTH
 // ============================================
 
 // NOTA: Reemplaza 'TU_PUBLISHABLE_KEY' con tu clave pública de Stripe
 const STRIPE_PUBLISHABLE_KEY = 'pk_test_51...'; // <-- COLOCA TU CLAVE AQUÍ
+
+// Mapeo de códigos de país a códigos telefónicos
+const COUNTRY_PHONE_CODES = {
+    'MX': '+52',
+    'US': '+1',
+    'CA': '+1',
+    'ES': '+34',
+    'AR': '+54',
+    'CO': '+57',
+    'CL': '+56',
+    'PE': '+51'
+};
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🛒 Checkout page loaded');
@@ -83,7 +95,7 @@ function initLogoAnimation() {
 }
 
 // ============================================
-// CUSTOM COUNTRY DROPDOWN
+// CUSTOM COUNTRY DROPDOWN CON LADA DINÁMICA
 // ============================================
 
 function initCountryDropdown() {
@@ -91,9 +103,13 @@ function initCountryDropdown() {
     const dropdown = document.getElementById('countryDropdown');
     const selectedCountry = document.getElementById('selectedCountry');
     const hiddenInput = document.getElementById('country');
+    const phoneCodeInput = document.getElementById('phoneCode');
     const countryOptions = document.querySelectorAll('.country-option');
 
     if (!trigger || !dropdown) return;
+
+    // Inicializar con México
+    updatePhoneCode('MX');
 
     // Toggle dropdown
     trigger.addEventListener('click', function() {
@@ -111,6 +127,7 @@ function initCountryDropdown() {
         option.addEventListener('click', function() {
             const value = this.getAttribute('data-value');
             const flag = this.getAttribute('data-flag');
+            const code = this.getAttribute('data-code');
             const name = this.querySelector('.country-name').textContent;
 
             // Update selected country display
@@ -122,11 +139,16 @@ function initCountryDropdown() {
             // Update hidden input
             hiddenInput.value = value;
 
+            // Update phone code dinámicamente
+            updatePhoneCode(value, code);
+
             // Close dropdown
             closeDropdown();
 
             // Trigger validation
             checkFormCompletion();
+            
+            console.log(`✅ País seleccionado: ${name} (${value}) - Código: ${code}`);
         });
     });
 
@@ -146,12 +168,29 @@ function initCountryDropdown() {
 
     function openDropdown() {
         dropdown.classList.add('open');
-        trigger.classList.add('open');
+        trigger.classList.add('active');
+        
+        // Reset animation para trigger cascada
+        const options = dropdown.querySelectorAll('.country-option');
+        options.forEach(option => {
+            option.style.animation = 'none';
+            setTimeout(() => {
+                option.style.animation = '';
+            }, 10);
+        });
     }
 
     function closeDropdown() {
         dropdown.classList.remove('open');
-        trigger.classList.remove('open');
+        trigger.classList.remove('active');
+    }
+    
+    function updatePhoneCode(countryCode, manualCode = null) {
+        if (phoneCodeInput) {
+            const code = manualCode || COUNTRY_PHONE_CODES[countryCode] || '+52';
+            phoneCodeInput.value = code;
+            console.log(`📱 Código telefónico actualizado: ${code}`);
+        }
     }
 }
 
@@ -424,7 +463,9 @@ async function processPayment() {
         // Obtener datos del formulario
         const fullName = document.getElementById('fullName').value.trim();
         const email = document.getElementById('email').value.trim();
-        const phone = document.getElementById('phone').value.trim();
+        const phoneCode = document.getElementById('phoneCode')?.value.trim() || '';
+        const phone = document.getElementById('phone')?.value.trim() || '';
+        const fullPhone = phoneCode && phone ? phoneCode + phone.replace(/\s/g, '') : '';
         const country = document.getElementById('country').value;
         const postalCode = document.getElementById('postalCode').value.trim();
         
@@ -435,7 +476,7 @@ async function processPayment() {
             billing_details: {
                 name: fullName,
                 email: email,
-                phone: phone,
+                phone: fullPhone,
                 address: {
                     country: country,
                     postal_code: postalCode
@@ -460,7 +501,8 @@ async function processPayment() {
         //         paymentMethodId: paymentMethod.id,
         //         amount: getTotalAmount(),
         //         email: email,
-        //         name: fullName
+        //         name: fullName,
+        //         phone: fullPhone
         //     })
         // });
         
@@ -617,5 +659,5 @@ document.querySelectorAll('.form-input, .form-select').forEach(input => {
 
 console.log('✅ Checkout JS initialized with Stripe Elements');
 console.log('🔒 Security: PCI compliant payment processing');
-console.log('💳 Features: Country dropdown with flags, smooth animations');
+console.log('💳 Features: Country dropdown with flags, smooth animations, dynamic phone codes');
 console.log('🎨 Ready to accept payments');

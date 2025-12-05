@@ -41,7 +41,8 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Nombre Completo *</label>
-                            <input type="text" class="form-input" id="fullName" required placeholder="Juan Pérez">
+                            <input type="text" class="form-input" id="fullName" required>
+                            <small class="input-hint">Juan Pérez</small>
                             <div class="error-message"></div>
                         </div>
                     </div>
@@ -49,12 +50,17 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Email *</label>
-                            <input type="email" class="form-input" id="email" required placeholder="juan@ejemplo.com">
+                            <input type="email" class="form-input" id="email" required>
+                            <small class="input-hint">juan@ejemplo.com</small>
                             <div class="error-message"></div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Teléfono</label>
-                            <input type="tel" class="form-input" id="phone" placeholder="6621234567">
+                            <div class="phone-input-wrapper">
+                                <input type="text" class="phone-code-input" id="phoneCode" readonly>
+                                <input type="tel" class="form-input phone-number-input" id="phone">
+                            </div>
+                            <small class="input-hint">6621234567</small>
                             <div class="error-message"></div>
                         </div>
                     </div>
@@ -71,46 +77,56 @@
                                     <i class="lni lni-chevron-down"></i>
                                 </div>
                                 <div class="country-dropdown" id="countryDropdown">
-                                    <div class="country-option" data-value="MX" data-flag="🇲🇽">
+                                    <div class="country-option" data-value="MX" data-flag="🇲🇽" data-code="+52">
                                         <span class="country-flag">🇲🇽</span>
                                         <span class="country-name">México</span>
+                                        <span class="country-code">+52</span>
                                     </div>
-                                    <div class="country-option" data-value="US" data-flag="🇺🇸">
+                                    <div class="country-option" data-value="US" data-flag="🇺🇸" data-code="+1">
                                         <span class="country-flag">🇺🇸</span>
                                         <span class="country-name">Estados Unidos</span>
+                                        <span class="country-code">+1</span>
                                     </div>
-                                    <div class="country-option" data-value="CA" data-flag="🇨🇦">
+                                    <div class="country-option" data-value="CA" data-flag="🇨🇦" data-code="+1">
                                         <span class="country-flag">🇨🇦</span>
                                         <span class="country-name">Canadá</span>
+                                        <span class="country-code">+1</span>
                                     </div>
-                                    <div class="country-option" data-value="ES" data-flag="🇪🇸">
+                                    <div class="country-option" data-value="ES" data-flag="🇪🇸" data-code="+34">
                                         <span class="country-flag">🇪🇸</span>
                                         <span class="country-name">España</span>
+                                        <span class="country-code">+34</span>
                                     </div>
-                                    <div class="country-option" data-value="AR" data-flag="🇦🇷">
+                                    <div class="country-option" data-value="AR" data-flag="🇦🇷" data-code="+54">
                                         <span class="country-flag">🇦🇷</span>
                                         <span class="country-name">Argentina</span>
+                                        <span class="country-code">+54</span>
                                     </div>
-                                    <div class="country-option" data-value="CO" data-flag="🇨🇴">
+                                    <div class="country-option" data-value="CO" data-flag="🇨🇴" data-code="+57">
                                         <span class="country-flag">🇨🇴</span>
                                         <span class="country-name">Colombia</span>
+                                        <span class="country-code">+57</span>
                                     </div>
-                                    <div class="country-option" data-value="CL" data-flag="🇨🇱">
+                                    <div class="country-option" data-value="CL" data-flag="🇨🇱" data-code="+56">
                                         <span class="country-flag">🇨🇱</span>
                                         <span class="country-name">Chile</span>
+                                        <span class="country-code">+56</span>
                                     </div>
-                                    <div class="country-option" data-value="PE" data-flag="🇵🇪">
+                                    <div class="country-option" data-value="PE" data-flag="🇵🇪" data-code="+51">
                                         <span class="country-flag">🇵🇪</span>
                                         <span class="country-name">Perú</span>
+                                        <span class="country-code">+51</span>
                                     </div>
                                 </div>
                                 <input type="hidden" id="country" value="MX" required>
                             </div>
+                            <small class="input-hint">Selecciona tu país</small>
                             <div class="error-message"></div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Código Postal *</label>
-                            <input type="text" class="form-input" id="postalCode" required placeholder="83000">
+                            <input type="text" class="form-input" id="postalCode" required>
+                            <small class="input-hint">83000</small>
                             <div class="error-message"></div>
                         </div>
                     </div>
@@ -168,23 +184,23 @@
                     <i class="lni lni-arrow-left"></i>
                     Volver a Planes
                 </a>
-            </form>
 
-            <!-- Trust Badges -->
-            <div class="trust-badges">
-                <div class="trust-item">
-                    <i class="lni lni-shield"></i>
-                    <span>SSL Seguro</span>
+                <!-- Security Badges al final -->
+                <div class="payment-security-badges">
+                    <div class="security-badge-item">
+                        <i class="lni lni-lock"></i>
+                        <span>Pago 100% seguro</span>
+                    </div>
+                    <div class="security-badge-item">
+                        <i class="lni lni-shield"></i>
+                        <span>Cifrado SSL</span>
+                    </div>
+                    <div class="security-badge-item">
+                        <i class="lni lni-certificate"></i>
+                        <span>Powered by Stripe</span>
+                    </div>
                 </div>
-                <div class="trust-item">
-                    <i class="lni lni-lock"></i>
-                    <span>Encriptación 256-bit</span>
-                </div>
-                <div class="trust-item">
-                    <i class="lni lni-checkmark-circle"></i>
-                    <span>PCI Compliant</span>
-                </div>
-            </div>
+            </form>
         </div>
 
         <!-- Right Side - Order Summary -->
@@ -244,12 +260,6 @@
                         <span>Soporte prioritario</span>
                     </li>
                 </ul>
-            </div>
-
-            <!-- Security Badge -->
-            <div class="security-badge">
-                <i class="lni lni-lock"></i>
-                <span>Pago 100% seguro y encriptado</span>
             </div>
         </div>
     </div>

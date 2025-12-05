@@ -297,24 +297,6 @@ circle#base {
     flex-shrink: 0;
 }
 
-.security-badge {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: #f9fafb;
-    border-radius: 12px;
-    color: #6b7280;
-    font-size: 0.875rem;
-    font-weight: 600;
-}
-
-.security-badge i {
-    color: #10b981;
-    font-size: 1.25rem;
-}
-
 /* ============================================
    PAYMENT SECTION (LEFT SIDE)
    ============================================ */
@@ -414,11 +396,69 @@ circle#base {
 }
 
 .form-input::placeholder {
-    color: #9ca3af;
+    color: transparent;
+}
+
+/* INPUT HINT ESTILO REGISTRO */
+.input-hint {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: #6b7280;
+    opacity: 0.6;
+    line-height: 1.4;
+    font-style: italic;
 }
 
 /* ============================================
-   CUSTOM COUNTRY SELECT CON BANDERAS
+   PHONE INPUT CON LADA
+   ============================================ */
+
+.phone-input-wrapper {
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.phone-code-input {
+    width: 110px;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: white;
+    color: #1a1a1a;
+    flex-shrink: 0;
+}
+
+.phone-code-input:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.1);
+}
+
+.phone-number-input {
+    flex: 1;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+    color: #1a1a1a;
+}
+
+.phone-number-input:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.1);
+}
+
+/* ============================================
+   CUSTOM COUNTRY SELECT CON BANDERAS - ESTILO REGISTRO
    ============================================ */
 
 .country-select-wrapper {
@@ -439,7 +479,7 @@ circle#base {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s ease;
 }
 
 .country-select-trigger:hover {
@@ -452,10 +492,8 @@ circle#base {
     box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.1);
 }
 
-.country-select-trigger.open {
+.country-select-trigger.active {
     border-color: #06b6d4;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
 }
 
 .selected-country {
@@ -470,37 +508,38 @@ circle#base {
 }
 
 .country-select-trigger i {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
     color: #6b7280;
 }
 
-.country-select-trigger.open i {
+.country-select-trigger.active i {
     transform: rotate(180deg);
+    color: #06b6d4;
 }
 
+/* DROPDOWN CON ANIMACIÓN CASCADE DEL REGISTRO */
 .country-dropdown {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 0.5rem);
     left: 0;
     right: 0;
     background: white;
     border: 2px solid #06b6d4;
-    border-top: none;
-    border-bottom-left-radius: 10px;
-    border-bottom-right-radius: 10px;
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
     max-height: 0;
     overflow: hidden;
-    z-index: 1000;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.3s ease;
     opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    z-index: 1000;
 }
 
 .country-dropdown.open {
-    max-height: 320px;
-    overflow-y: auto;
+    max-height: 400px;
     opacity: 1;
+    visibility: visible;
+    overflow-y: auto;
 }
 
 .country-option {
@@ -510,10 +549,33 @@ circle#base {
     padding: 0.875rem 1rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+/* Animación en cascada */
+.country-dropdown.open .country-option {
+    animation: cascadeIn 0.3s ease forwards;
+}
+
+.country-dropdown.open .country-option:nth-child(1) { animation-delay: 0.05s; }
+.country-dropdown.open .country-option:nth-child(2) { animation-delay: 0.1s; }
+.country-dropdown.open .country-option:nth-child(3) { animation-delay: 0.15s; }
+.country-dropdown.open .country-option:nth-child(4) { animation-delay: 0.2s; }
+.country-dropdown.open .country-option:nth-child(5) { animation-delay: 0.25s; }
+.country-dropdown.open .country-option:nth-child(6) { animation-delay: 0.3s; }
+.country-dropdown.open .country-option:nth-child(7) { animation-delay: 0.35s; }
+.country-dropdown.open .country-option:nth-child(8) { animation-delay: 0.4s; }
+
+@keyframes cascadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .country-option:hover {
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
+    background: linear-gradient(90deg, rgba(6, 182, 212, 0.1), rgba(6, 182, 212, 0.05));
 }
 
 .country-option:active {
@@ -526,9 +588,15 @@ circle#base {
     color: #1a1a1a;
 }
 
+.country-code {
+    font-size: 0.9rem;
+    color: #6b7280;
+    font-weight: 600;
+}
+
 /* Scrollbar personalizado */
 .country-dropdown::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 
 .country-dropdown::-webkit-scrollbar-track {
@@ -551,7 +619,9 @@ circle#base {
 
 .form-input.error,
 .form-select.error,
-.country-select-trigger.error {
+.country-select-trigger.error,
+.phone-code-input.error,
+.phone-number-input.error {
     border-color: #ef4444;
     animation: shake 0.5s;
     background-color: #fef2f2;
@@ -756,19 +826,20 @@ circle#base {
 }
 
 /* ============================================
-   TRUST BADGES
+   SECURITY BADGES AL FINAL DEL FORMULARIO
    ============================================ */
 
-.trust-badges {
+.payment-security-badges {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 2rem;
     padding: 2rem 0;
     margin-top: 2rem;
     border-top: 1px solid #e5e7eb;
 }
 
-.trust-item {
+.security-badge-item {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -778,7 +849,7 @@ circle#base {
     font-weight: 600;
 }
 
-.trust-item i {
+.security-badge-item i {
     font-size: 2rem;
     color: #10b981;
 }
@@ -943,7 +1014,7 @@ circle#base {
         grid-template-columns: 1fr;
     }
 
-    .trust-badges {
+    .payment-security-badges {
         flex-direction: column;
         gap: 1rem;
     }
@@ -963,5 +1034,13 @@ circle#base {
         flex-direction: column;
         align-items: flex-start;
         gap: 1rem;
+    }
+    
+    .phone-input-wrapper {
+        gap: 0.5rem;
+    }
+    
+    .phone-code-input {
+        width: 95px;
     }
 }
