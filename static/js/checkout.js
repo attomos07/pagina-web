@@ -17,6 +17,10 @@ const COUNTRY_PHONE_CODES = {
     'PE': '+51'
 };
 
+// Estado global del checkout
+let currentBillingPeriod = 'monthly'; // 'monthly' o 'annual'
+let currentPlan = 'neutron';
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🛒 Checkout page loaded');
     
@@ -519,6 +523,8 @@ async function processPayment() {
         //     headers: { 'Content-Type': 'application/json' },
         //     body: JSON.stringify({
         //         paymentMethodId: paymentMethod.id,
+        //         plan: currentPlan,
+        //         billingPeriod: currentBillingPeriod,
         //         amount: getTotalAmount(),
         //         email: email,
         //         name: fullName,
@@ -533,6 +539,7 @@ async function processPayment() {
         showSuccessModal();
         
         console.log('✅ Payment processed successfully');
+        console.log(`📊 Plan: ${currentPlan}, Billing: ${currentBillingPeriod}`);
         
     } catch (error) {
         console.error('❌ Payment error:', error);
@@ -582,11 +589,17 @@ function showSuccessModal() {
 function loadPlanDetails() {
     const urlParams = new URLSearchParams(window.location.search);
     const plan = urlParams.get('plan') || 'neutron';
+    const billing = urlParams.get('billing') || 'monthly';
+    
+    // Guardar en estado global
+    currentPlan = plan;
+    currentBillingPeriod = billing;
     
     const plans = {
         proton: {
             name: 'Plan Protón',
-            price: 149,
+            monthly: 149,
+            annual: 1432, // 149 * 12 * 0.8 = 1432.8
             features: [
                 '1 Chatbot incluido',
                 '1,000 mensajes/mes',
@@ -596,7 +609,8 @@ function loadPlanDetails() {
         },
         neutron: {
             name: 'Plan Neutrón',
-            price: 255,
+            monthly: 255,
+            annual: 2448, // 255 * 12 * 0.8 = 2448
             features: [
                 '3 Chatbots incluidos',
                 '10,000 mensajes/mes',
@@ -606,7 +620,8 @@ function loadPlanDetails() {
         },
         electron: {
             name: 'Plan Electrón',
-            price: 799,
+            monthly: 799,
+            annual: 7670, // 799 * 12 * 0.8 = 7670.4
             features: [
                 'Chatbots ilimitados',
                 'Mensajes ilimitados',
@@ -618,13 +633,28 @@ function loadPlanDetails() {
     
     const selectedPlan = plans[plan] || plans.neutron;
     
+    // Actualizar nombre del plan
     const planNameElement = document.getElementById('selectedPlanName');
     if (planNameElement) {
         planNameElement.textContent = selectedPlan.name;
     }
     
-    if (selectedPlan.price > 0) {
-        const subtotal = selectedPlan.price;
+    // Actualizar período de facturación
+    const billingPeriodElement = document.getElementById('billingPeriod');
+    if (billingPeriodElement) {
+        billingPeriodElement.textContent = billing === 'annual' ? 'Anual' : 'Mensual';
+    }
+    
+    // Calcular precios según período
+    let basePrice;
+    if (billing === 'annual') {
+        basePrice = selectedPlan.annual;
+    } else {
+        basePrice = selectedPlan.monthly;
+    }
+    
+    if (basePrice > 0) {
+        const subtotal = basePrice;
         const tax = subtotal * 0.16;
         const total = subtotal + tax;
         
@@ -637,6 +667,7 @@ function loadPlanDetails() {
         if (totalElement) totalElement.textContent = `$${total.toFixed(2)} MXN`;
     }
     
+    // Actualizar características
     const featuresList = document.getElementById('planFeatures');
     if (featuresList) {
         featuresList.innerHTML = selectedPlan.features.map(feature => `
@@ -648,6 +679,8 @@ function loadPlanDetails() {
     }
     
     console.log('📋 Plan details loaded:', selectedPlan.name);
+    console.log('💰 Billing period:', billing);
+    console.log('💵 Base price:', basePrice);
 }
 
 // ============================================
@@ -676,4 +709,5 @@ document.querySelectorAll('.form-input, .form-select').forEach(input => {
 console.log('✅ Checkout JS initialized');
 console.log('🔒 Security: PCI compliant payment processing');
 console.log('💳 Features: Country dropdown estilo registro, dynamic phone codes, logo ATTMOS');
+console.log('📅 Billing support: Monthly & Annual');
 console.log('🎨 Ready to accept payments');

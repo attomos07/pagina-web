@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const billingToggle = document.getElementById('billingToggle');
     const priceAmounts = document.querySelectorAll('.price-amount');
+    const pricePeriods = document.querySelectorAll('.price-period');
 
     // Toggle between monthly and annual billing
     if (billingToggle) {
@@ -23,6 +24,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             });
+
+            // Actualizar el texto del período
+            pricePeriods.forEach(period => {
+                if (isAnnual) {
+                    period.textContent = '/ año';
+                } else {
+                    period.textContent = '/ mes';
+                }
+            });
         });
     }
 
@@ -31,7 +41,8 @@ document.addEventListener('DOMContentLoaded', function() {
     planButtons.forEach(button => {
         button.addEventListener('click', function() {
             if (this.classList.contains('upgrade')) {
-                handleUpgrade(this.closest('.pricing-card').getAttribute('data-plan'));
+                const plan = this.closest('.pricing-card').getAttribute('data-plan');
+                handleUpgrade(plan);
             } else if (this.classList.contains('secondary')) {
                 handleContactSales();
             }
@@ -67,8 +78,13 @@ document.addEventListener('DOMContentLoaded', function() {
 function handleUpgrade(plan) {
     console.log('Upgrading to plan:', plan);
     
-    // Redirigir directamente sin confirmación
-    window.location.href = `/checkout?plan=${plan}`;
+    // Detectar si está en modo anual
+    const billingToggle = document.getElementById('billingToggle');
+    const isAnnual = billingToggle ? billingToggle.checked : false;
+    const billingPeriod = isAnnual ? 'annual' : 'monthly';
+    
+    // Redirigir con parámetros de plan y período
+    window.location.href = `/checkout?plan=${plan}&billing=${billingPeriod}`;
 }
 
 function handleContactSales() {
