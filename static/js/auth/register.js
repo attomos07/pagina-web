@@ -1,5 +1,5 @@
 // ============================================
-// REGISTER JAVASCRIPT - CON API REAL Y ANIMACIÓN iOS
+// REGISTER JAVASCRIPT - CON API REAL Y GOOGLE OAUTH
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -12,9 +12,35 @@ document.addEventListener('DOMContentLoaded', function() {
     initAutoFormat();
     initCustomSelect();
     initPhoneNumberFormat();
+    checkURLParams(); // NUEVO: Verificar errores de OAuth en URL
     
     console.log('✅ Register funcionalidades inicializadas');
 });
+
+// ============================================
+// VERIFICAR ERRORES DE OAUTH EN URL
+// ============================================
+
+function checkURLParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    
+    const errorMessages = {
+        'invalid_state': 'Error de seguridad en la autenticación. Intenta de nuevo.',
+        'no_code': 'No se recibió código de autorización de Google.',
+        'token_exchange_failed': 'Error al obtener token de Google.',
+        'user_info_failed': 'Error al obtener información del usuario.',
+        'user_creation_failed': 'Error al crear tu cuenta.',
+        'token_generation_failed': 'Error al generar sesión.'
+    };
+    
+    if (error && errorMessages[error]) {
+        showNotificationIOS(errorMessages[error], 'error');
+        
+        // Limpiar URL sin recargar página
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
 
 // ============================================
 // VALIDACIÓN ESPECÍFICA DEL REGISTRO
@@ -433,7 +459,7 @@ function handleRegisterError(message) {
 }
 
 // ============================================
-// REGISTRO SOCIAL
+// REGISTRO SOCIAL - GOOGLE OAUTH
 // ============================================
 
 function initSocialRegister() {
@@ -443,9 +469,9 @@ function initSocialRegister() {
 function registerWithGoogle() {
     showNotificationIOS('Redirigiendo a Google...', 'info');
     trackRegisterEvent('social_register_attempt', { provider: 'google' });
-    setTimeout(() => {
-        showNotificationIOS('Funcionalidad en desarrollo', 'warning');
-    }, 1000);
+    
+    // Redirigir al endpoint de Google OAuth
+    window.location.href = '/api/auth/google/login';
 }
 
 function registerWithFacebook() {

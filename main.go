@@ -93,10 +93,16 @@ func main() {
 		c.HTML(200, "index.html", nil)
 	})
 
-	// Autenticación
+	// Autenticación tradicional
 	router.POST("/api/register", handlers.Register)
 	router.POST("/api/login", handlers.Login)
 	router.POST("/api/logout", handlers.Logout)
+
+	// ============================================
+	// GOOGLE OAUTH ROUTES (NUEVAS)
+	// ============================================
+	router.GET("/api/auth/google/login", handlers.GoogleLogin)
+	router.GET("/api/auth/google/callback", handlers.GoogleCallback)
 
 	// ============================================
 	// RUTAS PROTEGIDAS (API)
@@ -195,7 +201,7 @@ func main() {
 		c.HTML(200, "plans.html", nil)
 	})
 
-	// Checkout (requiere autenticación) - NUEVA RUTA
+	// Checkout (requiere autenticación)
 	router.GET("/checkout", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "checkout.html", nil)
 	})

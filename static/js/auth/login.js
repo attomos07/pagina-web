@@ -1,5 +1,5 @@
 // ============================================
-// LOGIN JAVASCRIPT - CON API REAL Y ANIMACIÓN iOS
+// LOGIN JAVASCRIPT - CON API REAL Y GOOGLE OAUTH
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -10,9 +10,49 @@ document.addEventListener('DOMContentLoaded', function() {
     initPasswordToggle();
     initLoginForm();
     initSocialLogin();
+    checkURLParams(); // Verificar errores de OAuth
     
     console.log('✅ Login funcionalidades inicializadas');
 });
+
+// ============================================
+// VERIFICAR PARÁMETROS DE URL (ERRORES DE OAUTH)
+// ============================================
+
+function checkURLParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    
+    if (error) {
+        let errorMessage = 'Error en autenticación con Google';
+        
+        switch (error) {
+            case 'invalid_state':
+                errorMessage = 'Error de seguridad. Por favor intenta de nuevo.';
+                break;
+            case 'no_code':
+                errorMessage = 'No se recibió autorización de Google';
+                break;
+            case 'token_exchange_failed':
+                errorMessage = 'Error al procesar la autenticación';
+                break;
+            case 'user_info_failed':
+                errorMessage = 'No se pudo obtener tu información de Google';
+                break;
+            case 'user_creation_failed':
+                errorMessage = 'Error al crear tu cuenta';
+                break;
+            case 'token_generation_failed':
+                errorMessage = 'Error al iniciar sesión';
+                break;
+        }
+        
+        showNotificationIOS(errorMessage, 'error');
+        
+        // Limpiar URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
 
 // ============================================
 // VALIDACIÓN ESPECÍFICA DEL LOGIN
@@ -80,38 +120,43 @@ function validateLoginField(field) {
 }
 
 // ============================================
-// TOGGLE DE CONTRASEÑAS (CORREGIDO)
+// TOGGLE DE CONTRASEÑAS
 // ============================================
 
 function initPasswordToggle() {
-    const passwordToggleBtn = document.querySelector('.password-toggle');
+    const passwordToggle = document.querySelector('.password-toggle');
     
-    if (passwordToggleBtn) {
-        // Usamos replaceChild para eliminar cualquier event listener previo duplicado
-        const newBtn = passwordToggleBtn.cloneNode(true);
-        passwordToggleBtn.parentNode.replaceChild(newBtn, passwordToggleBtn);
-        
-        newBtn.addEventListener('click', function(e) {
-            e.preventDefault(); // Evitar comportamientos extraños
-            
+    if (passwordToggle) {
+        passwordToggle.addEventListener('click', function() {
             const passwordField = document.getElementById('password');
-            const icon = newBtn.querySelector('i'); // Buscamos el icono dentro del botón
+            const icon = document.getElementById('passwordToggleIcon');
             
             if (passwordField && icon) {
                 if (passwordField.type === 'password') {
-                    // MOSTRAR CONTRASEÑA
                     passwordField.type = 'text';
-                    // IMPORTANTE: Usamos 'lni-eye-slash' en lugar de 'eye-off'
-                    // Si este icono no aparece, tu versión de LineIcons no lo tiene.
-                    // En ese caso, prueba cambiar esta línea por: icon.className = 'lni lni-lock';
-                    icon.className = 'lni lni-eye-slash'; 
+                    icon.className = 'lni lni-eye-off';
                 } else {
-                    // OCULTAR CONTRASEÑA
                     passwordField.type = 'password';
                     icon.className = 'lni lni-eye';
                 }
             }
         });
+    }
+}
+
+// Función global para toggle (llamada desde HTML)
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = document.getElementById(fieldId + 'ToggleIcon');
+    
+    if (field && icon) {
+        if (field.type === 'password') {
+            field.type = 'text';
+            icon.className = 'lni lni-eye-off';
+        } else {
+            field.type = 'password';
+            icon.className = 'lni lni-eye';
+        }
     }
 }
 
@@ -234,7 +279,7 @@ function handleLoginError(message) {
 }
 
 // ============================================
-// LOGIN SOCIAL
+// LOGIN SOCIAL - GOOGLE OAUTH
 // ============================================
 
 function initSocialLogin() {
@@ -245,10 +290,8 @@ function loginWithGoogle() {
     showNotificationIOS('Redirigiendo a Google...', 'info');
     trackLoginEvent('social_login_attempt', { provider: 'google' });
     
-    // Implementar OAuth con Google aquí
-    setTimeout(() => {
-        showNotificationIOS('Funcionalidad en desarrollo', 'warning');
-    }, 1000);
+    // Redirigir a la ruta de Google OAuth
+    window.location.href = '/api/auth/google/login';
 }
 
 function loginWithFacebook() {
