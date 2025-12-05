@@ -48,6 +48,20 @@ func main() {
 
 	log.Println("✅ Base de datos conectada y migrada")
 
+	// ============================================
+	// INICIALIZAR GOOGLE OAUTH
+	// ============================================
+	if err := handlers.InitGoogleOAuth(); err != nil {
+		log.Printf("⚠️  Google OAuth no inicializado: %v", err)
+		log.Println("ℹ️  El login/registro con Google no estará disponible")
+		log.Println("💡 Verifica que tengas configuradas las variables:")
+		log.Println("   - GOOGLE_CLIENT_ID")
+		log.Println("   - GOOGLE_CLIENT_SECRET")
+		log.Println("   - GOOGLE_REDIRECT_URL")
+	} else {
+		log.Println("✅ Google OAuth inicializado correctamente")
+	}
+
 	// Configurar Gin
 	if os.Getenv("ENVIRONMENT") == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -99,7 +113,7 @@ func main() {
 	router.POST("/api/logout", handlers.Logout)
 
 	// ============================================
-	// GOOGLE OAUTH ROUTES (NUEVAS)
+	// GOOGLE OAUTH ROUTES
 	// ============================================
 	router.GET("/api/auth/google/login", handlers.GoogleLogin)
 	router.GET("/api/auth/google/callback", handlers.GoogleCallback)
@@ -236,8 +250,11 @@ func main() {
 		port = "8080"
 	}
 
-	log.Printf("🚀 Servidor iniciado en puerto %s", port)
-	log.Printf("🌐 http://localhost:%s", port)
+	log.Println("════════════════════════════════════════════════════════════")
+	log.Printf("🚀 Servidor Attomos iniciado exitosamente")
+	log.Printf("📍 Puerto: %s", port)
+	log.Printf("🌐 URL Local: http://localhost:%s", port)
+	log.Println("════════════════════════════════════════════════════════════")
 
 	if err := router.Run(":" + port); err != nil {
 		log.Fatal("❌ Error al iniciar servidor:", err)
