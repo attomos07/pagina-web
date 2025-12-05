@@ -26,7 +26,7 @@ body {
     margin: 0 auto;
     padding: 0 2rem;
     display: grid;
-    grid-template-columns: 1fr 400px; /* Formulario a la izquierda, resumen a la derecha */
+    grid-template-columns: 1fr 400px;
     gap: 3rem;
 }
 
@@ -194,6 +194,7 @@ circle#base {
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .plan-name {
@@ -416,13 +417,132 @@ circle#base {
     color: #9ca3af;
 }
 
-.form-select {
+/* ============================================
+   CUSTOM COUNTRY SELECT CON BANDERAS
+   ============================================ */
+
+.country-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.country-select-trigger {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    background: white;
     cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231a1a1a' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
-    padding-right: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.country-select-trigger:hover {
+    border-color: #06b6d4;
+}
+
+.country-select-trigger:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.1);
+}
+
+.country-select-trigger.open {
+    border-color: #06b6d4;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.selected-country {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.country-flag {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.country-select-trigger i {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #6b7280;
+}
+
+.country-select-trigger.open i {
+    transform: rotate(180deg);
+}
+
+.country-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #06b6d4;
+    border-top: none;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    max-height: 0;
+    overflow: hidden;
+    z-index: 1000;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease;
+    opacity: 0;
+}
+
+.country-dropdown.open {
+    max-height: 320px;
+    overflow-y: auto;
+    opacity: 1;
+}
+
+.country-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.country-option:hover {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
+}
+
+.country-option:active {
+    background: rgba(6, 182, 212, 0.15);
+}
+
+.country-name {
+    flex: 1;
+    font-weight: 500;
+    color: #1a1a1a;
+}
+
+/* Scrollbar personalizado */
+.country-dropdown::-webkit-scrollbar {
+    width: 8px;
+}
+
+.country-dropdown::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.country-dropdown::-webkit-scrollbar-thumb {
+    background: #06b6d4;
+    border-radius: 10px;
+}
+
+.country-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #0891b2;
 }
 
 /* ============================================
@@ -430,7 +550,8 @@ circle#base {
    ============================================ */
 
 .form-input.error,
-.form-select.error {
+.form-select.error,
+.country-select-trigger.error {
     border-color: #ef4444;
     animation: shake 0.5s;
     background-color: #fef2f2;
@@ -480,24 +601,6 @@ circle#base {
 /* ============================================
    STRIPE ELEMENTS CONTAINER
    ============================================ */
-
-.card-info-note {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.875rem 1rem;
-    background: #f0f9ff;
-    border: 1px solid #bae6fd;
-    border-radius: 10px;
-    color: #0369a1;
-    font-size: 0.875rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-}
-
-.card-info-note i {
-    font-size: 1.125rem;
-}
 
 .stripe-container {
     background: white;
@@ -593,45 +696,6 @@ circle#base {
     color: #6b7280;
     font-size: 0.95rem;
     max-width: 400px;
-}
-
-/* ============================================
-   CHECKBOX & TERMS
-   ============================================ */
-
-.checkbox-label {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    cursor: pointer;
-    padding: 1rem;
-    background: #f9fafb;
-    border-radius: 10px;
-}
-
-.checkbox-label input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    accent-color: #06b6d4;
-    flex-shrink: 0;
-    margin-top: 2px;
-}
-
-.checkbox-label span {
-    color: #374151;
-    font-size: 0.95rem;
-    line-height: 1.6;
-}
-
-.checkbox-label a {
-    color: #06b6d4;
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.checkbox-label a:hover {
-    text-decoration: underline;
 }
 
 /* ============================================

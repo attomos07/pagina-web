@@ -1,5 +1,5 @@
 // ============================================
-// CHECKOUT JAVASCRIPT - CON STRIPE ELEMENTS Y ANIMACIÓN DE ERROR
+// CHECKOUT JAVASCRIPT - CON STRIPE ELEMENTS Y DROPDOWN DE PAÍSES
 // ============================================
 
 // NOTA: Reemplaza 'TU_PUBLISHABLE_KEY' con tu clave pública de Stripe
@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     initLogoAnimation();
     initPaymentMethodToggle();
+    initCountryDropdown();
     initStripeElements();
     initFormValidation();
     initPaymentForm();
@@ -79,6 +80,79 @@ function initLogoAnimation() {
     };
 
     setTimeout(animate, 100);
+}
+
+// ============================================
+// CUSTOM COUNTRY DROPDOWN
+// ============================================
+
+function initCountryDropdown() {
+    const trigger = document.getElementById('countryTrigger');
+    const dropdown = document.getElementById('countryDropdown');
+    const selectedCountry = document.getElementById('selectedCountry');
+    const hiddenInput = document.getElementById('country');
+    const countryOptions = document.querySelectorAll('.country-option');
+
+    if (!trigger || !dropdown) return;
+
+    // Toggle dropdown
+    trigger.addEventListener('click', function() {
+        const isOpen = dropdown.classList.contains('open');
+        
+        if (isOpen) {
+            closeDropdown();
+        } else {
+            openDropdown();
+        }
+    });
+
+    // Select country
+    countryOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const value = this.getAttribute('data-value');
+            const flag = this.getAttribute('data-flag');
+            const name = this.querySelector('.country-name').textContent;
+
+            // Update selected country display
+            selectedCountry.innerHTML = `
+                <span class="country-flag">${flag}</span>
+                <span>${name}</span>
+            `;
+
+            // Update hidden input
+            hiddenInput.value = value;
+
+            // Close dropdown
+            closeDropdown();
+
+            // Trigger validation
+            checkFormCompletion();
+        });
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+            closeDropdown();
+        }
+    });
+
+    // Close dropdown on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDropdown();
+        }
+    });
+
+    function openDropdown() {
+        dropdown.classList.add('open');
+        trigger.classList.add('open');
+    }
+
+    function closeDropdown() {
+        dropdown.classList.remove('open');
+        trigger.classList.remove('open');
+    }
 }
 
 // ============================================
@@ -214,12 +288,6 @@ function initFormValidation() {
             checkFormCompletion();
         });
     });
-
-    // Validar checkbox de términos
-    const termsCheckbox = document.getElementById('termsAccepted');
-    if (termsCheckbox) {
-        termsCheckbox.addEventListener('change', checkFormCompletion);
-    }
 }
 
 function validateInput(input) {
@@ -281,12 +349,10 @@ function checkFormCompletion() {
     const email = document.getElementById('email')?.value.trim();
     const country = document.getElementById('country')?.value;
     const postalCode = document.getElementById('postalCode')?.value.trim();
-    const termsAccepted = document.getElementById('termsAccepted')?.checked;
     
     const submitButton = document.getElementById('submitButton');
     
-    const isFormComplete = fullName && email && country && postalCode && 
-                          cardData.complete && termsAccepted;
+    const isFormComplete = fullName && email && country && postalCode && cardData.complete;
     
     if (submitButton) {
         submitButton.disabled = !isFormComplete;
@@ -314,7 +380,7 @@ function initPaymentForm() {
             let firstErrorField = null;
             
             requiredInputs.forEach(input => {
-                if (input.type !== 'checkbox' && !validateInput(input)) {
+                if (input.type !== 'checkbox' && input.type !== 'hidden' && !validateInput(input)) {
                     isValid = false;
                     if (!firstErrorField) {
                         firstErrorField = input;
@@ -551,5 +617,5 @@ document.querySelectorAll('.form-input, .form-select').forEach(input => {
 
 console.log('✅ Checkout JS initialized with Stripe Elements');
 console.log('🔒 Security: PCI compliant payment processing');
-console.log('💳 Features: Error animation, field validation');
+console.log('💳 Features: Country dropdown with flags, smooth animations');
 console.log('🎨 Ready to accept payments');

@@ -62,13 +62,50 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">País *</label>
-                            <select class="form-select" id="country" required>
-                                <option value="">Selecciona un país</option>
-                                <option value="MX" selected>México</option>
-                                <option value="US">Estados Unidos</option>
-                                <option value="CA">Canadá</option>
-                                <option value="ES">España</option>
-                            </select>
+                            <div class="country-select-wrapper">
+                                <div class="country-select-trigger" id="countryTrigger" tabindex="0">
+                                    <span class="selected-country" id="selectedCountry">
+                                        <span class="country-flag">🇲🇽</span>
+                                        <span>México</span>
+                                    </span>
+                                    <i class="lni lni-chevron-down"></i>
+                                </div>
+                                <div class="country-dropdown" id="countryDropdown">
+                                    <div class="country-option" data-value="MX" data-flag="🇲🇽">
+                                        <span class="country-flag">🇲🇽</span>
+                                        <span class="country-name">México</span>
+                                    </div>
+                                    <div class="country-option" data-value="US" data-flag="🇺🇸">
+                                        <span class="country-flag">🇺🇸</span>
+                                        <span class="country-name">Estados Unidos</span>
+                                    </div>
+                                    <div class="country-option" data-value="CA" data-flag="🇨🇦">
+                                        <span class="country-flag">🇨🇦</span>
+                                        <span class="country-name">Canadá</span>
+                                    </div>
+                                    <div class="country-option" data-value="ES" data-flag="🇪🇸">
+                                        <span class="country-flag">🇪🇸</span>
+                                        <span class="country-name">España</span>
+                                    </div>
+                                    <div class="country-option" data-value="AR" data-flag="🇦🇷">
+                                        <span class="country-flag">🇦🇷</span>
+                                        <span class="country-name">Argentina</span>
+                                    </div>
+                                    <div class="country-option" data-value="CO" data-flag="🇨🇴">
+                                        <span class="country-flag">🇨🇴</span>
+                                        <span class="country-name">Colombia</span>
+                                    </div>
+                                    <div class="country-option" data-value="CL" data-flag="🇨🇱">
+                                        <span class="country-flag">🇨🇱</span>
+                                        <span class="country-name">Chile</span>
+                                    </div>
+                                    <div class="country-option" data-value="PE" data-flag="🇵🇪">
+                                        <span class="country-flag">🇵🇪</span>
+                                        <span class="country-name">Perú</span>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="country" value="MX" required>
+                            </div>
                             <div class="error-message"></div>
                         </div>
                         <div class="form-group">
@@ -105,11 +142,6 @@
 
                     <!-- Card Details with Stripe Elements -->
                     <div id="cardDetails" class="card-details">
-                        <div class="card-info-note">
-                            <i class="lni lni-lock"></i>
-                            <span>Ingresa los datos de tu tarjeta de forma segura</span>
-                        </div>
-
                         <div class="stripe-container" id="stripe-container">
                             <div id="card-element"></div>
                         </div>
@@ -123,14 +155,6 @@
                             <p>Serás redirigido a PayPal para completar tu pago de forma segura.</p>
                         </div>
                     </div>
-                </div>
-
-                <!-- Terms & Conditions -->
-                <div class="form-section">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="termsAccepted" required>
-                        <span>Acepto los <a href="/terms" target="_blank">términos y condiciones</a> y la <a href="/privacy" target="_blank">política de privacidad</a></span>
-                    </label>
                 </div>
 
                 <!-- Submit Button -->
