@@ -31,7 +31,7 @@ body {
 }
 
 /* ============================================
-   ANIMATED LOGO HEADER - DENTRO DEL FORM
+   ANIMATED LOGO HEADER - ATTMOS (SIN LA O ORIGINAL)
    ============================================ */
 
 .checkout-header {
@@ -68,9 +68,11 @@ body {
     transform: scale(1.2, 1);
 }
 
+/* Quitar la O (char3) que era visible */
 .logo-container h1 .char3 {
-    padding: 0 0.15em 0 0.1em;
+    padding: 0;
     visibility: hidden;
+    display: none;
 }
 
 .hide {
@@ -82,7 +84,7 @@ body {
 
 #svg {
     position: absolute;
-    right: -0.5em;
+    right: -0.35em;
     bottom: 0.4em;
     height: 4.4em;
     width: 3.5em;
@@ -458,74 +460,46 @@ circle#base {
 }
 
 /* ============================================
-   CUSTOM COUNTRY SELECT CON BANDERAS - ESTILO REGISTRO
+   CUSTOM SELECT DROPDOWN - ESTILO REGISTRO EXACTO
    ============================================ */
 
-.country-select-wrapper {
+.custom-select-wrapper {
     position: relative;
     width: 100%;
 }
 
-.country-select-trigger {
-    width: 100%;
-    padding: 0.875rem 1rem;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    font-size: 1rem;
-    font-weight: 500;
-    color: #1a1a1a;
-    background: white;
+.form-select {
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    transition: all 0.3s ease;
+    user-select: none;
 }
 
-.country-select-trigger:hover {
-    border-color: #06b6d4;
-}
-
-.country-select-trigger:focus {
-    outline: none;
-    border-color: #06b6d4;
-    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.1);
-}
-
-.country-select-trigger.active {
-    border-color: #06b6d4;
-}
-
-.selected-country {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.country-flag {
-    font-size: 1.5rem;
-    line-height: 1;
-}
-
-.country-select-trigger i {
-    transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+.select-arrow {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
     color: #6b7280;
+    opacity: 0.6;
+    font-size: 1rem;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    z-index: 3;
 }
 
-.country-select-trigger.active i {
-    transform: rotate(180deg);
+.custom-select-wrapper.active .select-arrow {
+    transform: translateY(-50%) rotate(180deg);
     color: #06b6d4;
+    opacity: 1;
 }
 
-/* DROPDOWN CON ANIMACIÓN CASCADE DEL REGISTRO */
-.country-dropdown {
+.select-dropdown {
     position: absolute;
     top: calc(100% + 0.5rem);
     left: 0;
     right: 0;
     background: white;
-    border: 2px solid #06b6d4;
-    border-radius: 10px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
     max-height: 0;
     overflow: hidden;
@@ -535,37 +509,58 @@ circle#base {
     z-index: 1000;
 }
 
-.country-dropdown.open {
+.custom-select-wrapper.active .select-dropdown {
     max-height: 400px;
     opacity: 1;
     visibility: visible;
-    overflow-y: auto;
 }
 
-.country-option {
+/* Options Container */
+.select-options-container {
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+}
+
+.select-options-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.select-options-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.select-options-container::-webkit-scrollbar-thumb {
+    background: #e5e7eb;
+    border-radius: 3px;
+}
+
+.select-options-container::-webkit-scrollbar-thumb:hover {
+    background: #06b6d4;
+}
+
+.select-option {
+    padding: 0.875rem 1rem;
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.875rem 1rem;
     cursor: pointer;
     transition: all 0.2s ease;
     opacity: 0;
     transform: translateY(-10px);
-}
-
-/* Animación en cascada */
-.country-dropdown.open .country-option {
     animation: cascadeIn 0.3s ease forwards;
 }
 
-.country-dropdown.open .country-option:nth-child(1) { animation-delay: 0.05s; }
-.country-dropdown.open .country-option:nth-child(2) { animation-delay: 0.1s; }
-.country-dropdown.open .country-option:nth-child(3) { animation-delay: 0.15s; }
-.country-dropdown.open .country-option:nth-child(4) { animation-delay: 0.2s; }
-.country-dropdown.open .country-option:nth-child(5) { animation-delay: 0.25s; }
-.country-dropdown.open .country-option:nth-child(6) { animation-delay: 0.3s; }
-.country-dropdown.open .country-option:nth-child(7) { animation-delay: 0.35s; }
-.country-dropdown.open .country-option:nth-child(8) { animation-delay: 0.4s; }
+/* Animación en cascada igual que registro */
+.select-option:nth-child(1) { animation-delay: 0.05s; }
+.select-option:nth-child(2) { animation-delay: 0.1s; }
+.select-option:nth-child(3) { animation-delay: 0.15s; }
+.select-option:nth-child(4) { animation-delay: 0.2s; }
+.select-option:nth-child(5) { animation-delay: 0.25s; }
+.select-option:nth-child(6) { animation-delay: 0.3s; }
+.select-option:nth-child(7) { animation-delay: 0.35s; }
+.select-option:nth-child(8) { animation-delay: 0.4s; }
 
 @keyframes cascadeIn {
     to {
@@ -574,43 +569,26 @@ circle#base {
     }
 }
 
-.country-option:hover {
+.country-flag {
+    font-size: 1.5rem;
+    line-height: 1;
+    width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.select-option span:not(.country-flag) {
+    font-size: 0.95rem;
+    color: #1a1a1a;
+    font-weight: 500;
+}
+
+.select-option:hover {
     background: linear-gradient(90deg, rgba(6, 182, 212, 0.1), rgba(6, 182, 212, 0.05));
 }
 
-.country-option:active {
-    background: rgba(6, 182, 212, 0.15);
-}
-
-.country-name {
-    flex: 1;
-    font-weight: 500;
-    color: #1a1a1a;
-}
-
-.country-code {
-    font-size: 0.9rem;
-    color: #6b7280;
-    font-weight: 600;
-}
-
-/* Scrollbar personalizado */
-.country-dropdown::-webkit-scrollbar {
-    width: 6px;
-}
-
-.country-dropdown::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 10px;
-}
-
-.country-dropdown::-webkit-scrollbar-thumb {
-    background: #06b6d4;
-    border-radius: 10px;
-}
-
-.country-dropdown::-webkit-scrollbar-thumb:hover {
-    background: #0891b2;
+.select-option.selected {
+    background: linear-gradient(90deg, rgba(6, 182, 212, 0.15), rgba(6, 182, 212, 0.08));
 }
 
 /* ============================================
@@ -619,7 +597,6 @@ circle#base {
 
 .form-input.error,
 .form-select.error,
-.country-select-trigger.error,
 .phone-code-input.error,
 .phone-number-input.error {
     border-color: #ef4444;

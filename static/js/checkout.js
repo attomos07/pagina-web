@@ -1,5 +1,5 @@
 // ============================================
-// CHECKOUT JAVASCRIPT - CON STRIPE ELEMENTS, LADA DINÁMICA Y DROPDOWN SMOOTH
+// CHECKOUT JAVASCRIPT - DROPDOWN ESTILO REGISTRO Y LOGO ATTMOS
 // ============================================
 
 // NOTA: Reemplaza 'TU_PUBLISHABLE_KEY' con tu clave pública de Stripe
@@ -30,12 +30,12 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================
-// LOGO ANIMATION
+// LOGO ANIMATION - ATTMOS (A-T-T-M-O-S CON ÁTOMO EN MEDIO)
 // ============================================
 
 function initLogoAnimation() {
     const lettering = function(el, optionalArg) {
-        const text = el.innerHTML;
+        const text = el.innerHTML; // "ATTMOS"
         const arg = optionalArg || "char";
         const size = window.getComputedStyle(el).getPropertyValue("font-size").substring(0, 2);
         
@@ -95,94 +95,116 @@ function initLogoAnimation() {
 }
 
 // ============================================
-// CUSTOM COUNTRY DROPDOWN CON LADA DINÁMICA
+// CUSTOM COUNTRY DROPDOWN - ESTILO REGISTRO EXACTO
 // ============================================
 
 function initCountryDropdown() {
-    const trigger = document.getElementById('countryTrigger');
+    const selectWrapper = document.querySelector('.country-select-wrapper');
+    const selectInput = document.getElementById('country');
     const dropdown = document.getElementById('countryDropdown');
-    const selectedCountry = document.getElementById('selectedCountry');
-    const hiddenInput = document.getElementById('country');
+    const optionsContainer = document.getElementById('countryOptionsContainer');
+    const options = optionsContainer.querySelectorAll('.select-option');
     const phoneCodeInput = document.getElementById('phoneCode');
-    const countryOptions = document.querySelectorAll('.country-option');
-
-    if (!trigger || !dropdown) return;
+    const countryCodeInput = document.getElementById('countryCode');
+    
+    if (!selectWrapper || !selectInput || !dropdown) {
+        console.warn('⚠️ Country select elements no encontrados');
+        return;
+    }
 
     // Inicializar con México
-    updatePhoneCode('MX');
+    updatePhoneCode('MX', '+52');
 
-    // Toggle dropdown
-    trigger.addEventListener('click', function() {
-        const isOpen = dropdown.classList.contains('open');
+    // Click en el input para abrir/cerrar
+    selectInput.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleDropdown();
+    });
+
+    // Seleccionar opción
+    options.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.stopPropagation();
+            selectOption(this);
+        });
+    });
+
+    // Cerrar al hacer click fuera
+    document.addEventListener('click', function(e) {
+        if (!selectWrapper.contains(e.target)) {
+            closeDropdown();
+        }
+    });
+
+    // Cerrar con ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && selectWrapper.classList.contains('active')) {
+            closeDropdown();
+        }
+    });
+
+    function toggleDropdown() {
+        const isActive = selectWrapper.classList.contains('active');
         
-        if (isOpen) {
+        if (isActive) {
             closeDropdown();
         } else {
             openDropdown();
         }
-    });
-
-    // Select country
-    countryOptions.forEach(option => {
-        option.addEventListener('click', function() {
-            const value = this.getAttribute('data-value');
-            const flag = this.getAttribute('data-flag');
-            const code = this.getAttribute('data-code');
-            const name = this.querySelector('.country-name').textContent;
-
-            // Update selected country display
-            selectedCountry.innerHTML = `
-                <span class="country-flag">${flag}</span>
-                <span>${name}</span>
-            `;
-
-            // Update hidden input
-            hiddenInput.value = value;
-
-            // Update phone code dinámicamente
-            updatePhoneCode(value, code);
-
-            // Close dropdown
-            closeDropdown();
-
-            // Trigger validation
-            checkFormCompletion();
-            
-            console.log(`✅ País seleccionado: ${name} (${value}) - Código: ${code}`);
-        });
-    });
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
-            closeDropdown();
-        }
-    });
-
-    // Close dropdown on escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeDropdown();
-        }
-    });
+    }
 
     function openDropdown() {
-        dropdown.classList.add('open');
-        trigger.classList.add('active');
+        selectWrapper.classList.add('active');
+        selectInput.classList.add('active');
         
         // Reset animation para trigger cascada
-        const options = dropdown.querySelectorAll('.country-option');
-        options.forEach(option => {
+        const visibleOptions = optionsContainer.querySelectorAll('.select-option:not(.hidden)');
+        visibleOptions.forEach((option, index) => {
             option.style.animation = 'none';
             setTimeout(() => {
                 option.style.animation = '';
             }, 10);
         });
+
+        console.log('🌍 Dropdown de países abierto');
     }
 
     function closeDropdown() {
-        dropdown.classList.remove('open');
-        trigger.classList.remove('active');
+        selectWrapper.classList.remove('active');
+        selectInput.classList.remove('active');
+    }
+
+    function selectOption(option) {
+        const value = option.getAttribute('data-value');
+        const flag = option.getAttribute('data-flag');
+        const code = option.getAttribute('data-code');
+        const name = option.getAttribute('data-name');
+
+        // Actualizar input visible con bandera + nombre
+        selectInput.value = `${flag} ${name}`;
+        
+        // Actualizar input hidden
+        if (countryCodeInput) {
+            countryCodeInput.value = value;
+        }
+
+        // Actualizar código telefónico
+        updatePhoneCode(value, code);
+
+        // Marcar como seleccionado
+        options.forEach(opt => opt.classList.remove('selected'));
+        option.classList.add('selected');
+
+        // Limpiar errores
+        clearError(selectInput);
+
+        // Cerrar dropdown
+        closeDropdown();
+
+        // Trigger validación
+        checkFormCompletion();
+
+        console.log(`✅ País seleccionado: ${name} (${value}) - Código: ${code}`);
     }
     
     function updatePhoneCode(countryCode, manualCode = null) {
@@ -192,6 +214,8 @@ function initCountryDropdown() {
             console.log(`📱 Código telefónico actualizado: ${code}`);
         }
     }
+
+    console.log('✅ Country dropdown estilo registro inicializado');
 }
 
 // ============================================
@@ -350,22 +374,18 @@ function validateInput(input) {
 }
 
 function showError(input, message) {
-    // Agregar clase de error con animación shake
     input.classList.add('error');
     
-    // Mostrar mensaje de error
     const errorMsg = input.parentElement.querySelector('.error-message');
     if (errorMsg) {
         errorMsg.innerHTML = `<i class="lni lni-warning"></i> ${message}`;
         errorMsg.classList.add('active');
     }
     
-    // Remover la clase después de la animación para poder repetirla
     setTimeout(() => {
         input.classList.remove('error');
     }, 500);
     
-    // Agregar la clase nuevamente para mantener el borde rojo
     setTimeout(() => {
         if (!input.value.trim() && input.hasAttribute('required')) {
             input.classList.add('error');
@@ -386,12 +406,12 @@ function clearError(input) {
 function checkFormCompletion() {
     const fullName = document.getElementById('fullName')?.value.trim();
     const email = document.getElementById('email')?.value.trim();
-    const country = document.getElementById('country')?.value;
+    const countryCode = document.getElementById('countryCode')?.value;
     const postalCode = document.getElementById('postalCode')?.value.trim();
     
     const submitButton = document.getElementById('submitButton');
     
-    const isFormComplete = fullName && email && country && postalCode && cardData.complete;
+    const isFormComplete = fullName && email && countryCode && postalCode && cardData.complete;
     
     if (submitButton) {
         submitButton.disabled = !isFormComplete;
@@ -466,7 +486,7 @@ async function processPayment() {
         const phoneCode = document.getElementById('phoneCode')?.value.trim() || '';
         const phone = document.getElementById('phone')?.value.trim() || '';
         const fullPhone = phoneCode && phone ? phoneCode + phone.replace(/\s/g, '') : '';
-        const country = document.getElementById('country').value;
+        const countryCode = document.getElementById('countryCode')?.value || 'MX';
         const postalCode = document.getElementById('postalCode').value.trim();
         
         // Crear método de pago con Stripe
@@ -478,7 +498,7 @@ async function processPayment() {
                 email: email,
                 phone: fullPhone,
                 address: {
-                    country: country,
+                    country: countryCode,
                     postal_code: postalCode
                 }
             }
@@ -524,7 +544,7 @@ async function processPayment() {
 function getTotalAmount() {
     const totalText = document.getElementById('total')?.textContent || '$0.00';
     const amount = parseFloat(totalText.replace(/[^0-9.]/g, ''));
-    return Math.round(amount * 100); // Convertir a centavos
+    return Math.round(amount * 100);
 }
 
 // ============================================
@@ -560,7 +580,6 @@ function showSuccessModal() {
 // ============================================
 
 function loadPlanDetails() {
-    // Obtener plan desde URL params
     const urlParams = new URLSearchParams(window.location.search);
     const plan = urlParams.get('plan') || 'neutron';
     
@@ -599,7 +618,6 @@ function loadPlanDetails() {
     
     const selectedPlan = plans[plan] || plans.neutron;
     
-    // Actualizar UI
     const planNameElement = document.getElementById('selectedPlanName');
     if (planNameElement) {
         planNameElement.textContent = selectedPlan.name;
@@ -619,7 +637,6 @@ function loadPlanDetails() {
         if (totalElement) totalElement.textContent = `$${total.toFixed(2)} MXN`;
     }
     
-    // Actualizar features
     const featuresList = document.getElementById('planFeatures');
     if (featuresList) {
         featuresList.innerHTML = selectedPlan.features.map(feature => `
@@ -643,7 +660,6 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Navegación con Enter entre campos
 document.querySelectorAll('.form-input, .form-select').forEach(input => {
     input.addEventListener('keypress', function(e) {
         if (e.key === 'Enter' && this.tagName !== 'TEXTAREA') {
@@ -657,7 +673,7 @@ document.querySelectorAll('.form-input, .form-select').forEach(input => {
     });
 });
 
-console.log('✅ Checkout JS initialized with Stripe Elements');
+console.log('✅ Checkout JS initialized');
 console.log('🔒 Security: PCI compliant payment processing');
-console.log('💳 Features: Country dropdown with flags, smooth animations, dynamic phone codes');
+console.log('💳 Features: Country dropdown estilo registro, dynamic phone codes, logo ATTMOS');
 console.log('🎨 Ready to accept payments');

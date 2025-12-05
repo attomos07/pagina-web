@@ -16,7 +16,7 @@
             <!-- Logo Header Animado DENTRO del formulario -->
             <header class="checkout-header">
                 <div class="logo-container">
-                    <h1>ATTOMOS</h1>
+                    <h1>ATTMOS</h1>
                     <svg id="svg">
                         <circle id="base" />
                         <path id="ring" />
@@ -68,57 +68,52 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">País *</label>
-                            <div class="country-select-wrapper">
-                                <div class="country-select-trigger" id="countryTrigger" tabindex="0">
-                                    <span class="selected-country" id="selectedCountry">
-                                        <span class="country-flag">🇲🇽</span>
-                                        <span>México</span>
-                                    </span>
-                                    <i class="lni lni-chevron-down"></i>
-                                </div>
-                                <div class="country-dropdown" id="countryDropdown">
-                                    <div class="country-option" data-value="MX" data-flag="🇲🇽" data-code="+52">
-                                        <span class="country-flag">🇲🇽</span>
-                                        <span class="country-name">México</span>
-                                        <span class="country-code">+52</span>
-                                    </div>
-                                    <div class="country-option" data-value="US" data-flag="🇺🇸" data-code="+1">
-                                        <span class="country-flag">🇺🇸</span>
-                                        <span class="country-name">Estados Unidos</span>
-                                        <span class="country-code">+1</span>
-                                    </div>
-                                    <div class="country-option" data-value="CA" data-flag="🇨🇦" data-code="+1">
-                                        <span class="country-flag">🇨🇦</span>
-                                        <span class="country-name">Canadá</span>
-                                        <span class="country-code">+1</span>
-                                    </div>
-                                    <div class="country-option" data-value="ES" data-flag="🇪🇸" data-code="+34">
-                                        <span class="country-flag">🇪🇸</span>
-                                        <span class="country-name">España</span>
-                                        <span class="country-code">+34</span>
-                                    </div>
-                                    <div class="country-option" data-value="AR" data-flag="🇦🇷" data-code="+54">
-                                        <span class="country-flag">🇦🇷</span>
-                                        <span class="country-name">Argentina</span>
-                                        <span class="country-code">+54</span>
-                                    </div>
-                                    <div class="country-option" data-value="CO" data-flag="🇨🇴" data-code="+57">
-                                        <span class="country-flag">🇨🇴</span>
-                                        <span class="country-name">Colombia</span>
-                                        <span class="country-code">+57</span>
-                                    </div>
-                                    <div class="country-option" data-value="CL" data-flag="🇨🇱" data-code="+56">
-                                        <span class="country-flag">🇨🇱</span>
-                                        <span class="country-name">Chile</span>
-                                        <span class="country-code">+56</span>
-                                    </div>
-                                    <div class="country-option" data-value="PE" data-flag="🇵🇪" data-code="+51">
-                                        <span class="country-flag">🇵🇪</span>
-                                        <span class="country-name">Perú</span>
-                                        <span class="country-code">+51</span>
+                            <div class="custom-select-wrapper country-select-wrapper">
+                                <input type="text" 
+                                       id="country" 
+                                       name="country" 
+                                       class="form-input form-select" 
+                                       value="🇲🇽 México"
+                                       readonly
+                                       required>
+                                <i class="lni lni-chevron-down select-arrow"></i>
+                                <div class="select-dropdown" id="countryDropdown">
+                                    <div class="select-options-container" id="countryOptionsContainer">
+                                        <div class="select-option" data-value="MX" data-flag="🇲🇽" data-code="+52" data-name="México">
+                                            <span class="country-flag">🇲🇽</span>
+                                            <span>México</span>
+                                        </div>
+                                        <div class="select-option" data-value="US" data-flag="🇺🇸" data-code="+1" data-name="Estados Unidos">
+                                            <span class="country-flag">🇺🇸</span>
+                                            <span>Estados Unidos</span>
+                                        </div>
+                                        <div class="select-option" data-value="CA" data-flag="🇨🇦" data-code="+1" data-name="Canadá">
+                                            <span class="country-flag">🇨🇦</span>
+                                            <span>Canadá</span>
+                                        </div>
+                                        <div class="select-option" data-value="ES" data-flag="🇪🇸" data-code="+34" data-name="España">
+                                            <span class="country-flag">🇪🇸</span>
+                                            <span>España</span>
+                                        </div>
+                                        <div class="select-option" data-value="AR" data-flag="🇦🇷" data-code="+54" data-name="Argentina">
+                                            <span class="country-flag">🇦🇷</span>
+                                            <span>Argentina</span>
+                                        </div>
+                                        <div class="select-option" data-value="CO" data-flag="🇨🇴" data-code="+57" data-name="Colombia">
+                                            <span class="country-flag">🇨🇴</span>
+                                            <span>Colombia</span>
+                                        </div>
+                                        <div class="select-option" data-value="CL" data-flag="🇨🇱" data-code="+56" data-name="Chile">
+                                            <span class="country-flag">🇨🇱</span>
+                                            <span>Chile</span>
+                                        </div>
+                                        <div class="select-option" data-value="PE" data-flag="🇵🇪" data-code="+51" data-name="Perú">
+                                            <span class="country-flag">🇵🇪</span>
+                                            <span>Perú</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <input type="hidden" id="country" value="MX" required>
+                                <input type="hidden" id="countryCode" value="MX">
                             </div>
                             <small class="input-hint">Selecciona tu país</small>
                             <div class="error-message"></div>
