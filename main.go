@@ -144,6 +144,11 @@ func main() {
 
 		// Chatwoot
 		protected.GET("/chatwoot/info", handlers.GetChatwootInfo)
+
+		// Stripe - Pagos
+		protected.POST("/stripe/checkout", handlers.CreateCheckoutSession)
+		protected.POST("/stripe/confirm", handlers.ConfirmPayment)
+		protected.GET("/stripe/public-key", handlers.GetStripePublicKey)
 	}
 
 	// ============================================
@@ -250,11 +255,11 @@ func main() {
 		port = "8080"
 	}
 
-	log.Println("════════════════════════════════════════════════════════════")
-	log.Printf("🚀 Servidor Attomos iniciado exitosamente")
-	log.Printf("📍 Puerto: %s", port)
-	log.Printf("🌐 URL Local: http://localhost:%s", port)
-	log.Println("════════════════════════════════════════════════════════════")
+	log.Println("╔══════════════════════════════════════════════════════════╗")
+	log.Printf("║ 🚀 Servidor Attomos iniciado exitosamente               ║")
+	log.Printf("║ 📍 Puerto: %s                                           ║", port)
+	log.Printf("║ 🌐 URL Local: http://localhost:%s                       ║", port)
+	log.Println("╚══════════════════════════════════════════════════════════╝")
 
 	if err := router.Run(":" + port); err != nil {
 		log.Fatal("❌ Error al iniciar servidor:", err)

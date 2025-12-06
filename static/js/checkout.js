@@ -1,9 +1,8 @@
 // ============================================
-// CHECKOUT JAVASCRIPT - DROPDOWN ESTILO REGISTRO Y LOGO ATTMOS
+// CHECKOUT JAVASCRIPT - INTEGRACIÓN STRIPE REAL
 // ============================================
 
-// NOTA: Reemplaza 'TU_PUBLISHABLE_KEY' con tu clave pública de Stripe
-const STRIPE_PUBLISHABLE_KEY = 'pk_test_51...'; // <-- COLOCA TU CLAVE AQUÍ
+let STRIPE_PUBLISHABLE_KEY = '';
 
 // Mapeo de códigos de país a códigos telefónicos
 const COUNTRY_PHONE_CODES = {
@@ -17,12 +16,11 @@ const COUNTRY_PHONE_CODES = {
     'PE': '+51'
 };
 
-// Estado global del checkout
-let currentBillingPeriod = 'monthly'; // 'monthly' o 'annual'
-let currentPlan = 'neutron';
-
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('🛒 Checkout page loaded');
+    
+    // Cargar clave pública de Stripe desde el backend
+    await loadStripePublicKey();
     
     initLogoAnimation();
     initPaymentMethodToggle();
@@ -34,12 +32,36 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================
-// LOGO ANIMATION - ATTMOS (A-T-T-M-O-S CON ÁTOMO EN MEDIO)
+// CARGAR CLAVE PÚBLICA DE STRIPE
+// ============================================
+
+async function loadStripePublicKey() {
+    try {
+        const response = await fetch('/api/stripe/public-key', {
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            STRIPE_PUBLISHABLE_KEY = data.publicKey;
+            console.log('✅ Stripe public key loaded');
+        } else {
+            console.error('❌ Error loading Stripe key');
+            alert('Error al configurar el sistema de pagos. Por favor recarga la página.');
+        }
+    } catch (error) {
+        console.error('❌ Error:', error);
+        alert('Error de conexión. Por favor recarga la página.');
+    }
+}
+
+// ============================================
+// LOGO ANIMATION - ATTMOS
 // ============================================
 
 function initLogoAnimation() {
     const lettering = function(el, optionalArg) {
-        const text = el.innerHTML; // "ATTMOS"
+        const text = el.innerHTML;
         const arg = optionalArg || "char";
         const size = window.getComputedStyle(el).getPropertyValue("font-size").substring(0, 2);
         
@@ -99,7 +121,7 @@ function initLogoAnimation() {
 }
 
 // ============================================
-// CUSTOM COUNTRY DROPDOWN - ESTILO REGISTRO EXACTO
+// CUSTOM COUNTRY DROPDOWN
 // ============================================
 
 function initCountryDropdown() {
@@ -116,16 +138,13 @@ function initCountryDropdown() {
         return;
     }
 
-    // Inicializar con México
     updatePhoneCode('MX', '+52');
 
-    // Click en el input para abrir/cerrar
     selectInput.addEventListener('click', function(e) {
         e.stopPropagation();
         toggleDropdown();
     });
 
-    // Seleccionar opción
     options.forEach(option => {
         option.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -133,14 +152,12 @@ function initCountryDropdown() {
         });
     });
 
-    // Cerrar al hacer click fuera
     document.addEventListener('click', function(e) {
         if (!selectWrapper.contains(e.target)) {
             closeDropdown();
         }
     });
 
-    // Cerrar con ESC
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && selectWrapper.classList.contains('active')) {
             closeDropdown();
@@ -161,7 +178,6 @@ function initCountryDropdown() {
         selectWrapper.classList.add('active');
         selectInput.classList.add('active');
         
-        // Reset animation para trigger cascada
         const visibleOptions = optionsContainer.querySelectorAll('.select-option:not(.hidden)');
         visibleOptions.forEach((option, index) => {
             option.style.animation = 'none';
@@ -184,28 +200,19 @@ function initCountryDropdown() {
         const code = option.getAttribute('data-code');
         const name = option.getAttribute('data-name');
 
-        // Actualizar input visible con bandera + nombre
         selectInput.value = `${flag} ${name}`;
         
-        // Actualizar input hidden
         if (countryCodeInput) {
             countryCodeInput.value = value;
         }
 
-        // Actualizar código telefónico
         updatePhoneCode(value, code);
 
-        // Marcar como seleccionado
         options.forEach(opt => opt.classList.remove('selected'));
         option.classList.add('selected');
 
-        // Limpiar errores
         clearError(selectInput);
-
-        // Cerrar dropdown
         closeDropdown();
-
-        // Trigger validación
         checkFormCompletion();
 
         console.log(`✅ País seleccionado: ${name} (${value}) - Código: ${code}`);
@@ -219,7 +226,7 @@ function initCountryDropdown() {
         }
     }
 
-    console.log('✅ Country dropdown estilo registro inicializado');
+    console.log('✅ Country dropdown inicializado');
 }
 
 // ============================================
@@ -262,10 +269,14 @@ let cardData = {
 };
 
 function initStripeElements() {
-    // Inicializar Stripe
+    if (!STRIPE_PUBLISHABLE_KEY) {
+        console.error('❌ Stripe key not loaded yet');
+        setTimeout(initStripeElements, 500);
+        return;
+    }
+
     stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
     
-    // Crear elementos con tema personalizado
     const elements = stripe.elements({
         appearance: {
             theme: 'stripe',
@@ -281,7 +292,6 @@ function initStripeElements() {
         }
     });
 
-    // Crear elemento de tarjeta
     cardElement = elements.create('card', {
         style: {
             base: {
@@ -298,10 +308,8 @@ function initStripeElements() {
         }
     });
 
-    // Montar el elemento
     cardElement.mount('#card-element');
 
-    // Eventos del elemento
     const stripeContainer = document.getElementById('stripe-container');
     const errorElement = document.getElementById('card-errors');
 
@@ -335,7 +343,7 @@ function initStripeElements() {
 }
 
 // ============================================
-// FORM VALIDATION CON ANIMACIÓN DE ERROR
+// FORM VALIDATION
 // ============================================
 
 function initFormValidation() {
@@ -406,7 +414,6 @@ function clearError(input) {
     }
 }
 
-// Verificar si el formulario está completo
 function checkFormCompletion() {
     const fullName = document.getElementById('fullName')?.value.trim();
     const email = document.getElementById('email')?.value.trim();
@@ -425,7 +432,7 @@ function checkFormCompletion() {
 }
 
 // ============================================
-// FORM SUBMISSION
+// FORM SUBMISSION CON INTEGRACIÓN REAL
 // ============================================
 
 function initPaymentForm() {
@@ -437,7 +444,6 @@ function initPaymentForm() {
             
             console.log('📝 Form submitted');
             
-            // Validar todos los campos requeridos
             const requiredInputs = form.querySelectorAll('[required]');
             let isValid = true;
             let firstErrorField = null;
@@ -460,7 +466,6 @@ function initPaymentForm() {
                 return;
             }
             
-            // Verificar que la tarjeta esté completa
             if (!cardData.complete) {
                 alert('Por favor completa los datos de tu tarjeta.');
                 const stripeContainer = document.getElementById('stripe-container');
@@ -471,10 +476,8 @@ function initPaymentForm() {
                 return;
             }
             
-            // Mostrar modal de procesamiento
             showProcessingModal();
             
-            // Procesar el pago
             await processPayment();
         });
     }
@@ -482,7 +485,7 @@ function initPaymentForm() {
 
 async function processPayment() {
     try {
-        console.log('💳 Creating payment method...');
+        console.log('💳 Processing payment...');
         
         // Obtener datos del formulario
         const fullName = document.getElementById('fullName').value.trim();
@@ -493,65 +496,94 @@ async function processPayment() {
         const countryCode = document.getElementById('countryCode')?.value || 'MX';
         const postalCode = document.getElementById('postalCode').value.trim();
         
-        // Crear método de pago con Stripe
-        const { paymentMethod, error: pmError } = await stripe.createPaymentMethod({
-            type: 'card',
-            card: cardElement,
-            billing_details: {
-                name: fullName,
-                email: email,
+        const urlParams = new URLSearchParams(window.location.search);
+        const plan = urlParams.get('plan') || 'neutron';
+        const billingPeriod = 'monthly'; // Por ahora solo mensual
+        
+        // Crear checkout session en el backend
+        console.log('📤 Creating checkout session...');
+        const checkoutResponse = await fetch('/api/stripe/checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                fullName,
+                email,
                 phone: fullPhone,
-                address: {
-                    country: countryCode,
-                    postal_code: postalCode
+                countryCode,
+                postalCode,
+                plan,
+                billingPeriod
+            })
+        });
+        
+        if (!checkoutResponse.ok) {
+            const error = await checkoutResponse.json();
+            throw new Error(error.error || 'Error al crear sesión de pago');
+        }
+        
+        const checkoutData = await checkoutResponse.json();
+        console.log('✅ Checkout session created:', checkoutData);
+        
+        // Confirmar pago con Stripe
+        console.log('💳 Confirming payment with Stripe...');
+        const { error: confirmError } = await stripe.confirmCardPayment(
+            checkoutData.clientSecret,
+            {
+                payment_method: {
+                    card: cardElement,
+                    billing_details: {
+                        name: fullName,
+                        email: email,
+                        phone: fullPhone,
+                        address: {
+                            country: countryCode,
+                            postal_code: postalCode
+                        }
+                    }
                 }
             }
-        });
-
-        if (pmError) {
+        );
+        
+        if (confirmError) {
             hideProcessingModal();
-            console.error('Payment method error:', pmError);
-            alert(`Error: ${pmError.message}`);
+            console.error('❌ Payment error:', confirmError);
+            alert(`Error: ${confirmError.message}`);
             return;
         }
-
-        console.log('✅ Payment method created:', paymentMethod.id);
         
-        // Aquí harías la llamada a tu backend para procesar el pago
-        // const response = await fetch('/api/process-payment', {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({
-        //         paymentMethodId: paymentMethod.id,
-        //         plan: currentPlan,
-        //         billingPeriod: currentBillingPeriod,
-        //         amount: getTotalAmount(),
-        //         email: email,
-        //         name: fullName,
-        //         phone: fullPhone
-        //     })
-        // });
+        console.log('✅ Payment confirmed with Stripe');
         
-        // Simular procesamiento (reemplazar con llamada real)
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Confirmar pago en el backend
+        const confirmResponse = await fetch('/api/stripe/confirm', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                paymentIntentId: checkoutData.clientSecret.split('_secret_')[0],
+                plan,
+                billingPeriod
+            })
+        });
+        
+        if (!confirmResponse.ok) {
+            throw new Error('Error al confirmar pago en el servidor');
+        }
+        
+        console.log('✅ Payment confirmed on backend');
         
         hideProcessingModal();
         showSuccessModal();
         
-        console.log('✅ Payment processed successfully');
-        console.log(`📊 Plan: ${currentPlan}, Billing: ${currentBillingPeriod}`);
-        
     } catch (error) {
         console.error('❌ Payment error:', error);
         hideProcessingModal();
-        alert('Error procesando el pago. Por favor intenta nuevamente.');
+        alert(`Error procesando el pago: ${error.message}`);
     }
-}
-
-function getTotalAmount() {
-    const totalText = document.getElementById('total')?.textContent || '$0.00';
-    const amount = parseFloat(totalText.replace(/[^0-9.]/g, ''));
-    return Math.round(amount * 100);
 }
 
 // ============================================
@@ -589,17 +621,11 @@ function showSuccessModal() {
 function loadPlanDetails() {
     const urlParams = new URLSearchParams(window.location.search);
     const plan = urlParams.get('plan') || 'neutron';
-    const billing = urlParams.get('billing') || 'monthly';
-    
-    // Guardar en estado global
-    currentPlan = plan;
-    currentBillingPeriod = billing;
     
     const plans = {
         proton: {
             name: 'Plan Protón',
-            monthly: 149,
-            annual: 1432, // 149 * 12 * 0.8 = 1432.8
+            price: 149,
             features: [
                 '1 Chatbot incluido',
                 '1,000 mensajes/mes',
@@ -609,8 +635,7 @@ function loadPlanDetails() {
         },
         neutron: {
             name: 'Plan Neutrón',
-            monthly: 255,
-            annual: 2448, // 255 * 12 * 0.8 = 2448
+            price: 255,
             features: [
                 '3 Chatbots incluidos',
                 '10,000 mensajes/mes',
@@ -620,8 +645,7 @@ function loadPlanDetails() {
         },
         electron: {
             name: 'Plan Electrón',
-            monthly: 799,
-            annual: 7670, // 799 * 12 * 0.8 = 7670.4
+            price: 799,
             features: [
                 'Chatbots ilimitados',
                 'Mensajes ilimitados',
@@ -633,28 +657,13 @@ function loadPlanDetails() {
     
     const selectedPlan = plans[plan] || plans.neutron;
     
-    // Actualizar nombre del plan
     const planNameElement = document.getElementById('selectedPlanName');
     if (planNameElement) {
         planNameElement.textContent = selectedPlan.name;
     }
     
-    // Actualizar período de facturación
-    const billingPeriodElement = document.getElementById('billingPeriod');
-    if (billingPeriodElement) {
-        billingPeriodElement.textContent = billing === 'annual' ? 'Anual' : 'Mensual';
-    }
-    
-    // Calcular precios según período
-    let basePrice;
-    if (billing === 'annual') {
-        basePrice = selectedPlan.annual;
-    } else {
-        basePrice = selectedPlan.monthly;
-    }
-    
-    if (basePrice > 0) {
-        const subtotal = basePrice;
+    if (selectedPlan.price > 0) {
+        const subtotal = selectedPlan.price;
         const tax = subtotal * 0.16;
         const total = subtotal + tax;
         
@@ -667,7 +676,6 @@ function loadPlanDetails() {
         if (totalElement) totalElement.textContent = `$${total.toFixed(2)} MXN`;
     }
     
-    // Actualizar características
     const featuresList = document.getElementById('planFeatures');
     if (featuresList) {
         featuresList.innerHTML = selectedPlan.features.map(feature => `
@@ -679,8 +687,6 @@ function loadPlanDetails() {
     }
     
     console.log('📋 Plan details loaded:', selectedPlan.name);
-    console.log('💰 Billing period:', billing);
-    console.log('💵 Base price:', basePrice);
 }
 
 // ============================================
@@ -708,6 +714,4 @@ document.querySelectorAll('.form-input, .form-select').forEach(input => {
 
 console.log('✅ Checkout JS initialized');
 console.log('🔒 Security: PCI compliant payment processing');
-console.log('💳 Features: Country dropdown estilo registro, dynamic phone codes, logo ATTMOS');
-console.log('📅 Billing support: Monthly & Annual');
-console.log('🎨 Ready to accept payments');
+console.log('💳 Stripe integration: READY');
