@@ -215,10 +215,7 @@ func main() {
 		c.HTML(200, "billing.html", nil)
 	})
 
-	// Plans (requiere autenticación)
-	router.GET("/plans", middleware.AuthRequired(), func(c *gin.Context) {
-		c.HTML(200, "plans.html", nil)
-	})
+	router.GET("/plans", middleware.AuthRequired(), handlers.GetPlansPage)
 
 	// Checkout (requiere autenticación)
 	router.GET("/checkout", middleware.AuthRequired(), func(c *gin.Context) {
