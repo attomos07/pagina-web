@@ -102,10 +102,8 @@ func main() {
 	// RUTAS PÚBLICAS
 	// ============================================
 
-	// Landing page
-	router.GET("/", func(c *gin.Context) {
-		c.HTML(200, "index.html", nil)
-	})
+	// Landing page con precios de Stripe
+	router.GET("/", handlers.GetIndexPage)
 
 	// Autenticación tradicional
 	router.POST("/api/register", handlers.Register)
