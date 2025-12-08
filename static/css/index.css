@@ -315,11 +315,15 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 60px;
-    height: 60px;
-    border-radius: 60%;
-    border: 2px solid;
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;           /* ← Círculo perfecto */
+    border: 3px solid;
     transition: all 0.3s ease;
+    flex-shrink: 0;
+    overflow: hidden;             /* ← Evita que iconos grandes se salgan */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .social-platform-item:hover .social-icon-wrapper {
