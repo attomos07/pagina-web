@@ -28,71 +28,7 @@ func GetPlansPage(c *gin.Context) {
 	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
 
 	// Obtener precios desde Stripe
-	plans := []gin.H{
-		{
-			"id":          "proton",
-			"name":        "Plan Protón",
-			"description": "Perfecto para pequeños negocios que comienzan con chatbots.",
-			"monthly": gin.H{
-				"amount":  getStripePriceAmount("STRIPE_PROTON_MONTHLY_PRICE_ID"),
-				"priceId": os.Getenv("STRIPE_PROTON_MONTHLY_PRICE_ID"),
-			},
-			"annual": gin.H{
-				"amount":  getStripePriceAmount("STRIPE_PROTON_ANNUAL_PRICE_ID"),
-				"priceId": os.Getenv("STRIPE_PROTON_ANNUAL_PRICE_ID"),
-			},
-			"features": []string{
-				"1 Chatbot incluido",
-				"1,000 mensajes/mes",
-				"Integración WhatsApp",
-				"Soporte por email",
-				"Panel básico de analytics",
-			},
-		},
-		{
-			"id":          "neutron",
-			"name":        "Plan Neutrón",
-			"description": "Ideal para Mipymes en crecimiento.",
-			"popular":     true,
-			"monthly": gin.H{
-				"amount":  getStripePriceAmount("STRIPE_NEUTRON_MONTHLY_PRICE_ID"),
-				"priceId": os.Getenv("STRIPE_NEUTRON_MONTHLY_PRICE_ID"),
-			},
-			"annual": gin.H{
-				"amount":  getStripePriceAmount("STRIPE_NEUTRON_ANNUAL_PRICE_ID"),
-				"priceId": os.Getenv("STRIPE_NEUTRON_ANNUAL_PRICE_ID"),
-			},
-			"features": []string{
-				"3 Chatbots incluidos",
-				"10,000 mensajes/mes",
-				"Todas las plataformas",
-				"Soporte prioritario",
-				"Analytics avanzados",
-				"Integraciones CRM",
-			},
-		},
-		{
-			"id":          "electron",
-			"name":        "Plan Electrón",
-			"description": "Plan premium con consumo ilimitado y soporte dedicado.",
-			"monthly": gin.H{
-				"amount":  getStripePriceAmount("STRIPE_ELECTRON_MONTHLY_PRICE_ID"),
-				"priceId": os.Getenv("STRIPE_ELECTRON_MONTHLY_PRICE_ID"),
-			},
-			"annual": gin.H{
-				"amount":  getStripePriceAmount("STRIPE_ELECTRON_ANNUAL_PRICE_ID"),
-				"priceId": os.Getenv("STRIPE_ELECTRON_ANNUAL_PRICE_ID"),
-			},
-			"features": []string{
-				"Chatbots ilimitados",
-				"Mensajes ilimitados",
-				"Todas las funcionalidades",
-				"Soporte dedicado 24/7",
-				"API personalizada",
-				"Onboarding personalizado",
-			},
-		},
-	}
+	plans := getPlansData()
 
 	c.HTML(http.StatusOK, "plans.html", gin.H{
 		"user":        user,
@@ -107,7 +43,17 @@ func GetIndexPage(c *gin.Context) {
 	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
 
 	// Obtener precios desde Stripe
-	plans := []gin.H{
+	plans := getPlansData()
+
+	c.HTML(http.StatusOK, "index.html", gin.H{
+		"title": "Attomos - Automatiza tu negocio con Agentes de IA",
+		"plans": plans,
+	})
+}
+
+// getPlansData obtiene los datos de los planes con precios de Stripe
+func getPlansData() []gin.H {
+	return []gin.H{
 		{
 			"id":          "proton",
 			"name":        "Plan Protón",
@@ -172,11 +118,6 @@ func GetIndexPage(c *gin.Context) {
 			},
 		},
 	}
-
-	c.HTML(http.StatusOK, "index.html", gin.H{
-		"title": "Attomos - Automatiza tu negocio con Agentes de IA",
-		"plans": plans,
-	})
 }
 
 // getStripePriceAmount obtiene el precio desde Stripe API
