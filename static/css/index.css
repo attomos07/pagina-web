@@ -170,10 +170,13 @@ body {
 
 .social-platforms-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 25px;
-    max-width: 1100px;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 30px;
+    max-width: 1200px;
     margin: 0 auto;
+    padding: 0 20px;
+    justify-content: center;        /* ← ESTO CENTRA TODO */
+    align-items: center;
 }
 
 .social-platform-item {
@@ -196,6 +199,7 @@ body {
     border: 2px solid transparent;
     width: 150px;
     height: 150px;
+    margin: 0 auto;
 }
 
 .social-platform-item:nth-child(1) { animation-delay: 0.1s; }
