@@ -285,18 +285,35 @@
    ============================================ */
 
 @media (max-width: 768px) {
-    /* Container en mobile */
+    /* Container en mobile - reorganizado */
     .nav-container {
         padding: 1rem 1.25rem;
+        justify-content: center;
+    }
+    
+    /* Botón hamburguesa a la IZQUIERDA */
+    .mobile-menu-btn {
+        display: flex;
+        position: absolute;
+        left: 1.25rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    
+    .mobile-menu-btn.active {
+        transform: translateY(-50%);
+    }
+    
+    /* Logo CENTRADO en mobile */
+    .nav-logo {
+        position: relative;
+        left: auto;
+        right: auto;
+        transform: none;
     }
     
     .nav-logo img {
         height: 32px;
-    }
-    
-    /* Mostrar botón hamburguesa en mobile */
-    .mobile-menu-btn {
-        display: flex;
     }
     
     /* Ocultar nav-auth en mobile */
@@ -327,9 +344,6 @@
         z-index: 1000;
         
         padding-top: 80px;
-        /* Reset position absolute de desktop */
-        position: fixed;
-        left: 0;
     }
     
     /* Decoración del menú mobile */
