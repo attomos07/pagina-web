@@ -85,6 +85,17 @@
     padding: 0;
     gap: 0.5rem;
     align-items: center;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Wrapper para los botones de auth */
+.nav-auth {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-left: auto;
 }
 
 .nav-item {
@@ -288,6 +299,11 @@
         display: flex;
     }
     
+    /* Ocultar nav-auth en mobile */
+    .nav-auth {
+        display: none;
+    }
+    
     /* MENU MOBILE - OCULTO POR DEFECTO */
     .nav-menu {
         position: fixed;
@@ -311,6 +327,9 @@
         z-index: 1000;
         
         padding-top: 80px;
+        /* Reset position absolute de desktop */
+        position: fixed;
+        left: 0;
     }
     
     /* Decoración del menú mobile */
@@ -359,6 +378,7 @@
     .nav-menu.active .nav-item:nth-child(4) { transition-delay: 0.25s; }
     .nav-menu.active .nav-item:nth-child(5) { transition-delay: 0.3s; }
     .nav-menu.active .nav-item:nth-child(6) { transition-delay: 0.35s; }
+    .nav-menu.active .nav-item:nth-child(7) { transition-delay: 0.4s; }
     
     /* Links en mobile */
     .nav-link {
