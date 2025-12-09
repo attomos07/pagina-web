@@ -41,7 +41,7 @@ body {
 }
 
 /* ========================================
-   PROGRESS BAR - NUEVO DISEÑO MODERNO
+   PROGRESS BAR - CYAN TO GREEN GRADIENT
 ======================================== */
 .progress-wrapper {
   background: white;
@@ -55,7 +55,10 @@ body {
   text-align: center;
   font-size: 32px;
   font-weight: 700;
-  color: #4F46E5;
+  background: linear-gradient(90deg, #06b6d4 0%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin-bottom: 16px;
   letter-spacing: -0.5px;
   transition: all 0.3s ease;
@@ -84,11 +87,11 @@ body {
 
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #4F46E5 0%, #6366F1 100%);
+  background: linear-gradient(90deg, #06b6d4 0%, #0891b2 50%, #10b981 100%);
   border-radius: 20px;
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
   width: 0%;
 }
 
@@ -131,65 +134,34 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   position: relative;
   z-index: 1;
   flex: 1;
 }
 
+/* REMOVED CIRCULAR STEP INDICATORS */
 .step-circle {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 20px;
-  color: #9ca3af;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 4px solid #E0E7FF;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.progress-step.active .step-circle {
-  background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
-  color: white;
-  transform: scale(1.15);
-  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
-  border-color: #4F46E5;
-}
-
-.progress-step.completed .step-circle {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  border-color: #10b981;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.progress-step.completed .step-circle::before {
-  content: '✓';
-  position: absolute;
-  font-size: 24px;
-  font-weight: 700;
+  display: none;
 }
 
 .step-label {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  color: #6b7280;
+  color: #9ca3af;
   text-align: center;
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .progress-step.active .step-label {
-  color: #4F46E5;
+  color: #06b6d4;
   font-weight: 700;
+  font-size: 16px;
 }
 
 .progress-step.completed .step-label {
   color: #10b981;
+  font-weight: 700;
 }
 
 /* ========================================
@@ -490,7 +462,7 @@ body {
   font-size: 15px;
   color: #111827;
   background: white;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   font-family: inherit;
 }
 
@@ -500,6 +472,7 @@ body {
   outline: none;
   border-color: #06b6d4;
   box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.1);
+  transform: translateY(-1px);
 }
 
 .form-textarea {
@@ -514,20 +487,58 @@ body {
 }
 
 /* ========================================
-   PHONE INPUT GROUP
+   PHONE INPUT GROUP - PARALLEL LAYOUT WITH SMOOTH DROPDOWN
 ======================================== */
 .phone-input-group {
-  display: flex;
+  display: grid;
+  grid-template-columns: 180px 1fr;
   gap: 16px;
-  align-items: flex-end;
+  align-items: flex-start;
 }
 
 .phone-prefix {
-  flex: 0 0 160px;
+  width: 100%;
 }
 
 .phone-number {
-  flex: 1;
+  width: 100%;
+}
+
+/* Smooth dropdown effect for country code selector */
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+  cursor: pointer;
+}
+
+.form-select:hover {
+  border-color: #06b6d4;
+  background-color: #f9fafb;
+}
+
+.form-select:focus {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Smooth animation for dropdown opening */
+@keyframes selectDropdown {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-select:focus {
+  animation: selectDropdown 0.3s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* ========================================
@@ -840,7 +851,7 @@ input:checked + .toggle-slider:before {
 }
 
 /* ========================================
-   SCHEDULE (HORARIOS)
+   SCHEDULE (HORARIOS) - WITH SMOOTH DROPDOWN
 ======================================== */
 .schedule-list {
   display: flex;
@@ -894,6 +905,7 @@ input:checked + .toggle-slider:before {
   gap: 12px;
 }
 
+/* SMOOTH TIME INPUT WITH DROPDOWN ANIMATION */
 .time-input {
   padding: 10px 14px;
   border: 2px solid #e5e7eb;
@@ -904,6 +916,12 @@ input:checked + .toggle-slider:before {
   transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   font-family: inherit;
   flex: 1;
+  cursor: pointer;
+}
+
+.time-input:hover {
+  border-color: #06b6d4;
+  background-color: #f9fafb;
 }
 
 .time-input:focus {
@@ -911,6 +929,7 @@ input:checked + .toggle-slider:before {
   border-color: #06b6d4;
   box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
   transform: translateY(-1px);
+  animation: selectDropdown 0.3s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* Smooth animation para el dropdown de tiempo nativo */
@@ -918,11 +937,14 @@ input:checked + .toggle-slider:before {
   cursor: pointer;
   opacity: 0.6;
   transition: all 0.3s ease;
+  padding: 4px;
+  border-radius: 4px;
 }
 
 .time-input::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
   transform: scale(1.1);
+  background-color: rgba(6, 182, 212, 0.1);
 }
 
 .time-separator {
@@ -932,7 +954,7 @@ input:checked + .toggle-slider:before {
 }
 
 /* ========================================
-   HOLIDAYS (DÍAS FESTIVOS)
+   HOLIDAYS (DÍAS FESTIVOS) - WITH SMOOTH DROPDOWN
 ======================================== */
 .holidays-list {
   display: flex;
@@ -960,12 +982,20 @@ input:checked + .toggle-slider:before {
   flex: 0 0 160px;
 }
 
+/* SMOOTH DATE INPUT WITH DROPDOWN ANIMATION */
 .holiday-date .form-input {
   transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  cursor: pointer;
+}
+
+.holiday-date .form-input:hover {
+  border-color: #06b6d4;
+  background-color: #f9fafb;
 }
 
 .holiday-date .form-input:focus {
   transform: translateY(-1px);
+  animation: selectDropdown 0.3s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* Smooth animation para el dropdown de calendario nativo */
@@ -973,11 +1003,14 @@ input:checked + .toggle-slider:before {
   cursor: pointer;
   opacity: 0.6;
   transition: all 0.3s ease;
+  padding: 4px;
+  border-radius: 4px;
 }
 
 .holiday-date .form-input::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
   transform: scale(1.1);
+  background-color: rgba(6, 182, 212, 0.1);
 }
 
 .holiday-name {
@@ -1935,11 +1968,7 @@ input:checked + .toggle-slider:before {
   }
 
   .phone-input-group {
-    flex-direction: column;
-  }
-
-  .phone-prefix {
-    flex: 1;
+    grid-template-columns: 1fr;
   }
 
   .tone-radio-group {
