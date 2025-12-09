@@ -1,4 +1,6 @@
-// State Management
+// ============================================
+// STATE MANAGEMENT
+// ============================================
 let currentStep = 1;
 let selectedSocial = '';
 let userBusinessType = '';
@@ -28,10 +30,52 @@ let agentData = {
     holidays: [],
     services: [],
     workers: []
+  },
+  location: {
+    address: '',
+    postalCode: '',
+    betweenStreets: '',
+    number: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    country: ''
+  },
+  social_media: {
+    facebook: '',
+    instagram: '',
+    twitter: '',
+    linkedin: ''
   }
 };
 
-// Initialize
+// Location data
+const COUNTRIES = [
+  { value: 'mexico', name: 'México', icon: 'lni-flag-mx' },
+  { value: 'usa', name: 'Estados Unidos', icon: 'lni-flag-us' },
+  { value: 'canada', name: 'Canadá', icon: 'lni-flag-ca' },
+  { value: 'spain', name: 'España', icon: 'lni-flag-es' },
+  { value: 'argentina', name: 'Argentina', icon: 'lni-flag-ar' }
+];
+
+const STATES_MEXICO = [
+  'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
+  'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima', 'Durango', 'Guanajuato',
+  'Guerrero', 'Hidalgo', 'Jalisco', 'México', 'Michoacán', 'Morelos', 'Nayarit',
+  'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí',
+  'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas'
+];
+
+const CITIES_MEXICO = {
+  'sonora': ['Hermosillo', 'Ciudad Obregón', 'Nogales', 'San Luis Río Colorado', 'Navojoa', 
+             'Guaymas', 'Empalme', 'Agua Prieta', 'Caborca', 'Cananea', 'Puerto Peñasco'],
+  'default': ['Ciudad de México', 'Guadalajara', 'Monterrey', 'Puebla', 'Tijuana', 
+              'León', 'Juárez', 'Zapopan', 'Mérida', 'Cancún']
+};
+
+// ============================================
+// INITIALIZE
+// ============================================
 document.addEventListener('DOMContentLoaded', function() {
   fetchUserData();
   initializeSocialSelection();
@@ -44,9 +88,655 @@ document.addEventListener('DOMContentLoaded', function() {
   initializeHolidays();
   initializeServices();
   initializeWorkers();
+  initializeLocationDropdowns();
+  initializeSocialMediaInputs();
+  
+  // Inicializar custom pickers
+  setTimeout(() => {
+    initBusinessTimePickers();
+    initHolidayDatePickers();
+    initWorkerTimePickers();
+  }, 100);
 });
 
-// Fetch User Data
+// ============================================
+// CUSTOM TIME PICKER - BUSINESS HOURS
+// ============================================
+function initBusinessTimePickers() {
+  console.log('🕐 Inicializando Time Pickers del negocio...');
+  
+  const timeInputs = document.querySelectorAll('.time-input');
+  
+  timeInputs.forEach(input => {
+    const parent = input.closest('.schedule-day');
+    if (parent && !input.dataset.useCustom) {
+      convertToCustomTimePicker(input);
+    }
+  });
+}
+
+function convertToCustomTimePicker(nativeInput) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'custom-time-wrapper';
+  
+  const customInput = document.createElement('input');
+  customInput.type = 'text';
+  customInput.className = 'time-input-custom';
+  customInput.value = formatTimeDisplay(nativeInput.value || '09:00');
+  customInput.readOnly = true;
+  
+  if (nativeInput.disabled) {
+    customInput.disabled = true;
+    wrapper.classList.add('disabled');
+  }
+  
+  const arrow = document.createElement('i');
+  arrow.className = 'lni lni-chevron-down time-arrow';
+  
+  const dropdown = document.createElement('div');
+  dropdown.className = 'time-dropdown';
+  
+  const columnsContainer = document.createElement('div');
+  columnsContainer.className = 'time-picker-columns';
+  
+  const initialTime = parseTime(nativeInput.value || '09:00');
+  
+  const hoursColumn = createTimeColumn('Hora', generateHours(), initialTime.hour);
+  const minutesColumn = createTimeColumn('Min', generateMinutes(), initialTime.minute);
+  const periodColumn = createTimeColumn('', ['AM', 'PM'], initialTime.period);
+  
+  columnsContainer.appendChild(hoursColumn);
+  columnsContainer.appendChild(minutesColumn);
+  columnsContainer.appendChild(periodColumn);
+  
+  const footer = document.createElement('div');
+  footer.className = 'time-picker-footer';
+  
+  const cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'time-picker-btn time-picker-cancel';
+  cancelBtn.textContent = 'Cancelar';
+  cancelBtn.onclick = (e) => {
+    e.stopPropagation();
+    closeBusinessDropdown(wrapper);
+  };
+  
+  const confirmBtn = document.createElement('button');
+  confirmBtn.type = 'button';
+  confirmBtn.className = 'time-picker-btn time-picker-confirm';
+  confirmBtn.textContent = 'Aceptar';
+  confirmBtn.onclick = (e) => {
+    e.stopPropagation();
+    applyBusinessTime(wrapper, nativeInput, customInput, hoursColumn, minutesColumn, periodColumn);
+  };
+  
+  footer.appendChild(cancelBtn);
+  footer.appendChild(confirmBtn);
+  
+  dropdown.appendChild(columnsContainer);
+  dropdown.appendChild(footer);
+  
+  customInput.addEventListener('click', (e) => {
+    if (!customInput.disabled) {
+      e.stopPropagation();
+      toggleBusinessDropdown(wrapper);
+    }
+  });
+  
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target)) {
+      closeBusinessDropdown(wrapper);
+    }
+  });
+  
+  wrapper.appendChild(customInput);
+  wrapper.appendChild(arrow);
+  wrapper.appendChild(dropdown);
+  
+  nativeInput.parentNode.insertBefore(wrapper, nativeInput);
+  nativeInput.style.display = 'none';
+  nativeInput.dataset.useCustom = 'true';
+  
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.attributeName === 'disabled') {
+        customInput.disabled = nativeInput.disabled;
+        if (nativeInput.disabled) {
+          wrapper.classList.add('disabled');
+          closeBusinessDropdown(wrapper);
+        } else {
+          wrapper.classList.remove('disabled');
+        }
+      }
+    });
+  });
+  
+  observer.observe(nativeInput, { attributes: true });
+}
+
+function createTimeColumn(label, options, selectedValue) {
+  const column = document.createElement('div');
+  column.className = 'time-column';
+  
+  if (label) {
+    const header = document.createElement('div');
+    header.className = 'time-column-header';
+    header.textContent = label;
+    column.appendChild(header);
+  }
+  
+  options.forEach(option => {
+    const optionElement = document.createElement('div');
+    optionElement.className = 'time-column-option';
+    optionElement.textContent = option;
+    optionElement.dataset.value = option;
+    
+    if (option === selectedValue) {
+      optionElement.classList.add('selected');
+      setTimeout(() => {
+        optionElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }, 50);
+    }
+    
+    optionElement.addEventListener('click', (e) => {
+      e.stopPropagation();
+      column.querySelectorAll('.time-column-option').forEach(opt => {
+        opt.classList.remove('selected');
+      });
+      optionElement.classList.add('selected');
+    });
+    
+    column.appendChild(optionElement);
+  });
+  
+  return column;
+}
+
+function generateHours() {
+  const hours = [];
+  for (let i = 1; i <= 12; i++) {
+    hours.push(i.toString().padStart(2, '0'));
+  }
+  return hours;
+}
+
+function generateMinutes() {
+  return ['00', '15', '30', '45'];
+}
+
+function parseTime(time24) {
+  const [hours, minutes] = time24.split(':');
+  let hour = parseInt(hours);
+  const period = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12 || 12;
+  
+  return {
+    hour: hour.toString().padStart(2, '0'),
+    minute: minutes,
+    period: period
+  };
+}
+
+function formatTimeDisplay(time24) {
+  const parsed = parseTime(time24);
+  return `${parsed.hour}:${parsed.minute} ${parsed.period}`;
+}
+
+function toggleBusinessDropdown(wrapper) {
+  const isActive = wrapper.classList.contains('active');
+  
+  if (isActive) {
+    closeBusinessDropdown(wrapper);
+  } else {
+    openBusinessDropdown(wrapper);
+  }
+}
+
+function openBusinessDropdown(wrapper) {
+  wrapper.classList.add('active');
+  wrapper.querySelector('.time-input-custom').classList.add('active');
+}
+
+function closeBusinessDropdown(wrapper) {
+  wrapper.classList.remove('active');
+  const input = wrapper.querySelector('.time-input-custom');
+  if (input) {
+    input.classList.remove('active');
+  }
+}
+
+function applyBusinessTime(wrapper, nativeInput, customInput, hoursColumn, minutesColumn, periodColumn) {
+  const selectedHour = hoursColumn.querySelector('.time-column-option.selected');
+  const selectedMinute = minutesColumn.querySelector('.time-column-option.selected');
+  const selectedPeriod = periodColumn.querySelector('.time-column-option.selected');
+  
+  if (!selectedHour || !selectedMinute || !selectedPeriod) {
+    return;
+  }
+  
+  let hour = parseInt(selectedHour.dataset.value);
+  const minute = selectedMinute.dataset.value;
+  const period = selectedPeriod.dataset.value;
+  
+  if (period === 'PM' && hour !== 12) {
+    hour += 12;
+  } else if (period === 'AM' && hour === 12) {
+    hour = 0;
+  }
+  
+  const time24 = `${hour.toString().padStart(2, '0')}:${minute}`;
+  const timeDisplay = `${selectedHour.dataset.value}:${minute} ${period}`;
+  
+  nativeInput.value = time24;
+  customInput.value = timeDisplay;
+  
+  const event = new Event('change', { bubbles: true });
+  nativeInput.dispatchEvent(event);
+  
+  closeBusinessDropdown(wrapper);
+}
+
+// ============================================
+// CUSTOM DATE PICKER - HOLIDAYS
+// ============================================
+function initHolidayDatePickers() {
+  console.log('📅 Inicializando Date Pickers de festivos...');
+  
+  const holidaysList = document.getElementById('holidaysList');
+  if (!holidaysList) return;
+  
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === 1 && node.classList.contains('holiday-item')) {
+          const dateInput = node.querySelector('.holiday-date-input');
+          if (dateInput && !dateInput.dataset.useCustom) {
+            convertToCustomDatePicker(dateInput);
+          }
+        }
+      });
+    });
+  });
+  
+  observer.observe(holidaysList, { childList: true });
+  
+  document.querySelectorAll('.holiday-date-input').forEach(input => {
+    if (!input.dataset.useCustom) {
+      convertToCustomDatePicker(input);
+    }
+  });
+}
+
+function convertToCustomDatePicker(nativeInput) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'custom-date-wrapper';
+  
+  const customInput = document.createElement('input');
+  customInput.type = 'text';
+  customInput.className = 'date-input-custom';
+  customInput.value = formatDisplayDate(nativeInput.value || '');
+  customInput.readOnly = true;
+  customInput.placeholder = 'Selecciona una fecha';
+  
+  const arrow = document.createElement('i');
+  arrow.className = 'lni lni-calendar date-arrow';
+  
+  const dropdown = document.createElement('div');
+  dropdown.className = 'date-dropdown';
+  
+  const currentDate = new Date();
+  let currentMonth = currentDate.getMonth();
+  let currentYear = currentDate.getFullYear();
+  
+  function renderCalendar() {
+    dropdown.innerHTML = '';
+    
+    const header = document.createElement('div');
+    header.className = 'date-picker-header';
+    
+    const nav = document.createElement('div');
+    nav.className = 'date-picker-nav';
+    
+    const prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.innerHTML = '<i class="lni lni-chevron-left"></i>';
+    prevBtn.onclick = (e) => {
+      e.stopPropagation();
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+      renderCalendar();
+    };
+    
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.innerHTML = '<i class="lni lni-chevron-right"></i>';
+    nextBtn.onclick = (e) => {
+      e.stopPropagation();
+      currentMonth++;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+      renderCalendar();
+    };
+    
+    nav.appendChild(prevBtn);
+    nav.appendChild(nextBtn);
+    
+    const current = document.createElement('div');
+    current.className = 'date-picker-current';
+    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    current.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+    
+    header.appendChild(nav);
+    header.appendChild(current);
+    dropdown.appendChild(header);
+    
+    const calendar = document.createElement('div');
+    calendar.className = 'date-picker-calendar';
+    
+    const weekdays = document.createElement('div');
+    weekdays.className = 'date-picker-weekdays';
+    ['D', 'L', 'M', 'M', 'J', 'V', 'S'].forEach(day => {
+      const weekday = document.createElement('div');
+      weekday.className = 'date-picker-weekday';
+      weekday.textContent = day;
+      weekdays.appendChild(weekday);
+    });
+    calendar.appendChild(weekdays);
+    
+    const days = document.createElement('div');
+    days.className = 'date-picker-days';
+    
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+    
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const day = document.createElement('div');
+      day.className = 'date-picker-day other-month';
+      day.textContent = daysInPrevMonth - i;
+      days.appendChild(day);
+    }
+    
+    const today = new Date();
+    const selectedDate = nativeInput.value ? new Date(nativeInput.value + 'T00:00:00') : null;
+    
+    for (let i = 1; i <= daysInMonth; i++) {
+      const day = document.createElement('div');
+      day.className = 'date-picker-day';
+      day.textContent = i;
+      
+      const thisDate = new Date(currentYear, currentMonth, i);
+      
+      if (today.toDateString() === thisDate.toDateString()) {
+        day.classList.add('today');
+      }
+      
+      if (selectedDate && selectedDate.toDateString() === thisDate.toDateString()) {
+        day.classList.add('selected');
+      }
+      
+      day.onclick = (e) => {
+        e.stopPropagation();
+        selectDate(wrapper, nativeInput, customInput, currentYear, currentMonth, i);
+      };
+      
+      days.appendChild(day);
+    }
+    
+    const totalCells = days.children.length;
+    const remainingCells = 42 - totalCells;
+    for (let i = 1; i <= remainingCells; i++) {
+      const day = document.createElement('div');
+      day.className = 'date-picker-day other-month';
+      day.textContent = i;
+      days.appendChild(day);
+    }
+    
+    calendar.appendChild(days);
+    dropdown.appendChild(calendar);
+  }
+  
+  renderCalendar();
+  
+  customInput.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleDateDropdown(wrapper);
+  });
+  
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target)) {
+      closeDateDropdown(wrapper);
+    }
+  });
+  
+  wrapper.appendChild(customInput);
+  wrapper.appendChild(arrow);
+  wrapper.appendChild(dropdown);
+  
+  nativeInput.parentNode.insertBefore(wrapper, nativeInput);
+  nativeInput.style.display = 'none';
+  nativeInput.dataset.useCustom = 'true';
+}
+
+function toggleDateDropdown(wrapper) {
+  const isActive = wrapper.classList.contains('active');
+  
+  if (isActive) {
+    closeDateDropdown(wrapper);
+  } else {
+    openDateDropdown(wrapper);
+  }
+}
+
+function openDateDropdown(wrapper) {
+  wrapper.classList.add('active');
+  wrapper.querySelector('.date-input-custom').classList.add('active');
+}
+
+function closeDateDropdown(wrapper) {
+  wrapper.classList.remove('active');
+  wrapper.querySelector('.date-input-custom').classList.remove('active');
+}
+
+function selectDate(wrapper, nativeInput, customInput, year, month, day) {
+  const date = new Date(year, month, day);
+  const dateString = date.toISOString().split('T')[0];
+  
+  nativeInput.value = dateString;
+  customInput.value = formatDisplayDate(dateString);
+  
+  const event = new Event('change', { bubbles: true });
+  nativeInput.dispatchEvent(event);
+  
+  closeDateDropdown(wrapper);
+}
+
+function formatDisplayDate(dateString) {
+  if (!dateString) return '';
+  
+  const date = new Date(dateString + 'T00:00:00');
+  const day = date.getDate();
+  const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+                      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  
+  return `${day} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+// ============================================
+// CUSTOM TIME PICKER - WORKERS
+// ============================================
+function initWorkerTimePickers() {
+  console.log('👷 Inicializando Time Pickers de trabajadores...');
+  
+  const workersList = document.getElementById('workersList');
+  if (!workersList) return;
+  
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === 1 && node.classList.contains('worker-item')) {
+          const startTime = node.querySelector('.worker-start-time');
+          const endTime = node.querySelector('.worker-end-time');
+          
+          if (startTime && !startTime.dataset.useCustom) {
+            convertToWorkerTimePicker(startTime);
+          }
+          if (endTime && !endTime.dataset.useCustom) {
+            convertToWorkerTimePicker(endTime);
+          }
+        }
+      });
+    });
+  });
+  
+  observer.observe(workersList, { childList: true, subtree: true });
+  
+  document.querySelectorAll('.worker-start-time, .worker-end-time').forEach(input => {
+    if (!input.dataset.useCustom) {
+      convertToWorkerTimePicker(input);
+    }
+  });
+}
+
+function convertToWorkerTimePicker(nativeInput) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'worker-time-wrapper';
+  
+  const customInput = document.createElement('input');
+  customInput.type = 'text';
+  customInput.className = 'worker-time-input-custom';
+  customInput.value = formatTimeDisplay(nativeInput.value || '09:00');
+  customInput.readOnly = true;
+  
+  const arrow = document.createElement('i');
+  arrow.className = 'lni lni-chevron-down worker-time-arrow';
+  
+  const dropdown = document.createElement('div');
+  dropdown.className = 'worker-time-dropdown';
+  
+  const columnsContainer = document.createElement('div');
+  columnsContainer.className = 'time-picker-columns';
+  
+  const initialTime = parseTime(nativeInput.value || '09:00');
+  
+  const hoursColumn = createTimeColumn('Hora', generateHours(), initialTime.hour);
+  const minutesColumn = createTimeColumn('Min', generateMinutes(), initialTime.minute);
+  const periodColumn = createTimeColumn('', ['AM', 'PM'], initialTime.period);
+  
+  columnsContainer.appendChild(hoursColumn);
+  columnsContainer.appendChild(minutesColumn);
+  columnsContainer.appendChild(periodColumn);
+  
+  const footer = document.createElement('div');
+  footer.className = 'time-picker-footer';
+  
+  const cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'time-picker-btn time-picker-cancel';
+  cancelBtn.textContent = 'Cancelar';
+  cancelBtn.onclick = (e) => {
+    e.stopPropagation();
+    closeWorkerDropdown(wrapper);
+  };
+  
+  const confirmBtn = document.createElement('button');
+  confirmBtn.type = 'button';
+  confirmBtn.className = 'time-picker-btn time-picker-confirm';
+  confirmBtn.textContent = 'Aceptar';
+  confirmBtn.onclick = (e) => {
+    e.stopPropagation();
+    applyWorkerTime(wrapper, nativeInput, customInput, hoursColumn, minutesColumn, periodColumn);
+  };
+  
+  footer.appendChild(cancelBtn);
+  footer.appendChild(confirmBtn);
+  
+  dropdown.appendChild(columnsContainer);
+  dropdown.appendChild(footer);
+  
+  customInput.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleWorkerDropdown(wrapper);
+  });
+  
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target)) {
+      closeWorkerDropdown(wrapper);
+    }
+  });
+  
+  wrapper.appendChild(customInput);
+  wrapper.appendChild(arrow);
+  wrapper.appendChild(dropdown);
+  
+  nativeInput.parentNode.insertBefore(wrapper, nativeInput);
+  nativeInput.style.display = 'none';
+  nativeInput.dataset.useCustom = 'true';
+}
+
+function toggleWorkerDropdown(wrapper) {
+  const isActive = wrapper.classList.contains('active');
+  
+  if (isActive) {
+    closeWorkerDropdown(wrapper);
+  } else {
+    openWorkerDropdown(wrapper);
+  }
+}
+
+function openWorkerDropdown(wrapper) {
+  wrapper.classList.add('active');
+  wrapper.querySelector('.worker-time-input-custom').classList.add('active');
+}
+
+function closeWorkerDropdown(wrapper) {
+  wrapper.classList.remove('active');
+  const input = wrapper.querySelector('.worker-time-input-custom');
+  if (input) {
+    input.classList.remove('active');
+  }
+}
+
+function applyWorkerTime(wrapper, nativeInput, customInput, hoursColumn, minutesColumn, periodColumn) {
+  const selectedHour = hoursColumn.querySelector('.time-column-option.selected');
+  const selectedMinute = minutesColumn.querySelector('.time-column-option.selected');
+  const selectedPeriod = periodColumn.querySelector('.time-column-option.selected');
+  
+  if (!selectedHour || !selectedMinute || !selectedPeriod) {
+    return;
+  }
+  
+  let hour = parseInt(selectedHour.dataset.value);
+  const minute = selectedMinute.dataset.value;
+  const period = selectedPeriod.dataset.value;
+  
+  if (period === 'PM' && hour !== 12) {
+    hour += 12;
+  } else if (period === 'AM' && hour === 12) {
+    hour = 0;
+  }
+  
+  const time24 = `${hour.toString().padStart(2, '0')}:${minute}`;
+  const timeDisplay = `${selectedHour.dataset.value}:${minute} ${period}`;
+  
+  nativeInput.value = time24;
+  customInput.value = timeDisplay;
+  
+  const event = new Event('change', { bubbles: true });
+  nativeInput.dispatchEvent(event);
+  
+  closeWorkerDropdown(wrapper);
+}
+
+// ============================================
+// USER DATA
+// ============================================
 async function fetchUserData() {
   try {
     const response = await fetch('/api/me', {
@@ -64,7 +754,9 @@ async function fetchUserData() {
   }
 }
 
-// Social Network Selection
+// ============================================
+// SOCIAL NETWORK SELECTION
+// ============================================
 function initializeSocialSelection() {
   const socialInputs = document.querySelectorAll('input[name="social"]');
   const btnStep1 = document.getElementById('btnStep1');
@@ -74,12 +766,13 @@ function initializeSocialSelection() {
       selectedSocial = this.value;
       agentData.social = this.value;
       btnStep1.disabled = false;
-      console.log('Red social seleccionada:', selectedSocial);
     });
   });
 }
 
-// Phone Toggle
+// ============================================
+// PHONE TOGGLE
+// ============================================
 function initializePhoneToggle() {
   const phoneToggle = document.getElementById('phoneToggle');
   const differentPhoneSection = document.getElementById('differentPhoneSection');
@@ -98,7 +791,9 @@ function initializePhoneToggle() {
   }
 }
 
-// Tone Selection
+// ============================================
+// TONE SELECTION
+// ============================================
 function initializeToneSelection() {
   const toneInputs = document.querySelectorAll('input[name="tone"]');
   const customToneEditor = document.getElementById('customToneEditor');
@@ -122,7 +817,9 @@ function initializeToneSelection() {
   });
 }
 
-// Language Selection
+// ============================================
+// LANGUAGE SELECTION
+// ============================================
 function initializeLanguageSelection() {
   const languageCheckboxes = document.querySelectorAll('input[name="additionalLanguage"]');
   
@@ -135,12 +832,13 @@ function initializeLanguageSelection() {
       } else {
         agentData.config.additionalLanguages = agentData.config.additionalLanguages.filter(lang => lang !== this.value);
       }
-      console.log('Idiomas adicionales seleccionados:', agentData.config.additionalLanguages);
     });
   });
 }
 
-// Rich Text Editor
+// ============================================
+// RICH TEXT EDITOR
+// ============================================
 function initializeRichEditor() {
   const editorContent = document.getElementById('editorContent');
   if (!editorContent) return;
@@ -183,7 +881,9 @@ function initializeRichEditor() {
   });
 }
 
-// Schedule Management
+// ============================================
+// SCHEDULE MANAGEMENT
+// ============================================
 function initializeSchedule() {
   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   
@@ -224,7 +924,9 @@ function initializeSchedule() {
   });
 }
 
-// Holidays Management
+// ============================================
+// HOLIDAYS MANAGEMENT
+// ============================================
 function initializeHolidays() {
   const addHolidayBtn = document.getElementById('addHolidayBtn');
   
@@ -281,10 +983,11 @@ function updateHolidaysData() {
     }
   });
   agentData.config.holidays = holidays;
-  console.log('Días festivos:', holidays);
 }
 
-// Services Management
+// ============================================
+// SERVICES MANAGEMENT
+// ============================================
 function initializeServices() {
   const addServiceBtn = document.getElementById('addServiceBtn');
   
@@ -377,7 +1080,6 @@ function addService() {
   
   servicesList.appendChild(serviceItem);
   
-  // Inicializar editor de texto enriquecido
   const editorButtons = serviceItem.querySelectorAll('.service-editor-btn');
   const editorContent = serviceItem.querySelector('.service-editor-content');
   
@@ -393,7 +1095,6 @@ function addService() {
     updateServicesData();
   });
   
-  // Price type selector
   const priceTypeOptions = serviceItem.querySelectorAll('.price-type-option');
   const promotionPrices = serviceItem.querySelector('.promotion-prices');
   const normalPrice = serviceItem.querySelector('.price-normal');
@@ -414,7 +1115,6 @@ function addService() {
     });
   });
   
-  // Update data on input
   serviceItem.querySelectorAll('input, textarea').forEach(input => {
     input.addEventListener('input', updateServicesData);
   });
@@ -426,7 +1126,6 @@ function removeService(serviceId) {
     serviceItem.remove();
     updateServicesData();
     
-    // Renumber services
     document.querySelectorAll('.service-item').forEach((item, index) => {
       const numberDiv = item.querySelector('.service-number');
       if (numberDiv) {
@@ -465,10 +1164,11 @@ function updateServicesData() {
     }
   });
   agentData.config.services = services;
-  console.log('Servicios:', services);
 }
 
-// Workers Management
+// ============================================
+// WORKERS MANAGEMENT
+// ============================================
 function initializeWorkers() {
   const addWorkerBtn = document.getElementById('addWorkerBtn');
   
@@ -549,7 +1249,6 @@ function addWorker() {
   
   workersList.appendChild(workerItem);
   
-  // Update data on input
   workerItem.querySelectorAll('input').forEach(input => {
     input.addEventListener('input', updateWorkersData);
     input.addEventListener('change', updateWorkersData);
@@ -562,7 +1261,6 @@ function removeWorker(workerId) {
     workerItem.remove();
     updateWorkersData();
     
-    // Renumber workers
     document.querySelectorAll('.worker-item').forEach((item, index) => {
       const numberDiv = item.querySelector('.worker-number');
       if (numberDiv) {
@@ -594,10 +1292,202 @@ function updateWorkersData() {
     }
   });
   agentData.config.workers = workers;
-  console.log('Trabajadores:', workers);
 }
 
-// Navigation
+// ============================================
+// LOCATION DROPDOWNS
+// ============================================
+function initializeLocationDropdowns() {
+  createLocationDropdown('countryInput', COUNTRIES, 'Selecciona un país');
+  createLocationDropdown('stateInput', STATES_MEXICO.map(s => ({ 
+    value: s.toLowerCase().replace(/\s+/g, '-'), 
+    name: s 
+  })), 'Selecciona un estado');
+  createLocationDropdown('cityInput', CITIES_MEXICO.default.map(c => ({ 
+    value: c.toLowerCase().replace(/\s+/g, '-'), 
+    name: c 
+  })), 'Selecciona una ciudad');
+}
+
+function createLocationDropdown(inputId, options, placeholder) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'location-dropdown-wrapper';
+  
+  const displayInput = document.createElement('input');
+  displayInput.type = 'text';
+  displayInput.className = 'form-input location-select';
+  displayInput.placeholder = placeholder;
+  displayInput.readOnly = true;
+  
+  const arrow = document.createElement('i');
+  arrow.className = 'lni lni-chevron-down location-arrow';
+  
+  const dropdown = document.createElement('div');
+  dropdown.className = 'location-dropdown';
+  
+  const searchContainer = document.createElement('div');
+  searchContainer.className = 'location-search-container';
+  searchContainer.innerHTML = `
+    <i class="lni lni-search-alt location-search-icon"></i>
+    <input type="text" class="location-search" placeholder="Buscar..." autocomplete="off">
+  `;
+  
+  const optionsContainer = document.createElement('div');
+  optionsContainer.className = 'location-options-container';
+  
+  options.forEach(opt => {
+    const option = document.createElement('div');
+    option.className = 'location-option';
+    option.setAttribute('data-value', opt.value);
+    option.innerHTML = `
+      ${opt.icon ? `<i class="lni ${opt.icon}"></i>` : '<i class="lni lni-map-marker"></i>'}
+      <span>${opt.name}</span>
+    `;
+    optionsContainer.appendChild(option);
+  });
+  
+  dropdown.appendChild(searchContainer);
+  dropdown.appendChild(optionsContainer);
+  wrapper.appendChild(displayInput);
+  wrapper.appendChild(arrow);
+  wrapper.appendChild(dropdown);
+  
+  input.parentNode.insertBefore(wrapper, input);
+  input.style.display = 'none';
+  
+  const searchInput = searchContainer.querySelector('.location-search');
+  const selectOptions = optionsContainer.querySelectorAll('.location-option');
+  
+  displayInput.addEventListener('click', function(e) {
+    e.stopPropagation();
+    toggleLocationDropdown(wrapper, searchInput, selectOptions);
+  });
+  
+  searchInput.addEventListener('input', function() {
+    filterLocationOptions(this.value, selectOptions);
+  });
+  
+  searchInput.addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+  
+  selectOptions.forEach(option => {
+    option.addEventListener('click', function(e) {
+      e.stopPropagation();
+      selectLocationOption(this, displayInput, input, wrapper, selectOptions, inputId);
+    });
+  });
+  
+  document.addEventListener('click', function(e) {
+    if (!wrapper.contains(e.target)) {
+      closeLocationDropdown(wrapper);
+    }
+  });
+}
+
+function toggleLocationDropdown(wrapper, searchInput, options) {
+  const isActive = wrapper.classList.contains('active');
+  
+  document.querySelectorAll('.location-dropdown-wrapper.active').forEach(w => {
+    if (w !== wrapper) w.classList.remove('active');
+  });
+  
+  if (isActive) {
+    closeLocationDropdown(wrapper);
+  } else {
+    wrapper.classList.add('active');
+    setTimeout(() => searchInput.focus(), 100);
+    searchInput.value = '';
+    options.forEach(opt => opt.classList.remove('hidden'));
+  }
+}
+
+function closeLocationDropdown(wrapper) {
+  wrapper.classList.remove('active');
+  const searchInput = wrapper.querySelector('.location-search');
+  if (searchInput) searchInput.value = '';
+}
+
+function filterLocationOptions(searchTerm, options) {
+  const term = searchTerm.toLowerCase().trim();
+  options.forEach(option => {
+    const text = option.querySelector('span')?.textContent.toLowerCase() || '';
+    if (text.includes(term)) {
+      option.classList.remove('hidden');
+    } else {
+      option.classList.add('hidden');
+    }
+  });
+}
+
+function selectLocationOption(option, displayInput, hiddenInput, wrapper, allOptions, inputId) {
+  const value = option.getAttribute('data-value');
+  const text = option.querySelector('span')?.textContent;
+  
+  displayInput.value = text;
+  hiddenInput.value = text;
+  hiddenInput.setAttribute('data-value', value);
+  
+  allOptions.forEach(opt => opt.classList.remove('selected'));
+  option.classList.add('selected');
+  
+  // Update agentData
+  if (inputId === 'countryInput') {
+    agentData.location.country = text;
+  } else if (inputId === 'stateInput') {
+    agentData.location.state = text;
+  } else if (inputId === 'cityInput') {
+    agentData.location.city = text;
+  }
+  
+  closeLocationDropdown(wrapper);
+}
+
+// ============================================
+// SOCIAL MEDIA INPUTS
+// ============================================
+function initializeSocialMediaInputs() {
+  const socialInputs = {
+    'facebookInput': 'facebook',
+    'instagramInput': 'instagram',
+    'twitterInput': 'twitter',
+    'linkedinInput': 'linkedin'
+  };
+  
+  Object.keys(socialInputs).forEach(inputId => {
+    const input = document.getElementById(inputId);
+    if (input) {
+      input.addEventListener('input', function() {
+        agentData.social_media[socialInputs[inputId]] = this.value;
+      });
+    }
+  });
+  
+  // Location text inputs
+  const locationInputs = {
+    'addressInput': 'address',
+    'postalCodeInput': 'postalCode',
+    'betweenStreetsInput': 'betweenStreets',
+    'numberInput': 'number',
+    'neighborhoodInput': 'neighborhood'
+  };
+  
+  Object.keys(locationInputs).forEach(inputId => {
+    const input = document.getElementById(inputId);
+    if (input) {
+      input.addEventListener('input', function() {
+        agentData.location[locationInputs[inputId]] = this.value;
+      });
+    }
+  });
+}
+
+// ============================================
+// NAVIGATION
+// ============================================
 function initializeNavigationButtons() {
   document.getElementById('btnStep1').addEventListener('click', () => nextStep());
   document.getElementById('btnBackStep2').addEventListener('click', () => previousStep());
@@ -692,20 +1582,16 @@ function updateProgressBar() {
     }
   });
 
-  // Calcular progreso (0%, 50%, 100%)
   const targetProgress = ((currentStep - 1) / 2) * 100;
   
-  // Actualizar barra de progreso tradicional (oculta)
   if (progressFill) {
     progressFill.style.width = targetProgress + '%';
   }
   
-  // Actualizar nueva barra de progreso moderna
   if (progressBarFill) {
     progressBarFill.style.width = targetProgress + '%';
   }
   
-  // Animar porcentaje con conteo
   if (progressPercentage) {
     const currentProgress = parseInt(progressPercentage.textContent) || 0;
     animatePercentage(currentProgress, targetProgress, progressPercentage);
@@ -720,7 +1606,6 @@ function animatePercentage(start, end, element) {
     const elapsed = currentTime - startTime;
     const progress = Math.min(elapsed / duration, 1);
     
-    // Easing function para animación suave
     const easeOutCubic = 1 - Math.pow(1 - progress, 3);
     const current = Math.round(start + (end - start) * easeOutCubic);
     
@@ -743,7 +1628,7 @@ function collectFormData() {
     const phoneNumber = document.getElementById('phoneNumber').value;
     agentData.phoneNumber = countryCode + phoneNumber;
   } else {
-    agentData.phoneNumber = ''; // Will use user's registered phone
+    agentData.phoneNumber = '';
   }
 
   const tone = document.querySelector('input[name="tone"]:checked');
@@ -756,12 +1641,9 @@ function collectFormData() {
       }
     }
   }
-
-  // Languages are already updated in real-time
-  // Schedule is already updated in real-time
-  // Holidays are already updated in real-time
-  // Services are already updated in real-time
-  // Workers are already updated in real-time
+  
+  // Location data is already being collected in real-time via initializeSocialMediaInputs
+  // Social media data is already being collected in real-time via initializeSocialMediaInputs
 }
 
 function generateSummary() {
@@ -843,7 +1725,6 @@ function generateSummary() {
     </div>
   `;
   
-  // Schedule summary
   const openDays = Object.keys(agentData.config.schedule).filter(day => agentData.config.schedule[day].open);
   if (openDays.length > 0) {
     html += `
@@ -862,7 +1743,6 @@ function generateSummary() {
     `;
   }
   
-  // Holidays summary
   if (agentData.config.holidays.length > 0) {
     html += `
       <div class="summary-section">
@@ -877,7 +1757,6 @@ function generateSummary() {
     `;
   }
   
-  // Services summary
   if (agentData.config.services.length > 0) {
     html += `
       <div class="summary-section">
@@ -900,7 +1779,96 @@ function generateSummary() {
     `;
   }
   
-  // Workers summary
+  // Location summary
+  if (agentData.location.address || agentData.location.city) {
+    html += `
+      <div class="summary-section">
+        <h3 class="summary-section-title">
+          <i class="lni lni-map-marker"></i>
+          Ubicación
+        </h3>
+        ${agentData.location.address ? `
+        <div class="summary-item">
+          <span class="summary-label">Dirección:</span>
+          <span class="summary-value">${agentData.location.address}</span>
+        </div>
+        ` : ''}
+        ${agentData.location.number ? `
+        <div class="summary-item">
+          <span class="summary-label">Número:</span>
+          <span class="summary-value">${agentData.location.number}</span>
+        </div>
+        ` : ''}
+        ${agentData.location.neighborhood ? `
+        <div class="summary-item">
+          <span class="summary-label">Colonia:</span>
+          <span class="summary-value">${agentData.location.neighborhood}</span>
+        </div>
+        ` : ''}
+        ${agentData.location.city ? `
+        <div class="summary-item">
+          <span class="summary-label">Ciudad:</span>
+          <span class="summary-value">${agentData.location.city}</span>
+        </div>
+        ` : ''}
+        ${agentData.location.state ? `
+        <div class="summary-item">
+          <span class="summary-label">Estado:</span>
+          <span class="summary-value">${agentData.location.state}</span>
+        </div>
+        ` : ''}
+        ${agentData.location.country ? `
+        <div class="summary-item">
+          <span class="summary-label">País:</span>
+          <span class="summary-value">${agentData.location.country}</span>
+        </div>
+        ` : ''}
+        ${agentData.location.postalCode ? `
+        <div class="summary-item">
+          <span class="summary-label">Código Postal:</span>
+          <span class="summary-value">${agentData.location.postalCode}</span>
+        </div>
+        ` : ''}
+      </div>
+    `;
+  }
+  
+  // Social media summary
+  if (agentData.social_media.facebook || agentData.social_media.instagram || agentData.social_media.twitter || agentData.social_media.linkedin) {
+    html += `
+      <div class="summary-section">
+        <h3 class="summary-section-title">
+          <i class="lni lni-share-alt"></i>
+          Redes Sociales
+        </h3>
+        ${agentData.social_media.facebook ? `
+        <div class="summary-item">
+          <span class="summary-label">Facebook:</span>
+          <span class="summary-value">${agentData.social_media.facebook}</span>
+        </div>
+        ` : ''}
+        ${agentData.social_media.instagram ? `
+        <div class="summary-item">
+          <span class="summary-label">Instagram:</span>
+          <span class="summary-value">${agentData.social_media.instagram}</span>
+        </div>
+        ` : ''}
+        ${agentData.social_media.twitter ? `
+        <div class="summary-item">
+          <span class="summary-label">Twitter / X:</span>
+          <span class="summary-value">${agentData.social_media.twitter}</span>
+        </div>
+        ` : ''}
+        ${agentData.social_media.linkedin ? `
+        <div class="summary-item">
+          <span class="summary-label">LinkedIn:</span>
+          <span class="summary-value">${agentData.social_media.linkedin}</span>
+        </div>
+        ` : ''}
+      </div>
+    `;
+  }
+  
   if (agentData.config.workers.length > 0) {
     html += `
       <div class="summary-section">
@@ -943,6 +1911,9 @@ function formatDay(day) {
   return dayNames[day] || day;
 }
 
+// ============================================
+// CREATE AGENT
+// ============================================
 async function createAgent() {
   document.getElementById('creatingModal').classList.add('show');
   
@@ -989,8 +1960,6 @@ async function createAgent() {
           }
           
           const statusData = await statusResp.json();
-          
-          console.log('Estado actual:', statusData.agent.deployStatus);
           
           updateCreationStatus(statusData.agent.deployStatus);
           

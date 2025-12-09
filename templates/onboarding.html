@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="/static/css/sidebar.css">
     <link rel="stylesheet" href="/static/css/userbar.css">
     <link rel="stylesheet" href="/static/css/onboarding.css">
-     <link rel="stylesheet" href="/static/css/custom-pickers.css">
 </head>
 <body>
     <div class="app-container">
@@ -25,7 +24,7 @@
                             <div class="progress-bar-fill" id="progressBarFill"></div>
                         </div>
                         
-                        <!-- Steps con círculos -->
+                        <!-- Steps -->
                         <div class="progress-steps">
                             <div class="progress-line-bg">
                                 <div class="progress-line-fill" id="progressFill"></div>
@@ -53,9 +52,6 @@
                         <!-- PASO 1: Selección de Red Social -->
                         <div id="step1" class="step active">
                             <div class="step-header">
-                                <div class="step-icon">
-                                    <i class="lni lni-network"></i>
-                                </div>
                                 <h2 class="step-title">Selecciona tu Red Social</h2>
                                 <p class="step-description">Elige la plataforma donde operará tu agente de IA</p>
                             </div>
@@ -154,9 +150,6 @@
                         <!-- PASO 2: Configuración -->
                         <div id="step2" class="step">
                             <div class="step-header">
-                                <div class="step-icon">
-                                    <i class="lni lni-cog"></i>
-                                </div>
                                 <h2 class="step-title">Configuración del Agente</h2>
                                 <p class="step-description">Personaliza el comportamiento y características de tu agente</p>
                             </div>
@@ -243,6 +236,106 @@
                                                 <span class="language-checkbox-label">🇨🇳 Chino</span>
                                             </label>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Ubicación -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="lni lni-map-marker"></i>
+                                    Ubicación del Negocio
+                                </h3>
+                                
+                                <div class="form-grid form-grid-2col">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="lni lni-map-marker"></i>
+                                            Dirección Completa
+                                        </label>
+                                        <input type="text" id="addressInput" class="form-input" placeholder="Ej: Calle Principal #123">
+                                        <span class="form-help">Dirección completa de tu negocio</span>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">Código Postal</label>
+                                        <input type="text" id="postalCodeInput" class="form-input" placeholder="Ej: 83000">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">Entre Calles</label>
+                                        <input type="text" id="betweenStreetsInput" class="form-input" placeholder="Ej: Entre Av. Uno y Calle Dos">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">Número Exterior / Interior</label>
+                                        <input type="text" id="numberInput" class="form-input" placeholder="Ej: 123 Int. A">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">Colonia</label>
+                                        <input type="text" id="neighborhoodInput" class="form-input" placeholder="Ej: Centro">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">Ciudad</label>
+                                        <input type="text" id="cityInput" class="form-input" style="display: none;">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">Estado/Provincia</label>
+                                        <input type="text" id="stateInput" class="form-input" style="display: none;">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">País</label>
+                                        <input type="text" id="countryInput" class="form-input" style="display: none;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Redes Sociales -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="lni lni-share-alt"></i>
+                                    Redes Sociales
+                                </h3>
+                                
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="lni lni-facebook-filled"></i>
+                                            Facebook
+                                        </label>
+                                        <input type="url" id="facebookInput" class="form-input" placeholder="https://facebook.com/tunegocio">
+                                        <span class="form-help">URL de tu página de Facebook</span>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="lni lni-instagram-filled"></i>
+                                            Instagram
+                                        </label>
+                                        <input type="url" id="instagramInput" class="form-input" placeholder="https://instagram.com/tunegocio">
+                                        <span class="form-help">URL de tu perfil de Instagram</span>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="lni lni-twitter-filled"></i>
+                                            Twitter / X
+                                        </label>
+                                        <input type="url" id="twitterInput" class="form-input" placeholder="https://twitter.com/tunegocio">
+                                        <span class="form-help">URL de tu perfil de Twitter/X</span>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="lni lni-linkedin-original"></i>
+                                            LinkedIn
+                                        </label>
+                                        <input type="url" id="linkedinInput" class="form-input" placeholder="https://linkedin.com/company/tunegocio">
+                                        <span class="form-help">URL de tu página de LinkedIn</span>
                                     </div>
                                 </div>
                             </div>
@@ -531,9 +624,6 @@
                         <!-- PASO 3: Resumen -->
                         <div id="step3" class="step">
                             <div class="step-header">
-                                <div class="step-icon">
-                                    <i class="lni lni-checkmark-circle"></i>
-                                </div>
                                 <h2 class="step-title">Resumen de Configuración</h2>
                                 <p class="step-description">Revisa la información antes de crear tu agente</p>
                             </div>
@@ -671,6 +761,5 @@
     </div>
 
     <script src="/static/js/onboarding.js"></script>
-    <script src="/static/js/custom-time-picker.js"></script>
 </body>
 </html>
