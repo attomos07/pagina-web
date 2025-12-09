@@ -7,13 +7,27 @@ let agentData = {
   businessType: '',
   name: '',
   phoneNumber: '',
+  useDifferentPhone: false,
   config: {
     welcomeMessage: '',
     aiPersonality: '',
     tone: 'formal',
+    customTone: '',
     languages: [],
+    additionalLanguages: [],
     specialInstructions: '',
-    capabilities: []
+    schedule: {
+      monday: { open: true, start: '09:00', end: '18:00' },
+      tuesday: { open: true, start: '09:00', end: '18:00' },
+      wednesday: { open: true, start: '09:00', end: '18:00' },
+      thursday: { open: true, start: '09:00', end: '18:00' },
+      friday: { open: true, start: '09:00', end: '18:00' },
+      saturday: { open: false, start: '09:00', end: '14:00' },
+      sunday: { open: false, start: '09:00', end: '14:00' }
+    },
+    holidays: [],
+    services: [],
+    workers: []
   }
 };
 
@@ -22,10 +36,14 @@ document.addEventListener('DOMContentLoaded', function() {
   fetchUserData();
   initializeSocialSelection();
   initializeNavigationButtons();
-  initializeCountryDropdown();
   initializeToneSelection();
   initializeLanguageSelection();
   initializeRichEditor();
+  initializePhoneToggle();
+  initializeSchedule();
+  initializeHolidays();
+  initializeServices();
+  initializeWorkers();
 });
 
 // Fetch User Data
@@ -61,9 +79,29 @@ function initializeSocialSelection() {
   });
 }
 
+// Phone Toggle
+function initializePhoneToggle() {
+  const phoneToggle = document.getElementById('phoneToggle');
+  const differentPhoneSection = document.getElementById('differentPhoneSection');
+  
+  if (phoneToggle) {
+    phoneToggle.addEventListener('change', function() {
+      agentData.useDifferentPhone = this.checked;
+      if (differentPhoneSection) {
+        if (this.checked) {
+          differentPhoneSection.style.display = 'block';
+        } else {
+          differentPhoneSection.style.display = 'none';
+        }
+      }
+    });
+  }
+}
+
 // Tone Selection
 function initializeToneSelection() {
   const toneInputs = document.querySelectorAll('input[name="tone"]');
+  const customToneEditor = document.getElementById('customToneEditor');
   
   toneInputs.forEach(input => {
     input.addEventListener('change', function() {
@@ -73,24 +111,31 @@ function initializeToneSelection() {
       
       this.closest('.tone-radio-option').classList.add('selected');
       agentData.config.tone = this.value;
+      
+      if (this.value === 'custom') {
+        customToneEditor.classList.add('show');
+      } else {
+        customToneEditor.classList.remove('show');
+        agentData.config.customTone = '';
+      }
     });
   });
 }
 
 // Language Selection
 function initializeLanguageSelection() {
-  const languageCheckboxes = document.querySelectorAll('input[name="language"]');
+  const languageCheckboxes = document.querySelectorAll('input[name="additionalLanguage"]');
   
   languageCheckboxes.forEach(checkbox => {
     checkbox.addEventListener('change', function() {
       if (this.checked) {
-        if (!agentData.config.languages.includes(this.value)) {
-          agentData.config.languages.push(this.value);
+        if (!agentData.config.additionalLanguages.includes(this.value)) {
+          agentData.config.additionalLanguages.push(this.value);
         }
       } else {
-        agentData.config.languages = agentData.config.languages.filter(lang => lang !== this.value);
+        agentData.config.additionalLanguages = agentData.config.additionalLanguages.filter(lang => lang !== this.value);
       }
-      console.log('Idiomas seleccionados:', agentData.config.languages);
+      console.log('Idiomas adicionales seleccionados:', agentData.config.additionalLanguages);
     });
   });
 }
@@ -134,61 +179,422 @@ function initializeRichEditor() {
   }
 
   editorContent.addEventListener('input', function() {
-    agentData.config.specialInstructions = this.innerHTML;
+    agentData.config.customTone = this.innerHTML;
   });
 }
 
-// Country Dropdown
-function initializeCountryDropdown() {
-  const wrapper = document.querySelector('.country-code-wrapper');
-  if (!wrapper) return;
+// Schedule Management
+function initializeSchedule() {
+  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   
-  const select = document.getElementById('countryCode');
-  const dropdown = document.getElementById('countryDropdown');
-  const options = dropdown.querySelectorAll('.country-option');
-  
-  let isDropdownOpen = false;
-  let hoverTimeout = null;
-
-  wrapper.addEventListener('mouseenter', function() {
-    if (!isDropdownOpen) {
-      hoverTimeout = setTimeout(() => {
-        dropdown.classList.add('show');
-        isDropdownOpen = true;
-      }, 200);
-    }
-  });
-
-  wrapper.addEventListener('mouseleave', function() {
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
-      hoverTimeout = null;
+  days.forEach(day => {
+    const toggle = document.getElementById(`${day}Toggle`);
+    const startTime = document.getElementById(`${day}Start`);
+    const endTime = document.getElementById(`${day}End`);
+    const scheduleDay = document.querySelector(`[data-day="${day}"]`);
+    
+    if (toggle) {
+      toggle.addEventListener('change', function() {
+        agentData.config.schedule[day].open = this.checked;
+        if (scheduleDay) {
+          if (this.checked) {
+            scheduleDay.classList.remove('closed');
+            if (startTime) startTime.disabled = false;
+            if (endTime) endTime.disabled = false;
+          } else {
+            scheduleDay.classList.add('closed');
+            if (startTime) startTime.disabled = true;
+            if (endTime) endTime.disabled = true;
+          }
+        }
+      });
     }
     
-    dropdown.classList.remove('show');
-    isDropdownOpen = false;
-  });
-
-  options.forEach(option => {
-    option.addEventListener('click', function(e) {
-      e.stopPropagation();
-      const value = this.dataset.value;
-      select.value = value;
-      
-      dropdown.classList.remove('show');
-      isDropdownOpen = false;
-      
-      const event = new Event('change', { bubbles: true });
-      select.dispatchEvent(event);
-    });
-  });
-
-  document.addEventListener('click', function(e) {
-    if (!wrapper.contains(e.target)) {
-      dropdown.classList.remove('show');
-      isDropdownOpen = false;
+    if (startTime) {
+      startTime.addEventListener('change', function() {
+        agentData.config.schedule[day].start = this.value;
+      });
+    }
+    
+    if (endTime) {
+      endTime.addEventListener('change', function() {
+        agentData.config.schedule[day].end = this.value;
+      });
     }
   });
+}
+
+// Holidays Management
+function initializeHolidays() {
+  const addHolidayBtn = document.getElementById('addHolidayBtn');
+  
+  if (addHolidayBtn) {
+    addHolidayBtn.addEventListener('click', addHoliday);
+  }
+}
+
+function addHoliday() {
+  const holidaysList = document.getElementById('holidaysList');
+  if (!holidaysList) return;
+  
+  const holidayId = Date.now();
+  const holidayItem = document.createElement('div');
+  holidayItem.className = 'holiday-item';
+  holidayItem.dataset.holidayId = holidayId;
+  
+  holidayItem.innerHTML = `
+    <div class="holiday-date form-group">
+      <input type="date" class="form-input holiday-date-input" required>
+    </div>
+    <div class="holiday-name form-group">
+      <input type="text" class="form-input holiday-name-input" placeholder="Nombre del día festivo" required>
+    </div>
+    <button type="button" class="btn-remove-holiday" onclick="removeHoliday(${holidayId})">
+      <i class="lni lni-trash-can"></i>
+    </button>
+  `;
+  
+  holidaysList.appendChild(holidayItem);
+  
+  const dateInput = holidayItem.querySelector('.holiday-date-input');
+  const nameInput = holidayItem.querySelector('.holiday-name-input');
+  
+  dateInput.addEventListener('change', updateHolidaysData);
+  nameInput.addEventListener('input', updateHolidaysData);
+}
+
+function removeHoliday(holidayId) {
+  const holidayItem = document.querySelector(`[data-holiday-id="${holidayId}"]`);
+  if (holidayItem) {
+    holidayItem.remove();
+    updateHolidaysData();
+  }
+}
+
+function updateHolidaysData() {
+  const holidays = [];
+  document.querySelectorAll('.holiday-item').forEach(item => {
+    const date = item.querySelector('.holiday-date-input').value;
+    const name = item.querySelector('.holiday-name-input').value;
+    if (date && name) {
+      holidays.push({ date, name });
+    }
+  });
+  agentData.config.holidays = holidays;
+  console.log('Días festivos:', holidays);
+}
+
+// Services Management
+function initializeServices() {
+  const addServiceBtn = document.getElementById('addServiceBtn');
+  
+  if (addServiceBtn) {
+    addServiceBtn.addEventListener('click', addService);
+  }
+}
+
+function addService() {
+  const servicesList = document.getElementById('servicesList');
+  if (!servicesList) return;
+  
+  const serviceId = Date.now();
+  const serviceNumber = document.querySelectorAll('.service-item').length + 1;
+  const serviceItem = document.createElement('div');
+  serviceItem.className = 'service-item';
+  serviceItem.dataset.serviceId = serviceId;
+  
+  serviceItem.innerHTML = `
+    <div class="service-header">
+      <div class="service-number">Servicio ${serviceNumber}</div>
+      <button type="button" class="btn-remove-service" onclick="removeService(${serviceId})">
+        <i class="lni lni-trash-can"></i>
+      </button>
+    </div>
+    <div class="service-fields">
+      <div class="form-group">
+        <label class="form-label">Título del Servicio *</label>
+        <input type="text" class="form-input service-title" placeholder="Ej: Corte de cabello" required>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Tipo de Precio</label>
+        <div class="price-type-selector">
+          <div class="price-type-option active" data-type="normal">Precio Normal</div>
+          <div class="price-type-option" data-type="promotion">Promoción</div>
+        </div>
+      </div>
+      
+      <div class="form-group price-normal">
+        <label class="form-label">Precio *</label>
+        <div class="price-input-wrapper">
+          <span class="price-currency">$</span>
+          <input type="number" class="form-input service-price price-input" placeholder="0.00" step="0.01" required>
+        </div>
+      </div>
+      
+      <div class="promotion-prices">
+        <div class="form-group">
+          <label class="form-label">Precio Original *</label>
+          <div class="price-input-wrapper">
+            <span class="price-currency">$</span>
+            <input type="number" class="form-input service-original-price price-input" placeholder="0.00" step="0.01">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Precio Promoción *</label>
+          <div class="price-input-wrapper">
+            <span class="price-currency">$</span>
+            <input type="number" class="form-input service-promo-price price-input" placeholder="0.00" step="0.01">
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Descripción del Servicio</label>
+        <div class="service-description-editor">
+          <div class="service-editor-toolbar">
+            <button type="button" class="service-editor-btn" data-command="bold" title="Negrita">
+              <i class="lni lni-text-format"></i>
+            </button>
+            <button type="button" class="service-editor-btn" data-command="italic" title="Cursiva">
+              <i class="lni lni-italic"></i>
+            </button>
+            <button type="button" class="service-editor-btn" data-command="underline" title="Subrayado">
+              <i class="lni lni-underline"></i>
+            </button>
+            <button type="button" class="service-editor-btn" data-command="insertUnorderedList" title="Lista">
+              <i class="lni lni-list"></i>
+            </button>
+          </div>
+          <div class="service-editor-content" 
+               contenteditable="true" 
+               data-placeholder="Describe las características del servicio...">
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  servicesList.appendChild(serviceItem);
+  
+  // Inicializar editor de texto enriquecido
+  const editorButtons = serviceItem.querySelectorAll('.service-editor-btn');
+  const editorContent = serviceItem.querySelector('.service-editor-content');
+  
+  editorButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const command = this.dataset.command;
+      document.execCommand(command, false, null);
+      editorContent.focus();
+    });
+  });
+  
+  editorContent.addEventListener('input', function() {
+    updateServicesData();
+  });
+  
+  // Price type selector
+  const priceTypeOptions = serviceItem.querySelectorAll('.price-type-option');
+  const promotionPrices = serviceItem.querySelector('.promotion-prices');
+  const normalPrice = serviceItem.querySelector('.price-normal');
+  
+  priceTypeOptions.forEach(option => {
+    option.addEventListener('click', function() {
+      priceTypeOptions.forEach(opt => opt.classList.remove('active'));
+      this.classList.add('active');
+      
+      if (this.dataset.type === 'promotion') {
+        promotionPrices.classList.add('show');
+        normalPrice.style.display = 'none';
+      } else {
+        promotionPrices.classList.remove('show');
+        normalPrice.style.display = 'block';
+      }
+      updateServicesData();
+    });
+  });
+  
+  // Update data on input
+  serviceItem.querySelectorAll('input, textarea').forEach(input => {
+    input.addEventListener('input', updateServicesData);
+  });
+}
+
+function removeService(serviceId) {
+  const serviceItem = document.querySelector(`[data-service-id="${serviceId}"]`);
+  if (serviceItem) {
+    serviceItem.remove();
+    updateServicesData();
+    
+    // Renumber services
+    document.querySelectorAll('.service-item').forEach((item, index) => {
+      const numberDiv = item.querySelector('.service-number');
+      if (numberDiv) {
+        numberDiv.textContent = `Servicio ${index + 1}`;
+      }
+    });
+  }
+}
+
+function updateServicesData() {
+  const services = [];
+  document.querySelectorAll('.service-item').forEach(item => {
+    const title = item.querySelector('.service-title').value;
+    const editorContent = item.querySelector('.service-editor-content');
+    const description = editorContent ? editorContent.innerHTML : '';
+    const priceType = item.querySelector('.price-type-option.active').dataset.type;
+    
+    let price, originalPrice, promoPrice;
+    
+    if (priceType === 'promotion') {
+      originalPrice = parseFloat(item.querySelector('.service-original-price').value) || 0;
+      promoPrice = parseFloat(item.querySelector('.service-promo-price').value) || 0;
+    } else {
+      price = parseFloat(item.querySelector('.service-price').value) || 0;
+    }
+    
+    if (title) {
+      services.push({
+        title,
+        description,
+        priceType,
+        price: priceType === 'normal' ? price : null,
+        originalPrice: priceType === 'promotion' ? originalPrice : null,
+        promoPrice: priceType === 'promotion' ? promoPrice : null
+      });
+    }
+  });
+  agentData.config.services = services;
+  console.log('Servicios:', services);
+}
+
+// Workers Management
+function initializeWorkers() {
+  const addWorkerBtn = document.getElementById('addWorkerBtn');
+  
+  if (addWorkerBtn) {
+    addWorkerBtn.addEventListener('click', addWorker);
+  }
+}
+
+function addWorker() {
+  const workersList = document.getElementById('workersList');
+  if (!workersList) return;
+  
+  const workerId = Date.now();
+  const workerNumber = document.querySelectorAll('.worker-item').length + 1;
+  const workerItem = document.createElement('div');
+  workerItem.className = 'worker-item';
+  workerItem.dataset.workerId = workerId;
+  
+  workerItem.innerHTML = `
+    <div class="worker-header">
+      <div class="worker-number">Trabajador ${workerNumber}</div>
+      <button type="button" class="btn-remove-worker" onclick="removeWorker(${workerId})">
+        <i class="lni lni-trash-can"></i>
+      </button>
+    </div>
+    <div class="worker-fields">
+      <div class="form-group">
+        <label class="form-label">Nombre del Trabajador *</label>
+        <input type="text" class="form-input worker-name" placeholder="Ej: Juan Pérez" required>
+      </div>
+      
+      <div class="worker-availability">
+        <div class="availability-title">Disponibilidad (Días de la Semana)</div>
+        <div class="availability-grid">
+          <label class="availability-day">
+            <input type="checkbox" value="monday" checked>
+            <span>Lunes</span>
+          </label>
+          <label class="availability-day">
+            <input type="checkbox" value="tuesday" checked>
+            <span>Martes</span>
+          </label>
+          <label class="availability-day">
+            <input type="checkbox" value="wednesday" checked>
+            <span>Miércoles</span>
+          </label>
+          <label class="availability-day">
+            <input type="checkbox" value="thursday" checked>
+            <span>Jueves</span>
+          </label>
+          <label class="availability-day">
+            <input type="checkbox" value="friday" checked>
+            <span>Viernes</span>
+          </label>
+          <label class="availability-day">
+            <input type="checkbox" value="saturday">
+            <span>Sábado</span>
+          </label>
+          <label class="availability-day">
+            <input type="checkbox" value="sunday">
+            <span>Domingo</span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="worker-hours">
+        <div class="form-group">
+          <label class="form-label">Hora de Inicio</label>
+          <input type="time" class="form-input worker-start-time" value="09:00" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hora de Fin</label>
+          <input type="time" class="form-input worker-end-time" value="18:00" required>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  workersList.appendChild(workerItem);
+  
+  // Update data on input
+  workerItem.querySelectorAll('input').forEach(input => {
+    input.addEventListener('input', updateWorkersData);
+    input.addEventListener('change', updateWorkersData);
+  });
+}
+
+function removeWorker(workerId) {
+  const workerItem = document.querySelector(`[data-worker-id="${workerId}"]`);
+  if (workerItem) {
+    workerItem.remove();
+    updateWorkersData();
+    
+    // Renumber workers
+    document.querySelectorAll('.worker-item').forEach((item, index) => {
+      const numberDiv = item.querySelector('.worker-number');
+      if (numberDiv) {
+        numberDiv.textContent = `Trabajador ${index + 1}`;
+      }
+    });
+  }
+}
+
+function updateWorkersData() {
+  const workers = [];
+  document.querySelectorAll('.worker-item').forEach(item => {
+    const name = item.querySelector('.worker-name').value;
+    const startTime = item.querySelector('.worker-start-time').value;
+    const endTime = item.querySelector('.worker-end-time').value;
+    
+    const days = [];
+    item.querySelectorAll('.availability-day input:checked').forEach(checkbox => {
+      days.push(checkbox.value);
+    });
+    
+    if (name && startTime && endTime) {
+      workers.push({
+        name,
+        startTime,
+        endTime,
+        days
+      });
+    }
+  });
+  agentData.config.workers = workers;
+  console.log('Trabajadores:', workers);
 }
 
 // Navigation
@@ -243,7 +649,6 @@ function previousStep() {
 
 function validateStep2() {
   const agentName = document.getElementById('agentName').value.trim();
-  const phoneNumber = document.getElementById('phoneNumber').value.trim();
 
   if (!agentName) {
     alert('Por favor ingresa el nombre del agente');
@@ -251,15 +656,14 @@ function validateStep2() {
     return false;
   }
 
-  if (!phoneNumber) {
-    alert('Por favor ingresa el número de teléfono');
-    document.getElementById('phoneNumber').focus();
-    return false;
-  }
-
-  if (agentData.config.languages.length === 0) {
-    alert('Por favor selecciona al menos un idioma');
-    return false;
+  const useDifferentPhone = document.getElementById('phoneToggle').checked;
+  if (useDifferentPhone) {
+    const phoneNumber = document.getElementById('phoneNumber').value.trim();
+    if (!phoneNumber) {
+      alert('Por favor ingresa el número de teléfono');
+      document.getElementById('phoneNumber').focus();
+      return false;
+    }
   }
 
   return true;
@@ -293,25 +697,31 @@ function updateProgressBar() {
 function collectFormData() {
   agentData.name = document.getElementById('agentName').value;
 
-  const countryCode = document.getElementById('countryCode').value;
-  const phoneNumber = document.getElementById('phoneNumber').value;
-  agentData.phoneNumber = countryCode + phoneNumber;
+  const useDifferentPhone = document.getElementById('phoneToggle').checked;
+  if (useDifferentPhone) {
+    const countryCode = document.getElementById('countryCode').value;
+    const phoneNumber = document.getElementById('phoneNumber').value;
+    agentData.phoneNumber = countryCode + phoneNumber;
+  } else {
+    agentData.phoneNumber = ''; // Will use user's registered phone
+  }
 
   const tone = document.querySelector('input[name="tone"]:checked');
   if (tone) {
     agentData.config.tone = tone.value;
+    if (tone.value === 'custom') {
+      const editorContent = document.getElementById('editorContent');
+      if (editorContent) {
+        agentData.config.customTone = editorContent.innerHTML;
+      }
+    }
   }
 
-  const editorContent = document.getElementById('editorContent');
-  if (editorContent) {
-    agentData.config.specialInstructions = editorContent.innerHTML;
-  }
-
-  agentData.config.capabilities = [];
-  const capabilityCheckboxes = document.querySelectorAll('input[id^="capability-"]:checked');
-  capabilityCheckboxes.forEach(checkbox => {
-    agentData.config.capabilities.push(checkbox.id.replace('capability-', ''));
-  });
+  // Languages are already updated in real-time
+  // Schedule is already updated in real-time
+  // Holidays are already updated in real-time
+  // Services are already updated in real-time
+  // Workers are already updated in real-time
 }
 
 function generateSummary() {
@@ -371,12 +781,14 @@ function generateSummary() {
       </div>
       <div class="summary-item">
         <span class="summary-label">Número de Teléfono:</span>
-        <span class="summary-value">${agentData.phoneNumber}</span>
+        <span class="summary-value">${agentData.phoneNumber || 'Usar número registrado'}</span>
       </div>
+      ${agentData.config.additionalLanguages.length > 0 ? `
       <div class="summary-item">
-        <span class="summary-label">Idiomas:</span>
-        <span class="summary-value">${agentData.config.languages.join(', ')}</span>
+        <span class="summary-label">Idiomas Adicionales:</span>
+        <span class="summary-value">${agentData.config.additionalLanguages.join(', ')}</span>
       </div>
+      ` : ''}
     </div>
     
     <div class="summary-section">
@@ -386,20 +798,80 @@ function generateSummary() {
       </h3>
       <div class="summary-item">
         <span class="summary-label">Tono:</span>
-        <span class="summary-value">${agentData.config.tone}</span>
+        <span class="summary-value">${formatTone(agentData.config.tone)}</span>
       </div>
     </div>
   `;
   
-  if (agentData.config.capabilities.length > 0) {
+  // Schedule summary
+  const openDays = Object.keys(agentData.config.schedule).filter(day => agentData.config.schedule[day].open);
+  if (openDays.length > 0) {
     html += `
       <div class="summary-section">
         <h3 class="summary-section-title">
-          <i class="lni lni-checkmark-circle"></i>
-          Capacidades
+          <i class="lni lni-calendar"></i>
+          Horario de Atención
         </h3>
         <ul class="summary-list">
-          ${agentData.config.capabilities.map(c => `<li>${formatCapability(c)}</li>`).join('')}
+          ${openDays.map(day => {
+            const dayData = agentData.config.schedule[day];
+            return `<li>${formatDay(day)}: ${dayData.start} - ${dayData.end}</li>`;
+          }).join('')}
+        </ul>
+      </div>
+    `;
+  }
+  
+  // Holidays summary
+  if (agentData.config.holidays.length > 0) {
+    html += `
+      <div class="summary-section">
+        <h3 class="summary-section-title">
+          <i class="lni lni-gift"></i>
+          Días Festivos
+        </h3>
+        <ul class="summary-list">
+          ${agentData.config.holidays.map(h => `<li>${h.date} - ${h.name}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+  }
+  
+  // Services summary
+  if (agentData.config.services.length > 0) {
+    html += `
+      <div class="summary-section">
+        <h3 class="summary-section-title">
+          <i class="lni lni-package"></i>
+          Servicios
+        </h3>
+        <ul class="summary-list">
+          ${agentData.config.services.map(s => {
+            let priceText = '';
+            if (s.priceType === 'promotion') {
+              priceText = `$${s.promoPrice} (antes $${s.originalPrice})`;
+            } else {
+              priceText = `$${s.price}`;
+            }
+            return `<li><strong>${s.title}</strong> - ${priceText}</li>`;
+          }).join('')}
+        </ul>
+      </div>
+    `;
+  }
+  
+  // Workers summary
+  if (agentData.config.workers.length > 0) {
+    html += `
+      <div class="summary-section">
+        <h3 class="summary-section-title">
+          <i class="lni lni-users"></i>
+          Trabajadores
+        </h3>
+        <ul class="summary-list">
+          ${agentData.config.workers.map(w => {
+            return `<li><strong>${w.name}</strong> - ${w.startTime} a ${w.endTime} (${w.days.length} días)</li>`;
+          }).join('')}
         </ul>
       </div>
     `;
@@ -408,21 +880,34 @@ function generateSummary() {
   container.innerHTML = html;
 }
 
-function formatCapability(capability) {
-  const capabilityNames = {
-    'appointments': 'Agendar citas y reservaciones',
-    'faq': 'Responder preguntas frecuentes',
-    'products': 'Información de productos/servicios',
-    'support': 'Soporte técnico básico'
+function formatTone(tone) {
+  const toneNames = {
+    'formal': 'Formal',
+    'friendly': 'Amigable',
+    'casual': 'Casual',
+    'custom': 'Personalizado'
   };
-  return capabilityNames[capability] || capability;
+  return toneNames[tone] || tone;
+}
+
+function formatDay(day) {
+  const dayNames = {
+    'monday': 'Lunes',
+    'tuesday': 'Martes',
+    'wednesday': 'Miércoles',
+    'thursday': 'Jueves',
+    'friday': 'Viernes',
+    'saturday': 'Sábado',
+    'sunday': 'Domingo'
+  };
+  return dayNames[day] || day;
 }
 
 async function createAgent() {
   document.getElementById('creatingModal').classList.add('show');
   
   let elapsedSeconds = 0;
-  const maxSeconds = 1200; // 20 minutos
+  const maxSeconds = 1200;
   
   const timerInterval = setInterval(() => {
     elapsedSeconds++;
@@ -440,7 +925,7 @@ async function createAgent() {
         name: agentData.name,
         phoneNumber: agentData.phoneNumber,
         businessType: agentData.businessType,
-        metaDocument: '', // Sin documento
+        metaDocument: '',
         config: agentData.config
       }),
     });
@@ -452,7 +937,6 @@ async function createAgent() {
       
       document.getElementById('agentNameDisplay').textContent = data.agent.name;
       
-      // Polling para verificar el estado
       const checkInterval = setInterval(async () => {
         try {
           const statusResp = await fetch(`/api/agents/${agentId}`, {
@@ -468,21 +952,17 @@ async function createAgent() {
           
           console.log('Estado actual:', statusData.agent.deployStatus);
           
-          // Actualizar UI con el estado correcto
           updateCreationStatus(statusData.agent.deployStatus);
           
-          // Verificar si el despliegue está completo
           if (statusData.agent.deployStatus === 'running') {
             clearInterval(checkInterval);
             clearInterval(timerInterval);
             
-            // Mostrar modal de éxito
             document.getElementById('creatingModal').classList.remove('show');
             document.getElementById('successModal').classList.add('show');
             
             document.getElementById('finalAgentName').textContent = statusData.agent.name;
             
-            // Obtener información del usuario para mostrar IP del servidor
             const userResp = await fetch('/api/me', { credentials: 'include' });
             const userData = await userResp.json();
             document.getElementById('finalAgentIP').textContent = userData.user.sharedServerIp || 'N/A';
@@ -497,7 +977,7 @@ async function createAgent() {
         } catch (error) {
           console.error('Error verificando estado:', error);
         }
-      }, 5000); // Verificar cada 5 segundos
+      }, 5000);
       
     } else {
       clearInterval(timerInterval);

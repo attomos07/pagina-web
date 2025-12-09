@@ -167,68 +167,72 @@
                                         <input type="text" id="agentName" class="form-input" placeholder="Ej: Asistente Virtual" required>
                                         <span class="form-help">Este nombre identificará a tu agente en el dashboard</span>
                                     </div>
-                                </div>
 
-                                <div class="form-group phone-input-group">
-                                    <div class="phone-prefix">
-                                        <label class="form-label">Código País</label>
-                                        <div class="country-code-wrapper">
-                                            <select id="countryCode" class="form-select">
-                                                <option value="+52">+52 (México)</option>
-                                                <option value="+1">+1 (USA/Canadá)</option>
-                                                <option value="+34">+34 (España)</option>
-                                                <option value="+54">+54 (Argentina)</option>
-                                            </select>
-                                            <div class="country-dropdown" id="countryDropdown">
-                                                <div class="country-option" data-value="+52">+52 (México)</div>
-                                                <div class="country-option" data-value="+1">+1 (USA/Canadá)</div>
-                                                <div class="country-option" data-value="+34">+34 (España)</div>
-                                                <div class="country-option" data-value="+54">+54 (Argentina)</div>
+                                    <div class="toggle-container">
+                                        <div class="toggle-info">
+                                            <div class="toggle-title">¿Usar un número de teléfono diferente?</div>
+                                            <div class="toggle-description">El agente puede usar tu número registrado o uno diferente</div>
+                                        </div>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="phoneToggle">
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+
+                                    <div id="differentPhoneSection" style="display: none;">
+                                        <div class="form-group phone-input-group">
+                                            <div class="phone-prefix">
+                                                <label class="form-label">Código País</label>
+                                                <select id="countryCode" class="form-select">
+                                                    <option value="+52">+52 (México)</option>
+                                                    <option value="+1">+1 (USA/Canadá)</option>
+                                                    <option value="+34">+34 (España)</option>
+                                                    <option value="+54">+54 (Argentina)</option>
+                                                </select>
+                                            </div>
+                                            <div class="phone-number">
+                                                <label class="form-label">Número de Teléfono *</label>
+                                                <input type="tel" id="phoneNumber" class="form-input" placeholder="6621234567" required>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="phone-number">
-                                        <label class="form-label">Número de Teléfono *</label>
-                                        <input type="tel" id="phoneNumber" class="form-input" placeholder="6621234567" required>
-                                    </div>
-                                </div>
 
-                                <div class="form-group" style="margin-top: 48px;">
-                                    <label class="form-label">
-                                        ¿En qué idiomas hablará el agente?
-                                        <span class="form-label-required">*</span>
-                                    </label>
-                                    <span class="form-help">Selecciona al menos un idioma para tu agente</span>
-                                    <div class="language-checkboxes">
-                                        <label class="language-checkbox-item">
-                                            <input type="checkbox" name="language" value="es" class="checkbox-input">
-                                            <span class="language-checkbox-label">🇪🇸 Español</span>
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Idiomas adicionales para responder
                                         </label>
-                                        
-                                        <label class="language-checkbox-item">
-                                            <input type="checkbox" name="language" value="en" class="checkbox-input">
-                                            <span class="language-checkbox-label">🇺🇸 Inglés</span>
-                                        </label>
-                                        
-                                        <label class="language-checkbox-item">
-                                            <input type="checkbox" name="language" value="fr" class="checkbox-input">
-                                            <span class="language-checkbox-label">🇫🇷 Francés</span>
-                                        </label>
-                                        
-                                        <label class="language-checkbox-item">
-                                            <input type="checkbox" name="language" value="pt" class="checkbox-input">
-                                            <span class="language-checkbox-label">🇧🇷 Portugués</span>
-                                        </label>
-                                        
-                                        <label class="language-checkbox-item">
-                                            <input type="checkbox" name="language" value="de" class="checkbox-input">
-                                            <span class="language-checkbox-label">🇩🇪 Alemán</span>
-                                        </label>
-                                        
-                                        <label class="language-checkbox-item">
-                                            <input type="checkbox" name="language" value="it" class="checkbox-input">
-                                            <span class="language-checkbox-label">🇮🇹 Italiano</span>
-                                        </label>
+                                        <span class="form-help">El agente responde en español por defecto. Selecciona idiomas adicionales</span>
+                                        <div class="language-checkboxes">
+                                            <label class="language-checkbox-item">
+                                                <input type="checkbox" name="additionalLanguage" value="en" class="checkbox-input">
+                                                <span class="language-checkbox-label">🇺🇸 Inglés</span>
+                                            </label>
+                                            
+                                            <label class="language-checkbox-item">
+                                                <input type="checkbox" name="additionalLanguage" value="fr" class="checkbox-input">
+                                                <span class="language-checkbox-label">🇫🇷 Francés</span>
+                                            </label>
+                                            
+                                            <label class="language-checkbox-item">
+                                                <input type="checkbox" name="additionalLanguage" value="pt" class="checkbox-input">
+                                                <span class="language-checkbox-label">🇧🇷 Portugués</span>
+                                            </label>
+                                            
+                                            <label class="language-checkbox-item">
+                                                <input type="checkbox" name="additionalLanguage" value="de" class="checkbox-input">
+                                                <span class="language-checkbox-label">🇩🇪 Alemán</span>
+                                            </label>
+                                            
+                                            <label class="language-checkbox-item">
+                                                <input type="checkbox" name="additionalLanguage" value="it" class="checkbox-input">
+                                                <span class="language-checkbox-label">🇮🇹 Italiano</span>
+                                            </label>
+                                            
+                                            <label class="language-checkbox-item">
+                                                <input type="checkbox" name="additionalLanguage" value="zh" class="checkbox-input">
+                                                <span class="language-checkbox-label">🇨🇳 Chino</span>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -275,65 +279,225 @@
                                                 <span>Relajado e informal</span>
                                             </div>
                                         </label>
-                                    </div>
-                                </div>
 
-                                <div class="form-group" style="margin-top: 48px;">
-                                    <label class="form-label">Instrucciones Especiales (Opcional)</label>
-                                    <span class="form-help">Proporciona directrices específicas sobre cómo debe comportarse tu agente</span>
-                                    
-                                    <div class="rich-editor">
-                                        <div class="editor-toolbar">
-                                            <button type="button" class="editor-btn" id="boldBtn" title="Negrita">
-                                                <i class="lni lni-text-format"></i>
-                                            </button>
-                                            <button type="button" class="editor-btn" id="italicBtn" title="Cursiva">
-                                                <i class="lni lni-italic"></i>
-                                            </button>
-                                            <button type="button" class="editor-btn" id="underlineBtn" title="Subrayado">
-                                                <i class="lni lni-underline"></i>
-                                            </button>
-                                            <button type="button" class="editor-btn" id="listBtn" title="Lista">
-                                                <i class="lni lni-list"></i>
-                                            </button>
-                                        </div>
-                                        <div class="editor-content" 
-                                             id="editorContent" 
-                                             contenteditable="true" 
-                                             data-placeholder="Ej: Siempre mencionar las promociones vigentes al inicio de la conversación...">
+                                        <label class="tone-radio-option">
+                                            <input type="radio" name="tone" value="custom">
+                                            <div class="tone-icon-wrapper">
+                                                <i class="lni lni-pencil"></i>
+                                            </div>
+                                            <div class="tone-radio-label">
+                                                <strong>Personalizado</strong>
+                                                <span>Define tu propio estilo</span>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <div class="custom-tone-editor" id="customToneEditor">
+                                        <label class="form-label">Describe la personalidad personalizada</label>
+                                        <span class="form-help">Define cómo debe comportarse y comunicarse tu agente</span>
+                                        
+                                        <div class="rich-editor">
+                                            <div class="editor-toolbar">
+                                                <button type="button" class="editor-btn" id="boldBtn" title="Negrita">
+                                                    <i class="lni lni-text-format"></i>
+                                                </button>
+                                                <button type="button" class="editor-btn" id="italicBtn" title="Cursiva">
+                                                    <i class="lni lni-italic"></i>
+                                                </button>
+                                                <button type="button" class="editor-btn" id="underlineBtn" title="Subrayado">
+                                                    <i class="lni lni-underline"></i>
+                                                </button>
+                                                <button type="button" class="editor-btn" id="listBtn" title="Lista">
+                                                    <i class="lni lni-list"></i>
+                                                </button>
+                                            </div>
+                                            <div class="editor-content" 
+                                                 id="editorContent" 
+                                                 contenteditable="true" 
+                                                 data-placeholder="Ej: El agente debe ser entusiasta y motivador, usar emojis ocasionalmente, y siempre mencionar las promociones vigentes...">
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Capacidades del Agente -->
+                            <!-- Horarios de Atención -->
                             <div class="form-section">
                                 <h3 class="section-title">
-                                    <i class="lni lni-checkmark-circle"></i>
-                                    Capacidades del Agente
+                                    <i class="lni lni-calendar"></i>
+                                    Horarios de Atención
                                 </h3>
                                 
-                                <div class="checkbox-group">
-                                    <label class="capability-checkbox-item">
-                                        <input type="checkbox" id="capability-appointments" class="checkbox-input" checked>
-                                        <span class="capability-checkbox-label">Agendar citas y reservaciones</span>
-                                    </label>
-                                    
-                                    <label class="capability-checkbox-item">
-                                        <input type="checkbox" id="capability-faq" class="checkbox-input" checked>
-                                        <span class="capability-checkbox-label">Responder preguntas frecuentes</span>
-                                    </label>
-                                    
-                                    <label class="capability-checkbox-item">
-                                        <input type="checkbox" id="capability-products" class="checkbox-input">
-                                        <span class="capability-checkbox-label">Información de productos/servicios</span>
-                                    </label>
-                                    
-                                    <label class="capability-checkbox-item">
-                                        <input type="checkbox" id="capability-support" class="checkbox-input">
-                                        <span class="capability-checkbox-label">Soporte técnico básico</span>
-                                    </label>
+                                <div class="schedule-list">
+                                    <div class="schedule-day" data-day="monday">
+                                        <div class="day-name">Lunes</div>
+                                        <div class="day-toggle">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="mondayToggle" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span class="toggle-label">Abierto</span>
+                                        </div>
+                                        <div class="day-times">
+                                            <input type="time" id="mondayStart" class="time-input" value="09:00">
+                                            <span class="time-separator">a</span>
+                                            <input type="time" id="mondayEnd" class="time-input" value="18:00">
+                                        </div>
+                                    </div>
+
+                                    <div class="schedule-day" data-day="tuesday">
+                                        <div class="day-name">Martes</div>
+                                        <div class="day-toggle">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="tuesdayToggle" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span class="toggle-label">Abierto</span>
+                                        </div>
+                                        <div class="day-times">
+                                            <input type="time" id="tuesdayStart" class="time-input" value="09:00">
+                                            <span class="time-separator">a</span>
+                                            <input type="time" id="tuesdayEnd" class="time-input" value="18:00">
+                                        </div>
+                                    </div>
+
+                                    <div class="schedule-day" data-day="wednesday">
+                                        <div class="day-name">Miércoles</div>
+                                        <div class="day-toggle">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="wednesdayToggle" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span class="toggle-label">Abierto</span>
+                                        </div>
+                                        <div class="day-times">
+                                            <input type="time" id="wednesdayStart" class="time-input" value="09:00">
+                                            <span class="time-separator">a</span>
+                                            <input type="time" id="wednesdayEnd" class="time-input" value="18:00">
+                                        </div>
+                                    </div>
+
+                                    <div class="schedule-day" data-day="thursday">
+                                        <div class="day-name">Jueves</div>
+                                        <div class="day-toggle">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="thursdayToggle" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span class="toggle-label">Abierto</span>
+                                        </div>
+                                        <div class="day-times">
+                                            <input type="time" id="thursdayStart" class="time-input" value="09:00">
+                                            <span class="time-separator">a</span>
+                                            <input type="time" id="thursdayEnd" class="time-input" value="18:00">
+                                        </div>
+                                    </div>
+
+                                    <div class="schedule-day" data-day="friday">
+                                        <div class="day-name">Viernes</div>
+                                        <div class="day-toggle">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="fridayToggle" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span class="toggle-label">Abierto</span>
+                                        </div>
+                                        <div class="day-times">
+                                            <input type="time" id="fridayStart" class="time-input" value="09:00">
+                                            <span class="time-separator">a</span>
+                                            <input type="time" id="fridayEnd" class="time-input" value="18:00">
+                                        </div>
+                                    </div>
+
+                                    <div class="schedule-day closed" data-day="saturday">
+                                        <div class="day-name">Sábado</div>
+                                        <div class="day-toggle">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="saturdayToggle">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span class="toggle-label">Cerrado</span>
+                                        </div>
+                                        <div class="day-times">
+                                            <input type="time" id="saturdayStart" class="time-input" value="09:00" disabled>
+                                            <span class="time-separator">a</span>
+                                            <input type="time" id="saturdayEnd" class="time-input" value="14:00" disabled>
+                                        </div>
+                                    </div>
+
+                                    <div class="schedule-day closed" data-day="sunday">
+                                        <div class="day-name">Domingo</div>
+                                        <div class="day-toggle">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="sundayToggle">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span class="toggle-label">Cerrado</span>
+                                        </div>
+                                        <div class="day-times">
+                                            <input type="time" id="sundayStart" class="time-input" value="09:00" disabled>
+                                            <span class="time-separator">a</span>
+                                            <input type="time" id="sundayEnd" class="time-input" value="14:00" disabled>
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
+
+                            <!-- Días Festivos -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="lni lni-gift"></i>
+                                    Días Festivos
+                                </h3>
+                                
+                                <span class="form-help">Agrega los días en que tu negocio estará cerrado por festividades</span>
+                                
+                                <div class="holidays-list" id="holidaysList">
+                                    <!-- Los días festivos se agregarán dinámicamente aquí -->
+                                </div>
+                                
+                                <button type="button" id="addHolidayBtn" class="btn-add-holiday">
+                                    <i class="lni lni-plus"></i>
+                                    Agregar Día Festivo
+                                </button>
+                            </div>
+
+                            <!-- Servicios -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="lni lni-package"></i>
+                                    Servicios / Productos
+                                </h3>
+                                
+                                <span class="form-help">Define los servicios o productos que ofreces</span>
+                                
+                                <div class="services-list" id="servicesList">
+                                    <!-- Los servicios se agregarán dinámicamente aquí -->
+                                </div>
+                                
+                                <button type="button" id="addServiceBtn" class="btn-add-service">
+                                    <i class="lni lni-plus"></i>
+                                    Agregar Servicio
+                                </button>
+                            </div>
+
+                            <!-- Trabajadores -->
+                            <div class="form-section">
+                                <h3 class="section-title">
+                                    <i class="lni lni-users"></i>
+                                    Trabajadores / Personal
+                                </h3>
+                                
+                                <span class="form-help">Agrega información sobre tu personal y su disponibilidad</span>
+                                
+                                <div class="workers-list" id="workersList">
+                                    <!-- Los trabajadores se agregarán dinámicamente aquí -->
+                                </div>
+                                
+                                <button type="button" id="addWorkerBtn" class="btn-add-worker">
+                                    <i class="lni lni-plus"></i>
+                                    Agregar Trabajador
+                                </button>
                             </div>
 
                             <div class="action-buttons">
