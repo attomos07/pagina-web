@@ -680,6 +680,8 @@ function updateStepDisplay() {
 function updateProgressBar() {
   const progressSteps = document.querySelectorAll('.progress-step');
   const progressFill = document.getElementById('progressFill');
+  const progressBarFill = document.getElementById('progressBarFill');
+  const progressPercentage = document.getElementById('progressPercentage');
 
   progressSteps.forEach((step, index) => {
     step.classList.remove('active', 'completed');
@@ -690,8 +692,46 @@ function updateProgressBar() {
     }
   });
 
-  const progress = ((currentStep - 1) / 2) * 100;
-  progressFill.style.width = progress + '%';
+  // Calcular progreso (0%, 50%, 100%)
+  const targetProgress = ((currentStep - 1) / 2) * 100;
+  
+  // Actualizar barra de progreso tradicional (oculta)
+  if (progressFill) {
+    progressFill.style.width = targetProgress + '%';
+  }
+  
+  // Actualizar nueva barra de progreso moderna
+  if (progressBarFill) {
+    progressBarFill.style.width = targetProgress + '%';
+  }
+  
+  // Animar porcentaje con conteo
+  if (progressPercentage) {
+    const currentProgress = parseInt(progressPercentage.textContent) || 0;
+    animatePercentage(currentProgress, targetProgress, progressPercentage);
+  }
+}
+
+function animatePercentage(start, end, element) {
+  const duration = 600;
+  const startTime = performance.now();
+  
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    // Easing function para animación suave
+    const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(start + (end - start) * easeOutCubic);
+    
+    element.textContent = current + '%';
+    
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    }
+  }
+  
+  requestAnimationFrame(update);
 }
 
 function collectFormData() {

@@ -41,7 +41,7 @@ body {
 }
 
 /* ========================================
-   PROGRESS BAR
+   PROGRESS BAR - NUEVO DISEÑO MODERNO
 ======================================== */
 .progress-wrapper {
   background: white;
@@ -49,6 +49,67 @@ body {
   padding: 40px;
   margin-bottom: 40px;
   border: 1px solid #e5e7eb;
+}
+
+.progress-percentage {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 700;
+  color: #4F46E5;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+  transition: all 0.3s ease;
+  animation: fadeInScale 0.5s ease;
+}
+
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.progress-bar-track {
+  height: 12px;
+  background: #E0E7FF;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+  margin-bottom: 32px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4F46E5 0%, #6366F1 100%);
+  border-radius: 20px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+  width: 0%;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .progress-steps {
@@ -59,22 +120,11 @@ body {
 }
 
 .progress-line-bg {
-  position: absolute;
-  top: 24px;
-  left: 60px;
-  right: 60px;
-  height: 3px;
-  background: #f3f4f6;
-  z-index: 0;
-  border-radius: 10px;
+  display: none;
 }
 
 .progress-line-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #06b6d4 0%, #0891b2 100%);
-  width: 0%;
-  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 10px;
+  display: none;
 }
 
 .progress-step {
@@ -91,7 +141,7 @@ body {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: #f9fafb;
+  background: white;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -99,33 +149,43 @@ body {
   font-size: 20px;
   color: #9ca3af;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 3px solid #e5e7eb;
+  border: 4px solid #E0E7FF;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .progress-step.active .step-circle {
-  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
   color: white;
   transform: scale(1.15);
-  box-shadow: 0 8px 20px rgba(6, 182, 212, 0.35);
-  border-color: #06b6d4;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
+  border-color: #4F46E5;
 }
 
 .progress-step.completed .step-circle {
-  background: #10b981;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.progress-step.completed .step-circle::before {
+  content: '✓';
+  position: absolute;
+  font-size: 24px;
+  font-weight: 700;
 }
 
 .step-label {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
-  color: #9ca3af;
+  color: #6b7280;
   text-align: center;
   transition: color 0.3s ease;
 }
 
 .progress-step.active .step-label {
-  color: #06b6d4;
+  color: #4F46E5;
+  font-weight: 700;
 }
 
 .progress-step.completed .step-label {
@@ -196,9 +256,14 @@ body {
 ======================================== */
 .social-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 30px;
   margin-top: 48px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  justify-content: center;
+  align-items: center;
 }
 
 .social-card {
@@ -213,63 +278,141 @@ body {
 }
 
 .social-content {
-  padding: 32px 24px;
-  border: 2px solid #f3f4f6;
-  border-radius: 16px;
+  padding: 40px 20px;
+  border: 3px solid #f3f4f6;
+  border-radius: 50%;
   background: white;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  justify-content: center;
+  gap: 15px;
   position: relative;
+  width: 150px;
+  height: 150px;
+  margin: 0 auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.social-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
   height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  transition: left 0.6s;
 }
 
 .social-card:hover .social-content {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
-  border-color: #06b6d4;
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+.social-card:hover .social-content::before {
+  left: 100%;
 }
 
 .social-card input[type="radio"]:checked + .social-content {
   border-color: #06b6d4;
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.04) 0%, rgba(255, 255, 255, 1) 100%);
-  box-shadow: 0 12px 28px rgba(6, 182, 212, 0.2);
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.05), rgba(34, 211, 238, 0.05));
+  box-shadow: 0 12px 40px rgba(6, 182, 212, 0.25);
+  transform: scale(1.05);
 }
 
 .social-icon-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   border: 2px solid;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  position: relative;
+}
+
+.social-icon-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transition: all 0.4s ease;
+  transform: translate(-50%, -50%);
 }
 
 .social-card:hover .social-icon-wrapper {
-  transform: scale(1.08);
+  transform: scale(1.15) rotate(5deg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.social-card:hover .social-icon-wrapper::before {
+  width: 80px;
+  height: 80px;
+}
+
+.social-card input[type="radio"]:checked + .social-content .social-icon-wrapper {
+  transform: scale(1.1);
+  box-shadow: 0 8px 25px rgba(6, 182, 212, 0.3);
 }
 
 .social-icon-wrapper i {
-  font-size: 36px;
+  font-size: 28px;
+  position: relative;
+  z-index: 1;
 }
 
 .social-name {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   color: #111827;
   text-align: center;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.social-name::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #06b6d4, #22d3ee);
+  transition: width 0.3s ease;
+}
+
+.social-card:hover .social-name {
+  color: #06b6d4;
+}
+
+.social-card:hover .social-name::after {
+  width: 100%;
 }
 
 .social-status {
-  font-size: 12px;
-  padding: 6px 12px;
+  font-size: 10px;
+  padding: 4px 10px;
   border-radius: 20px;
   font-weight: 600;
   margin-top: 4px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
 }
 
 .status-coming-soon {
@@ -758,7 +901,7 @@ input:checked + .toggle-slider:before {
   font-size: 14px;
   color: #111827;
   background: white;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   font-family: inherit;
   flex: 1;
 }
@@ -768,6 +911,18 @@ input:checked + .toggle-slider:before {
   border-color: #06b6d4;
   box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
   transform: translateY(-1px);
+}
+
+/* Smooth animation para el dropdown de tiempo nativo */
+.time-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.time-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 .time-separator {
@@ -806,11 +961,23 @@ input:checked + .toggle-slider:before {
 }
 
 .holiday-date .form-input {
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .holiday-date .form-input:focus {
   transform: translateY(-1px);
+}
+
+/* Smooth animation para el dropdown de calendario nativo */
+.holiday-date .form-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.holiday-date .form-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 .holiday-name {
@@ -1739,7 +1906,28 @@ input:checked + .toggle-slider:before {
   }
 
   .social-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    max-width: 400px;
+  }
+
+  .social-content {
+    width: 130px;
+    height: 130px;
+    padding: 30px 15px;
+  }
+
+  .social-icon-wrapper {
+    width: 50px;
+    height: 50px;
+  }
+
+  .social-icon-wrapper i {
+    font-size: 24px;
+  }
+
+  .social-name {
+    font-size: 12px;
   }
 
   .form-grid-2col {
