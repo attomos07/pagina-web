@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -113,6 +114,23 @@ type Agent struct {
 	ChatwootInboxName   string `gorm:"size:255" json:"chatwootInboxName"`
 	ChatwootURL         string `gorm:"size:500" json:"chatwootUrl"`
 
+	// =============================================
+	// INTEGRACIÓN DE GOOGLE CALENDAR Y SHEETS
+	// =============================================
+
+	// Token de OAuth2 (almacenado como JSON)
+	GoogleToken string `gorm:"type:text" json:"-"`
+
+	// ID del Google Calendar creado automáticamente
+	GoogleCalendarID string `gorm:"size:500" json:"googleCalendarId"`
+
+	// ID del Google Sheet creado automáticamente
+	GoogleSheetID string `gorm:"size:500" json:"googleSheetId"`
+
+	// Estado de la conexión
+	GoogleConnected   bool       `gorm:"default:false" json:"googleConnected"`
+	GoogleConnectedAt *time.Time `json:"googleConnectedAt"`
+
 	// Timestamps
 	CreatedAt time.Time      `json:"createdAt"`
 	UpdatedAt time.Time      `json:"updatedAt"`
@@ -124,4 +142,47 @@ type Agent struct {
 
 func (Agent) TableName() string {
 	return "agents"
+}
+
+// GetGoogleCalendarEmail extrae el email del token de Google
+func (a *Agent) GetGoogleCalendarEmail() string {
+	if a.GoogleToken == "" {
+		return ""
+	}
+
+	var tokenData struct {
+		AccessToken  string `json:"access_token"`
+		TokenType    string `json:"token_type"`
+		RefreshToken string `json:"refresh_token"`
+		Expiry       string `json:"expiry"`
+	}
+
+	if err := json.Unmarshal([]byte(a.GoogleToken), &tokenData); err != nil {
+		return ""
+	}
+
+	// El Calendar ID ES el email del usuario de Google
+	return a.GoogleCalendarID
+}
+
+// GetEnvVarsForBot genera las variables de entorno para el bot
+func (a *Agent) GetEnvVarsForBot() map[string]string {
+	envVars := map[string]string{
+		"AGENT_ID":     fmt.Sprintf("%d", a.ID),
+		"AGENT_NAME":   a.Name,
+		"PHONE_NUMBER": a.PhoneNumber,
+		"PORT":         fmt.Sprintf("%d", a.Port),
+	}
+
+	// Agregar variables de Google si está conectado
+	if a.GoogleConnected {
+		if a.GoogleSheetID != "" {
+			envVars["SPREADSHEETID"] = a.GoogleSheetID
+		}
+		if a.GoogleCalendarID != "" {
+			envVars["GOOGLE_CALENDAR_ID"] = a.GoogleCalendarID
+		}
+	}
+
+	return envVars
 }

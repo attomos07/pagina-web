@@ -1,224 +1,296 @@
 package handlers
 
 import (
-	"crypto/rand"
-	"database/sql"
-	"encoding/base64"
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"time"
 
-	"yourproject/models"
-	"yourproject/services"
+	"attomos/config"
+	"attomos/models"
+	"attomos/services"
+
+	"github.com/gin-gonic/gin"
 )
 
 type GoogleIntegrationHandler struct {
-	DB              *sql.DB
-	CalendarService *services.GoogleCalendarService
-	SheetsService   *services.GoogleSheetsService
-	FrontendURL     string
+	calendarService *services.GoogleCalendarService
+	sheetsService   *services.GoogleSheetsService
 }
 
-// InitiateGoogleAuth inicia el flujo OAuth2 para Calendar y Sheets
-func (h *GoogleIntegrationHandler) InitiateGoogleAuth(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
-	agentID := r.URL.Query().Get("agent_id")
+// NewGoogleIntegrationHandler crea una nueva instancia del handler
+func NewGoogleIntegrationHandler() (*GoogleIntegrationHandler, error) {
+	clientID := os.Getenv("GOOGLE_CLIENT_ID")
+	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+	redirectURL := os.Getenv("GOOGLE_REDIRECT_URL")
+
+	if clientID == "" || clientSecret == "" || redirectURL == "" {
+		return nil, fmt.Errorf("faltan credenciales de Google OAuth (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL)")
+	}
+
+	return &GoogleIntegrationHandler{
+		calendarService: &services.GoogleCalendarService{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			RedirectURL:  redirectURL,
+		},
+		sheetsService: &services.GoogleSheetsService{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			RedirectURL:  redirectURL,
+		},
+	}, nil
+}
+
+// InitiateGoogleIntegration inicia el flujo OAuth2 para Calendar y Sheets
+func (h *GoogleIntegrationHandler) InitiateGoogleIntegration(c *gin.Context) {
+	userInterface, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autenticado"})
+		return
+	}
+
+	user := userInterface.(*models.User)
+	agentID := c.Query("agent_id")
 
 	if agentID == "" {
-		http.Error(w, "agent_id is required", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "agent_id es requerido"})
 		return
 	}
 
-	// Generar state token para prevenir CSRF
-	stateToken := generateStateToken()
-
-	// Guardar state en sesión o BD temporal (aquí usamos BD)
-	_, err := h.DB.Exec(`
-		INSERT INTO oauth_states (user_id, agent_id, state_token, expires_at)
-		VALUES (?, ?, ?, ?)
-	`, userID, agentID, stateToken, time.Now().Add(10*time.Minute))
-
-	if err != nil {
-		http.Error(w, "Error saving state", http.StatusInternalServerError)
+	// Verificar que el agente pertenece al usuario
+	var agent models.Agent
+	if err := config.DB.Where("id = ? AND user_id = ?", agentID, user.ID).First(&agent).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Agente no encontrado"})
 		return
 	}
 
-	// Generar URL de autorización (necesitamos ambos scopes)
-	config := h.CalendarService.GetOAuthConfig()
-	config.Scopes = append(config.Scopes, "https://www.googleapis.com/auth/spreadsheets")
+	// Generar state token con agent_id incluido
+	state := fmt.Sprintf("%d:%d:%d", user.ID, agent.ID, time.Now().Unix())
 
-	authURL := config.AuthCodeURL(stateToken,
-		"access_type", "offline",
-		"prompt", "consent",
-	)
+	// Guardar state en sesión (cookie temporal)
+	c.SetCookie("oauth_state", state, 600, "/", "", false, true) // 10 minutos
 
-	response := map[string]string{
+	// Obtener URL de autorización con ambos scopes
+	authURL := h.calendarService.GetAuthURL(state)
+
+	c.JSON(http.StatusOK, gin.H{
 		"auth_url": authURL,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	})
 }
 
-// HandleGoogleCallback maneja el callback de OAuth2
-func (h *GoogleIntegrationHandler) HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {
-	code := r.URL.Query().Get("code")
-	state := r.URL.Query().Get("state")
+// HandleGoogleCallback maneja el callback de OAuth2 y crea automáticamente Calendar y Sheet
+func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
+	code := c.Query("code")
+	state := c.Query("state")
 
 	if code == "" || state == "" {
-		http.Redirect(w, r, h.FrontendURL+"/integration?error=invalid_request", http.StatusFound)
+		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=invalid_request")
 		return
 	}
 
 	// Verificar state token
-	var userID, agentID int
-	var expiresAt time.Time
-	err := h.DB.QueryRow(`
-		SELECT user_id, agent_id, expires_at 
-		FROM oauth_states 
-		WHERE state_token = ?
-	`, state).Scan(&userID, &agentID, &expiresAt)
-
-	if err != nil || time.Now().After(expiresAt) {
-		http.Redirect(w, r, h.FrontendURL+"/integration?error=invalid_state", http.StatusFound)
+	savedState, err := c.Cookie("oauth_state")
+	if err != nil || state != savedState {
+		log.Printf("❌ Error de validación de state: state=%s, savedState=%s", state, savedState)
+		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=invalid_state")
 		return
 	}
 
-	// Eliminar state token usado
-	h.DB.Exec("DELETE FROM oauth_states WHERE state_token = ?", state)
+	// Limpiar cookie de state
+	c.SetCookie("oauth_state", "", -1, "/", "", false, true)
+
+	// Extraer user_id y agent_id del state
+	var userID, agentID int64
+	fmt.Sscanf(state, "%d:%d:", &userID, &agentID)
+
+	// Obtener agente
+	var agent models.Agent
+	if err := config.DB.Where("id = ? AND user_id = ?", agentID, userID).First(&agent).Error; err != nil {
+		log.Printf("❌ Error obteniendo agente: %v", err)
+		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=agent_not_found")
+		return
+	}
 
 	// Intercambiar código por tokens
-	ctx := r.Context()
-	token, err := h.CalendarService.ExchangeCode(ctx, code)
+	ctx := context.Background()
+	token, err := h.calendarService.ExchangeCode(ctx, code)
 	if err != nil {
-		http.Redirect(w, r, h.FrontendURL+"/integration?error=token_exchange_failed", http.StatusFound)
+		log.Printf("❌ Error intercambiando código: %v", err)
+		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=token_exchange_failed")
 		return
 	}
 
 	tokenJSON, err := json.Marshal(token)
 	if err != nil {
-		http.Error(w, "Error processing token", http.StatusInternalServerError)
+		log.Printf("❌ Error serializando token: %v", err)
+		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=token_error")
 		return
 	}
 
-	// Obtener información del agente
-	var agentName string
-	err = h.DB.QueryRow("SELECT name FROM agents WHERE id = ?", agentID).Scan(&agentName)
+	log.Printf("✅ [Agent %d] Token obtenido exitosamente", agent.ID)
+
+	// PASO 1: Crear Calendar automáticamente
+	log.Printf("📅 [Agent %d] Creando Google Calendar...", agent.ID)
+	calendarID, err := h.calendarService.CreateCalendar(ctx, string(tokenJSON), agent.Name)
 	if err != nil {
-		http.Redirect(w, r, h.FrontendURL+"/integration?error=agent_not_found", http.StatusFound)
+		log.Printf("❌ [Agent %d] Error creando Calendar: %v", agent.ID, err)
+		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=calendar_creation_failed")
 		return
 	}
+	log.Printf("✅ [Agent %d] Calendar creado: %s", agent.ID, calendarID)
 
-	// Crear Calendar automáticamente
-	calendarID, err := h.CalendarService.CreateCalendar(ctx, string(tokenJSON), agentName)
+	// PASO 2: Crear Spreadsheet automáticamente
+	log.Printf("📊 [Agent %d] Creando Google Sheet...", agent.ID)
+	spreadsheetID, err := h.sheetsService.CreateSpreadsheet(ctx, string(tokenJSON), agent.Name)
 	if err != nil {
-		http.Redirect(w, r, h.FrontendURL+"/integration?error=calendar_creation_failed", http.StatusFound)
+		log.Printf("❌ [Agent %d] Error creando Sheet: %v", agent.ID, err)
+		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=sheet_creation_failed")
+		return
+	}
+	log.Printf("✅ [Agent %d] Sheet creado: %s", agent.ID, spreadsheetID)
+
+	// PASO 3: Guardar todo en la base de datos
+	now := time.Now()
+	agent.GoogleToken = string(tokenJSON)
+	agent.GoogleCalendarID = calendarID
+	agent.GoogleSheetID = spreadsheetID
+	agent.GoogleConnected = true
+	agent.GoogleConnectedAt = &now
+
+	if err := config.DB.Save(&agent).Error; err != nil {
+		log.Printf("❌ [Agent %d] Error guardando en BD: %v", agent.ID, err)
+		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=save_failed")
 		return
 	}
 
-	// Crear Spreadsheet automáticamente
-	spreadsheetID, err := h.SheetsService.CreateSpreadsheet(ctx, string(tokenJSON), agentName)
-	if err != nil {
-		http.Redirect(w, r, h.FrontendURL+"/integration?error=sheet_creation_failed", http.StatusFound)
-		return
-	}
+	log.Printf("🎉 [Agent %d] Integración completada exitosamente", agent.ID)
 
-	// Guardar todo en la BD
-	_, err = h.DB.Exec(`
-		UPDATE agents 
-		SET 
-			google_token = ?,
-			google_calendar_id = ?,
-			google_sheet_id = ?,
-			google_connected = 1,
-			google_connected_at = ?
-		WHERE id = ?
-	`, string(tokenJSON), calendarID, spreadsheetID, time.Now(), agentID)
-
-	if err != nil {
-		http.Redirect(w, r, h.FrontendURL+"/integration?error=save_failed", http.StatusFound)
-		return
-	}
-
-	// Redirigir al frontend con éxito
-	redirectURL := fmt.Sprintf("%s/integration?success=true&agent_id=%d&calendar_id=%s&sheet_id=%s",
-		h.FrontendURL, agentID, calendarID, spreadsheetID)
-	http.Redirect(w, r, redirectURL, http.StatusFound)
+	// Redirigir con éxito
+	redirectURL := fmt.Sprintf("/my-agents?success=true&agent_id=%d&calendar_id=%s&sheet_id=%s",
+		agent.ID, calendarID, spreadsheetID)
+	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 }
 
 // DisconnectGoogle desconecta la integración de Google
-func (h *GoogleIntegrationHandler) DisconnectGoogle(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
-	agentID := r.URL.Query().Get("agent_id")
+func (h *GoogleIntegrationHandler) DisconnectGoogle(c *gin.Context) {
+	userInterface, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autenticado"})
+		return
+	}
+
+	user := userInterface.(*models.User)
+	agentID := c.Param("agent_id")
 
 	if agentID == "" {
-		http.Error(w, "agent_id is required", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "agent_id es requerido"})
 		return
 	}
 
 	// Verificar que el agente pertenece al usuario
-	var ownerID int
-	err := h.DB.QueryRow("SELECT user_id FROM agents WHERE id = ?", agentID).Scan(&ownerID)
-	if err != nil || ownerID != userID {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	var agent models.Agent
+	if err := config.DB.Where("id = ? AND user_id = ?", agentID, user.ID).First(&agent).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Agente no encontrado"})
 		return
 	}
 
-	// Desconectar
-	_, err = h.DB.Exec(`
-		UPDATE agents 
-		SET 
-			google_token = NULL,
-			google_calendar_id = NULL,
-			google_sheet_id = NULL,
-			google_connected = 0,
-			google_connected_at = NULL
-		WHERE id = ?
-	`, agentID)
+	// Limpiar campos de Google
+	agent.GoogleToken = ""
+	agent.GoogleCalendarID = ""
+	agent.GoogleSheetID = ""
+	agent.GoogleConnected = false
+	agent.GoogleConnectedAt = nil
 
-	if err != nil {
-		http.Error(w, "Error disconnecting", http.StatusInternalServerError)
+	if err := config.DB.Save(&agent).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error desconectando"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]bool{"success": true})
+	log.Printf("✅ [Agent %d] Google desconectado", agent.ID)
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+// GetIntegrationStatus obtiene el estado de la integración
+func (h *GoogleIntegrationHandler) GetIntegrationStatus(c *gin.Context) {
+	userInterface, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autenticado"})
+		return
+	}
+
+	user := userInterface.(*models.User)
+	agentID := c.Param("agent_id")
+
+	if agentID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "agent_id es requerido"})
+		return
+	}
+
+	var agent models.Agent
+	if err := config.DB.Where("id = ? AND user_id = ?", agentID, user.ID).First(&agent).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Agente no encontrado"})
+		return
+	}
+
+	response := gin.H{
+		"connected":    agent.GoogleConnected,
+		"calendar_id":  agent.GoogleCalendarID,
+		"sheet_id":     agent.GoogleSheetID,
+		"connected_at": agent.GoogleConnectedAt,
+	}
+
+	// Si está conectado, agregar URLs públicas
+	if agent.GoogleConnected {
+		if agent.GoogleCalendarID != "" {
+			response["calendar_url"] = fmt.Sprintf("https://calendar.google.com/calendar/u/0/r?cid=%s", agent.GoogleCalendarID)
+		}
+		if agent.GoogleSheetID != "" {
+			response["sheet_url"] = fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s/edit", agent.GoogleSheetID)
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // CreateAppointment crea una cita en Calendar y Sheets
-func (h *GoogleIntegrationHandler) CreateAppointment(w http.ResponseWriter, r *http.Request) {
+func (h *GoogleIntegrationHandler) CreateAppointment(c *gin.Context) {
+	userInterface, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autenticado"})
+		return
+	}
+
+	user := userInterface.(*models.User)
+
 	var req struct {
-		AgentID     int       `json:"agent_id"`
-		Title       string    `json:"title"`
+		AgentID     uint      `json:"agent_id" binding:"required"`
+		Title       string    `json:"title" binding:"required"`
 		Description string    `json:"description"`
-		StartTime   time.Time `json:"start_time"`
-		EndTime     time.Time `json:"end_time"`
-		ClientName  string    `json:"client_name"`
+		StartTime   time.Time `json:"start_time" binding:"required"`
+		EndTime     time.Time `json:"end_time" binding:"required"`
+		ClientName  string    `json:"client_name" binding:"required"`
 		ClientEmail string    `json:"client_email"`
 		ClientPhone string    `json:"client_phone"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos", "details": err.Error()})
 		return
 	}
 
 	// Obtener agente con integración
 	var agent models.Agent
-	err := h.DB.QueryRow(`
-		SELECT id, name, google_token, google_calendar_id, google_sheet_id, google_connected
-		FROM agents 
-		WHERE id = ? AND google_connected = 1
-	`, req.AgentID).Scan(&agent.ID, &agent.Name, &agent.GoogleToken,
-		&agent.GoogleCalendarID, &agent.GoogleSheetID, &agent.GoogleConnected)
-
-	if err != nil {
-		http.Error(w, "Agent not found or not connected", http.StatusNotFound)
+	if err := config.DB.Where("id = ? AND user_id = ? AND google_connected = ?", req.AgentID, user.ID, true).First(&agent).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Agente no encontrado o no conectado a Google"})
 		return
 	}
 
-	ctx := r.Context()
+	ctx := context.Background()
 
 	// Crear evento en Calendar
 	eventData := services.EventData{
@@ -230,12 +302,14 @@ func (h *GoogleIntegrationHandler) CreateAppointment(w http.ResponseWriter, r *h
 		ClientPhone: req.ClientPhone,
 	}
 
-	eventID, err := h.CalendarService.CreateEvent(ctx, agent.GoogleToken.String,
-		agent.GoogleCalendarID.String, eventData)
+	eventID, err := h.calendarService.CreateEvent(ctx, agent.GoogleToken, agent.GoogleCalendarID, eventData)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error creating calendar event: %v", err), http.StatusInternalServerError)
+		log.Printf("❌ Error creando evento en Calendar: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creando evento en Calendar"})
 		return
 	}
+
+	log.Printf("✅ [Agent %d] Evento creado en Calendar: %s", agent.ID, eventID)
 
 	// Agregar a Sheets
 	appointmentData := services.AppointmentData{
@@ -250,63 +324,20 @@ func (h *GoogleIntegrationHandler) CreateAppointment(w http.ResponseWriter, r *h
 		Status:      "Confirmada",
 	}
 
-	err = h.SheetsService.AddAppointment(ctx, agent.GoogleToken.String,
-		agent.GoogleSheetID.String, appointmentData)
+	err = h.sheetsService.AddAppointment(ctx, agent.GoogleToken, agent.GoogleSheetID, appointmentData)
 	if err != nil {
 		// Si falla Sheets, intentar eliminar el evento de Calendar
-		h.CalendarService.DeleteEvent(ctx, agent.GoogleToken.String,
-			agent.GoogleCalendarID.String, eventID)
-		http.Error(w, "Error adding to spreadsheet", http.StatusInternalServerError)
+		h.calendarService.DeleteEvent(ctx, agent.GoogleToken, agent.GoogleCalendarID, eventID)
+		log.Printf("❌ Error agregando a Sheet: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error agregando a la hoja de cálculo"})
 		return
 	}
 
-	response := map[string]interface{}{
+	log.Printf("✅ [Agent %d] Cita agregada a Sheet", agent.ID)
+
+	c.JSON(http.StatusOK, gin.H{
 		"success":  true,
 		"event_id": eventID,
 		"message":  "Cita creada exitosamente",
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
-}
-
-// GetIntegrationStatus obtiene el estado de la integración
-func (h *GoogleIntegrationHandler) GetIntegrationStatus(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("user_id").(int)
-	agentID := r.URL.Query().Get("agent_id")
-
-	if agentID == "" {
-		http.Error(w, "agent_id is required", http.StatusBadRequest)
-		return
-	}
-
-	var agent models.Agent
-	err := h.DB.QueryRow(`
-		SELECT id, name, google_connected, google_calendar_id, google_sheet_id, google_connected_at
-		FROM agents 
-		WHERE id = ? AND user_id = ?
-	`, agentID, userID).Scan(&agent.ID, &agent.Name, &agent.GoogleConnected,
-		&agent.GoogleCalendarID, &agent.GoogleSheetID, &agent.GoogleConnectedAt)
-
-	if err != nil {
-		http.Error(w, "Agent not found", http.StatusNotFound)
-		return
-	}
-
-	response := map[string]interface{}{
-		"connected":    agent.GoogleConnected,
-		"calendar_id":  agent.GoogleCalendarID.String,
-		"sheet_id":     agent.GoogleSheetID.String,
-		"connected_at": agent.GoogleConnectedAt,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
-}
-
-// generateStateToken genera un token aleatorio para CSRF protection
-func generateStateToken() string {
-	b := make([]byte, 32)
-	rand.Read(b)
-	return base64.URLEncoding.EncodeToString(b)
+	})
 }

@@ -62,6 +62,21 @@ func main() {
 		log.Println("✅ Google OAuth inicializado correctamente")
 	}
 
+	// ============================================
+	// INICIALIZAR GOOGLE INTEGRATION (Calendar & Sheets)
+	// ============================================
+	googleIntegrationHandler, err := handlers.NewGoogleIntegrationHandler()
+	if err != nil {
+		log.Printf("⚠️  Google Integration no inicializado: %v", err)
+		log.Println("ℹ️  La integración de Calendar y Sheets no estará disponible")
+		log.Println("💡 Verifica que tengas configuradas las variables:")
+		log.Println("   - GOOGLE_CLIENT_ID")
+		log.Println("   - GOOGLE_CLIENT_SECRET")
+		log.Println("   - GOOGLE_REDIRECT_URL")
+	} else {
+		log.Println("✅ Google Integration inicializado correctamente")
+	}
+
 	// Configurar Gin
 	if os.Getenv("ENVIRONMENT") == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -147,6 +162,26 @@ func main() {
 		protected.POST("/stripe/checkout", handlers.CreateCheckoutSession)
 		protected.POST("/stripe/confirm", handlers.ConfirmPayment)
 		protected.GET("/stripe/public-key", handlers.GetStripePublicKey)
+
+		// ============================================
+		// GOOGLE INTEGRATION - Calendar & Sheets
+		// ============================================
+		if googleIntegrationHandler != nil {
+			// Iniciar OAuth flow para conectar Google
+			protected.GET("/google/connect", googleIntegrationHandler.InitiateGoogleIntegration)
+
+			// Callback de Google OAuth
+			protected.GET("/google/callback", googleIntegrationHandler.HandleGoogleCallback)
+
+			// Obtener estado de integración de un agente
+			protected.GET("/google/status/:agent_id", googleIntegrationHandler.GetIntegrationStatus)
+
+			// Desconectar Google de un agente
+			protected.POST("/google/disconnect/:agent_id", googleIntegrationHandler.DisconnectGoogle)
+
+			// Crear cita en Calendar y Sheet
+			protected.POST("/google/appointments", googleIntegrationHandler.CreateAppointment)
+		}
 	}
 
 	// ============================================
@@ -166,6 +201,11 @@ func main() {
 	// Appointments (requiere autenticación)
 	router.GET("/appointments", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "appointments.html", nil)
+	})
+
+	// Test Google Integration (requiere autenticación)
+	router.GET("/test-google", middleware.AuthRequired(), func(c *gin.Context) {
+		c.HTML(200, "test-google-integration.html", nil)
 	})
 
 	// Login page

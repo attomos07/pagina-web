@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Integración Google Calendar & Sheets</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .card-header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .card-header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .card-body {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: #667eea;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-box {
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .status-box.disconnected {
+            background: #fee2e2;
+            border: 2px solid #fca5a5;
+            color: #991b1b;
+        }
+
+        .status-box.connected {
+            background: #d1fae5;
+            border: 2px solid #6ee7b7;
+            color: #065f46;
+        }
+
+        .status-box.loading {
+            background: #fef3c7;
+            border: 2px solid #fcd34d;
+            color: #92400e;
+        }
+
+        .status-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .info-value {
+            color: #333;
+            font-family: 'Courier New', monospace;
+        }
+
+        .link-external {
+            color: #667eea;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .link-external:hover {
+            text-decoration: underline;
+        }
+
+        .buttons-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            border: 1px solid #6ee7b7;
+            color: #065f46;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .datetime-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .datetime-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h1>
+                    <i class="lni lni-google"></i>
+                    Test de Integración Google
+                </h1>
+                <p>Prueba la conexión con Google Calendar y Sheets</p>
+            </div>
+
+            <div class="card-body">
+                <!-- Alertas -->
+                <div id="alerts"></div>
+
+                <!-- Sección 1: Configuración -->
+                <div class="section">
+                    <div class="section-title">
+                        <i class="lni lni-cog"></i>
+                        Configuración Inicial
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Selecciona un Agente para Probar</label>
+                        <select id="agentSelect" class="form-select">
+                            <option value="">Cargando agentes...</option>
+                        </select>
+                    </div>
+
+                    <button id="loadStatusBtn" class="btn btn-primary" onclick="loadIntegrationStatus()">
+                        <i class="lni lni-reload"></i>
+                        Cargar Estado de Integración
+                    </button>
+                </div>
+
+                <!-- Sección 2: Estado de Conexión -->
+                <div class="section">
+                    <div class="section-title">
+                        <i class="lni lni-network"></i>
+                        Estado de Conexión
+                    </div>
+
+                    <div id="statusBox" class="status-box loading">
+                        <i class="lni lni-spinner status-icon"></i>
+                        Cargando estado...
+                    </div>
+
+                    <div id="connectionInfo" style="display: none;">
+                        <div class="info-row">
+                            <span class="info-label">Calendar ID:</span>
+                            <span class="info-value" id="calendarIdDisplay">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Sheet ID:</span>
+                            <span class="info-value" id="sheetIdDisplay">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Conectado en:</span>
+                            <span class="info-value" id="connectedAtDisplay">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Ver Calendar:</span>
+                            <a href="#" id="calendarLink" class="link-external" target="_blank">
+                                Abrir en Google Calendar <i class="lni lni-arrow-right"></i>
+                            </a>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Ver Sheet:</span>
+                            <a href="#" id="sheetLink" class="link-external" target="_blank">
+                                Abrir en Google Sheets <i class="lni lni-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="buttons-group" style="margin-top: 20px;">
+                        <button id="connectBtn" class="btn btn-success" onclick="connectGoogle()" style="display: none;">
+                            <i class="lni lni-link"></i>
+                            Conectar Google
+                        </button>
+                        <button id="disconnectBtn" class="btn btn-danger" onclick="disconnectGoogle()" style="display: none;">
+                            <i class="lni lni-unlink"></i>
+                            Desconectar Google
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sección 3: Crear Cita de Prueba -->
+                <div class="section">
+                    <div class="section-title">
+                        <i class="lni lni-calendar"></i>
+                        Crear Cita de Prueba
+                    </div>
+
+                    <form id="appointmentForm">
+                        <div class="form-group">
+                            <label class="form-label">Título de la Cita</label>
+                            <input type="text" id="appointmentTitle" class="form-input" 
+                                   placeholder="Ej: Consulta con Juan Pérez" value="Cita de Prueba">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Descripción</label>
+                            <input type="text" id="appointmentDescription" class="form-input" 
+                                   placeholder="Detalles de la cita" value="Esta es una cita de prueba">
+                        </div>
+
+                        <div class="datetime-row">
+                            <div class="form-group">
+                                <label class="form-label">Fecha y Hora de Inicio</label>
+                                <input type="datetime-local" id="appointmentStart" class="form-input">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Fecha y Hora de Fin</label>
+                                <input type="datetime-local" id="appointmentEnd" class="form-input">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Nombre del Cliente</label>
+                            <input type="text" id="clientName" class="form-input" 
+                                   placeholder="Ej: Juan Pérez" value="Cliente de Prueba">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email del Cliente (opcional)</label>
+                            <input type="email" id="clientEmail" class="form-input" 
+                                   placeholder="cliente@example.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Teléfono del Cliente (opcional)</label>
+                            <input type="tel" id="clientPhone" class="form-input" 
+                                   placeholder="+52 662 123 4567">
+                        </div>
+
+                        <button type="submit" id="createAppointmentBtn" class="btn btn-primary" disabled>
+                            <i class="lni lni-plus"></i>
+                            Crear Cita de Prueba
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/test.js"></script>
+</body>
+</html>
