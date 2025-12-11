@@ -8,6 +8,7 @@ import (
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 )
@@ -18,7 +19,7 @@ type GoogleSheetsService struct {
 	RedirectURL  string
 }
 
-// GetOAuthConfig retorna la configuración de OAuth2 para Google Sheets
+// GetOAuthConfig retorna la configuración de OAuth2 para Google Sheets y Calendar
 func (s *GoogleSheetsService) GetOAuthConfig() *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     s.ClientID,
@@ -26,6 +27,7 @@ func (s *GoogleSheetsService) GetOAuthConfig() *oauth2.Config {
 		RedirectURL:  s.RedirectURL,
 		Scopes: []string{
 			sheets.SpreadsheetsScope, // Acceso completo a Sheets
+			calendar.CalendarScope,   // Acceso completo a Calendar
 		},
 		Endpoint: google.Endpoint,
 	}
@@ -110,6 +112,19 @@ func (s *GoogleSheetsService) SetupHeaders(ctx context.Context, tokenJSON, sprea
 		return err
 	}
 
+	// Obtener el spreadsheet para conseguir el sheetId correcto
+	spreadsheet, err := service.Spreadsheets.Get(spreadsheetID).Do()
+	if err != nil {
+		return fmt.Errorf("error getting spreadsheet: %w", err)
+	}
+
+	if len(spreadsheet.Sheets) == 0 {
+		return fmt.Errorf("spreadsheet has no sheets")
+	}
+
+	// Obtener el sheetId de la primera hoja
+	sheetId := spreadsheet.Sheets[0].Properties.SheetId
+
 	// Encabezados
 	headers := []interface{}{
 		"ID Evento",
@@ -143,7 +158,7 @@ func (s *GoogleSheetsService) SetupHeaders(ctx context.Context, tokenJSON, sprea
 		{
 			RepeatCell: &sheets.RepeatCellRequest{
 				Range: &sheets.GridRange{
-					SheetId:       0,
+					SheetId:       sheetId,
 					StartRowIndex: 0,
 					EndRowIndex:   1,
 				},
@@ -166,7 +181,7 @@ func (s *GoogleSheetsService) SetupHeaders(ctx context.Context, tokenJSON, sprea
 		{
 			UpdateSheetProperties: &sheets.UpdateSheetPropertiesRequest{
 				Properties: &sheets.SheetProperties{
-					SheetId: 0,
+					SheetId: sheetId,
 					GridProperties: &sheets.GridProperties{
 						FrozenRowCount: 1,
 					},

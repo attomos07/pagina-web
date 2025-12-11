@@ -10,6 +10,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
+	"google.golang.org/api/sheets/v4"
 )
 
 type GoogleCalendarService struct {
@@ -18,14 +19,15 @@ type GoogleCalendarService struct {
 	RedirectURL  string
 }
 
-// GetOAuthConfig retorna la configuración de OAuth2 para Google Calendar
+// GetOAuthConfig retorna la configuración de OAuth2 para Google Calendar y Sheets
 func (s *GoogleCalendarService) GetOAuthConfig() *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     s.ClientID,
 		ClientSecret: s.ClientSecret,
 		RedirectURL:  s.RedirectURL,
 		Scopes: []string{
-			calendar.CalendarScope, // Acceso completo a Calendar
+			calendar.CalendarScope,   // Acceso completo a Calendar
+			sheets.SpreadsheetsScope, // Acceso completo a Sheets
 		},
 		Endpoint: google.Endpoint,
 	}

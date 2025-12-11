@@ -23,13 +23,27 @@ type GoogleIntegrationHandler struct {
 
 // NewGoogleIntegrationHandler crea una nueva instancia del handler
 func NewGoogleIntegrationHandler() (*GoogleIntegrationHandler, error) {
-	clientID := os.Getenv("GOOGLE_CLIENT_ID")
-	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
-	redirectURL := os.Getenv("GOOGLE_REDIRECT_URL")
+	// Intentar primero con variables específicas de integración
+	clientID := os.Getenv("GOOGLE_INTEGRATION_CLIENT_ID")
+	clientSecret := os.Getenv("GOOGLE_INTEGRATION_CLIENT_SECRET")
+	redirectURL := os.Getenv("GOOGLE_INTEGRATION_REDIRECT_URL")
+
+	// Fallback a variables genéricas si no existen las específicas
+	if clientID == "" {
+		clientID = os.Getenv("GOOGLE_CLIENT_ID")
+	}
+	if clientSecret == "" {
+		clientSecret = os.Getenv("GOOGLE_CLIENT_SECRET")
+	}
+	if redirectURL == "" {
+		redirectURL = os.Getenv("GOOGLE_REDIRECT_URL")
+	}
 
 	if clientID == "" || clientSecret == "" || redirectURL == "" {
-		return nil, fmt.Errorf("faltan credenciales de Google OAuth (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL)")
+		return nil, fmt.Errorf("faltan credenciales de Google OAuth (GOOGLE_INTEGRATION_CLIENT_ID, GOOGLE_INTEGRATION_CLIENT_SECRET, GOOGLE_INTEGRATION_REDIRECT_URL)")
 	}
+
+	log.Printf("✅ Google Integration configurado con redirect URL: %s", redirectURL)
 
 	return &GoogleIntegrationHandler{
 		calendarService: &services.GoogleCalendarService{
