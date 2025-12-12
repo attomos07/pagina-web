@@ -204,8 +204,8 @@ func main() {
 	})
 
 	// Test Google Integration (requiere autenticación)
-	router.GET("/test-google", middleware.AuthRequired(), func(c *gin.Context) {
-		c.HTML(200, "test-google-integration.html", nil)
+	router.GET("/integrations", middleware.AuthRequired(), func(c *gin.Context) {
+		c.HTML(200, "integrations.html", nil)
 	})
 
 	// Login page
