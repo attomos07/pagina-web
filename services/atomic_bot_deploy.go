@@ -657,8 +657,8 @@ func (s *AtomicBotDeployService) GetBotLogs(agentID uint, lines int) (string, er
 
 // GetQRCodeFromLogs obtiene el QR code desde los logs del bot
 func (s *AtomicBotDeployService) GetQRCodeFromLogs(agentID uint) (string, bool, error) {
-	// Leer últimas 200 líneas del log
-	cmd := fmt.Sprintf("tail -n 200 /var/log/atomic-bot-%d.log", agentID)
+	// Leer últimas 300 líneas del log (más líneas para asegurar capturar el QR)
+	cmd := fmt.Sprintf("tail -n 300 /var/log/atomic-bot-%d.log", agentID)
 	output, err := s.executeCommand(cmd)
 
 	if err != nil {
@@ -667,14 +667,26 @@ func (s *AtomicBotDeployService) GetQRCodeFromLogs(agentID uint) (string, bool, 
 
 	lines := strings.Split(output, "\n")
 
-	// Verificar si ya está conectado
+	// Log para debugging
+	log.Printf("📋 [Agent %d] Analizando %d líneas de logs", agentID, len(lines))
+
+	// Verificar si ya está conectado (buscar en orden inverso para obtener el estado más reciente)
 	for i := len(lines) - 1; i >= 0; i-- {
 		line := lines[i]
+
+		// Detectar mensajes de conexión exitosa
 		if strings.Contains(line, "BOT CONECTADO EXITOSAMENTE") ||
 			strings.Contains(line, "Conectado a WhatsApp") ||
-			strings.Contains(line, "Connected") ||
-			strings.Contains(line, "Authenticated") {
-			return "", true, nil // Conectado
+			strings.Contains(line, "✅ Google Calendar inicializado") ||
+			strings.Contains(line, "Esperando mensajes de WhatsApp") {
+			log.Printf("✅ [Agent %d] Bot conectado a WhatsApp", agentID)
+			return "", true, nil
+		}
+
+		// Detectar si está autenticado
+		if strings.Contains(line, "Authenticated") || strings.Contains(line, "Connected") {
+			log.Printf("✅ [Agent %d] WhatsApp autenticado", agentID)
+			return "", true, nil
 		}
 	}
 
@@ -682,9 +694,34 @@ func (s *AtomicBotDeployService) GetQRCodeFromLogs(agentID uint) (string, bool, 
 	qrCode := extractQRFromLogs(lines)
 
 	if qrCode != "" {
+		log.Printf("📱 [Agent %d] QR code encontrado (%d caracteres)", agentID, len(qrCode))
 		return qrCode, false, nil
 	}
 
+	// Verificar si el bot está iniciando
+	for i := len(lines) - 1; i >= 0 && i >= len(lines)-20; i-- {
+		line := lines[i]
+		if strings.Contains(line, "Inicializando servicios") ||
+			strings.Contains(line, "AtomicBot WhatsApp") ||
+			strings.Contains(line, "Conectando a WhatsApp") {
+			log.Printf("⏳ [Agent %d] Bot está iniciando, esperando QR code", agentID)
+			return "", false, fmt.Errorf("bot iniciando, esperando código QR")
+		}
+	}
+
+	// Si llegamos aquí, no hay QR ni conexión - ver últimas líneas para diagnóstico
+	lastLines := ""
+	startIdx := len(lines) - 10
+	if startIdx < 0 {
+		startIdx = 0
+	}
+	for i := startIdx; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i]) != "" {
+			lastLines += lines[i] + "\n"
+		}
+	}
+
+	log.Printf("⚠️  [Agent %d] No se encontró QR code ni estado de conexión\nÚltimas líneas:\n%s", agentID, lastLines)
 	return "", false, fmt.Errorf("no QR code found in logs")
 }
 

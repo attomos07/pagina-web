@@ -1,5 +1,13 @@
 /* Agent Details Page Styles */
 
+/* Import Inter font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Apply Inter globally */
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
 /* Layout con Sidebar - IGUAL QUE MY-AGENTS */
 .app-container {
     display: flex;
@@ -254,10 +262,11 @@
 
 .qr-container {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 400px;
-    padding: 2rem;
+    min-height: 500px;
+    padding: 3rem 2rem;
     background: #f9fafb;
     border-radius: 12px;
     margin-bottom: 1.5rem;
@@ -265,21 +274,23 @@
 
 .qr-code {
     background: #fff;
-    padding: 1.5rem;
-    border-radius: 12px;
+    padding: 2rem;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    margin-bottom: 2rem;
 }
 
 .qr-code pre {
     margin: 0;
-    font-family: monospace;
-    font-size: 6px;
-    line-height: 6px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 8px;
+    line-height: 8px;
     color: #000;
     white-space: pre;
+    letter-spacing: 0;
 }
 
 .qr-loading,
@@ -293,8 +304,15 @@
 
 .qr-loading p,
 .qr-error p {
-    color: #6b7280;
+    color: #374151;
     margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.qr-loading small {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* Loading Spinner */
@@ -317,34 +335,39 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    gap: 1.25rem;
     text-align: center;
 }
 
 .connected-icon {
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     background: linear-gradient(135deg, #10b981, #059669);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 12px 32px rgba(16, 185, 129, 0.3);
 }
 
 .connected-icon i {
-    font-size: 40px;
+    font-size: 50px;
     color: #fff;
 }
 
 .qr-connected h3 {
     color: #10b981;
     margin: 0;
-    font-size: 1.5rem;
+    font-size: 1.75rem;
+    font-weight: 700;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .qr-connected p {
     color: #6b7280;
     margin: 0;
+    font-size: 1rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .qr-info {
@@ -352,12 +375,14 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.75rem;
+    padding: 0.75rem 1.25rem;
     background: rgba(6, 182, 212, 0.1);
     border: 1px solid rgba(6, 182, 212, 0.2);
-    border-radius: 8px;
+    border-radius: 10px;
     color: #06b6d4;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .qr-instructions {
@@ -369,8 +394,10 @@
 
 .qr-instructions h3 {
     color: #1a1a1a;
-    font-size: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
     margin: 0 0 1rem 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .qr-instructions ol {
@@ -378,10 +405,12 @@
     padding-left: 1.5rem;
     color: #374151;
     line-height: 1.8;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .qr-instructions strong {
     color: #1a1a1a;
+    font-weight: 600;
 }
 
 /* Details Section */

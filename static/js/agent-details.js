@@ -60,15 +60,15 @@ function renderAgentDetails(agent) {
     const toggleText = document.getElementById('toggleText');
     if (agent.isActive) {
         toggleIcon.className = 'lni lni-pause';
-        toggleText.textContent = 'Pause';
+        toggleText.textContent = 'Pausar';
     } else {
         toggleIcon.className = 'lni lni-play';
-        toggleText.textContent = 'Activate';
+        toggleText.textContent = 'Activar';
     }
     
     // Basic Info
     document.getElementById('infoName').textContent = agent.name;
-    document.getElementById('infoPhone').textContent = agent.phoneNumber || 'Not configured';
+    document.getElementById('infoPhone').textContent = agent.phoneNumber || 'No configurado';
     document.getElementById('infoBusinessType').textContent = formatBusinessType(agent.businessType);
     document.getElementById('infoPort').textContent = agent.port || '--';
     
@@ -79,10 +79,10 @@ function renderAgentDetails(agent) {
         const languages = [...(agent.config.languages || []), ...(agent.config.additionalLanguages || [])];
         document.getElementById('configLanguages').textContent = languages.length > 0 
             ? languages.join(', ') 
-            : 'Not configured';
+            : 'No configurado';
         
         document.getElementById('configWelcome').textContent = 
-            agent.config.welcomeMessage || 'No welcome message configured';
+            agent.config.welcomeMessage || 'No hay mensaje de bienvenida configurado';
         
         // Schedule
         renderSchedule(agent.config.schedule);
@@ -102,16 +102,16 @@ function updateStatusBadge(agent) {
     
     if (agent.deployStatus === 'running' && agent.isActive) {
         statusBadge.classList.add('active');
-        statusBadge.innerHTML = '<span class="status-dot"></span><span>Active</span>';
+        statusBadge.innerHTML = '<span class="status-dot"></span><span>Activo</span>';
     } else if (agent.deployStatus === 'pending' || agent.deployStatus === 'deploying') {
         statusBadge.classList.add('pending');
-        statusBadge.innerHTML = '<span class="status-dot"></span><span>Deploying</span>';
+        statusBadge.innerHTML = '<span class="status-dot"></span><span>Desplegando</span>';
     } else if (agent.deployStatus === 'error') {
         statusBadge.classList.add('inactive');
         statusBadge.innerHTML = '<span class="status-dot"></span><span>Error</span>';
     } else {
         statusBadge.classList.add('inactive');
-        statusBadge.innerHTML = '<span class="status-dot"></span><span>Inactive</span>';
+        statusBadge.innerHTML = '<span class="status-dot"></span><span>Inactivo</span>';
     }
 }
 
@@ -132,11 +132,16 @@ async function loadQRCode() {
         const data = await response.json();
         
         if (response.ok && data.qrCode) {
+            console.log('📱 QR code received');
             displayQRCode(data.qrCode);
         } else if (data.connected) {
+            console.log('✅ WhatsApp connected');
             displayConnectedMessage();
         } else {
-            displayQRLoading(data.message || 'Waiting for QR code...');
+            // Bot is starting or waiting for QR
+            const message = data.message || data.error || 'Starting bot, waiting for QR code...';
+            console.log('⏳ Waiting:', message);
+            displayQRLoading(message);
         }
     } catch (error) {
         console.error('❌ Error loading QR:', error);
@@ -151,9 +156,14 @@ function displayQRCode(qrCode) {
         <div class="qr-code">
             <pre>${escapeHtml(qrCode)}</pre>
         </div>
-        <div class="qr-info">
-            <i class="lni lni-timer"></i>
-            <span>QR code refreshes automatically</span>
+        <div style="text-align: center; max-width: 400px;">
+            <p style="font-size: 1.1rem; font-weight: 600; color: #1a1a1a; margin: 0 0 1rem 0; font-family: 'Inter', sans-serif;">
+                Escanea este código QR con WhatsApp
+            </p>
+            <div class="qr-info">
+                <i class="lni lni-timer"></i>
+                <span>El código QR se actualiza automáticamente</span>
+            </div>
         </div>
     `;
 }
@@ -166,25 +176,55 @@ function displayConnectedMessage() {
             <div class="connected-icon">
                 <i class="lni lni-checkmark-circle"></i>
             </div>
-            <h3>WhatsApp Connected!</h3>
-            <p>Your bot is connected and running</p>
+            <h3>¡WhatsApp Conectado!</h3>
+            <p>Tu bot está conectado y funcionando</p>
         </div>
     `;
     
     // Stop polling when connected
-    if (qrPollInterval) {
-        clearInterval(qrPollInterval);
-        qrPollInterval = null;
-    }
+    stopQRPolling();
 }
 
 // Display QR loading state
 function displayQRLoading(message) {
     const qrContainer = document.getElementById('qrContainer');
+    
+    // Traducir mensajes al español
+    const translations = {
+        'Starting bot, waiting for QR code...': 'Iniciando bot, esperando código QR...',
+        'Waiting for QR code...': 'Esperando código QR...',
+        'bot iniciando, esperando código QR': 'Bot iniciando, esperando código QR...',
+        'This usually takes 5-15 seconds': 'Esto usualmente toma 5-15 segundos'
+    };
+    
+    let translatedMessage = message;
+    for (const [eng, esp] of Object.entries(translations)) {
+        if (message.toLowerCase().includes(eng.toLowerCase())) {
+            translatedMessage = esp;
+            break;
+        }
+    }
+    
+    // Determinar el ícono y color según el mensaje
+    let icon = 'lni-hourglass';
+    let statusClass = 'loading';
+    
+    if (translatedMessage.toLowerCase().includes('iniciando')) {
+        icon = 'lni-rocket';
+        statusClass = 'starting';
+    } else if (translatedMessage.toLowerCase().includes('esperando')) {
+        icon = 'lni-timer';
+        statusClass = 'waiting';
+    }
+    
     qrContainer.innerHTML = `
-        <div class="qr-loading">
+        <div class="qr-loading ${statusClass}">
             <div class="loading-spinner"></div>
-            <p>${escapeHtml(message)}</p>
+            <i class="lni ${icon}" style="font-size: 2rem; color: #06b6d4; margin-top: 1rem;"></i>
+            <p>${escapeHtml(translatedMessage)}</p>
+            <small style="color: #9ca3af; margin-top: 0.5rem;">
+                Esto usualmente toma 5-15 segundos
+            </small>
         </div>
     `;
 }
@@ -195,41 +235,67 @@ function displayQRError() {
     qrContainer.innerHTML = `
         <div class="qr-error">
             <i class="lni lni-warning"></i>
-            <p>Could not load QR code</p>
+            <p>No se pudo cargar el código QR</p>
             <button class="btn-secondary btn-sm" onclick="loadQRCode()">
                 <i class="lni lni-reload"></i>
-                Retry
+                Reintentar
             </button>
         </div>
     `;
 }
 
-// Start QR polling (every 5 seconds)
+// Start QR polling with adaptive interval
 function startQRPolling() {
     // Only poll if atomic bot
     if (!agent || agent.botType !== 'atomic') return;
     
-    qrPollInterval = setInterval(() => {
-        loadQRCode();
-    }, 5000);
+    let pollCount = 0;
+    
+    // Poll más frecuentemente al inicio (cada 3 segundos por los primeros 10 intentos)
+    // Luego cada 5 segundos
+    const poll = () => {
+        pollCount++;
+        const interval = pollCount <= 10 ? 3000 : 5000;
+        
+        qrPollInterval = setTimeout(() => {
+            loadQRCode().then(() => {
+                // Continuar polling solo si no está conectado
+                if (qrPollInterval !== null) {
+                    poll();
+                }
+            });
+        }, interval);
+    };
+    
+    // Iniciar el polling
+    poll();
+}
+
+// Stop QR polling
+function stopQRPolling() {
+    if (qrPollInterval) {
+        clearTimeout(qrPollInterval);
+        qrPollInterval = null;
+        console.log('⏸️  QR polling stopped');
+    }
 }
 
 // Render schedule
 function renderSchedule(schedule) {
     if (!schedule) {
-        document.getElementById('scheduleGrid').innerHTML = '<p class="no-data">No schedule configured</p>';
+        document.getElementById('scheduleGrid').innerHTML = '<p class="no-data">No hay horario configurado</p>';
         return;
     }
     
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     const dayNames = {
-        monday: 'Monday',
-        tuesday: 'Tuesday',
-        wednesday: 'Wednesday',
-        thursday: 'Thursday',
-        friday: 'Friday',
-        saturday: 'Saturday',
-        sunday: 'Sunday'
+        monday: 'Lunes',
+        tuesday: 'Martes',
+        wednesday: 'Miércoles',
+        thursday: 'Jueves',
+        friday: 'Viernes',
+        saturday: 'Sábado',
+        sunday: 'Domingo'
     };
     
     const scheduleHTML = days.map(day => {
@@ -242,20 +308,20 @@ function renderSchedule(schedule) {
                 <div class="schedule-time">
                     ${daySchedule.open 
                         ? `${daySchedule.start} - ${daySchedule.end}`
-                        : '<span class="closed">Closed</span>'
+                        : '<span class="closed">Cerrado</span>'
                     }
                 </div>
             </div>
         `;
     }).join('');
     
-    document.getElementById('scheduleGrid').innerHTML = scheduleHTML || '<p class="no-data">No schedule configured</p>';
+    document.getElementById('scheduleGrid').innerHTML = scheduleHTML || '<p class="no-data">No hay horario configurado</p>';
 }
 
 // Render services
 function renderServices(services) {
     if (!services || services.length === 0) {
-        document.getElementById('servicesList').innerHTML = '<p class="no-data">No services configured</p>';
+        document.getElementById('servicesList').innerHTML = '<p class="no-data">No hay servicios configurados</p>';
         return;
     }
     
@@ -275,7 +341,7 @@ function renderServices(services) {
 // Render workers
 function renderWorkers(workers) {
     if (!workers || workers.length === 0) {
-        document.getElementById('workersList').innerHTML = '<p class="no-data">No staff configured</p>';
+        document.getElementById('workersList').innerHTML = '<p class="no-data">No hay personal configurado</p>';
         return;
     }
     
@@ -309,16 +375,16 @@ function formatPrice(service) {
 
 // Format work days
 function formatWorkDays(days) {
-    if (!days || days.length === 0) return 'No days configured';
+    if (!days || days.length === 0) return 'Sin días configurados';
     
     const dayAbbr = {
-        monday: 'Mon',
-        tuesday: 'Tue',
-        wednesday: 'Wed',
-        thursday: 'Thu',
-        friday: 'Fri',
-        saturday: 'Sat',
-        sunday: 'Sun'
+        monday: 'Lun',
+        tuesday: 'Mar',
+        wednesday: 'Mié',
+        thursday: 'Jue',
+        friday: 'Vie',
+        saturday: 'Sáb',
+        sunday: 'Dom'
     };
     
     return days.map(day => `<span class="day-badge">${dayAbbr[day] || day}</span>`).join('');
@@ -326,23 +392,28 @@ function formatWorkDays(days) {
 
 // Format business type
 function formatBusinessType(type) {
-    if (!type) return 'Not specified';
+    if (!type) return 'No especificado';
     return type.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }
 
 // Format tone
 function formatTone(tone) {
-    if (!tone) return 'Not specified';
-    return tone.charAt(0).toUpperCase() + tone.slice(1);
+    if (!tone) return 'No especificado';
+    const tones = {
+        formal: 'Formal',
+        friendly: 'Amigable',
+        casual: 'Casual'
+    };
+    return tones[tone] || tone.charAt(0).toUpperCase() + tone.slice(1);
 }
 
 // Toggle agent status
 async function toggleAgentStatus() {
     if (!agent) return;
     
-    const action = agent.isActive ? 'pause' : 'activate';
+    const action = agent.isActive ? 'pausar' : 'activar';
     
-    if (!confirm(`Are you sure you want to ${action} this agent?`)) {
+    if (!confirm(`¿Estás seguro de que quieres ${action} este agente?`)) {
         return;
     }
     
@@ -353,14 +424,14 @@ async function toggleAgentStatus() {
         });
         
         if (!response.ok) {
-            throw new Error('Error toggling agent status');
+            throw new Error('Error cambiando estado del agente');
         }
         
         await loadAgentDetails();
-        alert(`Agent ${action}d successfully`);
+        alert(`Agente ${action === 'pausar' ? 'pausado' : 'activado'} exitosamente`);
     } catch (error) {
         console.error('❌ Error:', error);
-        alert('Error changing agent status. Please try again.');
+        alert('Error cambiando el estado del agente. Por favor intenta de nuevo.');
     }
 }
 
@@ -379,7 +450,5 @@ function escapeHtml(text) {
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', function() {
-    if (qrPollInterval) {
-        clearInterval(qrPollInterval);
-    }
+    stopQRPolling();
 });
