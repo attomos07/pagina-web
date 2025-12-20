@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Citas - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/appointments.css">
+</head>
+<body>
+    <!-- Decorative Rings -->
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="appointments-layout">
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <div class="header-title">
+                            <h1>
+                                <i class="lni lni-calendar"></i>
+                                Mis Citas
+                            </h1>
+                            <p>Gestiona todas tus citas agendadas</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn-primary" id="createAppointmentBtn">
+                                <i class="lni lni-plus"></i>
+                                <span>Nueva Cita</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon cyan">
+                                <i class="lni lni-calendar"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="totalAppointments">0</div>
+                                <div class="stat-label">Total de Citas</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon green">
+                                <i class="lni lni-checkmark-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="confirmedAppointments">0</div>
+                                <div class="stat-label">Confirmadas</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon orange">
+                                <i class="lni lni-timer"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="pendingAppointments">0</div>
+                                <div class="stat-label">Pendientes</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon purple">
+                                <i class="lni lni-users"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="totalClients">0</div>
+                                <div class="stat-label">Clientes Únicos</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters and View Controls -->
+                    <div class="controls-section">
+                        <div class="filters">
+                            <select class="filter-select" id="statusFilter">
+                                <option value="all">Todos los Estados</option>
+                                <option value="confirmed">Confirmadas</option>
+                                <option value="pending">Pendientes</option>
+                                <option value="cancelled">Canceladas</option>
+                                <option value="completed">Completadas</option>
+                            </select>
+
+                            <select class="filter-select" id="agentFilter">
+                                <option value="all">Todos los Agentes</option>
+                                <!-- Se llenarán dinámicamente -->
+                            </select>
+
+                            <select class="filter-select" id="dateFilter">
+                                <option value="all">Todas las Fechas</option>
+                                <option value="today">Hoy</option>
+                                <option value="tomorrow">Mañana</option>
+                                <option value="week">Esta Semana</option>
+                                <option value="month">Este Mes</option>
+                            </select>
+
+                            <div class="search-box">
+                                <i class="lni lni-search-alt"></i>
+                                <input type="text" id="searchInput" placeholder="Buscar por cliente o servicio...">
+                            </div>
+                        </div>
+
+                        <div class="view-controls">
+                            <button class="view-btn active" data-view="list">
+                                <i class="lni lni-list"></i>
+                            </button>
+                            <button class="view-btn" data-view="calendar">
+                                <i class="lni lni-calendar"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Appointments List View -->
+                    <div class="appointments-container" id="appointmentsListView">
+                        <div class="appointments-list" id="appointmentsList">
+                            <!-- Las citas se cargarán dinámicamente aquí -->
+                        </div>
+                    </div>
+
+                    <!-- Calendar View (hidden by default) -->
+                    <div class="calendar-container" id="calendarView" style="display: none;">
+                        <div class="calendar-header">
+                            <button class="calendar-nav-btn" id="prevMonth">
+                                <i class="lni lni-chevron-left"></i>
+                            </button>
+                            <h3 id="calendarMonth">Enero 2025</h3>
+                            <button class="calendar-nav-btn" id="nextMonth">
+                                <i class="lni lni-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="calendar-grid" id="calendarGrid">
+                            <!-- El calendario se generará dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="empty-state" id="emptyState" style="display: none;">
+                        <div class="empty-icon">
+                            <i class="lni lni-calendar"></i>
+                        </div>
+                        <h3>No hay citas agendadas</h3>
+                        <p>Comienza creando tu primera cita o sincroniza con tus agentes</p>
+                        <button class="btn-primary" onclick="document.getElementById('createAppointmentBtn').click()">
+                            <i class="lni lni-plus"></i>
+                            <span>Crear Primera Cita</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointment Details Modal -->
+    <div class="modal" id="appointmentModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Detalles de la Cita</h3>
+                <button class="modal-close" onclick="closeAppointmentModal()">
+                    <i class="lni lni-close"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- El contenido se llenará dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/appointments.js"></script>
+</body>
+</html>

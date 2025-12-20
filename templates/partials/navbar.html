@@ -1,0 +1,44 @@
+{{define "partials/navbar.html"}}
+<nav class="navbar" id="navbar">
+    <div class="nav-container">
+        <!-- Logo -->
+        <div class="nav-logo">
+            <a href="/">
+                <img src="/static/images/attomos-logo.png" alt="ChatBot Hub Logo" style="height: 36px; width: auto;">
+            </a>
+        </div>
+        
+        <!-- Menu de navegación (centrado) -->
+        <ul class="nav-menu" id="navMenu">
+            <li class="nav-item">
+                <a href="/" class="nav-link active">Inicio</a>
+            </li>
+            <li class="nav-item">
+                <a href="/agents" class="nav-link">Agentes</a>
+            </li>
+            <li class="nav-item">
+                <a href="/blog" class="nav-link">Blog</a>
+            </li>
+            <li class="nav-item">
+                <a href="/pricing" class="nav-link">Precios</a>
+            </li>
+            <li class="nav-item">
+                <a href="/contact" class="nav-link">Contacto</a>
+            </li>
+        </ul>
+        
+        <!-- Botones de autenticación (desktop) -->
+        <div class="nav-auth">
+            <a href="/login" class="nav-link nav-login">Iniciar sesión</a>
+            <a href="/register" class="nav-link nav-cta">Registrarse</a>
+        </div>
+        
+        <!-- Botón de menú móvil -->
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Abrir menú de navegación" aria-expanded="false">
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+        </button>
+    </div>
+</nav>
+{{end}}

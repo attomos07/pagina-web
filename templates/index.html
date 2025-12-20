@@ -1,0 +1,281 @@
+{{define "index.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}}</title>
+    <!-- LineIcons CSS -->
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/static/css/partials/navbar.css">
+    <link rel="stylesheet" href="/static/css/partials/footer.css">
+    <link rel="stylesheet" href="/static/css/index.css">
+</head>
+<body>
+    <!-- Navbar -->
+    {{template "partials/navbar.html" .}}
+
+  <!-- Hero Section -->
+<section class="hero-section">
+    <!-- Canvas de partículas animadas -->
+    <canvas id="particles-canvas"></canvas>
+    
+    <div class="hero-container">
+        <div class="hero-content-wrapper">
+            <div class="hero-text-content">
+<h1 class="hero-title" data-text="Automatiza tu negocio con <span class='highlight'>Agentes de IA</span>">
+    Automatiza tu negocio con <span class="highlight">Agentes de IA</span>
+</h1>
+                <p class="hero-subtitle">
+                    Crea Agentes inteligentes para WhatsApp, Messenger, Instagram y más. Disponible 24/7, listo en minutos y sin escribir una línea de código.
+                </p>
+                <div class="hero-buttons">
+                    <button class="hero-btn hero-btn-primary">
+                        <i class="lni lni-rocket"></i>
+                        Crear mi Agente
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+    <!-- Sección de Redes Sociales -->
+    <section class="social-platforms-section">
+        <div class="social-platforms-container">
+            <h2 class="social-platforms-title">Integra con tus plataformas favoritas</h2>
+            <div class="social-platforms-grid">
+                <div class="social-platform-item" data-platform="whatsapp">
+                    <div class="social-icon-wrapper" style="background-color: #25D36615; border-color: #25D36640;">
+                        <i class="lni lni-whatsapp" style="color: #25D366;"></i>
+                    </div>
+                    <div class="social-platform-name">WhatsApp</div>
+                </div>
+                
+                <div class="social-platform-item" data-platform="facebook">
+                    <div class="social-icon-wrapper" style="background-color: #0084FF15; border-color: #0084FF40;">
+                        <i class="lni lni-facebook-messenger" style="color: #0084FF;"></i>
+                    </div>
+                    <div class="social-platform-name">Messenger</div>
+                </div>
+                
+                <div class="social-platform-item" data-platform="instagram">
+                    <div class="social-icon-wrapper" style="background-color: #E4405F15; border-color: #E4405F40;">
+                        <i class="lni lni-instagram" style="color: #E4405F;"></i>
+                    </div>
+                    <div class="social-platform-name">Instagram</div>
+                </div>
+                
+                <div class="social-platform-item" data-platform="telegram">
+                    <div class="social-icon-wrapper" style="background-color: #0088cc15; border-color: #0088cc40;">
+                        <i class="lni lni-telegram" style="color: #0088cc;"></i>
+                    </div>
+                    <div class="social-platform-name">Telegram</div>
+                </div>
+                
+                <div class="social-platform-item" data-platform="wechat">
+                    <div class="social-icon-wrapper" style="background-color: #09B83E15; border-color: #09B83E40;">
+                        <i class="lni lni-wechat" style="color: #09B83E;"></i>
+                    </div>
+                    <div class="social-platform-name">WeChat</div>
+                </div>
+
+                <div class="social-platform-item" data-platform="kakaotalk">
+                    <div class="social-icon-wrapper" style="background-color: #FEE50015; border-color: #FEE50040;">
+                        <div class="kakao-icon-onboard">
+                            <svg viewBox="0 0 24 24" class="kakao-bubble-onboard">
+                                <path d="M12 3C6.48 3 2 6.58 2 11c0 2.91 1.88 5.45 4.68 6.94l-1.19 4.37c-.09.34.23.63.55.49l5.11-2.29c.27.02.55.03.85.03 5.52 0 10-3.58 10-8C22 6.58 17.52 3 12 3z"/>
+                            </svg>
+                            <span class="kakao-text-onboard">TALK</span>
+                        </div>
+                    </div>
+                    <div class="social-platform-name">KakaoTalk</div>
+                </div>
+
+                <div class="social-platform-item" data-platform="line">
+                    <div class="social-icon-wrapper" style="background-color: #00B90015; border-color: #00B90040;">
+                        <i class="lni lni-line" style="color: #00B900;"></i>
+                    </div>
+                    <div class="social-platform-name">Line</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección de plataformas -->
+    <section class="platforms-section">
+        <div class="section-header">
+            <h2 class="section-title">Agentes en Todas las Plataformas</h2>
+            <p class="section-subtitle">Llega a tus clientes donde sea que estén. Nuestros agentes se integran perfectamente con las plataformas más populares.</p>
+        </div>
+
+        <!-- Carrusel de Plataformas -->
+        <div class="platforms-carousel-container">
+            <button class="carousel-arrow carousel-arrow-left" id="carouselPrev">
+                <i class="lni lni-chevron-left"></i>
+            </button>
+
+            <div class="platforms-carousel" id="platformsCarousel">
+                <!-- WhatsApp - Clínica Dental -->
+                <div class="platform-slide" data-platform="whatsapp">
+                    <div class="mockup-container">
+                        <div class="mockup-phone">
+                            <video class="phone-screen-video" autoplay loop muted playsinline>
+                                <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+                                Tu navegador no soporta video HTML5.
+                            </video>
+                            <img src="/static/images/mockup.png" alt="WhatsApp Chatbot Mockup" class="mockup-image">
+                        </div>
+                    </div>
+                    <div class="platform-content">
+                        <h3 class="platform-name">
+                            <div class="platform-icon platform-icon-black whatsapp">
+                                <i class="lni lni-heart-pulse"></i>
+                            </div>
+                            Clínica Dental
+                        </h3>
+                        <p class="platform-description">
+                            Optimiza la gestión de tu clínica dental con un chatbot especializado que agenda citas, confirma tratamientos, envía recordatorios y responde consultas odontológicas básicas las 24 horas. Ideal para mejorar la experiencia del paciente y reducir las llamadas de recepción.
+                        </p>
+                        <ul class="platform-features">
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Agendamiento automático de citas</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Recordatorios de tratamientos y revisiones</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Consultas sobre higiene dental y servicios</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Envío de presupuestos y planes de tratamiento</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Facebook - Peluquería -->
+                <div class="platform-slide" data-platform="facebook">
+                    <div class="mockup-container">
+                        <div class="mockup-phone">
+                            <video class="phone-screen-video" autoplay loop muted playsinline>
+                                <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+                            </video>
+                            <img src="/static/images/mockup.png" alt="Facebook Chatbot Mockup" class="mockup-image">
+                        </div>
+                    </div>
+                    <div class="platform-content">
+                        <h3 class="platform-name">
+                            <div class="platform-icon platform-icon-black facebook">
+                                <i class="lni lni-cut"></i>
+                            </div>
+                            Peluquería y Estética
+                        </h3>
+                        <p class="platform-description">
+                            Gestiona tu salón de belleza con un chatbot que agenda servicios, responde sobre tratamientos capilares, sugiere productos personalizados y envía promociones especiales. Mantén a tus clientes informados sobre nuevas tendencias y ofertas exclusivas.
+                        </p>
+                        <ul class="platform-features">
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Reservas de citas automatizadas</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Recomendaciones de tratamientos</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Notificaciones de promociones y descuentos</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Catálogo digital de servicios</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Instagram - E-commerce -->
+                <div class="platform-slide" data-platform="instagram">
+                    <div class="mockup-container">
+                        <div class="mockup-phone">
+                            <video class="phone-screen-video" autoplay loop muted playsinline>
+                                <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+                            </video>
+                            <img src="/static/images/mockup.png" alt="Instagram Chatbot Mockup" class="mockup-image">
+                        </div>
+                    </div>
+                    <div class="platform-content">
+                        <h3 class="platform-name">
+                            <div class="platform-icon platform-icon-black instagram">
+                                <i class="lni lni-cart"></i>
+                            </div>
+                            Tienda Online
+                        </h3>
+                        <p class="platform-description">
+                            Impulsa tus ventas online con un chatbot que responde consultas sobre productos, procesa pedidos, proporciona tracking de envíos y gestiona devoluciones. Ideal para tiendas de ropa, accesorios, tecnología y más.
+                        </p>
+                        <ul class="platform-features">
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Catálogo interactivo de productos</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Proceso de pedidos automatizado</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Seguimiento de envíos en tiempo real</li>
+                            <li><div class="check-icon"><i class="lni lni-checkmark"></i></div>Gestión de devoluciones y cambios</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <button class="carousel-arrow carousel-arrow-right" id="carouselNext">
+                <i class="lni lni-chevron-right"></i>
+            </button>
+        </div>
+    </section>
+
+    <!-- Sección de Planes y Precios -->
+    <!-- Sección de Planes y Precios -->
+    <section class="pricing-section">
+        <div class="pricing-header">
+            <h2 class="pricing-title">Planes y Precios</h2>
+            <p class="pricing-subtitle">Elige el plan perfecto para tu negocio. Cambia o cancela en cualquier momento.</p>
+        </div>
+
+        <!-- Toggle de Periodo de Facturación -->
+        <div class="billing-toggle">
+            <span class="toggle-label">Mensual</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="billingToggle">
+                <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">Anual <span class="savings-badge">Ahorra 20%</span></span>
+        </div>
+
+        <!-- Pricing Cards -->
+        <div class="pricing-grid">
+            {{range .plans}}
+            <div class="pricing-card {{if .popular}}featured{{end}}" data-plan="{{.id}}">
+                {{if .popular}}
+                <div class="popular-badge">Más Popular</div>
+                {{end}}
+                
+                <h3 class="plan-name">{{.name}}</h3>
+                <div class="plan-price">
+                    <span class="price-amount" data-monthly="{{.monthly.amount}}" data-annual="{{.annual.amount}}">${{.monthly.amount}}</span>
+                    <span class="price-period">por mes</span>
+                </div>
+                <p class="plan-description">{{.description}}</p>
+                
+                <ul class="plan-features">
+                    {{range .features}}
+                    <li>
+                        <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                        <span>{{.}}</span>
+                    </li>
+                    {{end}}
+                </ul>
+                
+                {{if eq .id "electron"}}
+                <button class="plan-button secondary">Contactar Ventas</button>
+                {{else}}
+                <button class="plan-button primary">Elegir Plan</button>
+                {{end}}
+            </div>
+            {{end}}
+        </div>
+    </section>
+
+    <!-- Footer -->
+    {{template "partials/footer.html" .}}
+
+    <!-- Botón flotante de WhatsApp -->
+    <div class="whatsapp-float" onclick="openWhatsApp()">
+        <i class="lni lni-whatsapp"></i>
+        <div class="whatsapp-tooltip">¡Contáctanos por WhatsApp!</div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/static/js/index.js"></script>
+</body>
+</html>
+
+{{end}}

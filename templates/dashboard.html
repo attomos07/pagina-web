@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <!-- Decorative Rings -->
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="dashboard-layout">
+                    <!-- Create Button -->
+                    <div class="page-header">
+                        <a href="/onboarding" class="btn-primary">
+                            <i class="lni lni-plus"></i>
+                            <span>Crear Agente</span>
+                        </a>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon sky">
+                                <svg class="stat-bot-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <line x1="24" y1="6" x2="24" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <circle cx="24" cy="5" r="1.5" fill="currentColor"/>
+                                    <rect x="14" y="10" width="20" height="16" rx="4" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <circle cx="19" cy="16" r="2" fill="currentColor"/>
+                                    <circle cx="29" cy="16" r="2" fill="currentColor"/>
+                                    <path d="M 18 21 Q 24 23 30 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+                                    <rect x="16" y="26" width="16" height="12" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <circle cx="24" cy="31" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                                    <circle cx="24" cy="31" r="0.8" fill="currentColor"/>
+                                    <rect x="10" y="28" width="4" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <rect x="34" y="28" width="4" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <rect x="18" y="38" width="4" height="4" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <rect x="26" y="38" width="4" height="4" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
+                                </svg>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="activeAgentsCount">0</div>
+                                <div class="stat-label">Agentes Activos</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon fuchsia">
+                                <i class="lni lni-comments"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">Conversaciones</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon lime">
+                                <i class="lni lni-calendar"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">Citas Agendadas</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon amber">
+                                <i class="lni lni-timer"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value">--</div>
+                                <div class="stat-label">Tiempo de Respuesta</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Billing Section -->
+                    <div class="ai-billing-section">
+                        <div class="billing-header">
+                            <div class="billing-title-wrapper">
+                                <h2 class="section-title">
+                                    <i class="lni lni-coin"></i>
+                                    Costos de IA
+                                </h2>
+                                <span class="billing-badge">Gemini API</span>
+                            </div>
+                            <div class="billing-controls">
+                                <select class="currency-select" id="currencySelect">
+                                    <option value="MXN" selected>🇲🇽 MXN</option>
+                                    <option value="USD">🇺🇸 USD</option>
+                                    <option value="EUR">🇪🇺 EUR</option>
+                                    <option value="GBP">🇬🇧 GBP</option>
+                                    <option value="CAD">🇨🇦 CAD</option>
+                                    <option value="ARS">🇦🇷 ARS</option>
+                                    <option value="COP">🇨🇴 COP</option>
+                                    <option value="CLP">🇨🇱 CLP</option>
+                                </select>
+                                <select class="time-range-select" id="billingTimeRange">
+                                    <option value="7">Últimos 7 días</option>
+                                    <option value="14">Últimos 14 días</option>
+                                    <option value="28" selected>Últimos 28 días</option>
+                                    <option value="90">Últimos 90 días</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="billing-card">
+                            <div class="cost-summary">
+                                <div class="cost-item">
+                                    <div class="cost-label">Costo Total</div>
+                                    <div class="cost-value" id="totalCost">$0.00</div>
+                                </div>
+                            </div>
+
+                            <div class="chart-container">
+                                <canvas id="costChart"></canvas>
+                            </div>
+
+                            <div class="billing-footer">
+                                <div class="billing-info">
+                                    <i class="lni lni-information"></i>
+                                    <span>Los costos se actualizan cada hora. Basado en el uso de tokens de la API de Gemini.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Services Statistics Section -->
+                    <div class="services-stats-section">
+                        <div class="services-stats-grid">
+                            <!-- Most Requested Services -->
+                            <div class="service-chart-card">
+                                <div class="service-chart-header">
+                                    <h3>
+                                        <i class="lni lni-bar-chart"></i>
+                                        Servicios Más Pedidos
+                                    </h3>
+                                </div>
+                                <div id="mostRequestedServicesContainer" class="service-bars-container">
+                                    <!-- Los servicios se cargarán dinámicamente aquí -->
+                                </div>
+                            </div>
+
+                            <!-- Least Requested Services -->
+                            <div class="service-chart-card least-requested">
+                                <div class="service-chart-header">
+                                    <h3>
+                                        <i class="lni lni-stats-down"></i>
+                                        Servicios Menos Pedidos
+                                    </h3>
+                                </div>
+                                <div id="leastRequestedServicesContainer" class="service-bars-container">
+                                    <!-- Los servicios se cargarán dinámicamente aquí -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pie Charts Section -->
+                    <div class="pie-charts-section">
+                        <div class="pie-charts-header">
+                            <div class="pie-charts-title">
+                                <h2>
+                                    <i class="lni lni-pie-chart"></i>
+                                    Distribución de Servicios
+                                </h2>
+                            </div>
+                            <div class="export-buttons">
+                                <button class="btn-export btn-export-excel" onclick="exportToExcel()">
+                                    <i class="lni lni-download"></i>
+                                    <span>Exportar Excel</span>
+                                </button>
+                                <button class="btn-export btn-export-pdf" onclick="exportToPDF()">
+                                    <i class="lni lni-download"></i>
+                                    <span>Exportar PDF</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="pie-charts-grid">
+                            <!-- Pie Chart - Most Requested -->
+                            <div class="pie-chart-card">
+                                <div class="pie-chart-header">
+                                    <div class="pie-chart-title">
+                                        <i class="lni lni-graph"></i>
+                                        <h3>Servicios Más Solicitados</h3>
+                                    </div>
+                                    <span class="pie-chart-badge" id="mostRequestedTotal">0 Total</span>
+                                </div>
+                                <div class="pie-chart-content">
+                                    <div class="pie-chart-canvas-wrapper">
+                                        <canvas id="mostRequestedPieChart"></canvas>
+                                    </div>
+                                    <div class="pie-chart-legend" id="mostRequestedLegend">
+                                        <!-- Leyenda se genera dinámicamente -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pie Chart - Least Requested -->
+                            <div class="pie-chart-card">
+                                <div class="pie-chart-header">
+                                    <div class="pie-chart-title">
+                                        <i class="lni lni-graph"></i>
+                                        <h3>Servicios Menos Solicitados</h3>
+                                    </div>
+                                    <span class="pie-chart-badge" id="leastRequestedTotal">0 Total</span>
+                                </div>
+                                <div class="pie-chart-content">
+                                    <div class="pie-chart-canvas-wrapper">
+                                        <canvas id="leastRequestedPieChart"></canvas>
+                                    </div>
+                                    <div class="pie-chart-legend" id="leastRequestedLegend">
+                                        <!-- Leyenda se genera dinámicamente -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- SheetJS para Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- jsPDF para PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

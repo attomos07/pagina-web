@@ -1,0 +1,261 @@
+{{define "register.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}} - Crear Cuenta</title>
+    <!-- LineIcons CSS -->
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/static/css/partials/navbar.css">
+    <link rel="stylesheet" href="/static/css/partials/footer.css">
+    <link rel="stylesheet" href="/static/css/auth/register.css">
+</head>
+<body>
+    <!-- Navbar -->
+    {{template "partials/navbar.html" .}}
+
+    <!-- Main Auth Container -->
+    <div class="auth-container">
+        <div class="auth-background">
+            <div class="auth-shape auth-shape-1"></div>
+            <div class="auth-shape auth-shape-2"></div>
+            <div class="auth-shape auth-shape-3"></div>
+        </div>
+
+        <div class="auth-content">
+            <!-- Left Side - Átomo Animado -->
+            <div class="orbital-container">
+                <div id="atome">
+                    <div class="atome-wrap">
+                        <div class="circle circle_0"></div>
+                        <div class="circle circle_1"></div>
+                        <div class="circle circle_2"></div>
+                        <div class="circle circle_3"></div>
+                        <div class="circle circle_4"></div>
+                        <div class="circle circle_5"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side - Register Form -->
+            <div class="auth-form-container">
+                <div class="auth-form-content">
+                    <div class="auth-header">
+                        <h2 class="auth-title">Crear Cuenta</h2>
+                        <p class="auth-subtitle">Completa el formulario para comenzar</p>
+                    </div>
+
+                    <!-- Social Register - SOLO ICONOS EN UNA FILA -->
+                    <div class="social-login social-login-inline">
+                        <button class="social-btn social-icon-btn google-btn" onclick="registerWithGoogle()" title="Registrarse con Google">
+                            <svg width="24" height="24" viewBox="0 0 24 24">
+                                <path fill="#4285f4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34a853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#fbbc05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                <path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                        </button>
+                        
+                        <button class="social-btn social-icon-btn facebook-btn" onclick="registerWithFacebook()" title="Registrarse con Facebook">
+                            <i class="lni lni-facebook-original"></i>
+                        </button>
+                    </div>
+
+                    <div class="divider">
+                        <span>o regístrate con email</span>
+                    </div>
+
+                    <!-- Register Form -->
+                    <form class="auth-form" id="registerForm">
+                        <div class="form-group">
+                            <label for="businessName" class="form-label">Nombre del Negocio</label>
+                            <div class="input-container">
+                                <i class="lni lni-briefcase input-icon"></i>
+                                <input type="text" id="businessName" name="businessName" class="form-input" required>
+                            </div>
+                            <small class="input-hint">Ej: Mi Restaurante</small>
+                            <div class="form-error" id="businessNameError"></div>
+                        </div>
+
+                        <!-- Número de WhatsApp con LADA separada -->
+                        <div class="form-group">
+                            <label for="phoneNumber" class="form-label">Número de WhatsApp</label>
+                            <div class="phone-input-wrapper">
+                                <!-- Contenedor de LADA -->
+                                <div class="phone-code-container">
+                                    <i class="lni lni-world"></i>
+                                    <input type="text" 
+                                           id="phoneCode" 
+                                           name="phoneCode" 
+                                           class="phone-code-input" 
+                                           maxlength="4"
+                                           required>
+                                </div>
+                                
+                                <!-- Contenedor de Número -->
+                                <div class="phone-number-container">
+                                    <i class="lni lni-phone"></i>
+                                    <input type="tel" 
+                                           id="phoneNumber" 
+                                           name="phoneNumber" 
+                                           class="phone-number-input" 
+                                           required>
+                                </div>
+                            </div>
+                            <small class="phone-hint">
+                                Código de país + número local. Ej: +52 664 123 4567 (México)
+                            </small>
+                            <div class="form-error" id="phoneNumberError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email</label>
+                            <div class="input-container">
+                                <i class="lni lni-envelope input-icon"></i>
+                                <input type="email" id="email" name="email" class="form-input" required>
+                            </div>
+                            <small class="input-hint">tu@email.com</small>
+                            <div class="form-error" id="emailError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="businessType" class="form-label">Giro de Negocio</label>
+                            <div class="input-container">
+                                <i class="lni lni-store input-icon"></i>
+                                <div class="custom-select-wrapper">
+                                    <input type="text" 
+                                           id="businessType" 
+                                           name="businessType" 
+                                           class="form-input form-select" 
+                                           readonly
+                                           required>
+                                    <i class="lni lni-chevron-down select-arrow"></i>
+                                    <div class="select-dropdown" id="businessDropdown">
+                                        <div class="select-search-container">
+                                            <i class="lni lni-search-alt search-icon"></i>
+                                            <input type="text" 
+                                                   class="select-search" 
+                                                   id="businessSearch"
+                                                   placeholder="Buscar giro de negocio..."
+                                                   autocomplete="off">
+                                        </div>
+                                        <div class="select-options-container" id="selectOptionsContainer">
+                                            <div class="select-option" data-value="clinica-dental" data-keywords="clinica dental odontologia dientes">
+                                                <i class="lni lni-hospital"></i>
+                                                <span>Clínica Dental</span>
+                                            </div>
+                                            <div class="select-option" data-value="peluqueria" data-keywords="peluqueria salon belleza corte cabello">
+                                                <i class="lni lni-cut"></i>
+                                                <span>Peluquería / Salón de Belleza</span>
+                                            </div>
+                                            <div class="select-option" data-value="restaurante" data-keywords="restaurante comida alimentos">
+                                                <i class="lni lni-restaurant"></i>
+                                                <span>Restaurante</span>
+                                            </div>
+                                            <div class="select-option" data-value="pizzeria" data-keywords="pizzeria pizza comida italiana">
+                                                <i class="lni lni-pizza"></i>
+                                                <span>Pizzería</span>
+                                            </div>
+                                            <div class="select-option" data-value="escuela" data-keywords="escuela educacion academia colegio">
+                                                <i class="lni lni-graduation"></i>
+                                                <span>Escuela / Educación</span>
+                                            </div>
+                                            <div class="select-option" data-value="gym" data-keywords="gimnasio gym fitness ejercicio deporte">
+                                                <i class="lni lni-dumbbell"></i>
+                                                <span>Gimnasio / Fitness</span>
+                                            </div>
+                                            <div class="select-option" data-value="spa" data-keywords="spa wellness bienestar masajes relajacion">
+                                                <i class="lni lni-leaf"></i>
+                                                <span>Spa / Wellness</span>
+                                            </div>
+                                            <div class="select-option" data-value="consultorio" data-keywords="consultorio medico doctor salud clinica">
+                                                <i class="lni lni-heart-monitor"></i>
+                                                <span>Consultorio Médico</span>
+                                            </div>
+                                            <div class="select-option" data-value="veterinaria" data-keywords="veterinaria animales mascotas perros gatos">
+                                                <i class="lni lni-bug"></i>
+                                                <span>Veterinaria</span>
+                                            </div>
+                                            <div class="select-option" data-value="hotel" data-keywords="hotel hospedaje alojamiento turismo">
+                                                <i class="lni lni-home"></i>
+                                                <span>Hotel / Hospedaje</span>
+                                            </div>
+                                            <div class="select-option" data-value="tienda" data-keywords="tienda retail comercio ventas">
+                                                <i class="lni lni-cart"></i>
+                                                <span>Tienda / Retail</span>
+                                            </div>
+                                            <div class="select-option" data-value="agencia" data-keywords="agencia servicios consultorias">
+                                                <i class="lni lni-briefcase"></i>
+                                                <span>Agencia / Servicios</span>
+                                            </div>
+                                            <div class="select-option" data-value="otro" data-keywords="otro diferente">
+                                                <i class="lni lni-more"></i>
+                                                <span>Otro</span>
+                                            </div>
+                                        </div>
+                                        <div class="select-no-results" id="selectNoResults" style="display: none;">
+                                            <i class="lni lni-emoji-sad"></i>
+                                            <p>No se encontraron resultados</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="input-hint">Selecciona tu giro de negocio</small>
+                            <div class="form-error" id="businessTypeError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <div class="input-container">
+                                <i class="lni lni-lock input-icon"></i>
+                                <input type="password" id="password" name="password" class="form-input" required>
+                                <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                                    <i class="lni lni-eye" id="passwordToggleIcon"></i>
+                                </button>
+                            </div>
+                            <small class="input-hint">Mínimo 8 caracteres</small>
+                            <div class="form-error" id="passwordError"></div>
+                            <div class="password-strength" id="passwordStrength">
+                                <div class="strength-meter">
+                                    <div class="strength-meter-fill" id="strengthMeterFill"></div>
+                                </div>
+                                <span class="strength-text" id="strengthText"></span>
+                            </div>
+                        </div>
+
+                        <label class="checkbox-container">
+                            <input type="checkbox" name="terms" id="terms" required>
+                            <span class="checkmark"></span>
+                            <span class="checkbox-label">
+                                Acepto los <a href="/terms">Términos y Condiciones</a> y la <a href="/privacy">Política de Privacidad</a>
+                            </span>
+                        </label>
+
+                        <button type="submit" class="auth-btn primary-btn" id="registerBtn">
+                            <span class="btn-text">Crear Cuenta</span>
+                            <div class="btn-loading" style="display: none;">
+                                <div class="loading-spinner"></div>
+                                Creando cuenta...
+                            </div>
+                        </button>
+
+                        <div class="form-footer">
+                            <p>¿Ya tienes una cuenta? <a href="/login" class="auth-link">Inicia Sesión</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    {{template "partials/footer.html" .}}
+
+    <!-- JavaScript -->
+    <script src="/static/js/index.js"></script>
+    <script src="/static/js/auth/register.js"></script>
+</body>
+</html>
+{{end}}

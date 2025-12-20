@@ -1,0 +1,681 @@
+/* ============================================
+   SELECT PLAN PAGE - DISEÑO PREMIUM CON EFECTO NIEBLA
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #ffffff;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* ============================================
+   EFECTO DE NIEBLA ANIMADA
+   ============================================ */
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 20% 30%, rgba(6, 182, 212, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(16, 185, 129, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+    animation: fogMove 20s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes fogMove {
+    0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.6;
+    }
+    50% {
+        transform: translate(30px, -30px) scale(1.1);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translate(-30px, 30px) scale(1);
+        opacity: 0.6;
+    }
+}
+
+/* ============================================
+   CONTAINER PRINCIPAL
+   ============================================ */
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 60px 20px;
+    position: relative;
+    z-index: 1;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.header {
+    text-align: center;
+    margin-bottom: 60px;
+    animation: fadeInDown 0.8s ease-out;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.header h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+}
+
+.header p {
+    font-size: 1.25rem;
+    color: #6b7280;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* ============================================
+   BILLING TOGGLE
+   ============================================ */
+
+.billing-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 60px;
+    animation: fadeIn 1s ease-out 0.2s both;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.billing-option {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.billing-option:hover {
+    color: #06b6d4;
+}
+
+.billing-option.active {
+    color: #06b6d4;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 64px;
+    height: 36px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #e5e7eb;
+    transition: 0.4s;
+    border-radius: 36px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 28px;
+    width: 28px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+input:checked + .toggle-slider {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(28px);
+}
+
+/* ============================================
+   PLANS GRID - CON ANIMACIÓN ESCALONADA
+   ============================================ */
+
+.plans-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 60px;
+    margin-top: 30px;
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.plan-card {
+    background: white;
+    border-radius: 24px;
+    padding: 2rem 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    border: 2px solid transparent;
+    opacity: 0;
+    transform: translateY(50px);
+    animation: cardFadeIn 0.8s ease-out forwards;
+    overflow: visible;
+}
+
+/* Animación escalonada para cada tarjeta */
+.plan-card:nth-child(1) {
+    animation-delay: 0.2s;
+}
+
+.plan-card:nth-child(2) {
+    animation-delay: 0.4s;
+}
+
+.plan-card:nth-child(3) {
+    animation-delay: 0.6s;
+}
+
+.plan-card:nth-child(4) {
+    animation-delay: 0.8s;
+}
+
+@keyframes cardFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(50px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.plan-card:hover {
+    transform: translateY(-12px);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================
+   PLAN GRATUITO - DESTACADO EN VERDE BRILLANTE
+   ============================================ */
+
+.plan-card.free-trial {
+    border-color: #10b981;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, white 100%);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1),
+                0 8px 32px rgba(16, 185, 129, 0.25);
+    position: relative;
+    overflow: visible;
+}
+
+.plan-card.free-trial::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(16, 185, 129, 0.1) 50%,
+        transparent 70%
+    );
+    animation: shimmer 3s infinite;
+    border-radius: 24px;
+    z-index: 1;
+    pointer-events: none;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+}
+
+.plan-card.free-trial:hover {
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.15),
+                0 28px 70px rgba(16, 185, 129, 0.35);
+}
+
+/* ============================================
+   PLAN POPULAR
+   ============================================ */
+
+.plan-card.featured {
+    border-color: #06b6d4;
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, white 100%);
+    transform: scale(1.05);
+}
+
+.plan-card.featured:hover {
+    transform: scale(1.05) translateY(-12px);
+    box-shadow: 0 28px 70px rgba(6, 182, 212, 0.3);
+    border-color: #0891b2;
+}
+
+/* ============================================
+   BADGES
+   ============================================ */
+
+.plan-badge {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.625rem 1.25rem;
+    border-radius: 24px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    z-index: 100;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+}
+
+.plan-badge.trial {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    animation: pulseBadge 2s ease-in-out infinite;
+}
+
+@keyframes pulseBadge {
+    0%, 100% {
+        box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+        transform: translateX(-50%) scale(1);
+    }
+    50% {
+        box-shadow: 0 6px 24px rgba(16, 185, 129, 0.6);
+        transform: translateX(-50%) scale(1.05);
+    }
+}
+
+.plan-badge.popular {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    color: white;
+}
+
+.plan-badge.enterprise {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: white;
+}
+
+/* ============================================
+   PLAN HEADER
+   ============================================ */
+
+.plan-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.plan-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 1rem;
+}
+
+.plan-price {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+}
+
+.plan-price .price {
+    font-size: 2.75rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+}
+
+.plan-card.free-trial .plan-price .price {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.plan-price .period {
+    font-size: 1rem;
+    color: #6b7280;
+    margin-left: 0.5rem;
+    font-weight: 500;
+}
+
+.plan-subtitle {
+    color: #6b7280;
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+/* ============================================
+   FEATURES
+   ============================================ */
+
+.plan-features {
+    list-style: none;
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.plan-features li {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 0;
+    color: #374151;
+    font-size: 0.8125rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.plan-features li:last-child {
+    border-bottom: none;
+}
+
+.plan-features .icon {
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    flex-shrink: 0;
+    font-weight: bold;
+}
+
+.plan-card.free-trial .plan-features .icon {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.plan-features .icon.disabled {
+    background: #e5e7eb;
+    color: #9ca3af;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.plan-button {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    position: relative;
+    z-index: 2;
+}
+
+.plan-button.primary {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    color: white;
+    box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
+}
+
+.plan-button.primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(6, 182, 212, 0.45);
+}
+
+.plan-button.primary:active {
+    transform: translateY(-1px);
+}
+
+.plan-card.free-trial .plan-button.primary {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
+}
+
+.plan-card.free-trial .plan-button.primary:hover {
+    box-shadow: 0 8px 30px rgba(16, 185, 129, 0.5);
+    transform: translateY(-3px) scale(1.02);
+}
+
+.plan-button.secondary {
+    background: transparent;
+    color: #06b6d4;
+    border: 2px solid #06b6d4;
+}
+
+.plan-button.secondary:hover {
+    background: #06b6d4;
+    color: white;
+    transform: translateY(-3px);
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+    background: white;
+    padding: 3.5rem 3rem;
+    border-radius: 24px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    animation: modalSlideIn 0.4s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.spinner {
+    border: 4px solid #f3f4f6;
+    border-top: 4px solid #06b6d4;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1.5rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#loadingMessage {
+    font-size: 1.125rem;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1400px) {
+    .plans-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.25rem;
+    }
+}
+
+@media (max-width: 1024px) {
+    .plans-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .plan-card.featured {
+        transform: scale(1);
+    }
+    
+    .plan-card.featured:hover {
+        transform: translateY(-12px);
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 40px 15px;
+    }
+
+    .header h1 {
+        font-size: 2rem;
+    }
+
+    .header p {
+        font-size: 1rem;
+    }
+
+    .plans-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .plan-card {
+        padding: 2.5rem 2rem;
+    }
+
+    .plan-card.featured {
+        transform: scale(1);
+    }
+
+    .plan-card.featured:hover {
+        transform: translateY(-12px);
+    }
+
+    .plan-card.free-trial:hover {
+        transform: translateY(-12px) scale(1);
+    }
+
+    .billing-toggle {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .trust-section {
+        gap: 2rem;
+        padding: 2rem 1.5rem;
+    }
+
+    .trust-badge {
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header h1 {
+        font-size: 1.75rem;
+    }
+
+    .plan-price .price {
+        font-size: 2.5rem;
+    }
+
+    .plan-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .modal-content {
+        padding: 2.5rem 2rem;
+        margin: 20px;
+    }
+
+    .plan-button {
+        padding: 1rem 1.5rem;
+        font-size: 0.9375rem;
+    }
+}

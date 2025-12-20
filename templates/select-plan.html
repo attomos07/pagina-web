@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selecciona tu Plan - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/select-plan.css">
+</head>
+<body>
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Selecciona el plan perfecto para tu negocio</h1>
+            <p>Comienza con 30 días gratis y escala cuando lo necesites. Sin tarjeta de crédito requerida.</p>
+        </div>
+
+        <!-- Billing Toggle -->
+        <div class="billing-toggle">
+            <span class="billing-option active" data-cycle="monthly">Mensual</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="billingToggle">
+                <span class="toggle-slider"></span>
+            </label>
+            <span class="billing-option" data-cycle="annual">Anual</span>
+        </div>
+
+        <!-- Plans Grid -->
+        <div class="plans-grid">
+            <!-- Plan Gratuito (Destacado en Verde) -->
+            <div class="plan-card free-trial">
+                <div class="plan-badge trial">✨ Prueba Gratis</div>
+                <div class="plan-header">
+                    <h2>Gratuito</h2>
+                    <div class="plan-price">
+                        <span class="price">$0</span>
+                        <span class="period">/ 30 días</span>
+                    </div>
+                    <p class="plan-subtitle">Perfecto para probar sin compromisos</p>
+                </div>
+                <ul class="plan-features">
+                    <li><span class="icon">✓</span> 1 chatbot de WhatsApp</li>
+                    <li><span class="icon">✓</span> 100 mensajes al mes</li>
+                    <li><span class="icon">✓</span> Solo WhatsApp</li>
+                    <li><span class="icon">✓</span> Soporte por email</li>
+                    <li><span class="icon">✓</span> Plantillas básicas</li>
+                    <li><span class="icon disabled">✗</span> Sin analíticas</li>
+                </ul>
+                <button class="plan-button primary" onclick="selectPlan('gratuito', 'monthly')">
+                    Comenzar Gratis
+                </button>
+            </div>
+
+            <!-- Plan Protón -->
+            <div class="plan-card">
+                <div class="plan-header">
+                    <h2>Protón</h2>
+                    <div class="plan-price">
+                        <span class="price" data-monthly="149" data-annual="119">$149</span>
+                        <span class="period">/ mes</span>
+                    </div>
+                    <p class="plan-subtitle">Ideal para comenzar tu negocio</p>
+                </div>
+                <ul class="plan-features">
+                    <li><span class="icon">✓</span> 1 chatbot de WhatsApp</li>
+                    <li><span class="icon">✓</span> 1,000 mensajes al mes</li>
+                    <li><span class="icon">✓</span> Solo WhatsApp</li>
+                    <li><span class="icon">✓</span> Analíticas básicas</li>
+                    <li><span class="icon">✓</span> Plantillas personalizadas</li>
+                    <li><span class="icon">✓</span> Soporte prioritario</li>
+                </ul>
+                <button class="plan-button primary" onclick="selectPlan('proton', getCurrentBillingCycle())">
+                    Seleccionar Protón
+                </button>
+            </div>
+
+            <!-- Plan Neutrón (Más Popular) -->
+            <div class="plan-card featured">
+                <div class="plan-badge popular">🔥 Más Popular</div>
+                <div class="plan-header">
+                    <h2>Neutrón</h2>
+                    <div class="plan-price">
+                        <span class="price" data-monthly="349" data-annual="279">$349</span>
+                        <span class="period">/ mes</span>
+                    </div>
+                    <p class="plan-subtitle">Para negocios en crecimiento</p>
+                </div>
+                <ul class="plan-features">
+                    <li><span class="icon">✓</span> 3 chatbots de WhatsApp</li>
+                    <li><span class="icon">✓</span> 10,000 mensajes al mes</li>
+                    <li><span class="icon">✓</span> Todas las plataformas</li>
+                    <li><span class="icon">✓</span> Analíticas avanzadas</li>
+                    <li><span class="icon">✓</span> Integraciones CRM</li>
+                    <li><span class="icon">✓</span> Soporte prioritario 24/7</li>
+                </ul>
+                <button class="plan-button primary" onclick="selectPlan('neutron', getCurrentBillingCycle())">
+                    Seleccionar Neutrón
+                </button>
+            </div>
+
+            <!-- Plan Electrón -->
+            <div class="plan-card">
+                <div class="plan-badge enterprise">⚡ Enterprise</div>
+                <div class="plan-header">
+                    <h2>Electrón</h2>
+                    <div class="plan-price">
+                        <span class="price" data-monthly="749" data-annual="599">$749</span>
+                        <span class="period">/ mes</span>
+                    </div>
+                    <p class="plan-subtitle">Para empresas grandes</p>
+                </div>
+                <ul class="plan-features">
+                    <li><span class="icon">✓</span> Chatbots ilimitados</li>
+                    <li><span class="icon">✓</span> Mensajes ilimitados</li>
+                    <li><span class="icon">✓</span> Todas las plataformas</li>
+                    <li><span class="icon">✓</span> Analíticas personalizadas</li>
+                    <li><span class="icon">✓</span> API personalizada</li>
+                    <li><span class="icon">✓</span> Soporte dedicado 24/7</li>
+                </ul>
+                <button class="plan-button primary" onclick="selectPlan('electron', getCurrentBillingCycle())">
+                    Seleccionar Electrón
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="modal">
+        <div class="modal-content">
+            <div class="spinner"></div>
+            <p id="loadingMessage">Procesando tu selección...</p>
+        </div>
+    </div>
+
+    <script src="/static/js/select-plan.js"></script>
+</body>
+</html>

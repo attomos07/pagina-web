@@ -1,0 +1,267 @@
+// ============================================
+// SELECT PLAN JS - MANEJO DE SELECCIÓN DE PLANES
+// ============================================
+
+let currentBillingCycle = 'monthly';
+
+// ============================================
+// INICIALIZACIÓN
+// ============================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Select Plan JS cargado correctamente');
+    
+    initBillingToggle();
+    initBillingOptions();
+    
+    console.log('✅ Select Plan funcionalidades inicializadas');
+});
+
+// ============================================
+// TOGGLE DE FACTURACIÓN
+// ============================================
+
+function initBillingToggle() {
+    const billingToggle = document.getElementById('billingToggle');
+    
+    if (billingToggle) {
+        billingToggle.addEventListener('change', function() {
+            currentBillingCycle = this.checked ? 'annual' : 'monthly';
+            updatePrices();
+            updateBillingOptionsState();
+        });
+    }
+}
+
+// ============================================
+// OPCIONES DE FACTURACIÓN CLICKEABLES
+// ============================================
+
+function initBillingOptions() {
+    const billingOptions = document.querySelectorAll('.billing-option');
+    
+    billingOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const cycle = this.getAttribute('data-cycle');
+            
+            if (cycle === 'annual' && currentBillingCycle === 'monthly') {
+                document.getElementById('billingToggle').checked = true;
+                currentBillingCycle = 'annual';
+                updatePrices();
+                updateBillingOptionsState();
+            } else if (cycle === 'monthly' && currentBillingCycle === 'annual') {
+                document.getElementById('billingToggle').checked = false;
+                currentBillingCycle = 'monthly';
+                updatePrices();
+                updateBillingOptionsState();
+            }
+        });
+    });
+}
+
+// ============================================
+// ACTUALIZAR ESTADO VISUAL DE OPCIONES
+// ============================================
+
+function updateBillingOptionsState() {
+    const billingOptions = document.querySelectorAll('.billing-option');
+    
+    billingOptions.forEach(option => {
+        const cycle = option.getAttribute('data-cycle');
+        
+        if (cycle === currentBillingCycle) {
+            option.classList.add('active');
+        } else {
+            option.classList.remove('active');
+        }
+    });
+}
+
+// ============================================
+// OBTENER CICLO DE FACTURACIÓN ACTUAL
+// ============================================
+
+function getCurrentBillingCycle() {
+    return currentBillingCycle;
+}
+
+// ============================================
+// ACTUALIZAR PRECIOS SEGÚN EL CICLO
+// ============================================
+
+function updatePrices() {
+    const priceElements = document.querySelectorAll('.plan-price .price[data-monthly]');
+    const periodElements = document.querySelectorAll('.plan-price .period');
+    
+    priceElements.forEach(element => {
+        const monthlyPrice = element.getAttribute('data-monthly');
+        const annualPrice = element.getAttribute('data-annual');
+        
+        if (currentBillingCycle === 'annual') {
+            element.textContent = '$' + annualPrice;
+        } else {
+            element.textContent = '$' + monthlyPrice;
+        }
+    });
+    
+    // Actualizar texto del período
+    periodElements.forEach(element => {
+        if (currentBillingCycle === 'annual') {
+            element.textContent = '/ año';
+        } else {
+            element.textContent = '/ mes';
+        }
+    });
+}
+
+// ============================================
+// SELECCIÓN DE PLAN
+// ============================================
+
+async function selectPlan(plan, billingCycle) {
+    console.log(`📋 Seleccionando plan: ${plan} (${billingCycle})`);
+    
+    // Mostrar modal de carga
+    const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
+    showLoading(`Activando plan ${planName}...`);
+    
+    try {
+        const response = await fetch('/api/select-plan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                plan: plan,
+                billingCycle: billingCycle
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al seleccionar el plan');
+        }
+        
+        console.log('✅ Plan seleccionado exitosamente:', data);
+        
+        // Si es plan gratuito, mostrar mensaje de éxito
+        if (data.trial) {
+            updateLoadingMessage('✨ ¡Plan gratuito activado! Redirigiendo al dashboard...');
+        } else {
+            updateLoadingMessage('🔐 Redirigiendo a checkout seguro...');
+        }
+        
+        // Redirigir después de 1.5 segundos
+        setTimeout(() => {
+            window.location.href = data.redirectTo;
+        }, 1500);
+        
+    } catch (error) {
+        console.error('❌ Error:', error);
+        hideLoading();
+        showErrorModal(error.message);
+    }
+}
+
+// ============================================
+// MODAL DE CARGA
+// ============================================
+
+function showLoading(message) {
+    const modal = document.getElementById('loadingModal');
+    const messageElement = document.getElementById('loadingMessage');
+    
+    if (modal && messageElement) {
+        messageElement.textContent = message;
+        modal.style.display = 'flex';
+    }
+}
+
+function updateLoadingMessage(message) {
+    const messageElement = document.getElementById('loadingMessage');
+    if (messageElement) {
+        messageElement.textContent = message;
+    }
+}
+
+function hideLoading() {
+    const modal = document.getElementById('loadingModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// ============================================
+// MODAL DE ERROR
+// ============================================
+
+function showErrorModal(message) {
+    // Crear modal de error si no existe
+    let errorModal = document.getElementById('errorModal');
+    
+    if (!errorModal) {
+        errorModal = document.createElement('div');
+        errorModal.id = 'errorModal';
+        errorModal.className = 'modal';
+        errorModal.innerHTML = `
+            <div class="modal-content">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                <p id="errorMessage" style="font-size: 1.125rem; color: #ef4444; font-weight: 600; margin-bottom: 1.5rem;"></p>
+                <button onclick="hideErrorModal()" style="
+                    padding: 0.75rem 2rem;
+                    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+                    color: white;
+                    border: none;
+                    border-radius: 10px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                ">Entendido</button>
+            </div>
+        `;
+        document.body.appendChild(errorModal);
+    }
+    
+    const errorMessage = document.getElementById('errorMessage');
+    if (errorMessage) {
+        errorMessage.textContent = message;
+    }
+    
+    errorModal.style.display = 'flex';
+}
+
+function hideErrorModal() {
+    const errorModal = document.getElementById('errorModal');
+    if (errorModal) {
+        errorModal.style.display = 'none';
+    }
+}
+
+// ============================================
+// ANALYTICS Y TRACKING
+// ============================================
+
+function trackPlanSelection(plan, billingCycle) {
+    console.log(`📊 Plan Selected: ${plan} (${billingCycle})`);
+    
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'select_plan', {
+            event_category: 'onboarding',
+            plan_name: plan,
+            billing_cycle: billingCycle,
+            page_title: 'Select Plan'
+        });
+    }
+}
+
+// ============================================
+// MANEJO DE ERRORES
+// ============================================
+
+window.addEventListener('error', function(e) {
+    console.error('Error en select-plan.js:', e.error);
+    hideLoading();
+    showErrorModal('Ocurrió un error inesperado. Por favor recarga la página.');
+});

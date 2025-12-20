@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/checkout.css">
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <!-- Main Checkout Container -->
+    <div class="checkout-container">
+        <!-- Left Side - Payment Form -->
+        <div class="payment-section">
+            <!-- Logo Header Animado DENTRO del formulario -->
+            <header class="checkout-header">
+                <div class="logo-container">
+                    <h1>ATTMOS</h1>
+                    <svg id="svg">
+                        <circle id="base" />
+                        <path id="ring" />
+                        <path id="second" />
+                        <path id="third" />
+                    </svg>
+                </div>
+            </header>
+
+            <div class="payment-header">
+                <h2 class="payment-title">Información de Pago</h2>
+            </div>
+
+            <form id="paymentForm" class="payment-form">
+                <!-- Billing Information -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="lni lni-user"></i>
+                        Información de Facturación
+                    </h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-input" id="fullName" required>
+                            <small class="input-hint">Juan Pérez</small>
+                            <div class="error-message"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Email *</label>
+                            <input type="email" class="form-input" id="email" required>
+                            <small class="input-hint">juan@ejemplo.com</small>
+                            <div class="error-message"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Teléfono</label>
+                            <div class="phone-input-wrapper">
+                                <input type="text" class="phone-code-input" id="phoneCode" readonly>
+                                <input type="tel" class="form-input phone-number-input" id="phone">
+                            </div>
+                            <small class="input-hint">6621234567</small>
+                            <div class="error-message"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">País *</label>
+                            <div class="custom-select-wrapper country-select-wrapper">
+                                <input type="text" 
+                                       id="country" 
+                                       name="country" 
+                                       class="form-input form-select" 
+                                       value="🇲🇽 México"
+                                       readonly
+                                       required>
+                                <i class="lni lni-chevron-down select-arrow"></i>
+                                <div class="select-dropdown" id="countryDropdown">
+                                    <div class="select-options-container" id="countryOptionsContainer">
+                                        <div class="select-option" data-value="MX" data-flag="🇲🇽" data-code="+52" data-name="México">
+                                            <span class="country-flag">🇲🇽</span>
+                                            <span>México</span>
+                                        </div>
+                                        <div class="select-option" data-value="US" data-flag="🇺🇸" data-code="+1" data-name="Estados Unidos">
+                                            <span class="country-flag">🇺🇸</span>
+                                            <span>Estados Unidos</span>
+                                        </div>
+                                        <div class="select-option" data-value="CA" data-flag="🇨🇦" data-code="+1" data-name="Canadá">
+                                            <span class="country-flag">🇨🇦</span>
+                                            <span>Canadá</span>
+                                        </div>
+                                        <div class="select-option" data-value="ES" data-flag="🇪🇸" data-code="+34" data-name="España">
+                                            <span class="country-flag">🇪🇸</span>
+                                            <span>España</span>
+                                        </div>
+                                        <div class="select-option" data-value="AR" data-flag="🇦🇷" data-code="+54" data-name="Argentina">
+                                            <span class="country-flag">🇦🇷</span>
+                                            <span>Argentina</span>
+                                        </div>
+                                        <div class="select-option" data-value="CO" data-flag="🇨🇴" data-code="+57" data-name="Colombia">
+                                            <span class="country-flag">🇨🇴</span>
+                                            <span>Colombia</span>
+                                        </div>
+                                        <div class="select-option" data-value="CL" data-flag="🇨🇱" data-code="+56" data-name="Chile">
+                                            <span class="country-flag">🇨🇱</span>
+                                            <span>Chile</span>
+                                        </div>
+                                        <div class="select-option" data-value="PE" data-flag="🇵🇪" data-code="+51" data-name="Perú">
+                                            <span class="country-flag">🇵🇪</span>
+                                            <span>Perú</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="countryCode" value="MX">
+                            </div>
+                            <small class="input-hint">Selecciona tu país</small>
+                            <div class="error-message"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Código Postal *</label>
+                            <input type="text" class="form-input" id="postalCode" required>
+                            <small class="input-hint">83000</small>
+                            <div class="error-message"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="lni lni-credit-cards"></i>
+                        Método de Pago
+                    </h3>
+
+                    <div class="payment-method-selector">
+                        <label class="payment-method-option active">
+                            <input type="radio" name="paymentMethod" value="card" checked>
+                            <div class="method-content">
+                                <i class="lni lni-credit-cards"></i>
+                                <span>Tarjeta de Crédito/Débito</span>
+                            </div>
+                        </label>
+                        <label class="payment-method-option">
+                            <input type="radio" name="paymentMethod" value="paypal">
+                            <div class="method-content">
+                                <i class="lni lni-paypal"></i>
+                                <span>PayPal</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Card Details with Stripe Elements -->
+                    <div id="cardDetails" class="card-details">
+                        <div class="stripe-container" id="stripe-container">
+                            <div id="card-element"></div>
+                        </div>
+                        <div class="error-message" id="card-errors"></div>
+                    </div>
+
+                    <!-- PayPal Option -->
+                    <div id="paypalDetails" class="paypal-details" style="display: none;">
+                        <div class="paypal-info">
+                            <i class="lni lni-paypal" style="font-size: 3rem; color: #0070ba;"></i>
+                            <p>Serás redirigido a PayPal para completar tu pago de forma segura.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn-submit" id="submitButton" disabled>
+                    <i class="lni lni-lock"></i>
+                    <span>Realizar Pago Seguro</span>
+                </button>
+
+                <!-- Cancel Link -->
+                <a href="/plans" class="cancel-link">
+                    <i class="lni lni-arrow-left"></i>
+                    Volver a Planes
+                </a>
+
+                <!-- Security Badges al final -->
+                <div class="payment-security-badges">
+                    <div class="security-badge-item">
+                        <i class="lni lni-lock"></i>
+                        <span>Pago 100% seguro</span>
+                    </div>
+                    <div class="security-badge-item">
+                        <i class="lni lni-shield"></i>
+                        <span>Cifrado SSL</span>
+                    </div>
+                    <div class="security-badge-item">
+                        <i class="lni lni-certificate"></i>
+                        <span>Powered by Stripe</span>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Right Side - Order Summary -->
+        <div class="order-summary">
+            <div class="summary-header">
+                <h2 class="summary-title">
+                    <i class="lni lni-cart"></i>
+                    Resumen de Compra
+                </h2>
+            </div>
+
+            <!-- Selected Plan Card -->
+            <div class="selected-plan-card">
+                <div class="plan-badge">Plan Seleccionado</div>
+                <h3 class="plan-name" id="selectedPlanName">Plan Neutrón</h3>
+                <div class="plan-billing-period">
+                    <span class="billing-label">Período de facturación:</span>
+                    <span class="billing-value" id="billingPeriod">Mensual</span>
+                </div>
+            </div>
+
+            <!-- Price Breakdown -->
+            <div class="price-breakdown">
+                <div class="price-item">
+                    <span class="price-label">Subtotal</span>
+                    <span class="price-value" id="subtotal">$255.00</span>
+                </div>
+                <div class="price-item">
+                    <span class="price-label">IVA (16%)</span>
+                    <span class="price-value" id="tax">$40.80</span>
+                </div>
+                <div class="price-separator"></div>
+                <div class="price-item total">
+                    <span class="price-label">Total a Pagar</span>
+                    <span class="price-value" id="total">$295.80</span>
+                </div>
+            </div>
+
+            <!-- Features Included -->
+            <div class="features-included">
+                <h4 class="features-title">Incluye:</h4>
+                <ul class="features-list" id="planFeatures">
+                    <li>
+                        <i class="lni lni-checkmark-circle"></i>
+                        <span>3 Chatbots incluidos</span>
+                    </li>
+                    <li>
+                        <i class="lni lni-checkmark-circle"></i>
+                        <span>10,000 mensajes/mes</span>
+                    </li>
+                    <li>
+                        <i class="lni lni-checkmark-circle"></i>
+                        <span>Todas las plataformas</span>
+                    </li>
+                    <li>
+                        <i class="lni lni-checkmark-circle"></i>
+                        <span>Soporte prioritario</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Modal -->
+    <div id="processingModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="processing-animation">
+                <div class="spinner"></div>
+            </div>
+            <h3 class="processing-title">Procesando tu pago...</h3>
+            <p class="processing-text">Por favor espera, no cierres esta ventana.</p>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal-overlay">
+        <div class="modal-content success-modal">
+            <div class="success-icon">
+                <i class="lni lni-checkmark-circle"></i>
+            </div>
+            <h3 class="success-title">¡Pago Exitoso!</h3>
+            <p class="success-text">Tu suscripción ha sido activada correctamente.</p>
+            <button class="btn-success" onclick="window.location.href='/dashboard'">
+                Ir al Dashboard
+            </button>
+        </div>
+    </div>
+
+    <script src="/static/js/checkout.js"></script>
+</body>
+</html>

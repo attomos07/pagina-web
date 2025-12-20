@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integraciones - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/integrations.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="integrations-layout">
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <div class="header-content">
+                            <h1 class="page-title">
+                                <i class="lni lni-plug"></i>
+                                Integraciones
+                            </h1>
+                            <p class="page-subtitle">Conecta tus herramientas favoritas con Attomos</p>
+                        </div>
+                    </div>
+
+                    <!-- Agent Selector -->
+                    <div class="agent-selector">
+                        <label class="selector-label">Selecciona un agente para configurar sus integraciones</label>
+                        <div class="custom-select" id="agentSelect">
+                            <div class="select-display" id="agentSelectDisplay">
+                                Selecciona un agente...
+                            </div>
+                            <i class="lni lni-chevron-down select-arrow"></i>
+                            <div class="select-dropdown" id="agentSelectDropdown">
+                                <div class="select-options" id="agentSelectOptions">
+                                    <!-- Agents will be loaded here dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Integrations Grid -->
+                    <div class="integrations-grid" id="integrationsGrid">
+                        <!-- Google Calendar & Sheets Card -->
+                        <div class="integration-card" id="googleIntegrationCard">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-google"></i>
+                                    <h2>Google Calendar & Sheets</h2>
+                                </div>
+                                <div class="status-badge disconnected" id="googleStatus">
+                                    <span class="status-indicator"></span>
+                                    No conectado
+                                </div>
+                            </div>
+
+                            <p class="card-description">
+                                Conecta tu cuenta de Google para que tu agente pueda crear citas automáticamente en tu calendario y registrar clientes en hojas de cálculo.
+                            </p>
+
+                            <div class="card-features">
+                                <ul class="feature-list">
+                                    <li class="feature-item">
+                                        <i class="lni lni-calendar"></i>
+                                        Crear citas automáticamente en Google Calendar
+                                    </li>
+                                    <li class="feature-item">
+                                        <i class="lni lni-files"></i>
+                                        Registrar clientes en Google Sheets
+                                    </li>
+                                    <li class="feature-item">
+                                        <i class="lni lni-checkmark-circle"></i>
+                                        Consultar disponibilidad en tiempo real
+                                    </li>
+                                    <li class="feature-item">
+                                        <i class="lni lni-timer"></i>
+                                        Sincronización automática
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Connection Info (hidden by default) -->
+                            <div class="connection-info" id="googleConnectionInfo" style="display: none;">
+                                <div class="connection-details">
+                                    <div class="connection-detail">
+                                        <span class="connection-label">Calendar:</span>
+                                        <a href="#" id="calendarLink" class="connection-link" target="_blank">
+                                            Ver calendario
+                                            <i class="lni lni-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                    <div class="connection-detail">
+                                        <span class="connection-label">Sheet:</span>
+                                        <a href="#" id="sheetLink" class="connection-link" target="_blank">
+                                            Ver hoja de citas
+                                            <i class="lni lni-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                    <div class="connection-detail">
+                                        <span class="connection-label">Conectado:</span>
+                                        <span class="connection-value" id="connectedAt">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="card-actions" id="googleActions">
+                                <button class="btn btn-connect" id="btnConnectGoogle" disabled>
+                                    <i class="lni lni-link"></i>
+                                    Conectar Google
+                                </button>
+                            </div>
+
+                            <!-- Disconnect/Reconnect Buttons (hidden by default) -->
+                            <div class="card-actions" id="googleManageActions" style="display: none;">
+                                <button class="btn btn-secondary" id="btnReconnectGoogle">
+                                    <i class="lni lni-reload"></i>
+                                    Reconectar
+                                </button>
+                                <button class="btn btn-disconnect" id="btnDisconnectGoogle">
+                                    <i class="lni lni-unlink"></i>
+                                    Desconectar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Placeholder for future integrations -->
+                        <div class="integration-card coming-soon">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-more"></i>
+                                    <h2>Más integraciones próximamente</h2>
+                                </div>
+                                <div class="status-badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;">
+                                    <span class="status-indicator"></span>
+                                    Próximamente
+                                </div>
+                            </div>
+
+                            <p class="card-description">
+                                Estamos trabajando en nuevas integraciones para mejorar tu experiencia. ¿Qué herramienta te gustaría integrar?
+                            </p>
+
+                            <div class="card-features">
+                                <ul class="feature-list">
+                                    <li class="feature-item">
+                                        <i class="lni lni-slack"></i>
+                                        Slack
+                                    </li>
+                                    <li class="feature-item">
+                                        <i class="lni lni-stripe"></i>
+                                        Stripe Payments
+                                    </li>
+                                    <li class="feature-item">
+                                        <i class="lni lni-envelope"></i>
+                                        Email Marketing
+                                    </li>
+                                    <li class="feature-item">
+                                        <i class="lni lni-cloud"></i>
+                                        Y muchas más...
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- No Agent Selected State -->
+                    <div class="empty-state" id="emptyState">
+                        <i class="lni lni-inbox"></i>
+                        <h3>Selecciona un agente</h3>
+                        <p>Selecciona un agente del menú superior para ver y configurar sus integraciones</p>
+                    </div>
+
+                    <!-- No Agents State -->
+                    <div class="empty-state" id="noAgentsState" style="display: none;">
+                        <i class="lni lni-robot"></i>
+                        <h3>No tienes agentes</h3>
+                        <p>Crea tu primer agente para comenzar a usar las integraciones</p>
+                        <a href="/onboarding" class="btn btn-connect" style="margin-top: 1.5rem;">
+                            <i class="lni lni-plus"></i>
+                            Crear Agente
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/integrations.js"></script>
+</body>
+</html>

@@ -1,0 +1,777 @@
+{{define "pricing.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precios - ChatBot Hub</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/partials/navbar.css">
+    <link rel="stylesheet" href="/static/css/partials/footer.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #ffffff;
+            padding-top: 80px;
+            line-height: 1.6;
+            color: #1f2937;
+        }
+
+        /* Hero Section */
+        .pricing-hero {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            padding: 100px 20px 80px 20px;
+            text-align: center;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero-title {
+            font-size: 56px;
+            font-weight: 800;
+            color: #1a1a1a;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            font-size: 22px;
+            color: #6b7280;
+            margin-bottom: 40px;
+        }
+
+        /* Toggle Section */
+        .billing-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 60px;
+        }
+
+        .toggle-label {
+            font-size: 18px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .toggle-label.active {
+            color: #06b6d4;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 32px;
+            background: #e5e7eb;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(28px);
+        }
+
+        .discount-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 700;
+            margin-left: 12px;
+        }
+
+        /* Pricing Cards */
+        .pricing-section {
+            padding: 60px 20px 100px 20px;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+        }
+
+        .pricing-card {
+            background: white;
+            border-radius: 24px;
+            padding: 48px 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 25px 60px rgba(6, 182, 212, 0.2);
+            border-color: rgba(6, 182, 212, 0.3);
+        }
+
+        .pricing-card.featured {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+            transform: scale(1.05);
+            border-color: transparent;
+        }
+
+        .pricing-card.featured:hover {
+            transform: scale(1.08) translateY(-8px);
+            box-shadow: 0 30px 80px rgba(6, 182, 212, 0.4);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            padding: 8px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .plan-name {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .pricing-card.featured .plan-name {
+            color: white;
+        }
+
+        .plan-price {
+            font-size: 56px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+
+        .pricing-card.featured .plan-price {
+            color: white;
+        }
+
+        .plan-period {
+            font-size: 16px;
+            color: #6b7280;
+            margin-bottom: 24px;
+        }
+
+        .pricing-card.featured .plan-period {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .plan-description {
+            font-size: 16px;
+            color: #6b7280;
+            margin-bottom: 32px;
+            line-height: 1.6;
+            min-height: 48px;
+        }
+
+        .pricing-card.featured .plan-description {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 40px;
+        }
+
+        .plan-features li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 16px;
+            color: #374151;
+        }
+
+        .pricing-card.featured .plan-features li {
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .feature-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #06b6d4, #22d3ee);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .pricing-card.featured .feature-icon {
+            background: white;
+            color: #06b6d4;
+        }
+
+        .plan-button {
+            width: 100%;
+            padding: 18px 24px;
+            border: none;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+        }
+
+        .plan-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(6, 182, 212, 0.4);
+        }
+
+        .pricing-card.featured .plan-button {
+            background: white;
+            color: #06b6d4;
+        }
+
+        .pricing-card.featured .plan-button:hover {
+            background: #f0f9ff;
+            box-shadow: 0 15px 35px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Comparison Table */
+        .comparison-section {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            padding: 100px 20px;
+        }
+
+        .comparison-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-title {
+            font-size: 48px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-subtitle {
+            font-size: 20px;
+            color: #6b7280;
+        }
+
+        .comparison-table {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .table-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 20px;
+            padding: 32px;
+            background: linear-gradient(135deg, #f8fafc, #f0f9ff);
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .table-header div {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            text-align: center;
+        }
+
+        .table-header div:first-child {
+            text-align: left;
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 20px;
+            padding: 24px 32px;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.2s ease;
+        }
+
+        .table-row:hover {
+            background: #f9fafb;
+        }
+
+        .table-row div:first-child {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .table-row div {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+        }
+
+        .check-icon {
+            color: #06b6d4;
+            font-size: 20px;
+        }
+
+        .cross-icon {
+            color: #d1d5db;
+            font-size: 20px;
+        }
+
+        /* FAQ Section */
+        .faq-section {
+            padding: 100px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .faq-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .faq-item {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .faq-item:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .faq-question {
+            padding: 28px 32px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            transition: color 0.3s ease;
+        }
+
+        .faq-question:hover {
+            color: #06b6d4;
+        }
+
+        .faq-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            font-size: 20px;
+        }
+
+        .faq-item.active .faq-icon {
+            transform: rotate(45deg);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+            background: #f8fafc;
+        }
+
+        .faq-item.active .faq-answer {
+            max-height: 300px;
+        }
+
+        .faq-answer-content {
+            padding: 0 32px 28px 32px;
+            color: #6b7280;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .pricing-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+
+            .pricing-card.featured:hover {
+                transform: scale(1.02) translateY(-8px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 36px;
+            }
+
+            .hero-subtitle {
+                font-size: 18px;
+            }
+
+            .table-header,
+            .table-row {
+                grid-template-columns: 1fr;
+                text-align: left !important;
+            }
+
+            .table-header div,
+            .table-row div {
+                text-align: left !important;
+                justify-content: flex-start !important;
+            }
+
+            .comparison-table {
+                overflow-x: auto;
+            }
+
+            .plan-price {
+                font-size: 48px;
+            }
+        }
+    </style>
+</head>
+<body>
+    {{template "partials/navbar.html" .}}
+
+    <!-- Hero Section -->
+    <section class="pricing-hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Planes Simples y Transparentes</h1>
+            <p class="hero-subtitle">Elige el plan perfecto para tu negocio. Sin tarifas ocultas, sin compromisos a largo plazo.</p>
+            
+            <div class="billing-toggle">
+                <span class="toggle-label active" id="monthlyLabel">Mensual</span>
+                <div class="toggle-switch" id="billingToggle">
+                    <div class="toggle-slider"></div>
+                </div>
+                <span class="toggle-label" id="yearlyLabel">Anual <span class="discount-badge">-20%</span></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Cards -->
+    <section class="pricing-section">
+        <div class="pricing-grid">
+            <!-- Plan Protón -->
+            <div class="pricing-card">
+                <h3 class="plan-name">Plan Protón</h3>
+                <div class="plan-price" data-monthly="655" data-yearly="524">$655</div>
+                <div class="plan-period">por mes</div>
+                <p class="plan-description">Perfecto para pequeños negocios que comienzan con chatbots.</p>
+                
+                <ul class="plan-features">
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>1 Chatbot incluido</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>1,000 mensajes/mes</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>Integración WhatsApp</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>Soporte por email</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>Panel básico de analytics</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>40 GB de almacenamiento</li>
+                </ul>
+                
+                <button class="plan-button">Comenzar Ahora</button>
+            </div>
+
+            <!-- Plan Neutrón -->
+            <div class="pricing-card featured">
+                <div class="popular-badge">Más Popular</div>
+                <h3 class="plan-name">Plan Neutrón</h3>
+                <div class="plan-price" data-monthly="255" data-yearly="204">$255</div>
+                <div class="plan-period">por mes</div>
+                <p class="plan-description">Ideal para Mipymes en crecimiento que buscan más potencia.</p>
+                
+                <ul class="plan-features">
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>3 Chatbots incluidos</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>10,000 mensajes/mes</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>Todas las plataformas</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>Soporte prioritario 24/7</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>Analytics avanzados</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>Integraciones CRM</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>100 GB de almacenamiento</li>
+                </ul>
+                
+                <button class="plan-button">Comenzar Ahora</button>
+            </div>
+
+            <!-- Plan Electrón -->
+            <div class="pricing-card">
+                <h3 class="plan-name">Plan Electrón</h3>
+                <div class="plan-price" data-monthly="999" data-yearly="799">$999</div>
+                <div class="plan-period">por mes</div>
+                <p class="plan-description">Para empresas que necesitan soluciones personalizadas.</p>
+                
+                <ul class="plan-features">
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>Chatbots ilimitados</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>Mensajes ilimitados</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>Todas las funcionalidades</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>Soporte dedicado</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>API personalizada</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>White label disponible</li>
+                    <li><span class="feature-icon"><i class="lni lni-checkmark"></i></span>Almacenamiento personalizado</li>
+                </ul>
+                
+                <button class="plan-button">Contactar Ventas</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Table -->
+    <section class="comparison-section">
+        <div class="comparison-container">
+            <div class="section-header">
+                <h2 class="section-title">Comparación Detallada</h2>
+                <p class="section-subtitle">Todas las características en un solo lugar para que tomes la mejor decisión.</p>
+            </div>
+
+            <div class="comparison-table">
+                <div class="table-header">
+                    <div>Características</div>
+                    <div>Protón</div>
+                    <div>Neutrón</div>
+                    <div>Electrón</div>
+                </div>
+                
+                <div class="table-row">
+                    <div>Número de Chatbots</div>
+                    <div>1</div>
+                    <div>3</div>
+                    <div>Ilimitado</div>
+                </div>
+                
+                <div class="table-row">
+                    <div>Mensajes por mes</div>
+                    <div>1,000</div>
+                    <div>10,000</div>
+                    <div>Ilimitado</div>
+                </div>
+                
+                <div class="table-row">
+                    <div>Soporte 24/7</div>
+                    <div><i class="lni lni-close cross-icon"></i></div>
+                    <div><i class="lni lni-checkmark check-icon"></i></div>
+                    <div><i class="lni lni-checkmark check-icon"></i></div>
+                </div>
+                
+                <div class="table-row">
+                    <div>API Personalizada</div>
+                    <div><i class="lni lni-close cross-icon"></i></div>
+                    <div><i class="lni lni-close cross-icon"></i></div>
+                    <div><i class="lni lni-checkmark check-icon"></i></div>
+                </div>
+                
+                <div class="table-row">
+                    <div>White Label</div>
+                    <div><i class="lni lni-close cross-icon"></i></div>
+                    <div><i class="lni lni-close cross-icon"></i></div>
+                    <div><i class="lni lni-checkmark check-icon"></i></div>
+                </div>
+                
+                <div class="table-row">
+                    <div>Integraciones CRM</div>
+                    <div><i class="lni lni-close cross-icon"></i></div>
+                    <div><i class="lni lni-checkmark check-icon"></i></div>
+                    <div><i class="lni lni-checkmark check-icon"></i></div>
+                </div>
+                
+                <div class="table-row">
+                    <div>Analytics Avanzados</div>
+                    <div><i class="lni lni-close cross-icon"></i></div>
+                    <div><i class="lni lni-checkmark check-icon"></i></div>
+                    <div><i class="lni lni-checkmark check-icon"></i></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+        <div class="section-header">
+            <h2 class="section-title">Preguntas Frecuentes</h2>
+            <p class="section-subtitle">Respuestas a las dudas más comunes sobre nuestros planes.</p>
+        </div>
+
+        <div class="faq-container">
+            <div class="faq-item">
+                <button class="faq-question">
+                    ¿Puedo cambiar de plan en cualquier momento?
+                    <div class="faq-icon">+</div>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Sí, puedes actualizar o degradar tu plan cuando quieras. Los cambios se aplican inmediatamente y solo pagas la diferencia prorrateada.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    ¿Qué sucede si excedo mi límite de mensajes?
+                    <div class="faq-icon">+</div>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Te notificaremos cuando estés cerca del límite. Puedes comprar paquetes adicionales de mensajes o actualizar tu plan para obtener más mensajes incluidos.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    ¿Ofrecen período de prueba gratuito?
+                    <div class="faq-icon">+</div>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Sí, todos los planes incluyen 14 días de prueba gratuita. No se requiere tarjeta de crédito para comenzar.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    ¿Qué métodos de pago aceptan?
+                    <div class="faq-icon">+</div>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Aceptamos tarjetas de crédito/débito (Visa, Mastercard, American Express), PayPal y transferencias bancarias para planes anuales.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    ¿Puedo cancelar mi suscripción?
+                    <div class="faq-icon">+</div>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Por supuesto. Puedes cancelar tu suscripción en cualquier momento desde tu panel de control. No hay penalizaciones ni cargos ocultos.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{template "partials/footer.html" .}}
+
+    <script src="/static/js/index.js"></script>
+    <script>
+        // Billing Toggle
+        const toggle = document.getElementById('billingToggle');
+        const monthlyLabel = document.getElementById('monthlyLabel');
+        const yearlyLabel = document.getElementById('yearlyLabel');
+        const prices = document.querySelectorAll('.plan-price');
+        
+        let isYearly = false;
+        
+        toggle.addEventListener('click', function() {
+            isYearly = !isYearly;
+            this.classList.toggle('active');
+            
+            monthlyLabel.classList.toggle('active');
+            yearlyLabel.classList.toggle('active');
+            
+            prices.forEach(price => {
+                const monthly = price.getAttribute('data-monthly');
+                const yearly = price.getAttribute('data-yearly');
+                
+                if (isYearly) {
+                    price.textContent = '$' + yearly;
+                } else {
+                    price.textContent = '$' + monthly;
+                }
+            });
+        });
+
+        // FAQ Toggle
+        const faqItems = document.querySelectorAll('.faq-item');
+        
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            
+            question.addEventListener('click', function() {
+                const isActive = item.classList.contains('active');
+                
+                faqItems.forEach(otherItem => {
+                    otherItem.classList.remove('active');
+                });
+                
+                if (!isActive) {
+                    item.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+{{end}}

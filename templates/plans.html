@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planes - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/sidebar.css">
+    <link rel="stylesheet" href="/static/css/userbar.css">
+    <link rel="stylesheet" href="/static/css/plans.css">
+    <style>
+        /* Estilo especial para plan gratuito */
+        .pricing-card[data-plan="gratuito"] {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, white 100%);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .pricing-card[data-plan="gratuito"] .plan-name {
+            color: #10b981;
+        }
+
+        .pricing-card[data-plan="gratuito"] .price-amount {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .plan-button.free-trial {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .plan-button.free-trial:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .free-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.5rem 1.25rem;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="plans-layout">
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <div class="header-content">
+                            <h1 class="page-title">Planes y Precios</h1>
+                            <p class="page-subtitle">Elige el plan perfecto para tu negocio. Cambia o cancela en cualquier momento.</p>
+                        </div>
+                    </div>
+
+                    <!-- Current Plan Banner -->
+                    {{if .currentPlan}}
+                    {{if ne .currentPlan "pending"}}
+                    <div class="current-plan-banner">
+                        <div class="banner-icon">
+                            <i class="lni lni-dollar"></i>
+                        </div>
+                        <div class="banner-content">
+                            <div class="banner-title">Plan Actual: <strong>{{.currentPlan}}</strong></div>
+                            <div class="banner-subtitle">Gestiona tu suscripción y pagos</div>
+                        </div>
+                        <a href="/billing" class="banner-link">
+                            Ver Facturación
+                            <i class="lni lni-arrow-right"></i>
+                        </a>
+                    </div>
+                    {{end}}
+                    {{end}}
+
+                    <!-- Toggle de Periodo de Facturación (ocultar para plan gratuito) -->
+                    <div class="billing-toggle" id="billingToggleContainer">
+                        <span class="toggle-label">Mensual</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="billingToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="toggle-label">Anual</span>
+                    </div>
+
+                    <!-- Pricing Cards (Dinámico desde Stripe) -->
+                    <div class="pricing-grid">
+                        {{range .plans}}
+                        <div class="pricing-card {{if .popular}}featured{{end}} {{if .isFree}}free-plan{{end}}" data-plan="{{.id}}">
+                            {{if .isFree}}
+                            <div class="free-badge">Gratis</div>
+                            {{else if .popular}}
+                            <div class="popular-badge">Más Popular</div>
+                            {{end}}
+                            
+                            <h3 class="plan-name">{{.name}}</h3>
+                            <div class="plan-price">
+                                {{if .isFree}}
+                                <span class="price-amount">$0</span>
+                                <span class="price-period">/ 30 días</span>
+                                {{else}}
+                                <span class="price-amount" 
+                                      data-monthly="{{.monthly.amount}}" 
+                                      data-annual="{{.annual.amount}}"
+                                      data-monthly-price-id="{{.monthly.priceId}}"
+                                      data-annual-price-id="{{.annual.priceId}}">
+                                    ${{.monthly.amount}}
+                                </span>
+                                <span class="price-period">/ mes</span>
+                                {{end}}
+                            </div>
+                            <p class="plan-description">{{.description}}</p>
+                            
+                            <ul class="plan-features">
+                                {{range .features}}
+                                <li>
+                                    <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                                    <span>{{.}}</span>
+                                </li>
+                                {{end}}
+                            </ul>
+                            
+                            {{if eq $.currentPlan .id}}
+                            <button class="plan-button current-plan" disabled>Plan Actual</button>
+                            {{else if .isFree}}
+                            <button class="plan-button free-trial">Probar Gratis</button>
+                            {{else}}
+                            <button class="plan-button upgrade">Actualizar Plan</button>
+                            {{end}}
+                        </div>
+                        {{end}}
+                    </div>
+
+                    <!-- Comparison Table -->
+                    <div class="comparison-section">
+                        <h2 class="comparison-title">Comparación Detallada de Planes</h2>
+                        
+                        <div class="comparison-table-wrapper">
+                            <table class="comparison-table">
+                                <thead>
+                                    <tr>
+                                        <th class="feature-column">Características</th>
+                                        <th>Gratuito</th>
+                                        <th>Protón</th>
+                                        <th class="featured-column">Neutrón</th>
+                                        <th>Electrón</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="feature-name">Número de Chatbots</td>
+                                        <td>1</td>
+                                        <td>1</td>
+                                        <td class="featured-cell">3</td>
+                                        <td>Ilimitados</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Tipo de Bot</td>
+                                        <td>AtomicBot</td>
+                                        <td>BuilderBot</td>
+                                        <td class="featured-cell">BuilderBot</td>
+                                        <td>BuilderBot</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">WhatsApp</td>
+                                        <td>Web</td>
+                                        <td>Business API</td>
+                                        <td class="featured-cell">Business API</td>
+                                        <td>Business API</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Mensajes mensuales</td>
+                                        <td>100</td>
+                                        <td>1,000</td>
+                                        <td class="featured-cell">10,000</td>
+                                        <td>Ilimitados</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Panel de Mensajes</td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                        <td class="featured-cell"><i class="lni lni-checkmark"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Analytics</td>
+                                        <td>Básico</td>
+                                        <td>Básico</td>
+                                        <td class="featured-cell">Avanzado</td>
+                                        <td>Personalizado</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Soporte</td>
+                                        <td>Email</td>
+                                        <td>Email</td>
+                                        <td class="featured-cell">Prioritario</td>
+                                        <td>Dedicado 24/7</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Integraciones CRM</td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td class="featured-cell"><i class="lni lni-checkmark"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">API Personalizada</td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td class="featured-cell"><i class="lni lni-close"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Section -->
+                    <div class="faq-section">
+                        <h2 class="faq-title">Preguntas Frecuentes</h2>
+                        
+                        <div class="faq-list">
+                            <div class="faq-item">
+                                <div class="faq-question">
+                                    <div class="faq-question-text">
+                                        <i class="lni lni-question-circle"></i>
+                                        <span>¿Puedo cambiar de plan en cualquier momento?</span>
+                                    </div>
+                                    <div class="faq-toggle">
+                                        <i class="lni lni-chevron-down"></i>
+                                    </div>
+                                </div>
+                                <div class="faq-answer">
+                                    <p>Sí, puedes actualizar o cambiar tu plan cuando quieras. Los cambios se aplican inmediatamente.</p>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question">
+                                    <div class="faq-question-text">
+                                        <i class="lni lni-question-circle"></i>
+                                        <span>¿Qué pasa si excedo mi límite de mensajes?</span>
+                                    </div>
+                                    <div class="faq-toggle">
+                                        <i class="lni lni-chevron-down"></i>
+                                    </div>
+                                </div>
+                                <div class="faq-answer">
+                                    <p>Puedes adquirir paquetes adicionales de mensajes o actualizar a un plan superior.</p>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question">
+                                    <div class="faq-question-text">
+                                        <i class="lni lni-question-circle"></i>
+                                        <span>¿Ofrecen garantía de devolución?</span>
+                                    </div>
+                                    <div class="faq-toggle">
+                                        <i class="lni lni-chevron-down"></i>
+                                    </div>
+                                </div>
+                                <div class="faq-answer">
+                                    <p>Sí, ofrecemos garantía de devolución de 30 días sin preguntas.</p>
+                                </div>
+                            </div>
+
+                            <div class="faq-item">
+                                <div class="faq-question">
+                                    <div class="faq-question-text">
+                                        <i class="lni lni-question-circle"></i>
+                                        <span>¿Cómo funciona la facturación anual?</span>
+                                    </div>
+                                    <div class="faq-toggle">
+                                        <i class="lni lni-chevron-down"></i>
+                                    </div>
+                                </div>
+                                <div class="faq-answer">
+                                    <p>Al elegir facturación anual, pagas por adelantado y obtienes un 20% de descuento.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/plans.js"></script>
+</body>
+</html>

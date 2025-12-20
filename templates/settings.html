@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+        }
+
+        /* Layout con Sidebar */
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Content Wrapper */
+        .content-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            background: #ffffff;
+        }
+
+        .settings-layout {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .page-header i {
+            font-size: 2.5rem;
+            color: #06b6d4;
+        }
+
+        .page-header h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Settings Grid */
+        .settings-grid {
+            display: grid;
+            gap: 2rem;
+        }
+
+        /* Settings Card */
+        .settings-card {
+            background: white;
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            border: 1px solid #f0f0f0;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .settings-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #06b6d4 0%, #0891b2 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .settings-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(6, 182, 212, 0.15);
+            border-color: rgba(6, 182, 212, 0.2);
+        }
+
+        .settings-card:hover::before {
+            opacity: 1;
+        }
+
+        .settings-card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #f3f4f6;
+        }
+
+        .settings-card-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(8, 145, 178, 0.05) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #06b6d4;
+            font-size: 28px;
+            transition: all 0.3s ease;
+        }
+
+        .settings-card:hover .settings-card-icon {
+            transform: scale(1.1);
+        }
+
+        .settings-card-title h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 0.25rem;
+        }
+
+        .settings-card-title p {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        /* Form Group */
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .form-description {
+            margin-top: 0.75rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+            line-height: 1.5;
+            display: flex;
+            align-items: start;
+            gap: 0.5rem;
+        }
+
+        .form-description i {
+            font-size: 1rem;
+            color: #06b6d4;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* Button Styles */
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn i,
+        .btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        /* WhatsApp Support */
+        .whatsapp-support {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #86efac;
+            border-radius: 20px;
+            margin-top: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .whatsapp-support:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(34, 197, 94, 0.2);
+            border-color: #22c55e;
+        }
+
+        .whatsapp-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 40px;
+            flex-shrink: 0;
+            box-shadow: 0 8px 20px rgba(34, 197, 94, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .whatsapp-support:hover .whatsapp-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .whatsapp-content {
+            flex: 1;
+        }
+
+        .whatsapp-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #166534;
+            margin-bottom: 0.5rem;
+        }
+
+        .whatsapp-description {
+            font-size: 1rem;
+            color: #15803d;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .whatsapp-number {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #14532d;
+            background: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .whatsapp-arrow {
+            margin-left: auto;
+            font-size: 2rem;
+            color: #22c55e;
+            transition: transform 0.3s ease;
+        }
+
+        .whatsapp-support:hover .whatsapp-arrow {
+            transform: translateX(8px);
+        }
+
+        /* Danger Zone */
+        .danger-zone {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border: 2px solid #fecaca;
+        }
+
+        .danger-zone:hover {
+            border-color: #ef4444;
+        }
+
+        .danger-zone::before {
+            background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .danger-zone .settings-card-icon {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
+            color: #ef4444;
+        }
+
+        .danger-info {
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 2px solid #fee2e2;
+        }
+
+        .danger-info i {
+            font-size: 1.5rem;
+            color: #ef4444;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .danger-info-content h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #991b1b;
+            margin-bottom: 0.5rem;
+        }
+
+        .danger-info-content p {
+            font-size: 0.875rem;
+            color: #7f1d1d;
+            line-height: 1.6;
+        }
+
+        /* Success Message */
+        .success-message {
+            display: none;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            color: #065f46;
+            font-weight: 600;
+            animation: slideInFromTop 0.5s ease-out;
+        }
+
+        .success-message i {
+            font-size: 1.5rem;
+            color: #10b981;
+        }
+
+        /* Error Message */
+        .error-message {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            color: #991b1b;
+            font-weight: 600;
+            margin-top: 1.5rem;
+            animation: slideInFromTop 0.5s ease-out;
+        }
+
+        .error-message i {
+            font-size: 1.5rem;
+            color: #ef4444;
+        }
+
+        /* Animations */
+        @keyframes slideInFromTop {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+
+        /* Loading State */
+        .btn.loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .btn.loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Confirmation Modal Styles */
+        .confirmation-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirmation-modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .confirmation-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+        }
+
+        .confirmation-modal-content {
+            position: relative;
+            background: white;
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+            animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .confirmation-modal-icon {
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ef4444;
+            font-size: 48px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .confirmation-modal-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .confirmation-modal-description {
+            font-size: 1rem;
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .confirmation-modal-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        /* Success Modal Styles */
+        .success-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10001;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success-modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .success-modal-content {
+            position: relative;
+            background: white;
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+            text-align: center;
+            animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .success-modal-icon {
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #10b981;
+            font-size: 48px;
+            animation: checkmarkAnimation 0.6s ease-out;
+        }
+
+        @keyframes checkmarkAnimation {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .success-modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-modal-description {
+            font-size: 1rem;
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            position: relative;
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #dc2626;
+            font-size: 40px;
+        }
+
+        .modal-header h3 {
+            font-size: 1.5rem;
+            color: #1a1a1a;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-description {
+            color: #6b7280;
+            line-height: 1.6;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .content-wrapper {
+                padding: 1rem;
+            }
+
+            .settings-card {
+                padding: 1.5rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.75rem;
+            }
+
+            .whatsapp-support {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .whatsapp-arrow {
+                margin: 0;
+                transform: rotate(90deg);
+            }
+
+            .modal-content {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        {{template "sidebar.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Userbar -->
+            {{template "userbar.html" .}}
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <div class="settings-layout">
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <i class="lni lni-cog"></i>
+                        <h1>Configuración</h1>
+                    </div>
+
+                    <!-- Settings Grid -->
+                    <div class="settings-grid">
+                        <!-- Change Password -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <div class="settings-card-icon">
+                                    <i class="lni lni-lock"></i>
+                                </div>
+                                <div class="settings-card-title">
+                                    <h2>Cambiar Contraseña</h2>
+                                    <p>Actualiza tu contraseña para mantener tu cuenta segura</p>
+                                </div>
+                            </div>
+
+                            <form id="passwordForm">
+                                <div class="form-group">
+                                    <label class="form-label" for="newPassword">Nueva Contraseña</label>
+                                    <input 
+                                        type="password" 
+                                        id="newPassword" 
+                                        class="form-input"
+                                        required
+                                    >
+                                    <div class="form-description">
+                                        <i class="lni lni-information"></i>
+                                        <span>Mínimo 8 caracteres, incluyendo mayúsculas, minúsculas, números y símbolos</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="confirmPassword">Confirmar Nueva Contraseña</label>
+                                    <input 
+                                        type="password" 
+                                        id="confirmPassword" 
+                                        class="form-input"
+                                        required
+                                    >
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="lni lni-checkmark-circle"></i>
+                                    <span>Actualizar Contraseña</span>
+                                </button>
+
+                                <div id="passwordSuccess" class="success-message" style="display: none;">
+                                    <i class="lni lni-checkmark-circle"></i>
+                                    <span>¡Contraseña actualizada exitosamente!</span>
+                                </div>
+
+                                <div id="passwordError" class="error-message" style="display: none;">
+                                    <i class="lni lni-cross-circle"></i>
+                                    <span id="passwordErrorText">Error al actualizar la contraseña</span>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Support - Solo WhatsApp -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <div class="settings-card-icon">
+                                    <i class="lni lni-help"></i>
+                                </div>
+                                <div class="settings-card-title">
+                                    <h2>Soporte</h2>
+                                    <p>Contáctanos directamente por WhatsApp</p>
+                                </div>
+                            </div>
+
+                            <div class="whatsapp-support" onclick="window.open('https://wa.me/526621234567?text=Hola,%20necesito%20ayuda%20con%20Attomos', '_blank')">
+                                <div class="whatsapp-icon">
+                                    <i class="lni lni-whatsapp"></i>
+                                </div>
+                                <div class="whatsapp-content">
+                                    <div class="whatsapp-title">Soporte por WhatsApp</div>
+                                    <div class="whatsapp-description">
+                                        Nuestro equipo está disponible para ayudarte con cualquier duda o problema
+                                    </div>
+                                    <div class="whatsapp-number">
+                                        <i class="lni lni-phone"></i>
+                                        <span>+52 662 123 4567</span>
+                                    </div>
+                                </div>
+                                <i class="lni lni-arrow-right whatsapp-arrow"></i>
+                            </div>
+                        </div>
+
+                        <!-- Delete Account - Danger Zone -->
+                        <div class="settings-card danger-zone">
+                            <div class="settings-card-header">
+                                <div class="settings-card-icon">
+                                    <i class="lni lni-warning"></i>
+                                </div>
+                                <div class="settings-card-title">
+                                    <h2>Zona de Peligro</h2>
+                                    <p>Acciones irreversibles y destructivas</p>
+                                </div>
+                            </div>
+
+                            <div class="danger-info">
+                                <i class="lni lni-shield"></i>
+                                <div class="danger-info-content">
+                                    <h3>Eliminar Tu Cuenta</h3>
+                                    <p>Una vez que elimines tu cuenta, no hay vuelta atrás. Esta acción eliminará permanentemente todos tus datos, agentes, conversaciones y configuraciones. Por favor, asegúrate de esta decisión.</p>
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn btn-danger" onclick="showDeleteModal()">
+                                <i class="lni lni-trash-can"></i>
+                                <span>Eliminar Cuenta</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Account Modal -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-overlay" onclick="closeDeleteModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <i class="lni lni-warning"></i>
+                </div>
+                <h3>¿Eliminar Cuenta?</h3>
+            </div>
+            <p class="modal-description">
+                Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta, todos los agentes, conversaciones y datos asociados. ¿Estás absolutamente seguro?
+            </p>
+            <div class="form-group">
+                <label class="form-label" for="confirmDelete">Escribe "ELIMINAR" para confirmar</label>
+                <input 
+                    type="text" 
+                    id="confirmDelete" 
+                    class="form-input"
+                >
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()" style="flex: 1;">
+                    <i class="lni lni-close"></i>
+                    <span>Cancelar</span>
+                </button>
+                <button class="btn btn-danger" onclick="confirmDelete()" style="flex: 1;">
+                    <i class="lni lni-trash-can"></i>
+                    <span>Eliminar Cuenta</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal (Última advertencia) -->
+    <div class="confirmation-modal" id="finalConfirmationModal">
+        <div class="confirmation-modal-overlay" onclick="closeFinalConfirmation()"></div>
+        <div class="confirmation-modal-content">
+            <div class="confirmation-modal-icon">
+                <i class="lni lni-warning"></i>
+            </div>
+            <h3 class="confirmation-modal-title">Esta es tu última advertencia</h3>
+            <p class="confirmation-modal-description">
+                Tu cuenta será eliminada permanentemente. Esta acción no se puede deshacer.
+            </p>
+            <div class="confirmation-modal-actions">
+                <button class="btn btn-secondary" onclick="closeFinalConfirmation()" style="flex: 1;">
+                    <i class="lni lni-close"></i>
+                    <span>Cancelar</span>
+                </button>
+                <button class="btn btn-danger" onclick="executeDelete()" style="flex: 1;">
+                    <i class="lni lni-trash-can"></i>
+                    <span>Sí, eliminar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="success-modal" id="deleteSuccessModal">
+        <div class="confirmation-modal-overlay"></div>
+        <div class="success-modal-content">
+            <div class="success-modal-icon">
+                <i class="lni lni-checkmark-circle"></i>
+            </div>
+            <h3 class="success-modal-title">Tu cuenta ha sido eliminada</h3>
+            <p class="success-modal-description">
+                Redirigiendo a la página de inicio de sesión...
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Helper function to show messages with smooth animation
+        function showMessage(element, duration = 5000) {
+            element.style.display = 'flex';
+            element.style.animation = 'slideInFromTop 0.5s ease-out';
+            
+            setTimeout(() => {
+                element.style.animation = 'fadeOut 0.5s ease-out';
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 500);
+            }, duration);
+        }
+
+        // Password Form Handling
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const successMessage = document.getElementById('passwordSuccess');
+            const errorMessage = document.getElementById('passwordError');
+            const errorText = document.getElementById('passwordErrorText');
+            
+            // Hide any previous messages
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
+            
+            // Validate passwords match
+            if (newPassword !== confirmPassword) {
+                errorText.textContent = 'Las contraseñas nuevas no coinciden';
+                showMessage(errorMessage);
+                return;
+            }
+            
+            // Validate password strength
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            if (!passwordRegex.test(newPassword)) {
+                errorText.textContent = 'La contraseña no cumple con los requisitos de seguridad';
+                showMessage(errorMessage);
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.classList.add('loading');
+            submitBtn.innerHTML = '<i class="lni lni-spinner"></i><span>Actualizando...</span>';
+            
+            try {
+                const response = await fetch('/api/user/password', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        newPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Show success message with animation
+                    showMessage(successMessage);
+                    
+                    // Clear form
+                    e.target.reset();
+                } else {
+                    errorText.textContent = data.error || 'Error al actualizar la contraseña';
+                    showMessage(errorMessage);
+                }
+            } catch (error) {
+                console.error('Error updating password:', error);
+                errorText.textContent = 'Ocurrió un error al actualizar la contraseña';
+                showMessage(errorMessage);
+            } finally {
+                // Reset button state
+                submitBtn.classList.remove('loading');
+                submitBtn.innerHTML = '<i class="lni lni-checkmark-circle"></i><span>Actualizar Contraseña</span>';
+            }
+        });
+        
+        // Delete Account Modal
+        function showDeleteModal() {
+            document.getElementById('deleteModal').classList.add('active');
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+            document.getElementById('confirmDelete').value = '';
+        }
+        
+        async function confirmDelete() {
+            const confirmInput = document.getElementById('confirmDelete').value;
+            
+            if (confirmInput !== 'ELIMINAR') {
+                alert('Por favor escribe ELIMINAR para confirmar');
+                return;
+            }
+            
+            // Cerrar el primer modal y mostrar el de confirmación final
+            closeDeleteModal();
+            showFinalConfirmation();
+        }
+
+        function showFinalConfirmation() {
+            document.getElementById('finalConfirmationModal').classList.add('active');
+        }
+
+        function closeFinalConfirmation() {
+            document.getElementById('finalConfirmationModal').classList.remove('active');
+        }
+        
+        async function executeDelete() {
+            // Cerrar modal de confirmación
+            closeFinalConfirmation();
+            
+            try {
+                const response = await fetch('/api/user/account', {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    // Mostrar modal de éxito
+                    showDeleteSuccess();
+                    
+                    // Esperar 2 segundos antes de redirigir
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Error al eliminar la cuenta');
+                }
+            } catch (error) {
+                console.error('Error deleting account:', error);
+                alert('Ocurrió un error al eliminar la cuenta');
+            }
+        }
+
+        function showDeleteSuccess() {
+            document.getElementById('deleteSuccessModal').classList.add('active');
+        }
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeDeleteModal();
+                closeFinalConfirmation();
+            }
+        });
+    </script>
+</body>
+</html>
