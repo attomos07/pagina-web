@@ -670,13 +670,28 @@ func (s *AtomicBotDeployService) GetQRCodeFromLogs(agentID uint) (string, bool, 
 	// Log para debugging
 	log.Printf("📋 [Agent %d] Analizando %d líneas de logs", agentID, len(lines))
 
+	// Verificar si fue desconectado/desvinculado recientemente (en las últimas líneas)
+	for i := len(lines) - 1; i >= 0 && i >= len(lines)-30; i-- {
+		line := lines[i]
+
+		// Detectar desconexión o logout
+		if strings.Contains(line, "WHATSAPP DESCONECTADO") ||
+			strings.Contains(line, "SESIÓN CERRADA - LOGOUT DETECTADO") ||
+			strings.Contains(line, "Dispositivo desvinculado") ||
+			strings.Contains(line, "esperando nueva conexión") {
+			log.Printf("⚠️  [Agent %d] Bot desconectado, esperando reconexión", agentID)
+			return "", false, fmt.Errorf("bot desconectado, esperando reconexión - escanea el nuevo QR cuando aparezca")
+		}
+	}
+
 	// Verificar si ya está conectado (buscar en orden inverso para obtener el estado más reciente)
 	for i := len(lines) - 1; i >= 0; i-- {
 		line := lines[i]
 
 		// Detectar mensajes de conexión exitosa
 		if strings.Contains(line, "BOT CONECTADO EXITOSAMENTE") ||
-			strings.Contains(line, "Conectado a WhatsApp") ||
+			strings.Contains(line, "WHATSAPP CONECTADO") ||
+			strings.Contains(line, "El bot está listo para recibir mensajes") ||
 			strings.Contains(line, "✅ Google Calendar inicializado") ||
 			strings.Contains(line, "Esperando mensajes de WhatsApp") {
 			log.Printf("✅ [Agent %d] Bot conectado a WhatsApp", agentID)
@@ -684,7 +699,8 @@ func (s *AtomicBotDeployService) GetQRCodeFromLogs(agentID uint) (string, bool, 
 		}
 
 		// Detectar si está autenticado
-		if strings.Contains(line, "Authenticated") || strings.Contains(line, "Connected") {
+		if strings.Contains(line, "Authenticated") ||
+			(strings.Contains(line, "Connected") && !strings.Contains(line, "Desconectado")) {
 			log.Printf("✅ [Agent %d] WhatsApp autenticado", agentID)
 			return "", true, nil
 		}

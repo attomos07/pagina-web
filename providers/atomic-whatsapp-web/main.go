@@ -20,6 +20,8 @@ import (
 	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
+var globalClient *whatsmeow.Client
+
 func main() {
 	printBanner()
 
@@ -30,21 +32,12 @@ func main() {
 		log.Println("✅ Archivo .env cargado correctamente")
 	}
 
-	// ============================================
-	// CARGAR CONFIGURACIÓN DEL NEGOCIO
-	// ============================================
-	log.Println("\n🔧 Cargando configuración del negocio...")
+	// Cargar configuración del negocio
 	if err := src.LoadBusinessConfig(); err != nil {
-		log.Printf("⚠️  Error cargando configuración: %v", err)
-		log.Println("⚠️  El bot funcionará con configuración por defecto")
+		log.Printf("⚠️  Error cargando business_config.json: %v\n", err)
+		log.Println("💡 El bot continuará con configuración por defecto")
 	} else {
-		log.Println("✅ Configuración del negocio cargada exitosamente")
-		if src.BusinessCfg != nil {
-			log.Printf("   - Negocio: %s", src.BusinessCfg.AgentName)
-			log.Printf("   - Tipo: %s", src.BusinessCfg.BusinessType)
-			log.Printf("   - Servicios configurados: %d", len(src.BusinessCfg.Services))
-			log.Printf("   - Trabajadores: %d", len(src.BusinessCfg.Workers))
-		}
+		log.Println("✅ Configuración del negocio cargada correctamente")
 	}
 
 	// Mostrar estado de configuración
@@ -117,6 +110,7 @@ func main() {
 
 	clientLog := waLog.Stdout("Client", "INFO", true)
 	client := whatsmeow.NewClient(deviceStore, clientLog)
+	globalClient = client
 
 	// Configurar cliente global
 	src.SetClient(client)
@@ -211,23 +205,6 @@ func showConfigurationStatus() {
 	log.Println("\n📋 Estado de Configuración:")
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
-	// Verificar business_config.json
-	configPath := os.Getenv("BUSINESS_CONFIG_PATH")
-	if configPath == "" {
-		configPath = "business_config.json"
-	}
-
-	if _, err := os.Stat(configPath); err == nil {
-		log.Printf("✅ Configuración del negocio: %s\n", configPath)
-		if src.BusinessCfg != nil {
-			log.Printf("   - Negocio: %s\n", src.BusinessCfg.AgentName)
-			log.Printf("   - Servicios: %d configurados\n", len(src.BusinessCfg.Services))
-		}
-	} else {
-		log.Printf("⚠️  Configuración del negocio: No encontrada\n")
-		log.Println("   💡 Se usará configuración por defecto")
-	}
-
 	// Verificar .env
 	if _, err := os.Stat(".env"); err == nil {
 		log.Println("✅ Archivo .env: Encontrado")
@@ -278,12 +255,8 @@ func printFinalStatus(gemini, sheets, calendar string) {
 	fmt.Println("╚═══════════════════════════════════════════════════════╝")
 
 	if src.BusinessCfg != nil {
-		fmt.Println("\n🏢 Negocio Configurado:")
-		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-		fmt.Printf("   📋 Nombre: %s\n", src.BusinessCfg.AgentName)
-		fmt.Printf("   🏪 Tipo: %s\n", src.BusinessCfg.BusinessType)
-		fmt.Printf("   📦 Servicios: %d\n", len(src.BusinessCfg.Services))
-		fmt.Printf("   👥 Trabajadores: %d\n", len(src.BusinessCfg.Workers))
+		fmt.Printf("\n🏢 Negocio: %s\n", src.BusinessCfg.AgentName)
+		fmt.Printf("📱 Tipo: %s\n", src.BusinessCfg.BusinessType)
 	}
 
 	fmt.Println("\n📊 Estado de Servicios:")
@@ -312,12 +285,6 @@ func configWatchdog() {
 			log.Println("\n🔄 Detectado cambio en business_config.json, recargando...")
 			if err := src.LoadBusinessConfig(); err == nil {
 				log.Println("✅ Configuración del negocio recargada")
-				if src.BusinessCfg != nil {
-					log.Printf("   - Negocio: %s\n", src.BusinessCfg.AgentName)
-					log.Printf("   - Servicios: %d\n", len(src.BusinessCfg.Services))
-				}
-			} else {
-				log.Printf("⚠️  Error recargando configuración: %v\n", err)
 			}
 			lastConfigMod = currentConfigMod
 		}
@@ -381,21 +348,64 @@ func getFileModTime(filename string) time.Time {
 	return info.ModTime()
 }
 
-// Manejador de eventos
+// Manejador de eventos mejorado con detección de desconexión
 func handleEvents(evt interface{}, client *whatsmeow.Client) {
 	switch v := evt.(type) {
 	case *events.Message:
 		src.HandleMessage(v, client)
+
 	case *events.Receipt:
 		if v.Type == events.ReceiptTypeRead || v.Type == events.ReceiptTypeReadSelf {
 			log.Printf("✓✓ Mensaje leído: %s\n", v.MessageIDs[0])
 		}
+
 	case *events.Connected:
-		fmt.Println("🟢 Conectado a WhatsApp")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		log.Println("🟢 WHATSAPP CONECTADO")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		log.Println("✅ El bot está listo para recibir mensajes")
+
 	case *events.Disconnected:
-		fmt.Println("🔴 Desconectado de WhatsApp")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		log.Println("🔴 WHATSAPP DESCONECTADO")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		log.Println("⚠️  Dispositivo desvinculado de WhatsApp")
+		log.Println("💡 El sistema está esperando nueva conexión...")
+
 	case *events.LoggedOut:
-		fmt.Println("🚪 Sesión cerrada")
-		log.Println("💡 Elimina whatsapp.db y vuelve a escanear el QR")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		log.Println("🚪 SESIÓN CERRADA - LOGOUT DETECTADO")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		log.Println("⚠️  El dispositivo fue desvinculado de WhatsApp")
+		log.Println("🔄 Limpiando sesión y preparando para nueva conexión...")
+
+		// Limpiar la base de datos para forzar nueva autenticación
+		go func() {
+			time.Sleep(2 * time.Second)
+
+			dbFile := os.Getenv("DATABASE_FILE")
+			if dbFile == "" {
+				dbFile = "whatsapp.db"
+			}
+
+			log.Println("🗑️  Eliminando base de datos de sesión...")
+			if err := os.Remove(dbFile); err != nil {
+				log.Printf("⚠️  No se pudo eliminar la base de datos: %v\n", err)
+			} else {
+				log.Println("✅ Base de datos eliminada")
+				log.Println("🔄 El bot se reiniciará automáticamente por systemd")
+				log.Println("📱 Escanea el nuevo código QR cuando aparezca")
+			}
+
+			// Salir para que systemd reinicie el servicio
+			os.Exit(0)
+		}()
+
+	case *events.StreamReplaced:
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		log.Println("🔄 STREAM REEMPLAZADO")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		log.Println("⚠️  WhatsApp se conectó desde otro dispositivo")
+		log.Println("🔄 Reconectando...")
 	}
 }

@@ -138,10 +138,18 @@ async function loadQRCode() {
             console.log('✅ WhatsApp connected');
             displayConnectedMessage();
         } else {
-            // Bot is starting or waiting for QR
-            const message = data.message || data.error || 'Starting bot, waiting for QR code...';
+            // Bot is starting, disconnected, or waiting for QR
+            const message = data.message || data.error || 'Iniciando bot, esperando código QR...';
             console.log('⏳ Waiting:', message);
-            displayQRLoading(message);
+            
+            // Detectar si fue desconectado
+            if (message.toLowerCase().includes('desconectado') || 
+                message.toLowerCase().includes('reconexión') ||
+                message.toLowerCase().includes('desvinculado')) {
+                displayDisconnectedMessage(message);
+            } else {
+                displayQRLoading(message);
+            }
         }
     } catch (error) {
         console.error('❌ Error loading QR:', error);
@@ -163,6 +171,26 @@ function displayQRCode(qrCode) {
             <div class="qr-info">
                 <i class="lni lni-timer"></i>
                 <span>El código QR se actualiza automáticamente</span>
+            </div>
+        </div>
+    `;
+}
+
+// Display disconnected message
+function displayDisconnectedMessage(message) {
+    const qrContainer = document.getElementById('qrContainer');
+    qrContainer.innerHTML = `
+        <div class="qr-disconnected">
+            <div class="disconnected-icon">
+                <i class="lni lni-unlink"></i>
+            </div>
+            <h3>WhatsApp Desconectado</h3>
+            <p>${escapeHtml(message)}</p>
+            <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 10px;">
+                <p style="margin: 0; color: #92400e; font-size: 0.9rem; line-height: 1.6;">
+                    <strong>💡 El bot se reiniciará automáticamente</strong><br>
+                    Espera unos segundos y un nuevo código QR aparecerá
+                </p>
             </div>
         </div>
     `;
