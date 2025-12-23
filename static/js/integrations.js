@@ -38,8 +38,12 @@ async function initAgentSelector() {
             throw new Error('Error al cargar agentes');
         }
 
-        agents = await response.json();
-        console.log(`✅ ${agents.length} agentes cargados`);
+        const data = await response.json();
+        
+        // Corregir: el endpoint devuelve { agents: [...] }
+        agents = data.agents || [];
+        
+        console.log(`✅ ${agents.length} agentes cargados`, agents);
 
         if (agents.length === 0) {
             showNoAgentsState();
@@ -52,6 +56,7 @@ async function initAgentSelector() {
     } catch (error) {
         console.error('Error cargando agentes:', error);
         showNotification('Error al cargar agentes', 'error');
+        showNoAgentsState();
     }
 }
 
@@ -65,7 +70,7 @@ function populateAgentSelector(agents) {
     agents.forEach(agent => {
         const option = document.createElement('div');
         option.className = 'select-option';
-        option.setAttribute('data-agent-id', agent.ID);
+        option.setAttribute('data-agent-id', agent.id);
         option.textContent = agent.name;
         
         optionsContainer.appendChild(option);
@@ -253,20 +258,20 @@ function updateGoogleIntegrationUI(data) {
             connectionInfo.style.display = 'block';
             
             // Update calendar link
-            if (calendarLink && data.calendarId) {
-                const calendarUrl = `https://calendar.google.com/calendar/u/0/r?cid=${encodeURIComponent(data.calendarId)}`;
+            if (calendarLink && data.calendar_id) {
+                const calendarUrl = `https://calendar.google.com/calendar/u/0/r?cid=${encodeURIComponent(data.calendar_id)}`;
                 calendarLink.href = calendarUrl;
             }
             
             // Update sheet link
-            if (sheetLink && data.sheetId) {
-                const sheetUrl = `https://docs.google.com/spreadsheets/d/${data.sheetId}/edit`;
+            if (sheetLink && data.sheet_id) {
+                const sheetUrl = `https://docs.google.com/spreadsheets/d/${data.sheet_id}/edit`;
                 sheetLink.href = sheetUrl;
             }
             
             // Update connected date
-            if (connectedAt && data.connectedAt) {
-                const date = new Date(data.connectedAt);
+            if (connectedAt && data.connected_at) {
+                const date = new Date(data.connected_at);
                 connectedAt.textContent = formatDate(date);
             }
         }
@@ -305,16 +310,33 @@ async function connectGoogle() {
     console.log(`🔗 Iniciando conexión de Google para agente ${selectedAgentId}...`);
     
     try {
+        // Get auth URL from API
+        const response = await fetch(`/api/google/connect?agent_id=${selectedAgentId}`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al obtener URL de autorización');
+        }
+
+        const data = await response.json();
+        
+        if (!data.auth_url) {
+            throw new Error('No se recibió URL de autorización');
+        }
+        
         // Open OAuth window
         const width = 600;
         const height = 700;
         const left = (window.screen.width - width) / 2;
         const top = (window.screen.height - height) / 2;
         
-        const oauthUrl = `/api/google/connect?agent_id=${selectedAgentId}`;
-        
         const popup = window.open(
-            oauthUrl,
+            data.auth_url,
             'GoogleOAuth',
             `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
         );
