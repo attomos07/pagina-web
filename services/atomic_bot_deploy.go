@@ -194,50 +194,79 @@ func (s *AtomicBotDeployService) DeployAtomicBot(agent *models.Agent, geminiAPIK
 
 // prepareServer prepara el servidor (instala Go, GCC, crea directorios)
 func (s *AtomicBotDeployService) prepareServer(userID uint, botDir string) error {
-	commands := []string{
-		// Crear directorios
-		fmt.Sprintf("mkdir -p %s/src", botDir),
-
-		// Esperar a que cloud-init termine y libere locks de apt
-		`timeout 300 bash -c 'while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do echo "Esperando que cloud-init libere apt locks..."; sleep 5; done' || true`,
-
-		// Verificar e instalar GCC/build-essential
-		`if ! command -v gcc &> /dev/null; then
-			echo "Instalando build-essential y gcc..."
-			apt-get update -y || { sleep 10; apt-get update -y; }
-			DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential gcc || { sleep 10; DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential gcc; }
-		else
-			echo "GCC ya está instalado"
-		fi`,
-
-		// Verificar e instalar Go
-		`if ! command -v go &> /dev/null; then
-			echo "Instalando Go 1.24.0..."
-			wget -q https://go.dev/dl/go1.24.0.linux-amd64.tar.gz -O /tmp/go.tar.gz || exit 1
-			tar -C /usr/local -xzf /tmp/go.tar.gz || exit 1
-			rm /tmp/go.tar.gz
-			echo "Go instalado"
-		else
-			echo "Go ya está instalado"
-		fi`,
-
-		// Verificar versiones
-		"/usr/local/go/bin/go version",
-		"gcc --version",
+	// Crear directorios
+	log.Printf("   [1/4] Creando directorios...")
+	if output, err := s.executeCommand(fmt.Sprintf("mkdir -p %s/src", botDir)); err != nil {
+		return fmt.Errorf("error creando directorios: %w\nOutput: %s", err, output)
 	}
 
-	for i, cmd := range commands {
-		log.Printf("   [%d/%d] Ejecutando preparación...", i+1, len(commands))
-		output, err := s.executeCommand(cmd)
+	// Esperar a que cloud-init libere locks de apt
+	log.Printf("   [2/4] Esperando que cloud-init termine...")
+	waitCmd := `timeout 300 bash -c 'while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do echo "Esperando locks de apt..."; sleep 5; done'`
+	if output, err := s.executeCommand(waitCmd); err != nil {
+		log.Printf("   ⚠️  Timeout esperando locks (continuando de todas formas): %v", err)
+	} else if strings.TrimSpace(output) != "" {
+		log.Printf("   %s", strings.TrimSpace(output))
+	}
 
-		// Mostrar output relevante
-		if strings.TrimSpace(output) != "" {
-			log.Printf("   Output: %s", strings.TrimSpace(output))
-		}
+	// Verificar e instalar GCC/build-essential
+	log.Printf("   [3/4] Verificando/instalando GCC...")
+	gccCmd := `
+	# Esperar locks una vez más antes de apt-get
+	timeout 60 bash -c 'while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 2; done' || true
+	
+	if ! command -v gcc &> /dev/null; then
+		echo "Instalando build-essential y gcc..."
+		
+		# Esperar y actualizar apt
+		for i in 1 2 3; do
+			apt-get update -y 2>&1 && break || {
+				echo "Intento $i/3 fallido, esperando 10s..."
+				sleep 10
+			}
+		done
+		
+		# Esperar y instalar paquetes
+		for i in 1 2 3; do
+			DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential gcc 2>&1 && break || {
+				echo "Intento $i/3 fallido, esperando 10s..."
+				sleep 10
+			}
+		done
+		
+		echo "Instalación completada"
+	else
+		echo "GCC ya está instalado"
+	fi
+	gcc --version`
 
-		if err != nil {
-			return fmt.Errorf("comando %d falló: %w\nOutput: %s", i+1, err, output)
-		}
+	output, err := s.executeCommand(gccCmd)
+	if strings.TrimSpace(output) != "" {
+		log.Printf("   Output: %s", strings.TrimSpace(output))
+	}
+	if err != nil {
+		return fmt.Errorf("error instalando GCC: %w\nOutput: %s", err, output)
+	}
+
+	// Verificar e instalar Go
+	log.Printf("   [4/4] Verificando/instalando Go...")
+	goCmd := `if ! command -v go &> /dev/null; then
+		echo "Instalando Go 1.24.0..."
+		wget -q https://go.dev/dl/go1.24.0.linux-amd64.tar.gz -O /tmp/go.tar.gz || exit 1
+		tar -C /usr/local -xzf /tmp/go.tar.gz || exit 1
+		rm /tmp/go.tar.gz
+		echo "Go instalado"
+	else
+		echo "Go ya está instalado"
+	fi
+	/usr/local/go/bin/go version`
+
+	output, err = s.executeCommand(goCmd)
+	if strings.TrimSpace(output) != "" {
+		log.Printf("   Output: %s", strings.TrimSpace(output))
+	}
+	if err != nil {
+		return fmt.Errorf("error instalando Go: %w\nOutput: %s", err, output)
 	}
 
 	log.Printf("✅ Servidor preparado correctamente (Go y GCC instalados)")
