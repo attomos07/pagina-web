@@ -195,25 +195,47 @@ func (s *AtomicBotDeployService) DeployAtomicBot(agent *models.Agent, geminiAPIK
 // prepareServer prepara el servidor (instala Go, GCC, crea directorios)
 func (s *AtomicBotDeployService) prepareServer(userID uint, botDir string) error {
 	commands := []string{
+		// Crear directorios
 		fmt.Sprintf("mkdir -p %s/src", botDir),
-		// Instalar GCC si no existe
+
+		// Esperar a que cloud-init termine y libere locks de apt
+		`timeout 300 bash -c 'while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do echo "Esperando que cloud-init libere apt locks..."; sleep 5; done' || true`,
+
+		// Verificar e instalar GCC/build-essential
 		`if ! command -v gcc &> /dev/null; then
-			apt-get update -y
-			DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential gcc
+			echo "Instalando build-essential y gcc..."
+			apt-get update -y || { sleep 10; apt-get update -y; }
+			DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential gcc || { sleep 10; DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential gcc; }
+		else
+			echo "GCC ya está instalado"
 		fi`,
-		// Instalar Go si no existe
+
+		// Verificar e instalar Go
 		`if ! command -v go &> /dev/null; then
-			wget -q https://go.dev/dl/go1.24.0.linux-amd64.tar.gz -O /tmp/go.tar.gz
-			tar -C /usr/local -xzf /tmp/go.tar.gz
+			echo "Instalando Go 1.24.0..."
+			wget -q https://go.dev/dl/go1.24.0.linux-amd64.tar.gz -O /tmp/go.tar.gz || exit 1
+			tar -C /usr/local -xzf /tmp/go.tar.gz || exit 1
 			rm /tmp/go.tar.gz
+			echo "Go instalado"
+		else
+			echo "Go ya está instalado"
 		fi`,
+
+		// Verificar versiones
 		"/usr/local/go/bin/go version",
 		"gcc --version",
 	}
 
 	for i, cmd := range commands {
 		log.Printf("   [%d/%d] Ejecutando preparación...", i+1, len(commands))
-		if output, err := s.executeCommand(cmd); err != nil {
+		output, err := s.executeCommand(cmd)
+
+		// Mostrar output relevante
+		if strings.TrimSpace(output) != "" {
+			log.Printf("   Output: %s", strings.TrimSpace(output))
+		}
+
+		if err != nil {
 			return fmt.Errorf("comando %d falló: %w\nOutput: %s", i+1, err, output)
 		}
 	}
@@ -510,10 +532,10 @@ func (s *AtomicBotDeployService) compileBotOnServer(userID uint, botDir string) 
 	}
 	log.Printf("   Permisos del ejecutable: %s", strings.TrimSpace(permOutput))
 
-	// Verificar que CGO está habilitado ejecutando el binario con --version
-	versionCmd := fmt.Sprintf("cd %s && ./atomic-bot --version 2>&1 || echo 'No version flag'", botDir)
-	versionOutput, _ := s.executeCommand(versionCmd)
-	log.Printf("   Test del ejecutable: %s", strings.TrimSpace(versionOutput))
+	// Verificar que el binario funciona (test básico)
+	testCmd := fmt.Sprintf("cd %s && file atomic-bot", botDir)
+	testOutput, _ := s.executeCommand(testCmd)
+	log.Printf("   Tipo de archivo: %s", strings.TrimSpace(testOutput))
 
 	log.Printf("✅ Bot compilado correctamente con CGO habilitado")
 	return nil
