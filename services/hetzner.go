@@ -134,6 +134,7 @@ packages:
   - ca-certificates
   - gnupg
   - build-essential
+  - gcc
   - nginx
   - certbot
   - python3-certbot-nginx

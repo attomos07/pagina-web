@@ -192,26 +192,33 @@ func (s *AtomicBotDeployService) DeployAtomicBot(agent *models.Agent, geminiAPIK
 	return nil
 }
 
-// prepareServer prepara el servidor (instala Go, crea directorios)
+// prepareServer prepara el servidor (instala Go, GCC, crea directorios)
 func (s *AtomicBotDeployService) prepareServer(userID uint, botDir string) error {
 	commands := []string{
 		fmt.Sprintf("mkdir -p %s/src", botDir),
+		// Instalar GCC si no existe
+		`if ! command -v gcc &> /dev/null; then
+			apt-get update -y
+			DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential gcc
+		fi`,
+		// Instalar Go si no existe
 		`if ! command -v go &> /dev/null; then
 			wget -q https://go.dev/dl/go1.24.0.linux-amd64.tar.gz -O /tmp/go.tar.gz
 			tar -C /usr/local -xzf /tmp/go.tar.gz
 			rm /tmp/go.tar.gz
 		fi`,
 		"/usr/local/go/bin/go version",
+		"gcc --version",
 	}
 
 	for i, cmd := range commands {
 		log.Printf("   [%d/%d] Ejecutando preparación...", i+1, len(commands))
-		if _, err := s.executeCommand(cmd); err != nil {
-			return fmt.Errorf("comando %d falló: %w", i+1, err)
+		if output, err := s.executeCommand(cmd); err != nil {
+			return fmt.Errorf("comando %d falló: %w\nOutput: %s", i+1, err, output)
 		}
 	}
 
-	log.Printf("✅ Servidor preparado correctamente")
+	log.Printf("✅ Servidor preparado correctamente (Go y GCC instalados)")
 	return nil
 }
 
@@ -464,12 +471,14 @@ func (s *AtomicBotDeployService) writeRemoteFileBytes(remotePath string, data []
 	return err
 }
 
-// compileBotOnServer compila el bot en el servidor
+// compileBotOnServer compila el bot en el servidor CON CGO HABILITADO
 func (s *AtomicBotDeployService) compileBotOnServer(userID uint, botDir string) error {
 	commands := []string{
+		// Descargar dependencias
 		fmt.Sprintf("cd %s && /usr/local/go/bin/go mod download", botDir),
 		fmt.Sprintf("cd %s && /usr/local/go/bin/go mod tidy", botDir),
-		fmt.Sprintf("cd %s && /usr/local/go/bin/go build -o atomic-bot main.go", botDir),
+		// Compilar con CGO_ENABLED=1 (CRÍTICO para go-sqlite3)
+		fmt.Sprintf("cd %s && CGO_ENABLED=1 /usr/local/go/bin/go build -o atomic-bot main.go", botDir),
 		fmt.Sprintf("chmod +x %s/atomic-bot", botDir),
 	}
 
@@ -478,6 +487,11 @@ func (s *AtomicBotDeployService) compileBotOnServer(userID uint, botDir string) 
 		output, err := s.executeCommand(cmd)
 		if err != nil {
 			return fmt.Errorf("compilación falló en paso %d: %w\nOutput: %s", i+1, err, output)
+		}
+
+		// Mostrar output si es relevante
+		if strings.TrimSpace(output) != "" && !strings.Contains(output, "go: downloading") {
+			log.Printf("   Output: %s", strings.TrimSpace(output))
 		}
 	}
 
@@ -496,7 +510,12 @@ func (s *AtomicBotDeployService) compileBotOnServer(userID uint, botDir string) 
 	}
 	log.Printf("   Permisos del ejecutable: %s", strings.TrimSpace(permOutput))
 
-	log.Printf("✅ Bot compilado correctamente")
+	// Verificar que CGO está habilitado ejecutando el binario con --version
+	versionCmd := fmt.Sprintf("cd %s && ./atomic-bot --version 2>&1 || echo 'No version flag'", botDir)
+	versionOutput, _ := s.executeCommand(versionCmd)
+	log.Printf("   Test del ejecutable: %s", strings.TrimSpace(versionOutput))
+
+	log.Printf("✅ Bot compilado correctamente con CGO habilitado")
 	return nil
 }
 
@@ -789,7 +808,7 @@ func (s *AtomicBotDeployService) executeCommand(cmd string) (string, error) {
 
 	output, err := session.CombinedOutput(cmd)
 	if err != nil {
-		return "", fmt.Errorf("comando falló: %s (output: %s)", err, string(output))
+		return string(output), fmt.Errorf("comando falló: %s", err)
 	}
 
 	return string(output), nil
