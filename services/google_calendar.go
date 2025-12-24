@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -26,8 +28,9 @@ func (s *GoogleCalendarService) GetOAuthConfig() *oauth2.Config {
 		ClientSecret: s.ClientSecret,
 		RedirectURL:  s.RedirectURL,
 		Scopes: []string{
-			calendar.CalendarScope,   // Acceso completo a Calendar
-			sheets.SpreadsheetsScope, // Acceso completo a Sheets
+			calendar.CalendarScope,                           // Acceso completo a Calendar
+			sheets.SpreadsheetsScope,                         // Acceso completo a Sheets
+			"https://www.googleapis.com/auth/userinfo.email", // Email del usuario
 		},
 		Endpoint: google.Endpoint,
 	}
@@ -47,6 +50,48 @@ func (s *GoogleCalendarService) ExchangeCode(ctx context.Context, code string) (
 		return nil, fmt.Errorf("error exchanging code: %w", err)
 	}
 	return token, nil
+}
+
+// GetUserEmail obtiene el email del usuario de Google usando el token
+func (s *GoogleCalendarService) GetUserEmail(ctx context.Context, tokenJSON string) (string, error) {
+	var token oauth2.Token
+	if err := json.Unmarshal([]byte(tokenJSON), &token); err != nil {
+		return "", fmt.Errorf("error parsing token: %w", err)
+	}
+
+	config := s.GetOAuthConfig()
+	client := config.Client(ctx, &token)
+
+	// Llamar a la API de userinfo de Google
+	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
+	if err != nil {
+		return "", fmt.Errorf("error getting user info: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return "", fmt.Errorf("error HTTP %d: %s", resp.StatusCode, string(body))
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("error reading response: %w", err)
+	}
+
+	var userInfo struct {
+		Email string `json:"email"`
+	}
+
+	if err := json.Unmarshal(body, &userInfo); err != nil {
+		return "", fmt.Errorf("error parsing user info: %w", err)
+	}
+
+	if userInfo.Email == "" {
+		return "", fmt.Errorf("email not found in user info")
+	}
+
+	return userInfo.Email, nil
 }
 
 // CreateCalendarService crea un servicio de Calendar con los tokens del usuario

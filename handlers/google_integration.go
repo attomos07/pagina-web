@@ -155,6 +155,15 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 
 	log.Printf("✅ [Agent %d] Token obtenido exitosamente", agent.ID)
 
+	// Obtener email del usuario de Google
+	userEmail, err := h.calendarService.GetUserEmail(ctx, string(tokenJSON))
+	if err != nil {
+		log.Printf("❌ [Agent %d] Error obteniendo email de Google: %v", agent.ID, err)
+		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=get_email_failed")
+		return
+	}
+	log.Printf("✅ [Agent %d] Email de Google obtenido: %s", agent.ID, userEmail)
+
 	// PASO 1: Crear Calendar automáticamente
 	log.Printf("📅 [Agent %d] Creando Google Calendar...", agent.ID)
 	calendarID, err := h.calendarService.CreateCalendar(ctx, string(tokenJSON), agent.Name)
@@ -178,7 +187,7 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 	// PASO 3: Guardar todo en la base de datos
 	now := time.Now()
 	agent.GoogleToken = string(tokenJSON)
-	agent.GoogleCalendarID = calendarID
+	agent.GoogleCalendarID = userEmail // Usar email del usuario en lugar del calendar ID
 	agent.GoogleSheetID = spreadsheetID
 	agent.GoogleConnected = true
 	agent.GoogleConnectedAt = &now
@@ -190,6 +199,8 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 	}
 
 	log.Printf("🎉 [Agent %d] Integración completada exitosamente", agent.ID)
+	log.Printf("📧 [Agent %d] Email de Google Calendar: %s", agent.ID, userEmail)
+	log.Printf("📊 [Agent %d] Spreadsheet ID: %s", agent.ID, spreadsheetID)
 
 	// PASO 4: Actualizar .env del bot en el servidor (SOLO para AtomicBot)
 	if agent.IsAtomicBot() && user.SharedServerIP != "" && user.SharedServerPassword != "" {
@@ -216,8 +227,8 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 	}
 
 	// Redirigir con éxito
-	redirectURL := fmt.Sprintf("/my-agents?success=true&agent_id=%d&calendar_id=%s&sheet_id=%s",
-		agent.ID, calendarID, spreadsheetID)
+	redirectURL := fmt.Sprintf("/my-agents?success=true&agent_id=%d&calendar_email=%s&sheet_id=%s",
+		agent.ID, userEmail, spreadsheetID)
 	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 }
 
