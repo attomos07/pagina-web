@@ -142,6 +142,184 @@ func (s *AtomicBotDeployService) Close() {
 	}
 }
 
+// UpdateGoogleIntegrationEnv actualiza las variables de entorno de Google Calendar y Sheets
+func (s *AtomicBotDeployService) UpdateGoogleIntegrationEnv(agent *models.Agent) error {
+	log.Printf("🔄 [Agent %d] Actualizando variables de entorno de Google...", agent.ID)
+
+	botDir := fmt.Sprintf("/home/user_%d/atomic-bot", agent.UserID)
+	envPath := fmt.Sprintf("%s/.env", botDir)
+
+	// Leer .env actual
+	envFile, err := s.sftpClient.Open(envPath)
+	if err != nil {
+		return fmt.Errorf("error abriendo .env: %w", err)
+	}
+	defer envFile.Close()
+
+	currentContent, err := ioutil.ReadAll(envFile)
+	if err != nil {
+		return fmt.Errorf("error leyendo .env: %w", err)
+	}
+
+	lines := strings.Split(string(currentContent), "\n")
+	updatedLines := make([]string, 0)
+	hasSpreadsheetID := false
+	hasCalendarID := false
+
+	// Actualizar líneas existentes
+	for _, line := range lines {
+		trimmedLine := strings.TrimSpace(line)
+
+		// Actualizar SPREADSHEETID si existe
+		if strings.HasPrefix(trimmedLine, "SPREADSHEETID") && agent.GoogleSheetID != "" {
+			updatedLines = append(updatedLines, fmt.Sprintf("SPREADSHEETID=%s", agent.GoogleSheetID))
+			hasSpreadsheetID = true
+			log.Printf("   ✅ SPREADSHEETID actualizado: %s", agent.GoogleSheetID)
+			continue
+		}
+
+		// Actualizar GOOGLE_CALENDAR_ID si existe
+		if strings.HasPrefix(trimmedLine, "GOOGLE_CALENDAR_ID") && agent.GoogleCalendarID != "" {
+			updatedLines = append(updatedLines, fmt.Sprintf("GOOGLE_CALENDAR_ID=%s", agent.GoogleCalendarID))
+			hasCalendarID = true
+			log.Printf("   ✅ GOOGLE_CALENDAR_ID actualizado: %s", agent.GoogleCalendarID)
+			continue
+		}
+
+		// Mantener línea original si no es una que estamos actualizando
+		updatedLines = append(updatedLines, line)
+	}
+
+	// Agregar variables si no existían
+	if !hasSpreadsheetID && agent.GoogleSheetID != "" {
+		// Buscar sección de Google Sheets
+		insertIndex := -1
+		for i, line := range updatedLines {
+			if strings.Contains(line, "Integracion Con Google Sheets") {
+				insertIndex = i + 1
+				break
+			}
+		}
+
+		if insertIndex == -1 {
+			// No existe la sección, agregarla al final
+			updatedLines = append(updatedLines, "")
+			updatedLines = append(updatedLines, "#Integracion Con Google Sheets Para Agendamiento")
+			updatedLines = append(updatedLines, fmt.Sprintf("SPREADSHEETID=%s", agent.GoogleSheetID))
+		} else {
+			// Insertar en la posición correcta
+			newLines := make([]string, 0, len(updatedLines)+1)
+			newLines = append(newLines, updatedLines[:insertIndex]...)
+			newLines = append(newLines, fmt.Sprintf("SPREADSHEETID=%s", agent.GoogleSheetID))
+			newLines = append(newLines, updatedLines[insertIndex:]...)
+			updatedLines = newLines
+		}
+		log.Printf("   ✅ SPREADSHEETID agregado: %s", agent.GoogleSheetID)
+	}
+
+	if !hasCalendarID && agent.GoogleCalendarID != "" {
+		// Buscar sección de Google Calendar
+		insertIndex := -1
+		for i, line := range updatedLines {
+			if strings.Contains(line, "Integracion Con Google Calendar") {
+				insertIndex = i + 1
+				break
+			}
+		}
+
+		if insertIndex == -1 {
+			// No existe la sección, agregarla al final
+			updatedLines = append(updatedLines, "")
+			updatedLines = append(updatedLines, "#Integracion Con Google Calendar Para Agendar Los Eventos")
+			updatedLines = append(updatedLines, fmt.Sprintf("GOOGLE_CALENDAR_ID=%s", agent.GoogleCalendarID))
+		} else {
+			// Insertar en la posición correcta
+			newLines := make([]string, 0, len(updatedLines)+1)
+			newLines = append(newLines, updatedLines[:insertIndex]...)
+			newLines = append(newLines, fmt.Sprintf("GOOGLE_CALENDAR_ID=%s", agent.GoogleCalendarID))
+			newLines = append(newLines, updatedLines[insertIndex:]...)
+			updatedLines = newLines
+		}
+		log.Printf("   ✅ GOOGLE_CALENDAR_ID agregado: %s", agent.GoogleCalendarID)
+	}
+
+	// Escribir .env actualizado
+	newContent := strings.Join(updatedLines, "\n")
+
+	// Crear archivo temporal
+	tmpEnvFile, err := s.sftpClient.Create(envPath + ".tmp")
+	if err != nil {
+		return fmt.Errorf("error creando archivo temporal: %w", err)
+	}
+
+	if _, err := tmpEnvFile.Write([]byte(newContent)); err != nil {
+		tmpEnvFile.Close()
+		return fmt.Errorf("error escribiendo archivo temporal: %w", err)
+	}
+	tmpEnvFile.Close()
+
+	// Reemplazar archivo original
+	renameCmd := fmt.Sprintf("mv %s.tmp %s", envPath, envPath)
+	if _, err := s.executeCommand(renameCmd); err != nil {
+		return fmt.Errorf("error reemplazando .env: %w", err)
+	}
+
+	log.Printf("✅ [Agent %d] Variables de entorno de Google actualizadas", agent.ID)
+	return nil
+}
+
+// UpdateGoogleCredentials actualiza el archivo google.json en el servidor
+func (s *AtomicBotDeployService) UpdateGoogleCredentials(agent *models.Agent, googleCredentials []byte) error {
+	log.Printf("🔑 [Agent %d] Actualizando credenciales de Google...", agent.ID)
+
+	botDir := fmt.Sprintf("/home/user_%d/atomic-bot", agent.UserID)
+	googleJSONPath := fmt.Sprintf("%s/google.json", botDir)
+
+	// Validar que googleCredentials no esté vacío
+	if len(googleCredentials) == 0 {
+		return fmt.Errorf("credenciales de Google vacías")
+	}
+
+	// Crear archivo google.json
+	googleJSONFile, err := s.sftpClient.Create(googleJSONPath)
+	if err != nil {
+		return fmt.Errorf("error creando google.json: %w", err)
+	}
+	defer googleJSONFile.Close()
+
+	if _, err := googleJSONFile.Write(googleCredentials); err != nil {
+		return fmt.Errorf("error escribiendo google.json: %w", err)
+	}
+
+	log.Printf("✅ [Agent %d] google.json actualizado correctamente", agent.ID)
+	return nil
+}
+
+// RestartBotAfterGoogleIntegration reinicia el bot después de actualizar integración de Google
+func (s *AtomicBotDeployService) RestartBotAfterGoogleIntegration(agent *models.Agent, googleCredentials []byte) error {
+	log.Printf("🔄 [Agent %d] Reiniciando bot después de integración de Google...", agent.ID)
+
+	// 1. Actualizar variables de entorno
+	if err := s.UpdateGoogleIntegrationEnv(agent); err != nil {
+		return fmt.Errorf("error actualizando .env: %w", err)
+	}
+
+	// 2. Actualizar google.json si se proporcionaron nuevas credenciales
+	if len(googleCredentials) > 0 {
+		if err := s.UpdateGoogleCredentials(agent, googleCredentials); err != nil {
+			return fmt.Errorf("error actualizando google.json: %w", err)
+		}
+	}
+
+	// 3. Reiniciar servicio systemd
+	if err := s.RestartBot(agent.ID); err != nil {
+		return fmt.Errorf("error reiniciando bot: %w", err)
+	}
+
+	log.Printf("✅ [Agent %d] Bot reiniciado con integración de Google", agent.ID)
+	return nil
+}
+
 // DeployAtomicBot despliega el bot de Go con configuración dinámica
 func (s *AtomicBotDeployService) DeployAtomicBot(agent *models.Agent, geminiAPIKey string, googleCredentials []byte) error {
 	log.Printf("🚀 [Agent %d] Iniciando despliegue de AtomicBot...", agent.ID)
@@ -245,148 +423,142 @@ func (s *AtomicBotDeployService) prepareServer(userID uint, botDir string) error
 		log.Printf("   Output: %s", strings.TrimSpace(output))
 	}
 	if err != nil {
-		return fmt.Errorf("error instalando GCC: %w\nOutput: %s", err, output)
+		return fmt.Errorf("error verificando/instalando GCC: %w", err)
 	}
 
-	// Verificar e instalar Go
+	// Instalar Go si no existe
 	log.Printf("   [4/4] Verificando/instalando Go...")
-	goCmd := `if ! command -v go &> /dev/null; then
-		echo "Instalando Go 1.24.0..."
-		wget -q https://go.dev/dl/go1.24.0.linux-amd64.tar.gz -O /tmp/go.tar.gz || exit 1
-		tar -C /usr/local -xzf /tmp/go.tar.gz || exit 1
-		rm /tmp/go.tar.gz
-		echo "Go instalado"
+	installGoCmd := `
+	if ! command -v go &> /dev/null; then
+		echo "Descargando Go 1.24..."
+		cd /tmp
+		wget -q https://go.dev/dl/go1.24.0.linux-amd64.tar.gz 2>&1 || {
+			echo "Error descargando Go"
+			exit 1
+		}
+		
+		echo "Extrayendo Go..."
+		rm -rf /usr/local/go
+		tar -C /usr/local -xzf go1.24.0.linux-amd64.tar.gz 2>&1 || {
+			echo "Error extrayendo Go"
+			exit 1
+		}
+		
+		rm go1.24.0.linux-amd64.tar.gz
+		echo "Go instalado correctamente"
 	else
 		echo "Go ya está instalado"
 	fi
-	/usr/local/go/bin/go version`
+	
+	export PATH=$PATH:/usr/local/go/bin
+	go version`
 
-	output, err = s.executeCommand(goCmd)
+	output, err = s.executeCommand(installGoCmd)
 	if strings.TrimSpace(output) != "" {
 		log.Printf("   Output: %s", strings.TrimSpace(output))
 	}
 	if err != nil {
-		return fmt.Errorf("error instalando Go: %w\nOutput: %s", err, output)
+		return fmt.Errorf("error instalando Go: %w", err)
 	}
 
-	log.Printf("✅ Servidor preparado correctamente (Go y GCC instalados)")
+	log.Printf("   ✅ Servidor preparado correctamente")
 	return nil
 }
 
-// transferBotFiles transfiere archivos desde /providers/atomic-whatsapp-web/
+// transferBotFiles transfiere los archivos del bot al servidor
 func (s *AtomicBotDeployService) transferBotFiles(userID uint, botDir string) error {
+	// Ruta local del código del bot
 	localBotPath := "./providers/atomic-whatsapp-web"
 
-	filesToTransfer := map[string]string{
-		"main.go":         "main.go",
-		"go.mod":          "go.mod",
-		"go.sum":          "go.sum",
-		"src/app.go":      "src/app.go",
-		"src/utils.go":    "src/utils.go",
-		"src/config.go":   "src/config.go",
-		"src/gemini.go":   "src/gemini.go",
-		"src/sheets.go":   "src/sheets.go",
-		"src/calendar.go": "src/calendar.go",
+	// Archivos y directorios a transferir
+	filesToTransfer := []string{
+		"go.mod",
+		"go.sum",
+		"main.go",
+		"src",
 	}
 
-	totalFiles := len(filesToTransfer)
-	currentFile := 0
+	for _, file := range filesToTransfer {
+		localPath := filepath.Join(localBotPath, file)
+		remotePath := filepath.Join(botDir, file)
 
-	for localFile, remoteFile := range filesToTransfer {
-		currentFile++
-		localPath := filepath.Join(localBotPath, localFile)
-		remotePath := filepath.Join(botDir, remoteFile)
-
-		if err := s.uploadFile(localPath, remotePath); err != nil {
-			return fmt.Errorf("error transfiriendo %s: %w", localFile, err)
+		info, err := ioutil.ReadDir(localPath)
+		if err == nil && len(info) > 0 {
+			// Es un directorio
+			if err := s.uploadDirectory(localPath, remotePath); err != nil {
+				return fmt.Errorf("error subiendo directorio %s: %w", file, err)
+			}
+			log.Printf("   ✅ Directorio transferido: %s", file)
+		} else {
+			// Es un archivo
+			if err := s.uploadFile(localPath, remotePath); err != nil {
+				return fmt.Errorf("error subiendo archivo %s: %w", file, err)
+			}
+			log.Printf("   ✅ Archivo transferido: %s", file)
 		}
-		log.Printf("   [%d/%d] ✅ %s transferido", currentFile, totalFiles, localFile)
 	}
 
-	log.Printf("✅ Todos los archivos transferidos correctamente")
+	log.Printf("   ✅ Archivos del bot transferidos correctamente")
 	return nil
 }
 
-// uploadFile sube un archivo al servidor vía SFTP
-func (s *AtomicBotDeployService) uploadFile(localPath, remotePath string) error {
-	data, err := ioutil.ReadFile(localPath)
-	if err != nil {
-		return fmt.Errorf("error leyendo archivo local: %w", err)
-	}
-
-	remoteDir := filepath.Dir(remotePath)
-	s.sftpClient.MkdirAll(remoteDir)
-
-	remoteFile, err := s.sftpClient.Create(remotePath)
-	if err != nil {
-		return fmt.Errorf("error creando archivo remoto: %w", err)
-	}
-	defer remoteFile.Close()
-
-	if _, err := remoteFile.Write(data); err != nil {
-		return fmt.Errorf("error escribiendo archivo: %w", err)
-	}
-
-	return nil
-}
-
-// configureEnvironment configura .env, business_config.json y google.json
+// configureEnvironment configura el entorno (.env y business_config.json)
 func (s *AtomicBotDeployService) configureEnvironment(agent *models.Agent, botDir, geminiAPIKey string, googleCredentials []byte) error {
-	// 1. Crear archivo .env
-	envContent := fmt.Sprintf(`# AtomicBot Configuration
-DATABASE_FILE=whatsapp.db
-LOG_LEVEL=INFO
-
-# Gemini AI
-GEMINI_API_KEY=%s
-
-# Google Sheets (opcional)
-SPREADSHEETID=%s
-
-# Google Calendar (opcional)
-GOOGLE_CALENDAR_ID=%s
-
-# Business Configuration Path
-BUSINESS_CONFIG_PATH=business_config.json
-`, geminiAPIKey, agent.GoogleSheetID, agent.GoogleCalendarID)
-
-	envPath := filepath.Join(botDir, ".env")
-	if err := s.writeRemoteFile(envPath, envContent); err != nil {
-		return fmt.Errorf("error creando .env: %w", err)
-	}
-	log.Printf("   ✅ Archivo .env creado")
-
-	// 2. Crear business_config.json desde los datos del agente
-	businessConfig := s.buildBusinessConfig(agent)
-	configJSON, err := json.MarshalIndent(businessConfig, "", "  ")
+	// Generar business_config.json
+	businessConfig := s.generateBusinessConfig(agent)
+	businessJSON, err := json.MarshalIndent(businessConfig, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error serializando business_config: %w", err)
 	}
 
-	configPath := filepath.Join(botDir, "business_config.json")
-	if err := s.writeRemoteFile(configPath, string(configJSON)); err != nil {
+	businessConfigPath := fmt.Sprintf("%s/business_config.json", botDir)
+	businessConfigFile, err := s.sftpClient.Create(businessConfigPath)
+	if err != nil {
 		return fmt.Errorf("error creando business_config.json: %w", err)
 	}
-	log.Printf("   ✅ Archivo business_config.json creado")
+	defer businessConfigFile.Close()
 
-	// 3. Crear google.json con credenciales (si están disponibles)
+	if _, err := businessConfigFile.Write(businessJSON); err != nil {
+		return fmt.Errorf("error escribiendo business_config.json: %w", err)
+	}
+	log.Printf("   ✅ business_config.json creado")
+
+	// Generar .env con integración de Google si está disponible
+	envContent := s.generateEnvFile(agent, geminiAPIKey)
+	envPath := fmt.Sprintf("%s/.env", botDir)
+	envFile, err := s.sftpClient.Create(envPath)
+	if err != nil {
+		return fmt.Errorf("error creando .env: %w", err)
+	}
+	defer envFile.Close()
+
+	if _, err := envFile.Write([]byte(envContent)); err != nil {
+		return fmt.Errorf("error escribiendo .env: %w", err)
+	}
+	log.Printf("   ✅ .env creado")
+
+	// Crear google.json si hay credenciales
 	if len(googleCredentials) > 0 {
-		googlePath := filepath.Join(botDir, "google.json")
-		if err := s.writeRemoteFileBytes(googlePath, googleCredentials); err != nil {
+		googleJSONPath := fmt.Sprintf("%s/google.json", botDir)
+		googleJSONFile, err := s.sftpClient.Create(googleJSONPath)
+		if err != nil {
 			return fmt.Errorf("error creando google.json: %w", err)
 		}
-		log.Printf("   ✅ Archivo google.json creado")
-	} else {
-		log.Printf("   ⚠️  google.json no disponible (Sheets/Calendar deshabilitados)")
+		defer googleJSONFile.Close()
+
+		if _, err := googleJSONFile.Write(googleCredentials); err != nil {
+			return fmt.Errorf("error escribiendo google.json: %w", err)
+		}
+		log.Printf("   ✅ google.json creado")
 	}
 
-	log.Printf("✅ Entorno configurado correctamente")
+	log.Printf("   ✅ Entorno configurado correctamente")
 	return nil
 }
 
-// buildBusinessConfig construye la configuración del negocio desde el agente
-func (s *AtomicBotDeployService) buildBusinessConfig(agent *models.Agent) BusinessConfig {
-	config := BusinessConfig{
+// generateBusinessConfig genera la configuración del negocio
+func (s *AtomicBotDeployService) generateBusinessConfig(agent *models.Agent) *BusinessConfig {
+	config := &BusinessConfig{
 		AgentName:    agent.Name,
 		BusinessType: agent.BusinessType,
 		PhoneNumber:  agent.PhoneNumber,
@@ -405,175 +577,175 @@ func (s *AtomicBotDeployService) buildBusinessConfig(agent *models.Agent) Busine
 			Sunday:    convertDaySchedule(agent.Config.Schedule.Sunday),
 			Timezone:  agent.Config.Schedule.Timezone,
 		},
-		Holidays: convertHolidays(agent.Config.Holidays),
-		Services: convertServices(agent.Config.Services),
-		Workers:  convertWorkers(agent.Config.Workers),
-		Location: Location{
-			// Estos campos no existen en el modelo actual
-			Address:        "",
-			Number:         "",
-			Neighborhood:   "",
-			City:           "",
-			State:          "",
-			Country:        "",
-			PostalCode:     "",
-			BetweenStreets: "",
-		},
-		SocialMedia: SocialMedia{
-			// Estos campos no existen en el modelo actual
-			Facebook:  "",
-			Instagram: "",
-			Twitter:   "",
-			LinkedIn:  "",
-		},
+		Holidays:    convertHolidays(agent.Config.Holidays),
+		Services:    convertServices(agent.Config.Services),
+		Workers:     convertWorkers(agent.Config.Workers),
+		Location:    Location{},
+		SocialMedia: SocialMedia{},
 	}
 
 	return config
 }
 
-// Funciones de conversión de tipos models -> deploy structures
-
-func convertDaySchedule(modelSchedule models.DaySchedule) DaySchedule {
+func convertDaySchedule(day models.DaySchedule) DaySchedule {
 	return DaySchedule{
-		Open:  modelSchedule.Open,
-		Start: modelSchedule.Start,
-		End:   modelSchedule.End,
+		Open:  day.Open,
+		Start: day.Start,
+		End:   day.End,
 	}
 }
 
-func convertHolidays(modelHolidays []models.Holiday) []Holiday {
-	holidays := make([]Holiday, len(modelHolidays))
-	for i, h := range modelHolidays {
-		holidays[i] = Holiday{
+func convertHolidays(holidays []models.Holiday) []Holiday {
+	result := make([]Holiday, len(holidays))
+	for i, h := range holidays {
+		result[i] = Holiday{
 			Date: h.Date,
 			Name: h.Name,
 		}
 	}
-	return holidays
+	return result
 }
 
-func convertServices(modelServices []models.Service) []Service {
-	services := make([]Service, len(modelServices))
-	for i, s := range modelServices {
+func convertServices(services []models.Service) []Service {
+	result := make([]Service, len(services))
+	for i, s := range services {
 		service := Service{
 			Title:       s.Title,
 			Description: s.Description,
 			PriceType:   s.PriceType,
 		}
 
-		// Convertir FlexibleString a float64
-		if s.Price != "" {
-			var price float64
-			fmt.Sscanf(string(s.Price), "%f", &price)
-			service.Price = price
+		// Convertir precio - FlexibleString.String() devuelve el string
+		if priceStr := s.Price.String(); priceStr != "" {
+			// Intentar parsear como float64
+			var priceFloat float64
+			if _, err := fmt.Sscanf(priceStr, "%f", &priceFloat); err == nil {
+				service.Price = priceFloat
+			}
 		}
 
-		if s.OriginalPrice != nil && *s.OriginalPrice != "" {
-			var originalPrice float64
-			fmt.Sscanf(string(*s.OriginalPrice), "%f", &originalPrice)
-			service.OriginalPrice = originalPrice
+		// Convertir precio original si existe
+		if s.OriginalPrice != nil {
+			if origPriceStr := s.OriginalPrice.String(); origPriceStr != "" {
+				var origPriceFloat float64
+				if _, err := fmt.Sscanf(origPriceStr, "%f", &origPriceFloat); err == nil {
+					service.OriginalPrice = origPriceFloat
+				}
+			}
 		}
 
-		if s.PromoPrice != nil && *s.PromoPrice != "" {
-			var promoPrice float64
-			fmt.Sscanf(string(*s.PromoPrice), "%f", &promoPrice)
-			service.PromoPrice = promoPrice
+		// Convertir precio promocional si existe
+		if s.PromoPrice != nil {
+			if promoPriceStr := s.PromoPrice.String(); promoPriceStr != "" {
+				var promoPriceFloat float64
+				if _, err := fmt.Sscanf(promoPriceStr, "%f", &promoPriceFloat); err == nil {
+					service.PromoPrice = promoPriceFloat
+				}
+			}
 		}
 
-		services[i] = service
+		result[i] = service
 	}
-	return services
+	return result
 }
 
-func convertWorkers(modelWorkers []models.Staff) []Worker {
-	workers := make([]Worker, len(modelWorkers))
-	for i, w := range modelWorkers {
-		workers[i] = Worker{
+func convertWorkers(workers []models.Staff) []Worker {
+	result := make([]Worker, len(workers))
+	for i, w := range workers {
+		result[i] = Worker{
 			Name:      w.Name,
 			StartTime: w.StartTime,
 			EndTime:   w.EndTime,
 			Days:      w.Days,
 		}
 	}
-	return workers
+	return result
 }
 
-// writeRemoteFile escribe contenido en archivo remoto
-func (s *AtomicBotDeployService) writeRemoteFile(remotePath, content string) error {
-	remoteFile, err := s.sftpClient.Create(remotePath)
-	if err != nil {
-		return err
+// generateEnvFile genera el contenido del archivo .env
+func (s *AtomicBotDeployService) generateEnvFile(agent *models.Agent, geminiAPIKey string) string {
+	var env strings.Builder
+
+	env.WriteString("# Configuración del Bot\n")
+	env.WriteString(fmt.Sprintf("AGENT_ID=%d\n", agent.ID))
+	env.WriteString(fmt.Sprintf("AGENT_NAME=%s\n", agent.Name))
+	env.WriteString(fmt.Sprintf("PHONE_NUMBER=%s\n", agent.PhoneNumber))
+	env.WriteString(fmt.Sprintf("PORT=%d\n", agent.Port))
+	env.WriteString(fmt.Sprintf("DATABASE_FILE=whatsapp-%d.db\n", agent.ID))
+	env.WriteString("\n")
+
+	// API Key de Gemini
+	if geminiAPIKey != "" {
+		env.WriteString("# Gemini AI\n")
+		env.WriteString(fmt.Sprintf("GEMINI_API_KEY=%s\n", geminiAPIKey))
+		env.WriteString("\n")
 	}
-	defer remoteFile.Close()
 
-	_, err = remoteFile.Write([]byte(content))
-	return err
-}
-
-// writeRemoteFileBytes escribe bytes en archivo remoto
-func (s *AtomicBotDeployService) writeRemoteFileBytes(remotePath string, data []byte) error {
-	remoteFile, err := s.sftpClient.Create(remotePath)
-	if err != nil {
-		return err
+	// Integración de Google Sheets
+	if agent.GoogleSheetID != "" {
+		env.WriteString("#Integracion Con Google Sheets Para Agendamiento\n")
+		env.WriteString(fmt.Sprintf("SPREADSHEETID=%s\n", agent.GoogleSheetID))
+		env.WriteString("\n")
+	} else {
+		env.WriteString("#Integracion Con Google Sheets Para Agendamiento\n")
+		env.WriteString("#SPREADSHEETID=\n")
+		env.WriteString("\n")
 	}
-	defer remoteFile.Close()
 
-	_, err = remoteFile.Write(data)
-	return err
+	// Integración de Google Calendar
+	if agent.GoogleCalendarID != "" {
+		env.WriteString("#Integracion Con Google Calendar Para Agendar Los Eventos\n")
+		env.WriteString(fmt.Sprintf("GOOGLE_CALENDAR_ID=%s\n", agent.GoogleCalendarID))
+		env.WriteString("\n")
+	} else {
+		env.WriteString("#Integracion Con Google Calendar Para Agendar Los Eventos\n")
+		env.WriteString("#GOOGLE_CALENDAR_ID=\n")
+		env.WriteString("\n")
+	}
+
+	return env.String()
 }
 
-// compileBotOnServer compila el bot en el servidor CON CGO HABILITADO
+// compileBotOnServer compila el bot en el servidor
 func (s *AtomicBotDeployService) compileBotOnServer(userID uint, botDir string) error {
-	commands := []string{
-		// Descargar dependencias
-		fmt.Sprintf("cd %s && /usr/local/go/bin/go mod download", botDir),
-		fmt.Sprintf("cd %s && /usr/local/go/bin/go mod tidy", botDir),
-		// Compilar con CGO_ENABLED=1 (CRÍTICO para go-sqlite3)
-		fmt.Sprintf("cd %s && CGO_ENABLED=1 /usr/local/go/bin/go build -o atomic-bot main.go", botDir),
-		fmt.Sprintf("chmod +x %s/atomic-bot", botDir),
+	compileCmd := fmt.Sprintf(`
+	export PATH=$PATH:/usr/local/go/bin
+	export HOME=/root
+	cd %s
+	
+	echo "Inicializando módulo Go..."
+	go mod tidy 2>&1 || {
+		echo "Error en go mod tidy"
+		exit 1
 	}
-
-	for i, cmd := range commands {
-		log.Printf("   [%d/%d] Compilando...", i+1, len(commands))
-		output, err := s.executeCommand(cmd)
-		if err != nil {
-			return fmt.Errorf("compilación falló en paso %d: %w\nOutput: %s", i+1, err, output)
-		}
-
-		// Mostrar output si es relevante
-		if strings.TrimSpace(output) != "" && !strings.Contains(output, "go: downloading") {
-			log.Printf("   Output: %s", strings.TrimSpace(output))
-		}
+	
+	echo "Compilando bot..."
+	go build -o atomic-bot main.go 2>&1 || {
+		echo "Error compilando bot"
+		exit 1
 	}
+	
+	chmod +x atomic-bot
+	echo "Compilación exitosa"
+	ls -lh atomic-bot`, botDir)
 
-	// Verificar que el ejecutable se creó correctamente
-	checkCmd := fmt.Sprintf("test -f %s/atomic-bot && echo 'OK'", botDir)
-	output, err := s.executeCommand(checkCmd)
-	if err != nil || !strings.Contains(output, "OK") {
-		return fmt.Errorf("el ejecutable atomic-bot no se creó correctamente")
+	output, err := s.executeCommand(compileCmd)
+	if strings.TrimSpace(output) != "" {
+		log.Printf("   Output compilación:\n%s", strings.TrimSpace(output))
 	}
-
-	// Verificar que el ejecutable tenga permisos de ejecución
-	permCmd := fmt.Sprintf("ls -l %s/atomic-bot", botDir)
-	permOutput, err := s.executeCommand(permCmd)
 	if err != nil {
-		return fmt.Errorf("error verificando permisos del ejecutable: %w", err)
+		return fmt.Errorf("error compilando: %w", err)
 	}
-	log.Printf("   Permisos del ejecutable: %s", strings.TrimSpace(permOutput))
 
-	// Verificar que el binario funciona (test básico)
-	testCmd := fmt.Sprintf("cd %s && file atomic-bot", botDir)
-	testOutput, _ := s.executeCommand(testCmd)
-	log.Printf("   Tipo de archivo: %s", strings.TrimSpace(testOutput))
-
-	log.Printf("✅ Bot compilado correctamente con CGO habilitado")
+	log.Printf("   ✅ Bot compilado exitosamente")
 	return nil
 }
 
-// createSystemdService crea servicio systemd para el bot
+// createSystemdService crea el servicio systemd para el bot
 func (s *AtomicBotDeployService) createSystemdService(agent *models.Agent, botDir string) error {
+	serviceName := fmt.Sprintf("atomic-bot-%d", agent.ID)
 	serviceContent := fmt.Sprintf(`[Unit]
-Description=AtomicBot WhatsApp - Agent %d (%s)
+Description=AtomicBot WhatsApp - Agent %d
 After=network.target
 
 [Service]
@@ -585,127 +757,81 @@ Restart=always
 RestartSec=10
 StandardOutput=append:/var/log/atomic-bot-%d.log
 StandardError=append:/var/log/atomic-bot-%d-error.log
+Environment="PATH=/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 [Install]
-WantedBy=multi-user.target
-`, agent.ID, agent.Name, botDir, botDir, agent.ID, agent.ID)
+WantedBy=multi-user.target`,
+		agent.ID,
+		botDir,
+		botDir,
+		agent.ID,
+		agent.ID)
 
-	servicePath := fmt.Sprintf("/etc/systemd/system/atomic-bot-%d.service", agent.ID)
-	if err := s.writeRemoteFile(servicePath, serviceContent); err != nil {
-		return fmt.Errorf("error creando servicio: %w", err)
+	servicePath := fmt.Sprintf("/etc/systemd/system/%s.service", serviceName)
+
+	// Crear archivo de servicio
+	serviceFile, err := s.sftpClient.Create(servicePath)
+	if err != nil {
+		return fmt.Errorf("error creando archivo de servicio: %w", err)
+	}
+	defer serviceFile.Close()
+
+	if _, err := serviceFile.Write([]byte(serviceContent)); err != nil {
+		return fmt.Errorf("error escribiendo archivo de servicio: %w", err)
 	}
 
+	// Recargar systemd
 	if _, err := s.executeCommand("systemctl daemon-reload"); err != nil {
 		return fmt.Errorf("error recargando systemd: %w", err)
 	}
 
-	log.Printf("✅ Servicio systemd creado correctamente")
-	return nil
-}
-
-// startBot habilita e inicia el servicio
-func (s *AtomicBotDeployService) startBot(agentID uint) error {
 	// Habilitar servicio
-	log.Printf("   [1/3] Habilitando servicio...")
-	enableCmd := fmt.Sprintf("systemctl enable atomic-bot-%d", agentID)
-	if _, err := s.executeCommand(enableCmd); err != nil {
+	if _, err := s.executeCommand(fmt.Sprintf("systemctl enable %s", serviceName)); err != nil {
 		return fmt.Errorf("error habilitando servicio: %w", err)
 	}
 
+	log.Printf("   ✅ Servicio systemd creado y habilitado")
+	return nil
+}
+
+// startBot inicia el bot
+func (s *AtomicBotDeployService) startBot(agentID uint) error {
+	serviceName := fmt.Sprintf("atomic-bot-%d", agentID)
+
+	// Detener si ya está corriendo
+	s.executeCommand(fmt.Sprintf("systemctl stop %s", serviceName))
+
 	// Iniciar servicio
-	log.Printf("   [2/3] Iniciando servicio...")
-	startCmd := fmt.Sprintf("systemctl start atomic-bot-%d", agentID)
-	if _, err := s.executeCommand(startCmd); err != nil {
-		// Obtener logs de error
-		logCmd := fmt.Sprintf("journalctl -u atomic-bot-%d -n 50 --no-pager", agentID)
-		logs, _ := s.executeCommand(logCmd)
-		return fmt.Errorf("error iniciando servicio: %w\nLogs: %s", err, logs)
+	if _, err := s.executeCommand(fmt.Sprintf("systemctl start %s", serviceName)); err != nil {
+		return fmt.Errorf("error iniciando servicio: %w", err)
 	}
 
-	// Esperar y verificar estado con reintentos
-	log.Printf("   [3/3] Verificando estado del servicio...")
-	maxRetries := 10
-	for i := 0; i < maxRetries; i++ {
-		time.Sleep(2 * time.Second)
+	// Esperar un momento para que inicie
+	time.Sleep(3 * time.Second)
 
-		statusCmd := fmt.Sprintf("systemctl is-active atomic-bot-%d", agentID)
-		status, err := s.executeCommand(statusCmd)
-		status = strings.TrimSpace(status)
-
-		if err == nil && status == "active" {
-			log.Printf("✅ AtomicBot iniciado correctamente")
-			return nil
-		}
-
-		if status == "failed" {
-			// Obtener logs del error
-			logCmd := fmt.Sprintf("journalctl -u atomic-bot-%d -n 100 --no-pager", agentID)
-			logs, _ := s.executeCommand(logCmd)
-			return fmt.Errorf("servicio falló al iniciar\nLogs:\n%s", logs)
-		}
-
-		log.Printf("      Estado: %s, reintentando... (%d/%d)", status, i+1, maxRetries)
+	// Verificar estado
+	statusOutput, err := s.executeCommand(fmt.Sprintf("systemctl is-active %s", serviceName))
+	if err != nil || !strings.Contains(statusOutput, "active") {
+		return fmt.Errorf("servicio no está activo: %s", statusOutput)
 	}
 
-	// Si llegamos aquí, el servicio no se activó a tiempo
-	logCmd := fmt.Sprintf("journalctl -u atomic-bot-%d -n 100 --no-pager", agentID)
-	logs, _ := s.executeCommand(logCmd)
-	return fmt.Errorf("timeout esperando que el servicio se active\nLogs:\n%s", logs)
-}
-
-// StopAtomicBot detiene y elimina el bot
-func (s *AtomicBotDeployService) StopAtomicBot(agentID uint) error {
-	log.Printf("🛑 [Agent %d] Deteniendo AtomicBot...", agentID)
-
-	commands := []string{
-		fmt.Sprintf("systemctl stop atomic-bot-%d", agentID),
-		fmt.Sprintf("systemctl disable atomic-bot-%d", agentID),
-		fmt.Sprintf("rm -f /etc/systemd/system/atomic-bot-%d.service", agentID),
-		"systemctl daemon-reload",
-	}
-
-	for _, cmd := range commands {
-		s.executeCommand(cmd)
-	}
-
-	log.Printf("✅ [Agent %d] AtomicBot eliminado", agentID)
+	log.Printf("   ✅ Bot iniciado correctamente")
 	return nil
 }
 
-// UpdateBotConfiguration actualiza la configuración del bot sin reiniciar
-func (s *AtomicBotDeployService) UpdateBotConfiguration(agent *models.Agent, botDir string) error {
-	log.Printf("🔄 [Agent %d] Actualizando configuración del bot...", agent.ID)
-
-	// Regenerar business_config.json
-	businessConfig := s.buildBusinessConfig(agent)
-	configJSON, err := json.MarshalIndent(businessConfig, "", "  ")
-	if err != nil {
-		return fmt.Errorf("error serializando business_config: %w", err)
+// StopBot detiene el bot
+func (s *AtomicBotDeployService) StopBot(agentID uint) error {
+	cmd := fmt.Sprintf("systemctl stop atomic-bot-%d", agentID)
+	if _, err := s.executeCommand(cmd); err != nil {
+		return fmt.Errorf("error deteniendo: %w", err)
 	}
 
-	configPath := filepath.Join(botDir, "business_config.json")
-	if err := s.writeRemoteFile(configPath, string(configJSON)); err != nil {
-		return fmt.Errorf("error actualizando business_config.json: %w", err)
-	}
-
-	log.Printf("✅ [Agent %d] Configuración actualizada (el bot la recargará automáticamente)", agent.ID)
+	log.Printf("✅ [Agent %d] AtomicBot detenido", agentID)
 	return nil
-}
-
-// GetBotStatus obtiene el estado del bot
-func (s *AtomicBotDeployService) GetBotStatus(agentID uint) (string, error) {
-	cmd := fmt.Sprintf("systemctl is-active atomic-bot-%d", agentID)
-	output, err := s.executeCommand(cmd)
-	if err != nil {
-		return "inactive", nil
-	}
-	return strings.TrimSpace(output), nil
 }
 
 // RestartBot reinicia el bot
 func (s *AtomicBotDeployService) RestartBot(agentID uint) error {
-	log.Printf("🔄 [Agent %d] Reiniciando AtomicBot...", agentID)
-
 	cmd := fmt.Sprintf("systemctl restart atomic-bot-%d", agentID)
 	if _, err := s.executeCommand(cmd); err != nil {
 		return fmt.Errorf("error reiniciando: %w", err)
@@ -863,6 +989,67 @@ func (s *AtomicBotDeployService) executeCommand(cmd string) (string, error) {
 	}
 
 	return string(output), nil
+}
+
+// uploadFile sube un archivo al servidor
+func (s *AtomicBotDeployService) uploadFile(localPath, remotePath string) error {
+	// Leer archivo local
+	data, err := ioutil.ReadFile(localPath)
+	if err != nil {
+		return fmt.Errorf("error leyendo archivo local: %w", err)
+	}
+
+	// Crear directorio remoto si no existe
+	remoteDir := filepath.Dir(remotePath)
+	s.executeCommand(fmt.Sprintf("mkdir -p %s", remoteDir))
+
+	// Crear archivo remoto
+	remoteFile, err := s.sftpClient.Create(remotePath)
+	if err != nil {
+		return fmt.Errorf("error creando archivo remoto: %w", err)
+	}
+	defer remoteFile.Close()
+
+	// Escribir datos
+	if _, err := remoteFile.Write(data); err != nil {
+		return fmt.Errorf("error escribiendo archivo remoto: %w", err)
+	}
+
+	return nil
+}
+
+// uploadDirectory sube un directorio completo al servidor
+func (s *AtomicBotDeployService) uploadDirectory(localPath, remotePath string) error {
+	// Crear directorio remoto
+	if _, err := s.executeCommand(fmt.Sprintf("mkdir -p %s", remotePath)); err != nil {
+		return fmt.Errorf("error creando directorio remoto: %w", err)
+	}
+
+	// Listar archivos locales
+	entries, err := ioutil.ReadDir(localPath)
+	if err != nil {
+		return fmt.Errorf("error leyendo directorio local: %w", err)
+	}
+
+	// Subir cada archivo/subdirectorio
+	for _, entry := range entries {
+		localEntryPath := filepath.Join(localPath, entry.Name())
+		remoteEntryPath := filepath.Join(remotePath, entry.Name())
+
+		if entry.IsDir() {
+			// Recursivo para subdirectorios
+			if err := s.uploadDirectory(localEntryPath, remoteEntryPath); err != nil {
+				return err
+			}
+		} else {
+			// Subir archivo
+			if err := s.uploadFile(localEntryPath, remoteEntryPath); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // CleanupBotFiles elimina completamente los archivos del bot

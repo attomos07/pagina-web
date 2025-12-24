@@ -129,6 +129,14 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 		return
 	}
 
+	// Obtener usuario para acceder a servidor
+	var user models.User
+	if err := config.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		log.Printf("❌ Error obteniendo usuario: %v", err)
+		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=user_not_found")
+		return
+	}
+
 	// Intercambiar código por tokens
 	ctx := context.Background()
 	token, err := h.calendarService.ExchangeCode(ctx, code)
@@ -183,6 +191,30 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 
 	log.Printf("🎉 [Agent %d] Integración completada exitosamente", agent.ID)
 
+	// PASO 4: Actualizar .env del bot en el servidor (SOLO para AtomicBot)
+	if agent.IsAtomicBot() && user.SharedServerIP != "" && user.SharedServerPassword != "" {
+		log.Printf("🔄 [Agent %d] Actualizando .env en el servidor...", agent.ID)
+
+		// Crear servicio de deploy
+		deployService := services.NewAtomicBotDeployService(user.SharedServerIP, user.SharedServerPassword)
+
+		// Conectar al servidor
+		if err := deployService.Connect(); err != nil {
+			log.Printf("⚠️  [Agent %d] Error conectando al servidor para actualizar .env: %v", agent.ID, err)
+			// No fallar completamente, la integración ya está guardada en BD
+		} else {
+			defer deployService.Close()
+
+			// Actualizar variables de entorno y reiniciar bot
+			if err := deployService.RestartBotAfterGoogleIntegration(&agent, nil); err != nil {
+				log.Printf("⚠️  [Agent %d] Error actualizando .env en servidor: %v", agent.ID, err)
+				// No fallar completamente, la integración ya está guardada en BD
+			} else {
+				log.Printf("✅ [Agent %d] .env actualizado y bot reiniciado en servidor", agent.ID)
+			}
+		}
+	}
+
 	// Redirigir con éxito
 	redirectURL := fmt.Sprintf("/my-agents?success=true&agent_id=%d&calendar_id=%s&sheet_id=%s",
 		agent.ID, calendarID, spreadsheetID)
@@ -225,6 +257,25 @@ func (h *GoogleIntegrationHandler) DisconnectGoogle(c *gin.Context) {
 	}
 
 	log.Printf("✅ [Agent %d] Google desconectado", agent.ID)
+
+	// Actualizar .env del bot en el servidor (SOLO para AtomicBot)
+	if agent.IsAtomicBot() && user.SharedServerIP != "" && user.SharedServerPassword != "" {
+		log.Printf("🔄 [Agent %d] Limpiando variables de Google del .env en el servidor...", agent.ID)
+
+		deployService := services.NewAtomicBotDeployService(user.SharedServerIP, user.SharedServerPassword)
+
+		if err := deployService.Connect(); err != nil {
+			log.Printf("⚠️  [Agent %d] Error conectando al servidor: %v", agent.ID, err)
+		} else {
+			defer deployService.Close()
+
+			if err := deployService.RestartBotAfterGoogleIntegration(&agent, nil); err != nil {
+				log.Printf("⚠️  [Agent %d] Error limpiando .env: %v", agent.ID, err)
+			} else {
+				log.Printf("✅ [Agent %d] Variables de Google limpiadas del .env", agent.ID)
+			}
+		}
+	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
