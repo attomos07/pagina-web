@@ -49,17 +49,98 @@
 
                     <!-- Integrations Grid -->
                     <div class="integrations-grid" id="integrationsGrid">
+                        <!-- Gemini API Key Card -->
+                        <div class="integration-card" id="geminiCard">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-gemini integration-icon" style="font-size: 2rem; color: #8E44AD;"></i>
+                                    <h2>Gemini AI</h2>
+                                </div>
+                                <div class="status-badge disconnected" id="geminiStatus">
+                                    <span class="status-indicator"></span>
+                                    No configurado
+                                </div>
+                            </div>
+
+                            <p class="card-description">
+                                Configura tu API Key de Google Gemini para potenciar tu agente con inteligencia artificial avanzada.
+                            </p>
+
+                            <div class="card-features">
+                                <ul class="feature-list">
+                                    <li class="feature-item">
+                                        <i class="lni lni-brain"></i>
+                                        IA conversacional avanzada
+                                    </li>
+                                    <li class="feature-item">
+                                        <i class="lni lni-comments"></i>
+                                        Respuestas naturales y contextuales
+                                    </li>
+                                    <li class="feature-item">
+                                        <i class="lni lni-target-customer"></i>
+                                        Personalización de personalidad
+                                    </li>
+                                    <li class="feature-item">
+                                        <i class="lni lni-pulse"></i>
+                                        Procesamiento en tiempo real
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="card-note">
+                                <i class="lni lni-information"></i>
+                                <span>Obtén tu API Key gratis en <a href="https://aistudio.google.com/apikey" target="_blank" style="color: #3b82f6; font-weight: 600; text-decoration: underline;">AI Studio de Google</a></span>
+                            </div>
+
+                            <!-- API Key Input Form -->
+                            <div class="api-key-form" id="geminiApiKeyForm">
+                                <div class="input-group">
+                                    <label class="input-label" for="geminiApiKeyInput">
+                                        <i class="lni lni-key"></i>
+                                        API Key de Gemini
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <input 
+                                            type="password" 
+                                            id="geminiApiKeyInput" 
+                                            class="api-key-input" 
+                                            placeholder="AIzaSy..." 
+                                            disabled
+                                        />
+                                        <button type="button" class="toggle-visibility" id="toggleGeminiKey" disabled>
+                                            <i class="lni lni-eye"></i>
+                                        </button>
+                                    </div>
+                                    <small class="input-hint">Tu API Key se encripta y almacena de forma segura</small>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="card-actions" id="geminiActions">
+                                <button class="btn btn-connect" id="btnSaveGeminiKey" disabled>
+                                    <i class="lni lni-save"></i>
+                                    Guardar API Key
+                                </button>
+                            </div>
+
+                            <!-- Manage Actions (hidden by default) -->
+                            <div class="card-actions" id="geminiManageActions" style="display: none;">
+                                <button class="btn btn-secondary" id="btnUpdateGeminiKey">
+                                    <i class="lni lni-pencil"></i>
+                                    Actualizar
+                                </button>
+                                <button class="btn btn-disconnect" id="btnRemoveGeminiKey">
+                                    <i class="lni lni-trash"></i>
+                                    Eliminar
+                                </button>
+                            </div>
+                        </div>
+
                         <!-- Google Calendar Card -->
                         <div class="integration-card" id="googleCalendarCard">
                             <div class="card-header">
                                 <div class="card-title">
-                                    <svg class="integration-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <rect width="32" height="32" rx="7" fill="#4285F4"/>
-                                        <path d="M23 13H19V9C19 8.448 18.552 8 18 8H14C13.448 8 13 8.448 13 9V13H9C8.448 13 8 13.448 8 14V18C8 18.552 8.448 19 9 19H13V23C13 23.552 13.448 24 14 24H18C18.552 24 19 23.552 19 23V19H23C23.552 19 24 18.552 24 18V14C24 13.448 23.552 13 23 13Z" fill="white"/>
-                                        <path d="M10 6H22C23.105 6 24 6.895 24 8V10H8V8C8 6.895 8.895 6 10 6Z" fill="#EA4335"/>
-                                        <rect x="9" y="4" width="2" height="4" rx="1" fill="#FBBC04"/>
-                                        <rect x="21" y="4" width="2" height="4" rx="1" fill="#FBBC04"/>
-                                    </svg>
+                                    <i class="lni lni-calendar-days integration-icon" style="font-size: 2rem; color: #4285F4;"></i>
                                     <h2>Google Calendar</h2>
                                 </div>
                                 <div class="status-badge disconnected" id="googleStatus">
@@ -97,11 +178,8 @@
                             <div class="connection-info" id="googleConnectionInfo" style="display: none;">
                                 <div class="connection-details">
                                     <div class="connection-detail">
-                                        <span class="connection-label">Calendar:</span>
-                                        <a href="#" id="calendarLink" class="connection-link" target="_blank">
-                                            Ver calendario
-                                            <i class="lni lni-arrow-right"></i>
-                                        </a>
+                                        <span class="connection-label">Email:</span>
+                                        <span class="connection-value" id="calendarEmail">-</span>
                                     </div>
                                     <div class="connection-detail">
                                         <span class="connection-label">Conectado:</span>
@@ -135,14 +213,12 @@
                         <div class="integration-card" id="googleSheetsCard">
                             <div class="card-header">
                                 <div class="card-title">
-                                    <svg class="integration-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <rect width="32" height="32" rx="7" fill="#0F9D58"/>
-                                        <rect x="8" y="8" width="16" height="16" rx="1" fill="white"/>
-                                        <line x1="8" y1="12" x2="24" y2="12" stroke="#0F9D58" stroke-width="1"/>
-                                        <line x1="8" y1="16" x2="24" y2="16" stroke="#0F9D58" stroke-width="1"/>
-                                        <line x1="8" y1="20" x2="24" y2="20" stroke="#0F9D58" stroke-width="1"/>
-                                        <line x1="14" y1="8" x2="14" y2="24" stroke="#0F9D58" stroke-width="1"/>
-                                        <line x1="19" y1="8" x2="19" y2="24" stroke="#0F9D58" stroke-width="1"/>
+                                    <svg class="integration-icon" style="width: 32px; height: 32px; color: #0F9D58;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                                        <line x1="3" x2="21" y1="9" y2="9"/>
+                                        <line x1="3" x2="21" y1="15" y2="15"/>
+                                        <line x1="9" x2="9" y1="9" y2="21"/>
+                                        <line x1="15" x2="15" y1="9" y2="21"/>
                                     </svg>
                                     <h2>Google Sheets</h2>
                                 </div>
@@ -153,26 +229,26 @@
                             </div>
 
                             <p class="card-description">
-                                Registra automáticamente clientes y citas en una hoja de cálculo. Accede a tus datos desde cualquier lugar.
+                                Registra todas las citas automáticamente en una hoja de cálculo para llevar un control detallado de tus reservas.
                             </p>
 
                             <div class="card-features">
                                 <ul class="feature-list">
                                     <li class="feature-item">
-                                        <i class="lni lni-files"></i>
-                                        Registro automático de clientes
+                                        <i class="lni lni-write"></i>
+                                        Registro automático de citas
                                     </li>
                                     <li class="feature-item">
-                                        <i class="lni lni-database"></i>
-                                        Base de datos centralizada
+                                        <i class="lni lni-pie-chart"></i>
+                                        Análisis y estadísticas
                                     </li>
                                     <li class="feature-item">
-                                        <i class="lni lni-bar-chart"></i>
-                                        Reportes y análisis
+                                        <i class="lni lni-download"></i>
+                                        Exportación de datos
                                     </li>
                                     <li class="feature-item">
-                                        <i class="lni lni-cloud-sync"></i>
-                                        Sincronización en la nube
+                                        <i class="lni lni-users"></i>
+                                        Acceso compartido al equipo
                                     </li>
                                 </ul>
                             </div>
@@ -201,54 +277,11 @@
                             </div>
                         </div>
 
-                        <!-- Meta WhatsApp Card -->
-                        <div class="integration-card" id="metaWhatsAppCard">
-                            <div class="card-header">
-                                <div class="card-title">
-                                    <svg class="integration-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <rect width="32" height="32" rx="7" fill="#25D366"/>
-                                        <path d="M16 6C10.477 6 6 10.477 6 16C6 17.89 6.525 19.66 7.438 21.166L6.5 25.5L10.98 24.589C12.437 25.418 14.158 25.9 16 25.9C21.523 25.9 26 21.423 26 15.9C26 10.377 21.523 6 16 6Z" fill="white"/>
-                                        <path d="M20.5 18.5C20.25 19.25 19 20 18.375 20.125C17.875 20.225 17.25 20.25 16.5 20C16.125 19.875 15.625 19.7 15 19.375C13.125 18.5 11.875 16.625 11.75 16.5C11.625 16.375 10.75 15.25 10.75 14.125C10.75 13 11.375 12.5 11.625 12.25C11.875 12 12.125 11.925 12.25 11.925C12.375 11.925 12.5 11.925 12.625 11.925C12.75 11.925 12.925 11.875 13.125 12.25C13.375 12.75 13.875 13.875 13.925 13.975C14 14.1 14 14.25 13.925 14.375C13.85 14.5 13.75 14.625 13.625 14.75C13.5 14.875 13.375 15.025 13.25 15.125C13.125 15.225 13 15.35 13.125 15.6C13.25 15.85 13.75 16.75 14.5 17.375C15.5 18.25 16.375 18.5 16.625 18.625C16.875 18.75 17.025 18.7 17.125 18.6C17.25 18.475 17.75 17.975 17.875 17.725C18 17.475 18.125 17.5 18.375 17.6C18.625 17.7 19.75 18.25 20 18.375C20.25 18.5 20.425 18.55 20.5 18.65C20.575 18.75 20.575 19.25 20.5 18.5Z" fill="#25D366"/>
-                                    </svg>
-                                    <h2>Meta WhatsApp Business</h2>
-                                </div>
-                                <div class="status-badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;">
-                                    <span class="status-indicator"></span>
-                                    Próximamente
-                                </div>
-                            </div>
-
-                            <p class="card-description">
-                                Conecta la API oficial de WhatsApp Business para enviar mensajes, plantillas y acceder a funciones avanzadas.
-                            </p>
-
-                            <div class="card-features">
-                                <ul class="feature-list">
-                                    <li class="feature-item">
-                                        <i class="lni lni-whatsapp"></i>
-                                        API oficial de WhatsApp
-                                    </li>
-                                    <li class="feature-item">
-                                        <i class="lni lni-files"></i>
-                                        Plantillas pre-aprobadas
-                                    </li>
-                                    <li class="feature-item">
-                                        <i class="lni lni-checkmark-circle"></i>
-                                        Verificación empresarial
-                                    </li>
-                                    <li class="feature-item">
-                                        <i class="lni lni-bar-chart"></i>
-                                        Analytics avanzados
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-
                         <!-- Placeholder for future integrations -->
                         <div class="integration-card coming-soon">
                             <div class="card-header">
                                 <div class="card-title">
-                                    <i class="lni lni-more"></i>
+                                    <i class="lni lni-more" style="font-size: 2rem; color: #6b7280;"></i>
                                     <h2>Más integraciones próximamente</h2>
                                 </div>
                                 <div class="status-badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;">
@@ -272,8 +305,8 @@
                                         Stripe Payments
                                     </li>
                                     <li class="feature-item">
-                                        <i class="lni lni-envelope"></i>
-                                        Email Marketing
+                                        <i class="lni lni-whatsapp"></i>
+                                        Meta WhatsApp Business
                                     </li>
                                     <li class="feature-item">
                                         <i class="lni lni-cloud"></i>
