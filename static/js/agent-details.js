@@ -3,6 +3,7 @@
 let agentId = null;
 let agent = null;
 let qrPollInterval = null;
+let isConnected = false;
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
@@ -40,6 +41,9 @@ async function loadAgentDetails() {
         console.log('📊 Agent data:', agent);
         
         renderAgentDetails(agent);
+        
+        // Cargar QR inmediatamente solo la primera vez
+        // El polling continuará actualizando
         loadQRCode();
     } catch (error) {
         console.error('❌ Error:', error);
@@ -133,14 +137,30 @@ async function loadQRCode() {
         
         if (response.ok && data.qrCode) {
             console.log('📱 QR code received');
+            // No está conectado, hay QR
+            if (isConnected) {
+                console.log('⚠️  Estado cambió de conectado a desconectado');
+                isConnected = false;
+            }
             displayQRCode(data.qrCode);
         } else if (data.connected) {
             console.log('✅ WhatsApp connected');
+            // Está conectado
+            if (!isConnected) {
+                console.log('🎉 Bot se conectó exitosamente');
+                isConnected = true;
+            }
             displayConnectedMessage();
         } else {
             // Bot is starting, disconnected, or waiting for QR
             const message = data.message || data.error || 'Iniciando bot, esperando código QR...';
             console.log('⏳ Waiting:', message);
+            
+            // Marcar como no conectado
+            if (isConnected) {
+                console.log('⚠️  Estado cambió de conectado a desconectado');
+                isConnected = false;
+            }
             
             // Detectar si fue desconectado
             if (message.toLowerCase().includes('desconectado') || 
@@ -206,11 +226,14 @@ function displayConnectedMessage() {
             </div>
             <h3>¡WhatsApp Conectado!</h3>
             <p>Tu bot está conectado y funcionando</p>
+            <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px;">
+                <p style="margin: 0; color: #065f46; font-size: 0.85rem;">
+                    <i class="lni lni-information"></i>
+                    Monitoreando conexión cada 15 segundos
+                </p>
+            </div>
         </div>
     `;
-    
-    // Stop polling when connected
-    stopQRPolling();
 }
 
 // Display QR loading state
@@ -279,24 +302,36 @@ function startQRPolling() {
     
     let pollCount = 0;
     
-    // Poll más frecuentemente al inicio (cada 3 segundos por los primeros 10 intentos)
-    // Luego cada 5 segundos
+    // Función para determinar el intervalo de polling
+    const getInterval = () => {
+        if (isConnected) {
+            // Si está conectado, hacer polling cada 15 segundos para detectar desconexiones
+            return 15000;
+        } else if (pollCount <= 10) {
+            // Al inicio (primeros 10 intentos), polling rápido cada 3 segundos
+            return 3000;
+        } else {
+            // Después, cada 5 segundos
+            return 5000;
+        }
+    };
+    
     const poll = () => {
         pollCount++;
-        const interval = pollCount <= 10 ? 3000 : 5000;
         
-        qrPollInterval = setTimeout(() => {
-            loadQRCode().then(() => {
-                // Continuar polling solo si no está conectado
-                if (qrPollInterval !== null) {
-                    poll();
-                }
-            });
-        }, interval);
+        qrPollInterval = setTimeout(async () => {
+            await loadQRCode();
+            
+            // Continuar polling siempre (incluso cuando está conectado)
+            // para detectar desconexiones
+            poll();
+        }, getInterval());
     };
     
     // Iniciar el polling
     poll();
+    
+    console.log('🔄 QR polling iniciado');
 }
 
 // Stop QR polling
