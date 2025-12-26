@@ -244,6 +244,25 @@ func (b *BotDeployService) UploadFile(localData []byte, remotePath string) error
 	return nil
 }
 
+// OpenPortForAgent abre el puerto específico del agente en el firewall
+func (b *BotDeployService) OpenPortForAgent(port int) error {
+	fmt.Printf("🔓 [FIREWALL] Abriendo puerto %d para BuilderBot...\n", port)
+
+	cmd := fmt.Sprintf("ufw allow %d/tcp && ufw status | grep %d", port, port)
+	output, err := b.ExecuteCommand(cmd)
+
+	if err != nil {
+		return fmt.Errorf("error abriendo puerto: %w", err)
+	}
+
+	fmt.Printf("✅ [FIREWALL] Puerto %d abierto exitosamente\n", port)
+	if strings.TrimSpace(output) != "" {
+		fmt.Printf("   Estado: %s\n", strings.TrimSpace(output))
+	}
+
+	return nil
+}
+
 // WaitForServerInitialization espera a que cloud-init complete CON LOGS EN TIEMPO REAL
 func (b *BotDeployService) WaitForServerInitialization(maxWaitMinutes int) error {
 	fmt.Println("╔═══════════════════════════════════════════════════════════════╗")
@@ -539,14 +558,13 @@ func (b *BotDeployService) manualInstallation() error {
 		return fmt.Errorf("PM2 no se instaló correctamente")
 	}
 
-	// Configurar firewall
+	// Configurar firewall (solo puertos básicos, BuilderBot abrirá su puerto bajo demanda)
 	fmt.Println("4. Configurando firewall...")
 	firewallCmds := []string{
 		"ufw --force enable",
 		"ufw allow 22/tcp",
 		"ufw allow 80/tcp",
 		"ufw allow 443/tcp",
-		"ufw allow 3001:3020/tcp",
 	}
 
 	for _, cmd := range firewallCmds {
@@ -562,7 +580,7 @@ func (b *BotDeployService) manualInstallation() error {
 	return nil
 }
 
-// verifyAllTools verifica manualmente que todas las herramientas estén instaladas
+// showDiagnostics muestra diagnóstico del servidor
 func (b *BotDeployService) showDiagnostics() {
 	fmt.Println("\n╔═══════════════════════════════════════════════════════════════╗")
 	fmt.Println("║                  📋 DIAGNÓSTICO DEL SERVIDOR                   ║")
@@ -633,7 +651,7 @@ func (b *BotDeployService) showDiagnostics() {
 // DeployBot despliega el bot con LOGS EN TIEMPO REAL
 func (b *BotDeployService) DeployBot(agent *models.Agent, pdfData []byte) error {
 	fmt.Println("\n╔═══════════════════════════════════════════════════════════════╗")
-	fmt.Printf("║            🤖 DESPLEGANDO BOT - AGENTE %d                      ║\n", agent.ID)
+	fmt.Printf("║            🤖 DESPLEGANDO BUILDERBOT - AGENTE %d               ║\n", agent.ID)
 	fmt.Println("╚═══════════════════════════════════════════════════════════════╝")
 
 	startTime := time.Now()
@@ -656,6 +674,16 @@ func (b *BotDeployService) DeployBot(agent *models.Agent, pdfData []byte) error 
 
 	if !b.verifyAllTools() {
 		return fmt.Errorf("las herramientas necesarias no están disponibles")
+	}
+
+	// 2.5. ABRIR PUERTO EN FIREWALL (NUEVO - ESPECÍFICO PARA BUILDERBOT)
+	fmt.Println("\n" + strings.Repeat("╔", 64))
+	fmt.Println("FASE 2.5: CONFIGURAR FIREWALL PARA BUILDERBOT")
+	fmt.Println(strings.Repeat("╝", 64))
+
+	if err := b.OpenPortForAgent(agent.Port); err != nil {
+		fmt.Printf("⚠️  Error abriendo puerto (no crítico): %v\n", err)
+		// Continuar de todas formas, el bot puede funcionar sin puerto expuesto
 	}
 
 	// 3. CREAR DIRECTORIOS
@@ -824,11 +852,11 @@ func (b *BotDeployService) DeployBot(agent *models.Agent, pdfData []byte) error 
 	totalTime := time.Since(startTime).Round(time.Second)
 
 	fmt.Println("\n╔═══════════════════════════════════════════════════════════════╗")
-	fmt.Printf("║              ✅ BOT DESPLEGADO EXITOSAMENTE                    ║\n")
+	fmt.Printf("║              ✅ BUILDERBOT DESPLEGADO EXITOSAMENTE             ║\n")
 	fmt.Println("╚═══════════════════════════════════════════════════════════════╝")
 	fmt.Printf("\n📊 Resumen del despliegue:\n")
 	fmt.Printf("   • Agente ID: %d\n", agent.ID)
-	fmt.Printf("   • Puerto: %d\n", agent.Port)
+	fmt.Printf("   • Puerto: %d (abierto en firewall)\n", agent.Port)
 	fmt.Printf("   • Path: %s\n", projectPath)
 	fmt.Printf("   • Tiempo total: %v\n", totalTime)
 	fmt.Println("\n" + strings.Repeat("╔", 64))

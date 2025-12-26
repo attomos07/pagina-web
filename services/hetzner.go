@@ -345,8 +345,7 @@ runcmd:
   - ufw allow 80 >> /var/log/attomos/init.log 2>&1
   - ufw allow 443 >> /var/log/attomos/init.log 2>&1
   - ufw allow 3000 >> /var/log/attomos/init.log 2>&1
-  - ufw allow 3001:3020/tcp >> /var/log/attomos/init.log 2>&1
-  - echo "[$(date)] Firewall configurado" >> /var/log/attomos/init.log
+  - echo "[$(date)] Firewall configurado (puertos para BuilderBot se abrirán bajo demanda)" >> /var/log/attomos/init.log
   
   # === FASE 7: OPTIMIZACIONES DEL SISTEMA ===
   - echo "PHASE_7_OPTIMIZATIONS" > /var/log/attomos/status
@@ -606,4 +605,37 @@ func (h *HetznerService) GetServerInfo(serverID int) (*ServerStatusResponse, err
 	}
 
 	return &statusResp, nil
+}
+
+// OpenPortForAgent abre un puerto específico en el firewall para un agente BuilderBot
+func (h *HetznerService) OpenPortForAgent(serverIP, password string, port int) error {
+	config := &ssh.ClientConfig{
+		User: "root",
+		Auth: []ssh.AuthMethod{
+			ssh.Password(password),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         30 * time.Second,
+	}
+
+	client, err := ssh.Dial("tcp", serverIP+":22", config)
+	if err != nil {
+		return fmt.Errorf("error conectando por SSH: %w", err)
+	}
+	defer client.Close()
+
+	session, err := client.NewSession()
+	if err != nil {
+		return fmt.Errorf("error creando sesión: %w", err)
+	}
+	defer session.Close()
+
+	cmd := fmt.Sprintf("ufw allow %d/tcp && ufw status", port)
+	output, err := session.CombinedOutput(cmd)
+	if err != nil {
+		return fmt.Errorf("error abriendo puerto %d: %w\nOutput: %s", port, err, string(output))
+	}
+
+	fmt.Printf("✅ Puerto %d abierto en firewall\n", port)
+	return nil
 }
