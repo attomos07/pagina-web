@@ -72,10 +72,10 @@ func (h *HetznerService) CreateServer(serverName string, userID uint) (*ServerRe
 		"image":       "ubuntu-22.04",
 		"location":    "nbg1",
 		"ssh_keys":    []string{},
-		"user_data":   h.getCloudInitScript(serverName, userID),
+		"user_data":   h.getCloudInitScript(userID),
 		"labels": map[string]string{
 			"user_id":     fmt.Sprintf("%d", userID),
-			"server_name": serverName,
+			"server_name": fmt.Sprintf("user-%d-server", userID),
 			"type":        "shared-server",
 		},
 	}
@@ -117,7 +117,7 @@ func (h *HetznerService) CreateServer(serverName string, userID uint) (*ServerRe
 }
 
 // getCloudInitScript genera el script de inicialización
-func (h *HetznerService) getCloudInitScript(agentName string, userID uint) string {
+func (h *HetznerService) getCloudInitScript(userID uint) string {
 	return `#cloud-config
 
 chpasswd:
@@ -473,9 +473,9 @@ func (h *HetznerService) MonitorCloudInitLogs(serverIP, password string, duratio
 	}
 
 	session.Wait()
-	fmt.Println("\n═══════════════════════════════════════════════════════════════")
+	fmt.Print("\n═══════════════════════════════════════════════════════════════\n")
 	fmt.Println("📊 FIN DE MONITOREO DE LOGS")
-	fmt.Println("═══════════════════════════════════════════════════════════════\n")
+	fmt.Print("═══════════════════════════════════════════════════════════════\n")
 }
 
 // WaitForServer espera a que el servidor esté en estado "running"
@@ -540,7 +540,7 @@ func (h *HetznerService) WaitForServer(serverID int, maxWaitTime time.Duration) 
 			fmt.Println("╚═══════════════════════════════════════════════════════════════╝")
 			fmt.Printf("⏱️  Tiempo total: %v\n", elapsed)
 			fmt.Printf("📊 Intentos: %d\n", attempt)
-			fmt.Println("\n💡 Nota: Cloud-init continuará ejecutándose en segundo plano")
+			fmt.Print("\n💡 Nota: Cloud-init continuará ejecutándose en segundo plano\n")
 			return nil
 		}
 	}
@@ -636,6 +636,6 @@ func (h *HetznerService) OpenPortForAgent(serverIP, password string, port int) e
 		return fmt.Errorf("error abriendo puerto %d: %w\nOutput: %s", port, err, string(output))
 	}
 
-	fmt.Printf("✅ Puerto %d abierto en firewall\n", port)
+	fmt.Printf("✅ Puerto %d abierto en firewall", port)
 	return nil
 }
