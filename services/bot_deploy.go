@@ -1132,3 +1132,145 @@ EOF`, agent.ID, flowContent)
 	fmt.Printf("✅ Agente %d actualizado exitosamente\n", agent.ID)
 	return nil
 }
+
+// ============================================
+// GEMINI API KEY MANAGEMENT
+// ============================================
+
+// UpdateGeminiAPIKey actualiza o elimina la API key de Gemini en el .env del bot
+func (b *BotDeployService) UpdateGeminiAPIKey(agent *models.Agent, apiKey string) error {
+	fmt.Printf("🔄 [Agent %d] Actualizando Gemini API key...\n", agent.ID)
+
+	envPath := fmt.Sprintf("/opt/agent-%d/base-ts-meta-memory/.env", agent.ID)
+
+	// Leer .env actual
+	readCmd := fmt.Sprintf("cat %s", envPath)
+	currentContent, err := b.ExecuteCommand(readCmd)
+	if err != nil {
+		return fmt.Errorf("error leyendo .env: %w", err)
+	}
+
+	lines := strings.Split(currentContent, "\n")
+	updatedLines := make([]string, 0)
+	hasGeminiKey := false
+	geminiSectionIndex := -1
+
+	// Actualizar líneas existentes
+	for i, line := range lines {
+		trimmedLine := strings.TrimSpace(line)
+
+		// Detectar sección Gemini AI
+		if strings.Contains(line, "# Gemini AI") {
+			geminiSectionIndex = i
+			updatedLines = append(updatedLines, line)
+			continue
+		}
+
+		// Si encontramos la línea de GEMINI_API_KEY
+		if strings.HasPrefix(trimmedLine, "GEMINI_API_KEY") || strings.HasPrefix(trimmedLine, "#GEMINI_API_KEY") {
+			hasGeminiKey = true
+
+			if apiKey == "" {
+				// Comentar la línea (eliminar key)
+				updatedLines = append(updatedLines, "#GEMINI_API_KEY=")
+				fmt.Println("   ✅ GEMINI_API_KEY comentada (eliminada)")
+			} else {
+				// Actualizar con nueva key
+				updatedLines = append(updatedLines, fmt.Sprintf("GEMINI_API_KEY=%s", apiKey))
+				fmt.Println("   ✅ GEMINI_API_KEY actualizada")
+			}
+			continue
+		}
+
+		// Mantener línea original
+		updatedLines = append(updatedLines, line)
+	}
+
+	// Si no existía la key, agregarla
+	if !hasGeminiKey && apiKey != "" {
+		if geminiSectionIndex == -1 {
+			// No existe la sección, agregarla después de PORT
+			insertIndex := 0
+			for i, line := range updatedLines {
+				if strings.HasPrefix(strings.TrimSpace(line), "PORT=") {
+					insertIndex = i + 1
+					break
+				}
+			}
+
+			if insertIndex > 0 {
+				newLines := make([]string, 0, len(updatedLines)+3)
+				newLines = append(newLines, updatedLines[:insertIndex]...)
+				newLines = append(newLines, "")
+				newLines = append(newLines, "# Gemini AI")
+				newLines = append(newLines, fmt.Sprintf("GEMINI_API_KEY=%s", apiKey))
+				newLines = append(newLines, updatedLines[insertIndex:]...)
+				updatedLines = newLines
+			}
+		} else {
+			// Insertar después de la sección Gemini AI
+			insertIndex := geminiSectionIndex + 1
+			newLines := make([]string, 0, len(updatedLines)+1)
+			newLines = append(newLines, updatedLines[:insertIndex]...)
+			newLines = append(newLines, fmt.Sprintf("GEMINI_API_KEY=%s", apiKey))
+			newLines = append(newLines, updatedLines[insertIndex:]...)
+			updatedLines = newLines
+		}
+		fmt.Println("   ✅ GEMINI_API_KEY agregada")
+	}
+
+	// Escribir .env actualizado
+	newContent := strings.Join(updatedLines, "\n")
+
+	writeCmd := fmt.Sprintf(`cat > %s << 'EOF'
+%s
+EOF`, envPath, newContent)
+
+	if _, err := b.ExecuteCommand(writeCmd); err != nil {
+		return fmt.Errorf("error escribiendo .env: %w", err)
+	}
+
+	// Reconstruir y reiniciar bot
+	fmt.Println("[BUILD] Recompilando TypeScript...")
+	rebuildCmd := fmt.Sprintf("cd /opt/agent-%d/base-ts-meta-memory && npm run build", agent.ID)
+	if err := b.ExecuteCommandWithRealtimeOutput(rebuildCmd, "[BUILD]"); err != nil {
+		return fmt.Errorf("error recompilando bot: %w", err)
+	}
+
+	fmt.Println("[PM2] Reiniciando bot...")
+	if err := b.RestartBot(agent.ID); err != nil {
+		return fmt.Errorf("error reiniciando bot: %w", err)
+	}
+
+	fmt.Printf("✅ [Agent %d] Gemini API key actualizada y bot reiniciado\n", agent.ID)
+	return nil
+}
+
+// CheckGeminiAPIKey verifica si existe una API key de Gemini configurada
+func (b *BotDeployService) CheckGeminiAPIKey(agent *models.Agent) bool {
+	envPath := fmt.Sprintf("/opt/agent-%d/base-ts-meta-memory/.env", agent.ID)
+
+	// Leer .env
+	readCmd := fmt.Sprintf("cat %s", envPath)
+	content, err := b.ExecuteCommand(readCmd)
+	if err != nil {
+		fmt.Printf("⚠️  [Agent %d] Error leyendo .env: %v\n", agent.ID, err)
+		return false
+	}
+
+	lines := strings.Split(content, "\n")
+	for _, line := range lines {
+		trimmedLine := strings.TrimSpace(line)
+
+		// Buscar línea GEMINI_API_KEY que NO esté comentada y tenga un valor
+		if strings.HasPrefix(trimmedLine, "GEMINI_API_KEY=") {
+			// Extraer el valor después del =
+			parts := strings.SplitN(trimmedLine, "=", 2)
+			if len(parts) == 2 && strings.TrimSpace(parts[1]) != "" {
+				return true
+			}
+		}
+	}
+
+	return false
+}

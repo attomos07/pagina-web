@@ -220,10 +220,6 @@ async function loadGeminiStatus(agentId) {
     console.log(`📊 Cargando estado de Gemini para agente ${agentId}...`);
     
     try {
-        // Por ahora usamos el mismo endpoint de GCP
-        const agent = agents.find(a => a.id === agentId);
-        if (!agent) return;
-        
         const apiKeyInput = document.getElementById('geminiApiKeyInput');
         const toggleButton = document.getElementById('toggleGeminiKey');
         const statusBadge = document.getElementById('geminiStatus');
@@ -234,9 +230,23 @@ async function loadGeminiStatus(agentId) {
         if (apiKeyInput) apiKeyInput.disabled = false;
         if (toggleButton) toggleButton.disabled = false;
         
-        // Aquí deberías hacer una petición al backend para verificar si tiene API key
-        // Por ahora simulamos el estado
-        const hasApiKey = false; // Cambiar esto cuando tengas el endpoint
+        // Llamar al endpoint para verificar si tiene API key
+        const response = await fetch(`/api/gemini/status/${agentId}`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al cargar estado de Gemini');
+        }
+
+        const data = await response.json();
+        const hasApiKey = data.has_api_key || false;
+        
+        console.log('✅ Estado de Gemini:', data);
         
         if (hasApiKey) {
             if (statusBadge) {
@@ -276,6 +286,22 @@ async function loadGeminiStatus(agentId) {
         
     } catch (error) {
         console.error('Error cargando estado de Gemini:', error);
+        
+        // En caso de error, mostrar como no configurado
+        const statusBadge = document.getElementById('geminiStatus');
+        const saveActions = document.getElementById('geminiActions');
+        const manageActions = document.getElementById('geminiManageActions');
+        
+        if (statusBadge) {
+            statusBadge.className = 'status-badge disconnected';
+            statusBadge.innerHTML = `
+                <span class="status-indicator"></span>
+                No configurado
+            `;
+        }
+        
+        if (saveActions) saveActions.style.display = 'flex';
+        if (manageActions) manageActions.style.display = 'none';
     }
 }
 

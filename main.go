@@ -190,6 +190,13 @@ func main() {
 		}
 
 		// ============================================
+		// GEMINI AI INTEGRATION
+		// ============================================
+		protected.POST("/gemini/save-key/:agent_id", handlers.SaveGeminiKey)
+		protected.DELETE("/gemini/remove-key/:agent_id", handlers.RemoveGeminiKey)
+		protected.GET("/gemini/status/:agent_id", handlers.GetGeminiStatus)
+
+		// ============================================
 		// META WHATSAPP BUSINESS INTEGRATION
 		// ============================================
 		if metaWhatsAppHandler != nil {

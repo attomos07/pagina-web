@@ -321,6 +321,164 @@ func (s *AtomicBotDeployService) RestartBotAfterGoogleIntegration(agent *models.
 	return nil
 }
 
+// UpdateGeminiAPIKey actualiza o elimina la API key de Gemini en el .env del bot
+func (s *AtomicBotDeployService) UpdateGeminiAPIKey(agent *models.Agent, apiKey string) error {
+	log.Printf("🔄 [Agent %d] Actualizando Gemini API key...", agent.ID)
+
+	botDir := fmt.Sprintf("/home/user_%d/atomic-bot", agent.UserID)
+	envPath := fmt.Sprintf("%s/.env", botDir)
+
+	// Leer .env actual
+	envFile, err := s.sftpClient.Open(envPath)
+	if err != nil {
+		return fmt.Errorf("error abriendo .env: %w", err)
+	}
+	defer envFile.Close()
+
+	currentContent, err := io.ReadAll(envFile)
+	if err != nil {
+		return fmt.Errorf("error leyendo .env: %w", err)
+	}
+
+	lines := strings.Split(string(currentContent), "\n")
+	updatedLines := make([]string, 0)
+	hasGeminiKey := false
+	geminiSectionIndex := -1
+
+	// Actualizar líneas existentes
+	for i, line := range lines {
+		trimmedLine := strings.TrimSpace(line)
+
+		// Detectar sección Gemini AI
+		if strings.Contains(line, "# Gemini AI") {
+			geminiSectionIndex = i
+			updatedLines = append(updatedLines, line)
+			continue
+		}
+
+		// Si encontramos la línea de GEMINI_API_KEY
+		if strings.HasPrefix(trimmedLine, "GEMINI_API_KEY") || strings.HasPrefix(trimmedLine, "#GEMINI_API_KEY") {
+			hasGeminiKey = true
+
+			if apiKey == "" {
+				// Comentar la línea (eliminar key)
+				updatedLines = append(updatedLines, "#GEMINI_API_KEY=")
+				log.Printf("   ✅ GEMINI_API_KEY comentada (eliminada)")
+			} else {
+				// Actualizar con nueva key
+				updatedLines = append(updatedLines, fmt.Sprintf("GEMINI_API_KEY=%s", apiKey))
+				log.Printf("   ✅ GEMINI_API_KEY actualizada")
+			}
+			continue
+		}
+
+		// Mantener línea original
+		updatedLines = append(updatedLines, line)
+	}
+
+	// Si no existía la key, agregarla
+	if !hasGeminiKey && apiKey != "" {
+		if geminiSectionIndex == -1 {
+			// No existe la sección, agregarla al principio (después de configuración básica)
+			insertIndex := 0
+			for i, line := range updatedLines {
+				if strings.Contains(line, "# Configuración del Bot") {
+					// Buscar el final de la sección de configuración básica
+					for j := i + 1; j < len(updatedLines); j++ {
+						if strings.TrimSpace(updatedLines[j]) == "" {
+							insertIndex = j + 1
+							break
+						}
+					}
+					break
+				}
+			}
+
+			newLines := make([]string, 0, len(updatedLines)+3)
+			newLines = append(newLines, updatedLines[:insertIndex]...)
+			newLines = append(newLines, "# Gemini AI")
+			newLines = append(newLines, fmt.Sprintf("GEMINI_API_KEY=%s", apiKey))
+			newLines = append(newLines, "")
+			newLines = append(newLines, updatedLines[insertIndex:]...)
+			updatedLines = newLines
+		} else {
+			// Insertar después de la sección Gemini AI
+			insertIndex := geminiSectionIndex + 1
+			newLines := make([]string, 0, len(updatedLines)+1)
+			newLines = append(newLines, updatedLines[:insertIndex]...)
+			newLines = append(newLines, fmt.Sprintf("GEMINI_API_KEY=%s", apiKey))
+			newLines = append(newLines, updatedLines[insertIndex:]...)
+			updatedLines = newLines
+		}
+		log.Printf("   ✅ GEMINI_API_KEY agregada")
+	}
+
+	// Escribir .env actualizado
+	newContent := strings.Join(updatedLines, "\n")
+
+	// Crear archivo temporal
+	tmpEnvFile, err := s.sftpClient.Create(envPath + ".tmp")
+	if err != nil {
+		return fmt.Errorf("error creando archivo temporal: %w", err)
+	}
+
+	if _, err := tmpEnvFile.Write([]byte(newContent)); err != nil {
+		tmpEnvFile.Close()
+		return fmt.Errorf("error escribiendo archivo temporal: %w", err)
+	}
+	tmpEnvFile.Close()
+
+	// Reemplazar archivo original
+	renameCmd := fmt.Sprintf("mv %s.tmp %s", envPath, envPath)
+	if _, err := s.executeCommand(renameCmd); err != nil {
+		return fmt.Errorf("error reemplazando .env: %w", err)
+	}
+
+	// Reiniciar bot para aplicar cambios
+	if err := s.RestartBot(agent.ID); err != nil {
+		return fmt.Errorf("error reiniciando bot: %w", err)
+	}
+
+	log.Printf("✅ [Agent %d] Gemini API key actualizada y bot reiniciado", agent.ID)
+	return nil
+}
+
+// CheckGeminiAPIKey verifica si existe una API key de Gemini configurada
+func (s *AtomicBotDeployService) CheckGeminiAPIKey(agent *models.Agent) bool {
+	botDir := fmt.Sprintf("/home/user_%d/atomic-bot", agent.UserID)
+	envPath := fmt.Sprintf("%s/.env", botDir)
+
+	// Abrir .env
+	envFile, err := s.sftpClient.Open(envPath)
+	if err != nil {
+		log.Printf("⚠️  [Agent %d] Error abriendo .env: %v", agent.ID, err)
+		return false
+	}
+	defer envFile.Close()
+
+	content, err := io.ReadAll(envFile)
+	if err != nil {
+		log.Printf("⚠️  [Agent %d] Error leyendo .env: %v", agent.ID, err)
+		return false
+	}
+
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		trimmedLine := strings.TrimSpace(line)
+
+		// Buscar línea GEMINI_API_KEY que NO esté comentada y tenga un valor
+		if strings.HasPrefix(trimmedLine, "GEMINI_API_KEY=") {
+			// Extraer el valor después del =
+			parts := strings.SplitN(trimmedLine, "=", 2)
+			if len(parts) == 2 && strings.TrimSpace(parts[1]) != "" {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 // DeployAtomicBot despliega el bot de Go con configuración dinámica
 func (s *AtomicBotDeployService) DeployAtomicBot(agent *models.Agent, geminiAPIKey string, googleCredentials []byte) error {
 	log.Printf("🚀 [Agent %d] Iniciando despliegue de AtomicBot...", agent.ID)
