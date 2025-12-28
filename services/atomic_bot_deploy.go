@@ -4,8 +4,9 @@ import (
 	"attomos/models"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -156,7 +157,7 @@ func (s *AtomicBotDeployService) UpdateGoogleIntegrationEnv(agent *models.Agent)
 	}
 	defer envFile.Close()
 
-	currentContent, err := ioutil.ReadAll(envFile)
+	currentContent, err := io.ReadAll(envFile)
 	if err != nil {
 		return fmt.Errorf("error leyendo .env: %w", err)
 	}
@@ -482,7 +483,7 @@ func (s *AtomicBotDeployService) transferBotFiles(userID uint, botDir string) er
 		localPath := filepath.Join(localBotPath, file)
 		remotePath := filepath.Join(botDir, file)
 
-		info, err := ioutil.ReadDir(localPath)
+		info, err := os.ReadDir(localPath)
 		if err == nil && len(info) > 0 {
 			// Es un directorio
 			if err := s.uploadDirectory(localPath, remotePath); err != nil {
@@ -1010,7 +1011,7 @@ func (s *AtomicBotDeployService) executeCommand(cmd string) (string, error) {
 // uploadFile sube un archivo al servidor
 func (s *AtomicBotDeployService) uploadFile(localPath, remotePath string) error {
 	// Leer archivo local
-	data, err := ioutil.ReadFile(localPath)
+	data, err := os.ReadFile(localPath)
 	if err != nil {
 		return fmt.Errorf("error leyendo archivo local: %w", err)
 	}
@@ -1042,7 +1043,7 @@ func (s *AtomicBotDeployService) uploadDirectory(localPath, remotePath string) e
 	}
 
 	// Listar archivos locales
-	entries, err := ioutil.ReadDir(localPath)
+	entries, err := os.ReadDir(localPath)
 	if err != nil {
 		return fmt.Errorf("error leyendo directorio local: %w", err)
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -35,7 +34,7 @@ func getCredentialsOption() (option.ClientOption, error) {
 		log.Printf("📋 Usando credenciales desde variable de entorno (%d bytes)", len(jsonContent))
 
 		// Crear archivo temporal
-		tmpFile, err := ioutil.TempFile("", "gcp-*.json")
+		tmpFile, err := os.CreateTemp("", "gcp-*.json")
 		if err != nil {
 			return nil, fmt.Errorf("error creando archivo temporal: %v", err)
 		}

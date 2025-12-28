@@ -169,7 +169,7 @@ func CreateAgent(c *gin.Context) {
 		log.Printf("✅ Documento procesado: %s (%d bytes)", metaDocFilename, len(docData))
 	}
 
-	// Asignar puerto único para este agente
+	// Asignar puerto único para este agente (se determinará según el tipo de servidor)
 	nextPort := 3001 + int(agentCount)
 
 	// Crear agente en la base de datos
@@ -183,7 +183,7 @@ func CreateAgent(c *gin.Context) {
 		Port:         nextPort,
 		DeployStatus: "pending",
 		IsActive:     false,
-		BotType:      botType, // ← NUEVO: tipo de bot según plan
+		BotType:      botType,
 	}
 
 	if err := config.DB.Create(&agent).Error; err != nil {
@@ -194,7 +194,7 @@ func CreateAgent(c *gin.Context) {
 		return
 	}
 
-	log.Printf("✅ Agente creado en BD: ID=%d, Port=%d", agent.ID, agent.Port)
+	log.Printf("✅ Agente creado en BD: ID=%d, Port=%d, BotType=%s", agent.ID, agent.Port, agent.BotType)
 
 	// Respuesta inmediata
 	c.JSON(http.StatusAccepted, gin.H{
@@ -207,7 +207,7 @@ func CreateAgent(c *gin.Context) {
 	go func() {
 		log.Println("\n" + strings.Repeat("═", 80))
 		log.Printf("║ %s ║", centerText("🚀 INICIO DE PROCESO DE CREACIÓN", 76))
-		log.Printf("║ %s ║", centerText(fmt.Sprintf("Agente ID: %d | Usuario ID: %d", agent.ID, user.ID), 76))
+		log.Printf("║ %s ║", centerText(fmt.Sprintf("Agente ID: %d | Usuario ID: %d | Tipo: %s", agent.ID, user.ID, agent.BotType), 76))
 		log.Println(strings.Repeat("═", 80))
 
 		// Recargar usuario para tener datos actuales
@@ -215,163 +215,325 @@ func CreateAgent(c *gin.Context) {
 
 		isFirstAgent := agentCount == 0
 
-		// PASO 1: Crear proyecto GCP si es necesario (NO BLOQUEANTE) - Solo para BuilderBot
-		if isFirstAgent && agent.IsBuilderBot() {
+		if agent.IsAtomicBot() {
+			// ========================
+			// ATOMIC BOT (Go)
+			// ========================
 			log.Println("\n" + strings.Repeat("═", 80))
-			log.Printf("║ %s ║", centerText("PASO 1/5: GOOGLE CLOUD PROJECT", 76))
+			log.Printf("║ %s ║", centerText("DESPLIEGUE DE ATOMIC BOT (GO)", 76))
 			log.Println(strings.Repeat("═", 80))
-			log.Printf("🎉 [User %d] Primer agente detectado - Intentando crear proyecto GCP\n", user.ID)
 
-			// Verificar si ya existe un proyecto GCP
-			var gcpProject models.GoogleCloudProject
-			err := config.DB.Where("user_id = ?", user.ID).First(&gcpProject).Error
+			// PASO 1: Obtener o crear servidor compartido global
+			log.Println("\n" + strings.Repeat("═", 80))
+			log.Printf("║ %s ║", centerText("PASO 1/2: OBTENER SERVIDOR COMPARTIDO GLOBAL", 76))
+			log.Println(strings.Repeat("═", 80))
+
+			serverManager := services.GetGlobalServerManager()
+			globalServer, err := serverManager.GetOrCreateAtomicBotsServer()
 
 			if err != nil {
-				// No existe, crear nuevo proyecto
-				gcpProject = models.GoogleCloudProject{
-					UserID:        user.ID,
-					ProjectStatus: "creating",
-				}
-				config.DB.Create(&gcpProject)
-			} else {
-				// Ya existe, marcar como en creación
-				gcpProject.MarkAsCreating()
-				config.DB.Save(&gcpProject)
+				log.Printf("❌ [Agent %d] Error obteniendo servidor compartido: %v", agent.ID, err)
+				agent.DeployStatus = "error"
+				config.DB.Save(&agent)
+				return
 			}
 
-			gca, err := services.NewGoogleCloudAutomation()
-			if err != nil {
-				log.Printf("⚠️ [User %d] Error inicializando GCP (NO CRÍTICO): %v", user.ID, err)
-				gcpProject.MarkAsError()
-				config.DB.Save(&gcpProject)
-			} else {
-				projectID, apiKey, err := gca.CreateProjectForUser(user.ID, user.Email)
-				if err != nil {
-					log.Printf("⚠️ [User %d] Error creando proyecto GCP (NO CRÍTICO): %v", user.ID, err)
-					gcpProject.MarkAsError()
-					config.DB.Save(&gcpProject)
-				} else {
-					gcpProject.ProjectID = projectID
-					gcpProject.ProjectName = fmt.Sprintf("Attomos User %d", user.ID)
-					gcpProject.GeminiAPIKey = apiKey
-					gcpProject.MarkAsReady()
+			// Verificar que el servidor esté listo
+			if globalServer.Status == "initializing" {
+				log.Printf("⏳ [Agent %d] Servidor compartido inicializándose, esperando...", agent.ID)
 
-					if err := config.DB.Save(&gcpProject).Error; err != nil {
-						log.Printf("⚠️ [User %d] Error guardando proyecto (NO CRÍTICO): %v", user.ID, err)
-					} else {
-						log.Printf("🎉 [User %d] Proyecto GCP listo: %s", user.ID, projectID)
+				// Esperar hasta 20 minutos máximo
+				timeout := time.After(20 * time.Minute)
+				ticker := time.NewTicker(30 * time.Second)
+				defer ticker.Stop()
+
+				for {
+					select {
+					case <-timeout:
+						log.Printf("❌ [Agent %d] Timeout esperando servidor compartido", agent.ID)
+						agent.DeployStatus = "error"
+						config.DB.Save(&agent)
+						return
+					case <-ticker.C:
+						// Recargar servidor
+						updatedServer, err := serverManager.GetServerStatus(globalServer.ID)
+						if err != nil {
+							log.Printf("⚠️  [Agent %d] Error recargando servidor: %v", agent.ID, err)
+							continue
+						}
+
+						if updatedServer.IsReady() {
+							globalServer = updatedServer
+							log.Printf("✅ [Agent %d] Servidor compartido listo!", agent.ID)
+							goto ServerReady
+						}
+
+						log.Printf("⏳ [Agent %d] Servidor aún inicializando (Status: %s)...", agent.ID, updatedServer.Status)
 					}
 				}
 			}
-		} else if isFirstAgent && agent.IsAtomicBot() {
-			log.Println("\n" + strings.Repeat("═", 80))
-			log.Printf("║ %s ║", centerText("PASO 1/5: GOOGLE CLOUD PROJECT (OMITIDO)", 76))
-			log.Println(strings.Repeat("═", 80))
-			log.Printf("ℹ️  [Agent %d] Plan Gratuito - GCP no es necesario", agent.ID)
-			log.Printf("💡 El usuario proporcionará su propia Gemini API Key desde AI Studio")
-			log.Printf("🔗 Obtener API Key en: https://aistudio.google.com/apikey")
-		}
 
-		// PASO 2: Crear servidor compartido si es el primer agente (CRÍTICO)
-		if isFirstAgent {
-			log.Println("\n" + strings.Repeat("═", 80))
-			log.Printf("║ %s ║", centerText("PASO 2/5: INFRAESTRUCTURA CLOUD", 76))
-			log.Println(strings.Repeat("═", 80))
-			log.Printf("🖥️  [User %d] Creando infraestructura compartida\n", user.ID)
-
-			user.SharedServerStatus = "creating"
-			config.DB.Save(&user)
-
-			hetznerService, err := services.NewHetznerService()
-			if err != nil {
-				log.Printf("❌ [User %d] Error inicializando servicio Hetzner: %v", user.ID, err)
-				user.SharedServerStatus = "error"
+		ServerReady:
+			if !globalServer.IsReady() {
+				log.Printf("❌ [Agent %d] Servidor compartido no está listo (Status: %s)", agent.ID, globalServer.Status)
 				agent.DeployStatus = "error"
-				config.DB.Save(&user)
 				config.DB.Save(&agent)
 				return
 			}
 
-			serverName := fmt.Sprintf("attomos-user-%d", user.ID)
-			serverResp, err := hetznerService.CreateServer(serverName, user.ID)
+			// Asignar puerto en el servidor compartido
+			assignedPort, err := serverManager.AssignPortToAgent(globalServer)
 			if err != nil {
-				log.Printf("❌ [User %d] Error creando infraestructura: %v", user.ID, err)
-				user.SharedServerStatus = "error"
+				log.Printf("❌ [Agent %d] Error asignando puerto: %v", agent.ID, err)
 				agent.DeployStatus = "error"
-				config.DB.Save(&user)
 				config.DB.Save(&agent)
 				return
 			}
 
-			user.SharedServerID = serverResp.Server.ID
-			user.SharedServerIP = serverResp.Server.PublicNet.IPv4.IP
-			user.SharedServerPassword = serverResp.RootPassword
-			user.SharedServerStatus = "provisioning"
-			config.DB.Save(&user)
+			// Actualizar puerto del agente
+			agent.Port = assignedPort
+			config.DB.Save(&agent)
 
-			log.Printf("✅ [User %d] Infraestructura creada exitosamente:", user.ID)
-			log.Printf("   - ID: %d", serverResp.Server.ID)
-			log.Printf("   - IP: %s", serverResp.Server.PublicNet.IPv4.IP)
+			log.Printf("✅ [Agent %d] Servidor compartido asignado:", agent.ID)
+			log.Printf("   - Server ID: %d", globalServer.ID)
+			log.Printf("   - IP: %s", globalServer.IPAddress)
+			log.Printf("   - Puerto asignado: %d", assignedPort)
+			log.Printf("   - Capacidad: %d/%d agentes", globalServer.CurrentAgents, globalServer.MaxAgents)
 
-			// Esperar a que el servidor esté en estado "running"
-			log.Printf("⏳ [User %d] Esperando que la infraestructura esté lista...", user.ID)
-			if err := hetznerService.WaitForServer(serverResp.Server.ID, 5*time.Minute); err != nil {
-				log.Printf("❌ [User %d] Timeout esperando infraestructura: %v", user.ID, err)
-				user.SharedServerStatus = "error"
-				agent.DeployStatus = "error"
-				config.DB.Save(&user)
-				config.DB.Save(&agent)
-				return
-			}
-
-			log.Printf("✅ [User %d] Infraestructura en estado 'running'", user.ID)
-
-			user.SharedServerStatus = "initializing"
-			config.DB.Save(&user)
-
-			go hetznerService.MonitorCloudInitLogs(user.SharedServerIP, user.SharedServerPassword, 10*time.Minute)
-
-		} else {
-			log.Printf("========================================")
-			log.Printf("ℹ️ [User %d] USANDO INFRAESTRUCTURA COMPARTIDA EXISTENTE", user.ID)
-			log.Printf("   - IP: %s", user.SharedServerIP)
-			log.Printf("   - Estado: %s", user.SharedServerStatus)
-			log.Printf("========================================")
-		}
-
-		// PASO 3: Configurar DNS en Cloudflare (NO BLOQUEANTE) - Solo para BuilderBot
-		if isFirstAgent && agent.IsBuilderBot() {
+			// PASO 2: Desplegar bot en servidor compartido
 			log.Println("\n" + strings.Repeat("═", 80))
-			log.Printf("║ %s ║", centerText("PASO 3/5: CONFIGURAR DNS EN CLOUDFLARE", 76))
+			log.Printf("║ %s ║", centerText("PASO 2/2: DESPLIEGUE DEL ATOMIC BOT", 76))
 			log.Println(strings.Repeat("═", 80))
 
-			cloudflareService, err := services.NewCloudflareService()
-			if err != nil {
-				log.Printf("⚠️  [User %d] Cloudflare no configurado (NO CRÍTICO): %v", user.ID, err)
-				log.Printf("⚠️  Tendrás que configurar el DNS manualmente:")
-				log.Printf("    - Tipo: A")
-				log.Printf("    - Nombre: chat-user%d", user.ID)
-				log.Printf("    - Contenido: %s", user.SharedServerIP)
-				log.Printf("    - Proxy: Activado")
-			} else {
-				if err := cloudflareService.CreateOrUpdateChatwootDNS(user.SharedServerIP, user.ID); err != nil {
-					log.Printf("⚠️  [User %d] Error configurando DNS (NO CRÍTICO): %v", user.ID, err)
-					log.Printf("⚠️  Configura el DNS manualmente en Cloudflare")
-				} else {
-					log.Printf("✅ [User %d] DNS configurado automáticamente", user.ID)
-					log.Printf("   URL: https://chat-user%d.attomos.com", user.ID)
+			agent.DeployStatus = "deploying"
+			config.DB.Save(&agent)
+
+			atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+
+			// Conectar al servidor compartido
+			maxRetries := 10
+			retryDelay := 10 * time.Second
+			var connectErr error
+
+			for attempt := 1; attempt <= maxRetries; attempt++ {
+				log.Printf("🔌 [Agent %d] Intento de conexión SSH %d/%d...", agent.ID, attempt, maxRetries)
+
+				connectErr = atomicService.Connect()
+				if connectErr == nil {
+					log.Printf("✅ [Agent %d] Conectado exitosamente al servidor compartido", agent.ID)
+					break
+				}
+
+				if attempt < maxRetries {
+					log.Printf("⚠️  [Agent %d] Error conectando (intento %d/%d): %v", agent.ID, attempt, maxRetries, connectErr)
+					log.Printf("   ⏳ Reintentando en %v...", retryDelay)
+					time.Sleep(retryDelay)
 				}
 			}
-		} else if isFirstAgent && agent.IsAtomicBot() {
-			log.Println("\n" + strings.Repeat("═", 80))
-			log.Printf("║ %s ║", centerText("PASO 3/5: DNS (OMITIDO)", 76))
-			log.Println(strings.Repeat("═", 80))
-			log.Printf("ℹ️  [Agent %d] AtomicBot no requiere DNS público - funciona localmente", agent.ID)
-		}
 
-		// PASO 4: Configurar Chatwoot (NO BLOQUEANTE) - Solo para BuilderBot
-		if isFirstAgent {
-			if agent.IsBuilderBot() {
+			if connectErr != nil {
+				log.Printf("❌ [Agent %d] No se pudo conectar después de %d intentos: %v", agent.ID, maxRetries, connectErr)
+				agent.DeployStatus = "error"
+				config.DB.Save(&agent)
+
+				// Liberar puerto
+				serverManager.ReleaseAgentPort(globalServer)
+				return
+			}
+
+			defer atomicService.Close()
+
+			// Obtener Gemini API Key
+			geminiAPIKey := user.GetGeminiAPIKey()
+			if geminiAPIKey == "" {
+				log.Printf("⚠️  [Agent %d] Sin Gemini API Key, bot funcionará sin IA", agent.ID)
+			}
+
+			// Desplegar AtomicBot
+			if err := atomicService.DeployAtomicBot(&agent, geminiAPIKey, docData); err != nil {
+				log.Printf("❌ [Agent %d] Error desplegando AtomicBot: %v", agent.ID, err)
+				agent.DeployStatus = "error"
+				config.DB.Save(&agent)
+
+				// Liberar puerto
+				serverManager.ReleaseAgentPort(globalServer)
+				return
+			}
+
+			// Marcar agente como activo y corriendo
+			agent.IsActive = true
+			agent.DeployStatus = "running"
+			config.DB.Save(&agent)
+
+			log.Printf("========================================")
+			log.Printf("🎉 [Agent %d] ATOMIC BOT DESPLEGADO EXITOSAMENTE", agent.ID)
+			log.Printf("   - Servidor Compartido: %s", globalServer.IPAddress)
+			log.Printf("   - Puerto: %d", agent.Port)
+			log.Printf("   - Tecnología: WhatsApp Web (Go)")
+			log.Printf("   - Acceso: SSH → Ver logs para escanear QR")
+			log.Printf("   - Comando logs: tail -f /var/log/atomic-bot-%d.log", agent.ID)
+
+			if geminiAPIKey != "" {
+				log.Printf("   - IA: Gemini AI habilitada ✅")
+			} else {
+				log.Printf("   - IA: Sin configurar")
+				log.Printf("   💡 Configura tu Gemini API Key en los ajustes del agente")
+				log.Printf("   🔗 Obtener API Key: https://aistudio.google.com/apikey")
+			}
+			log.Printf("========================================")
+
+		} else {
+			// ========================
+			// BUILDER BOT (Node.js) - SERVIDOR POR USUARIO
+			// ========================
+			log.Println("\n" + strings.Repeat("═", 80))
+			log.Printf("║ %s ║", centerText("DESPLIEGUE DE BUILDER BOT (NODE.JS)", 76))
+			log.Println(strings.Repeat("═", 80))
+
+			// PASO 1: Crear proyecto GCP si es necesario (NO BLOQUEANTE)
+			if isFirstAgent {
+				log.Println("\n" + strings.Repeat("═", 80))
+				log.Printf("║ %s ║", centerText("PASO 1/5: GOOGLE CLOUD PROJECT", 76))
+				log.Println(strings.Repeat("═", 80))
+				log.Printf("🎉 [User %d] Primer agente detectado - Intentando crear proyecto GCP\n", user.ID)
+
+				// Verificar si ya existe un proyecto GCP
+				var gcpProject models.GoogleCloudProject
+				err := config.DB.Where("user_id = ?", user.ID).First(&gcpProject).Error
+
+				if err != nil {
+					// No existe, crear nuevo proyecto
+					gcpProject = models.GoogleCloudProject{
+						UserID:        user.ID,
+						ProjectStatus: "creating",
+					}
+					config.DB.Create(&gcpProject)
+				} else {
+					// Ya existe, marcar como en creación
+					gcpProject.MarkAsCreating()
+					config.DB.Save(&gcpProject)
+				}
+
+				gca, err := services.NewGoogleCloudAutomation()
+				if err != nil {
+					log.Printf("⚠️ [User %d] Error inicializando GCP (NO CRÍTICO): %v", user.ID, err)
+					gcpProject.MarkAsError()
+					config.DB.Save(&gcpProject)
+				} else {
+					projectID, apiKey, err := gca.CreateProjectForUser(user.ID, user.Email)
+					if err != nil {
+						log.Printf("⚠️ [User %d] Error creando proyecto GCP (NO CRÍTICO): %v", user.ID, err)
+						gcpProject.MarkAsError()
+						config.DB.Save(&gcpProject)
+					} else {
+						gcpProject.ProjectID = projectID
+						gcpProject.ProjectName = fmt.Sprintf("Attomos User %d", user.ID)
+						gcpProject.GeminiAPIKey = apiKey
+						gcpProject.MarkAsReady()
+
+						if err := config.DB.Save(&gcpProject).Error; err != nil {
+							log.Printf("⚠️ [User %d] Error guardando proyecto (NO CRÍTICO): %v", user.ID, err)
+						} else {
+							log.Printf("🎉 [User %d] Proyecto GCP listo: %s", user.ID, projectID)
+						}
+					}
+				}
+			}
+
+			// PASO 2: Crear servidor compartido si es el primer agente (CRÍTICO)
+			if isFirstAgent {
+				log.Println("\n" + strings.Repeat("═", 80))
+				log.Printf("║ %s ║", centerText("PASO 2/5: INFRAESTRUCTURA CLOUD", 76))
+				log.Println(strings.Repeat("═", 80))
+				log.Printf("🖥️  [User %d] Creando infraestructura compartida\n", user.ID)
+
+				user.SharedServerStatus = "creating"
+				config.DB.Save(&user)
+
+				hetznerService, err := services.NewHetznerService()
+				if err != nil {
+					log.Printf("❌ [User %d] Error inicializando servicio Hetzner: %v", user.ID, err)
+					user.SharedServerStatus = "error"
+					agent.DeployStatus = "error"
+					config.DB.Save(&user)
+					config.DB.Save(&agent)
+					return
+				}
+
+				serverName := fmt.Sprintf("attomos-user-%d", user.ID)
+				serverResp, err := hetznerService.CreateServer(serverName, user.ID)
+				if err != nil {
+					log.Printf("❌ [User %d] Error creando infraestructura: %v", user.ID, err)
+					user.SharedServerStatus = "error"
+					agent.DeployStatus = "error"
+					config.DB.Save(&user)
+					config.DB.Save(&agent)
+					return
+				}
+
+				user.SharedServerID = serverResp.Server.ID
+				user.SharedServerIP = serverResp.Server.PublicNet.IPv4.IP
+				user.SharedServerPassword = serverResp.RootPassword
+				user.SharedServerStatus = "provisioning"
+				config.DB.Save(&user)
+
+				log.Printf("✅ [User %d] Infraestructura creada exitosamente:", user.ID)
+				log.Printf("   - ID: %d", serverResp.Server.ID)
+				log.Printf("   - IP: %s", serverResp.Server.PublicNet.IPv4.IP)
+
+				// Esperar a que el servidor esté en estado "running"
+				log.Printf("⏳ [User %d] Esperando que la infraestructura esté lista...", user.ID)
+				if err := hetznerService.WaitForServer(serverResp.Server.ID, 5*time.Minute); err != nil {
+					log.Printf("❌ [User %d] Timeout esperando infraestructura: %v", user.ID, err)
+					user.SharedServerStatus = "error"
+					agent.DeployStatus = "error"
+					config.DB.Save(&user)
+					config.DB.Save(&agent)
+					return
+				}
+
+				log.Printf("✅ [User %d] Infraestructura en estado 'running'", user.ID)
+
+				user.SharedServerStatus = "initializing"
+				config.DB.Save(&user)
+
+				go hetznerService.MonitorCloudInitLogs(user.SharedServerIP, user.SharedServerPassword, 10*time.Minute)
+
+			} else {
+				log.Printf("========================================")
+				log.Printf("ℹ️ [User %d] USANDO INFRAESTRUCTURA COMPARTIDA EXISTENTE", user.ID)
+				log.Printf("   - IP: %s", user.SharedServerIP)
+				log.Printf("   - Estado: %s", user.SharedServerStatus)
+				log.Printf("========================================")
+			}
+
+			// PASO 3: Configurar DNS en Cloudflare (NO BLOQUEANTE)
+			if isFirstAgent {
+				log.Println("\n" + strings.Repeat("═", 80))
+				log.Printf("║ %s ║", centerText("PASO 3/5: CONFIGURAR DNS EN CLOUDFLARE", 76))
+				log.Println(strings.Repeat("═", 80))
+
+				cloudflareService, err := services.NewCloudflareService()
+				if err != nil {
+					log.Printf("⚠️  [User %d] Cloudflare no configurado (NO CRÍTICO): %v", user.ID, err)
+					log.Printf("⚠️  Tendrás que configurar el DNS manualmente:")
+					log.Printf("    - Tipo: A")
+					log.Printf("    - Nombre: chat-user%d", user.ID)
+					log.Printf("    - Contenido: %s", user.SharedServerIP)
+					log.Printf("    - Proxy: Activado")
+				} else {
+					if err := cloudflareService.CreateOrUpdateChatwootDNS(user.SharedServerIP, user.ID); err != nil {
+						log.Printf("⚠️  [User %d] Error configurando DNS (NO CRÍTICO): %v", user.ID, err)
+						log.Printf("⚠️  Configura el DNS manualmente en Cloudflare")
+					} else {
+						log.Printf("✅ [User %d] DNS configurado automáticamente", user.ID)
+						log.Printf("   URL: https://chat-user%d.attomos.com", user.ID)
+					}
+				}
+			}
+
+			// PASO 4: Configurar Chatwoot (NO BLOQUEANTE)
+			if isFirstAgent {
 				log.Println("\n" + strings.Repeat("═", 80))
 				log.Printf("║ %s ║", centerText("PASO 4/5: CONFIGURAR CHATWOOT", 76))
 				log.Println(strings.Repeat("═", 80))
@@ -397,80 +559,19 @@ func CreateAgent(c *gin.Context) {
 					log.Printf("✅ [Agent %d] Chatwoot configurado exitosamente", agent.ID)
 					log.Printf("   URL: %s", credentials.ChatwootURL)
 				}
-			} else if agent.IsAtomicBot() {
-				log.Println("\n" + strings.Repeat("═", 80))
-				log.Printf("║ %s ║", centerText("PASO 4/5: CHATWOOT (OMITIDO)", 76))
-				log.Println(strings.Repeat("═", 80))
-				log.Printf("ℹ️  [Agent %d] AtomicBot usa WhatsApp Web - Chatwoot no es necesario", agent.ID)
-			}
-		}
-
-		// PASO 5: Desplegar bot en el servidor compartido (CRÍTICO)
-		log.Println("\n" + strings.Repeat("═", 80))
-		log.Printf("║ %s ║", centerText("PASO 5/5: DESPLIEGUE DEL BOT", 76))
-		log.Println(strings.Repeat("═", 80))
-		log.Printf("🤖 [Agent %d] Tipo de bot: %s", agent.ID, agent.BotType)
-		log.Printf("   - Puerto: %d", agent.Port)
-		log.Printf("   - Infraestructura: %s", user.SharedServerIP)
-		log.Printf("========================================")
-
-		agent.DeployStatus = "deploying"
-		config.DB.Save(&agent)
-
-		// DESPLIEGUE SEGÚN TIPO DE BOT
-		if agent.IsAtomicBot() {
-			// ========== ATOMIC BOT (Go) ==========
-			log.Printf("🚀 [Agent %d] Desplegando AtomicBot (Go)...", agent.ID)
-
-			atomicService := services.NewAtomicBotDeployService(user.SharedServerIP, user.SharedServerPassword)
-
-			// Reintentar conexión SSH (el servidor puede tardar en estar listo)
-			maxRetries := 30
-			retryDelay := 10 * time.Second
-			var connectErr error
-
-			for attempt := 1; attempt <= maxRetries; attempt++ {
-				log.Printf("🔌 [Agent %d] Intento de conexión SSH %d/%d...", agent.ID, attempt, maxRetries)
-
-				connectErr = atomicService.Connect()
-				if connectErr == nil {
-					log.Printf("✅ [Agent %d] Conectado exitosamente a la infraestructura", agent.ID)
-					break
-				}
-
-				if attempt < maxRetries {
-					log.Printf("⚠️  [Agent %d] Error conectando (intento %d/%d): %v", agent.ID, attempt, maxRetries, connectErr)
-					log.Printf("   ⏳ Reintentando en %v...", retryDelay)
-					time.Sleep(retryDelay)
-				}
 			}
 
-			if connectErr != nil {
-				log.Printf("❌ [Agent %d] No se pudo conectar después de %d intentos: %v", agent.ID, maxRetries, connectErr)
-				agent.DeployStatus = "error"
-				config.DB.Save(&agent)
-				return
-			}
+			// PASO 5: Desplegar bot en el servidor compartido (CRÍTICO)
+			log.Println("\n" + strings.Repeat("═", 80))
+			log.Printf("║ %s ║", centerText("PASO 5/5: DESPLIEGUE DEL BOT", 76))
+			log.Println(strings.Repeat("═", 80))
+			log.Printf("🤖 [Agent %d] Tipo de bot: %s", agent.ID, agent.BotType)
+			log.Printf("   - Puerto: %d", agent.Port)
+			log.Printf("   - Infraestructura: %s", user.SharedServerIP)
+			log.Printf("========================================")
 
-			defer atomicService.Close()
-
-			// Obtener Gemini API Key
-			geminiAPIKey := user.GetGeminiAPIKey()
-			if geminiAPIKey == "" {
-				log.Printf("⚠️  [Agent %d] Sin Gemini API Key, bot funcionará sin IA", agent.ID)
-			}
-
-			// Desplegar AtomicBot
-			if err := atomicService.DeployAtomicBot(&agent, geminiAPIKey, docData); err != nil {
-				log.Printf("❌ [Agent %d] Error desplegando AtomicBot: %v", agent.ID, err)
-				agent.DeployStatus = "error"
-				config.DB.Save(&agent)
-				return
-			}
-
-		} else {
-			// ========== BUILDER BOT (Node.js) ==========
-			log.Printf("🚀 [Agent %d] Desplegando BuilderBot (Node.js)...", agent.ID)
+			agent.DeployStatus = "deploying"
+			config.DB.Save(&agent)
 
 			deployService := services.NewBotDeployService(user.SharedServerIP, user.SharedServerPassword)
 
@@ -512,43 +613,27 @@ func CreateAgent(c *gin.Context) {
 				config.DB.Save(&agent)
 				return
 			}
-		}
 
-		// Actualizar servidor a "ready" si es primer agente y fue exitoso
-		if isFirstAgent {
-			user.SharedServerStatus = "ready"
-			config.DB.Save(&user)
-			log.Printf("✅ [User %d] Infraestructura marcada como 'ready'", user.ID)
-		}
-
-		// Marcar agente como activo y corriendo
-		agent.IsActive = true
-		agent.DeployStatus = "running"
-		config.DB.Save(&agent)
-
-		log.Printf("========================================")
-		log.Printf("🎉 [Agent %d] BOT DESPLEGADO EXITOSAMENTE", agent.ID)
-		log.Printf("   - Tipo: %s", agent.BotType)
-		log.Printf("   - Infraestructura: %s", user.SharedServerIP)
-		log.Printf("   - Puerto: %d", agent.Port)
-		log.Printf("   - Estado: running")
-
-		// Información específica según tipo de bot
-		if agent.IsAtomicBot() {
-			log.Printf("   - Tecnología: WhatsApp Web (Go)")
-			log.Printf("   - Acceso: SSH → Ver logs para escanear QR")
-			log.Printf("   - Comando logs: tail -f /var/log/atomic-bot-%d.log", agent.ID)
-
-			if user.GetGeminiAPIKey() != "" {
-				log.Printf("   - IA: Gemini AI habilitada ✅")
-			} else {
-				log.Printf("   - IA: Sin configurar")
-				log.Printf("   💡 Configura tu Gemini API Key en los ajustes del agente")
-				log.Printf("   🔗 Obtener API Key: https://aistudio.google.com/apikey")
+			// Actualizar servidor a "ready" si es primer agente y fue exitoso
+			if isFirstAgent {
+				user.SharedServerStatus = "ready"
+				config.DB.Save(&user)
+				log.Printf("✅ [User %d] Infraestructura marcada como 'ready'", user.ID)
 			}
-		} else {
-			// BuilderBot
+
+			// Marcar agente como activo y corriendo
+			agent.IsActive = true
+			agent.DeployStatus = "running"
+			config.DB.Save(&agent)
+
+			log.Printf("========================================")
+			log.Printf("🎉 [Agent %d] BUILDER BOT DESPLEGADO EXITOSAMENTE", agent.ID)
+			log.Printf("   - Tipo: %s", agent.BotType)
+			log.Printf("   - Infraestructura: %s", user.SharedServerIP)
+			log.Printf("   - Puerto: %d", agent.Port)
+			log.Printf("   - Estado: running")
 			log.Printf("   - Tecnología: Meta WhatsApp Business API (Node.js)")
+
 			if agent.ChatwootEmail != "" {
 				log.Printf("   - Chatwoot: %s", agent.ChatwootURL)
 				log.Printf("   - Chatwoot Email: %s", agent.ChatwootEmail)
@@ -563,8 +648,8 @@ func CreateAgent(c *gin.Context) {
 			} else {
 				log.Printf("   ⚠️ Proyecto GCP no creado (puedes hacerlo manualmente)")
 			}
+			log.Printf("========================================")
 		}
-		log.Printf("========================================")
 	}()
 }
 
@@ -588,10 +673,30 @@ func GetUserAgents(c *gin.Context) {
 		return
 	}
 
+	// Obtener información del servidor compartido global si tiene AtomicBots
+	var globalServerInfo map[string]interface{}
+	hasAtomicBot := false
+	for _, agent := range agents {
+		if agent.IsAtomicBot() {
+			hasAtomicBot = true
+			break
+		}
+	}
+
+	if hasAtomicBot {
+		serverManager := services.GetGlobalServerManager()
+		servers, err := serverManager.ListAllServers()
+		if err == nil && len(servers) > 0 {
+			globalServer := servers[0] // Obtener el servidor principal
+			globalServerInfo = serverManager.GetServerMetrics(&globalServer)
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"agents":   agents,
-		"total":    len(agents),
-		"serverIp": user.SharedServerIP,
+		"agents":           agents,
+		"total":            len(agents),
+		"serverIp":         user.SharedServerIP,
+		"globalServerInfo": globalServerInfo,
 	})
 }
 
@@ -742,19 +847,48 @@ func DeleteAgent(c *gin.Context) {
 		return
 	}
 
-	// Detener el bot en el servidor compartido
+	// Detener el bot en el servidor correspondiente
 	go func() {
-		deployService := services.NewBotDeployService(user.SharedServerIP, user.SharedServerPassword)
-		if err := deployService.Connect(); err != nil {
-			log.Printf("⚠️ [Agent %d] Error conectando a infraestructura: %v", agent.ID, err)
-			return
-		}
-		defer deployService.Close()
+		if agent.IsAtomicBot() {
+			// Obtener servidor compartido global
+			serverManager := services.GetGlobalServerManager()
+			servers, err := serverManager.ListAllServers()
+			if err != nil || len(servers) == 0 {
+				log.Printf("⚠️  [Agent %d] No se encontró servidor compartido", agent.ID)
+				return
+			}
 
-		if err := deployService.StopAndRemoveBot(agent.ID); err != nil {
-			log.Printf("⚠️ [Agent %d] Error eliminando bot: %v", agent.ID, err)
+			globalServer := servers[0]
+			atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+
+			if err := atomicService.Connect(); err != nil {
+				log.Printf("⚠️  [Agent %d] Error conectando a servidor compartido: %v", agent.ID, err)
+				return
+			}
+			defer atomicService.Close()
+
+			if err := atomicService.StopBot(agent.ID); err != nil {
+				log.Printf("⚠️  [Agent %d] Error deteniendo bot: %v", agent.ID, err)
+			} else {
+				log.Printf("✅ [Agent %d] Bot detenido del servidor compartido", agent.ID)
+
+				// Liberar puerto
+				serverManager.ReleaseAgentPort(&globalServer)
+			}
 		} else {
-			log.Printf("✅ [Agent %d] Bot eliminado de la infraestructura", agent.ID)
+			// BuilderBot - servidor por usuario
+			deployService := services.NewBotDeployService(user.SharedServerIP, user.SharedServerPassword)
+			if err := deployService.Connect(); err != nil {
+				log.Printf("⚠️  [Agent %d] Error conectando a infraestructura: %v", agent.ID, err)
+				return
+			}
+			defer deployService.Close()
+
+			if err := deployService.StopAndRemoveBot(agent.ID); err != nil {
+				log.Printf("⚠️  [Agent %d] Error eliminando bot: %v", agent.ID, err)
+			} else {
+				log.Printf("✅ [Agent %d] Bot eliminado de la infraestructura", agent.ID)
+			}
 		}
 	}()
 
@@ -824,8 +958,19 @@ func GetAgentQRCode(c *gin.Context) {
 		return
 	}
 
-	// Leer QR code desde los logs del bot
-	atomicService := services.NewAtomicBotDeployService(user.SharedServerIP, user.SharedServerPassword)
+	// Obtener servidor compartido global
+	serverManager := services.GetGlobalServerManager()
+	servers, err := serverManager.ListAllServers()
+	if err != nil || len(servers) == 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Error de servidor",
+			"message": "No se encontró servidor compartido",
+		})
+		return
+	}
+
+	globalServer := servers[0]
+	atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 
 	if err := atomicService.Connect(); err != nil {
 		log.Printf("❌ [Agent %d] Error conectando a servidor: %v", agent.ID, err)

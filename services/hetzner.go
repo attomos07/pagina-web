@@ -62,7 +62,219 @@ func NewHetznerService() (*HetznerService, error) {
 	}, nil
 }
 
-// CreateServer crea un nuevo servidor en Hetzner
+// CreateAtomicBotsGlobalServer crea el servidor compartido global para AtomicBots
+func (h *HetznerService) CreateAtomicBotsGlobalServer(serverName string) (*ServerResponse, error) {
+	url := "https://api.hetzner.cloud/v1/servers"
+
+	payload := map[string]interface{}{
+		"name":        serverName,
+		"server_type": "cx33", // Más potente para múltiples bots
+		"image":       "ubuntu-22.04",
+		"location":    "nbg1",
+		"ssh_keys":    []string{},
+		"user_data":   h.getAtomicBotsGlobalServerScript(),
+		"labels": map[string]string{
+			"purpose":     "atomic-bots",
+			"server_type": "global-shared",
+			"managed_by":  "attomos",
+		},
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+h.apiToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := h.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("error al crear servidor: %s - %s", resp.Status, string(body))
+	}
+
+	var serverResp ServerResponse
+	if err := json.Unmarshal(body, &serverResp); err != nil {
+		return nil, err
+	}
+
+	return &serverResp, nil
+}
+
+// getAtomicBotsGlobalServerScript genera el cloud-init para servidor global de AtomicBots
+func (h *HetznerService) getAtomicBotsGlobalServerScript() string {
+	return `#cloud-config
+
+chpasswd:
+  expire: false
+
+ssh_pwauth: true
+
+package_update: true
+package_upgrade: false
+
+packages:
+  - curl
+  - git
+  - ca-certificates
+  - gnupg
+  - build-essential
+  - gcc
+  - wget
+  - apt-transport-https
+  - software-properties-common
+
+runcmd:
+  # === FASE 1: SETUP INICIAL ===
+  - mkdir -p /var/log/attomos /opt/atomic-bots
+  - echo "INICIO SERVIDOR GLOBAL DE ATOMIC BOTS" > /var/log/attomos/init.log
+  - date >> /var/log/attomos/init.log
+  - echo "PHASE_1_START" > /var/log/attomos/status
+  - chage -I -1 -m 0 -M 99999 -E -1 root
+  
+  # === FASE 2: ESPERAR LOCKS DE APT ===
+  - echo "PHASE_2_WAIT_LOCKS" > /var/log/attomos/status
+  - echo "[$(date)] Esperando que cloud-init libere locks..." >> /var/log/attomos/init.log
+  - timeout 300 bash -c 'while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do echo "Esperando locks de apt..."; sleep 5; done' >> /var/log/attomos/init.log 2>&1 || true
+  
+  # === FASE 3: INSTALAR GCC Y BUILD TOOLS ===
+  - echo "PHASE_3_GCC" > /var/log/attomos/status
+  - echo "[$(date)] Instalando GCC y herramientas de compilación..." >> /var/log/attomos/init.log
+  - for i in 1 2 3; do apt-get update -y 2>&1 && break || sleep 10; done >> /var/log/attomos/init.log
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential gcc g++ make >> /var/log/attomos/init.log 2>&1
+  - gcc --version >> /var/log/attomos/init.log 2>&1
+  - echo "[$(date)] GCC instalado correctamente" >> /var/log/attomos/init.log
+  
+  # === FASE 4: INSTALAR GO ===
+  - echo "PHASE_4_GOLANG" > /var/log/attomos/status
+  - echo "[$(date)] Instalando Go 1.24..." >> /var/log/attomos/init.log
+  - cd /tmp
+  - wget -q https://go.dev/dl/go1.24.0.linux-amd64.tar.gz >> /var/log/attomos/init.log 2>&1
+  - rm -rf /usr/local/go
+  - tar -C /usr/local -xzf go1.24.0.linux-amd64.tar.gz >> /var/log/attomos/init.log 2>&1
+  - rm go1.24.0.linux-amd64.tar.gz
+  - echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
+  - echo 'export PATH=$PATH:/usr/local/go/bin' >> /root/.bashrc
+  - export PATH=$PATH:/usr/local/go/bin
+  - /usr/local/go/bin/go version >> /var/log/attomos/init.log 2>&1
+  - echo "[$(date)] Go instalado correctamente" >> /var/log/attomos/init.log
+  
+  # === FASE 5: CREAR ESTRUCTURA DE DIRECTORIOS ===
+  - echo "PHASE_5_DIRECTORIES" > /var/log/attomos/status
+  - echo "[$(date)] Creando estructura de directorios..." >> /var/log/attomos/init.log
+  - mkdir -p /opt/atomic-bots/agents
+  - mkdir -p /var/log/atomic-bots
+  - chmod 755 /opt/atomic-bots
+  - chmod 755 /var/log/atomic-bots
+  - echo "[$(date)] Directorios creados" >> /var/log/attomos/init.log
+  
+  # === FASE 6: CONFIGURAR FIREWALL ===
+  - echo "PHASE_6_FIREWALL" > /var/log/attomos/status
+  - echo "[$(date)] Configurando firewall..." >> /var/log/attomos/init.log
+  - ufw --force enable >> /var/log/attomos/init.log 2>&1
+  - ufw allow 22 >> /var/log/attomos/init.log 2>&1
+  - echo "[$(date)] Firewall configurado (puertos para bots se abrirán bajo demanda)" >> /var/log/attomos/init.log
+  
+  # === FASE 7: OPTIMIZACIONES DEL SISTEMA ===
+  - echo "PHASE_7_OPTIMIZATIONS" > /var/log/attomos/status
+  - echo "[$(date)] Aplicando optimizaciones del sistema..." >> /var/log/attomos/init.log
+  - echo "fs.file-max = 200000" >> /etc/sysctl.conf
+  - echo "net.core.somaxconn = 2048" >> /etc/sysctl.conf
+  - echo "vm.max_map_count = 262144" >> /etc/sysctl.conf
+  - sysctl -p >> /var/log/attomos/init.log 2>&1 || true
+  - echo "[$(date)] Optimizaciones aplicadas" >> /var/log/attomos/init.log
+  
+  # === FASE 8: HEALTH CHECK ===
+  - echo "PHASE_8_HEALTH_CHECK" > /var/log/attomos/status
+  - |
+    cat > /opt/health_check.sh << 'EOFHEALTH'
+    #!/bin/bash
+    echo "=== HEALTH CHECK - SERVIDOR GLOBAL ATOMIC BOTS ==="
+    command -v go && echo "Go OK" || exit 1
+    command -v gcc && echo "GCC OK" || exit 1
+    [ -d /opt/atomic-bots/agents ] && echo "Directorio de agentes OK" || exit 1
+    [ -f /var/log/attomos/status ] && cat /var/log/attomos/status
+    [ "$(cat /var/log/attomos/status)" = "CLOUD_INIT_COMPLETE" ] && echo "SERVIDOR LISTO PARA DESPLEGAR ATOMIC BOTS" && exit 0
+    exit 2
+    EOFHEALTH
+  - chmod +x /opt/health_check.sh
+  - echo "[$(date)] Health check creado" >> /var/log/attomos/init.log
+  
+  # === FASE 9: CREAR SCRIPT DE GESTIÓN DE BOTS ===
+  - echo "PHASE_9_BOT_MANAGER" > /var/log/attomos/status
+  - |
+    cat > /opt/atomic-bots/bot-manager.sh << 'EOFMANAGER'
+    #!/bin/bash
+    # Script para gestionar bots AtomicBot
+    
+    case "$1" in
+      list)
+        echo "=== BOTS ACTIVOS ==="
+        systemctl list-units --type=service --state=running | grep atomic-bot
+        ;;
+      status)
+        if [ -z "$2" ]; then
+          echo "Uso: bot-manager.sh status <agent_id>"
+          exit 1
+        fi
+        systemctl status atomic-bot-$2
+        ;;
+      logs)
+        if [ -z "$2" ]; then
+          echo "Uso: bot-manager.sh logs <agent_id> [lines]"
+          exit 1
+        fi
+        LINES=${3:-50}
+        tail -n $LINES /var/log/atomic-bot-$2.log
+        ;;
+      restart)
+        if [ -z "$2" ]; then
+          echo "Uso: bot-manager.sh restart <agent_id>"
+          exit 1
+        fi
+        systemctl restart atomic-bot-$2
+        ;;
+      stop)
+        if [ -z "$2" ]; then
+          echo "Uso: bot-manager.sh stop <agent_id>"
+          exit 1
+        fi
+        systemctl stop atomic-bot-$2
+        ;;
+      *)
+        echo "Uso: bot-manager.sh {list|status|logs|restart|stop} [agent_id] [args]"
+        exit 1
+        ;;
+    esac
+    EOFMANAGER
+  - chmod +x /opt/atomic-bots/bot-manager.sh
+  - echo "[$(date)] Bot manager creado" >> /var/log/attomos/init.log
+  
+  # === COMPLETADO ===
+  - echo "CLOUD_INIT_COMPLETE" > /var/log/attomos/status
+  - date >> /var/log/attomos/init.log
+  - echo "[$(date)] ✅ SERVIDOR GLOBAL DE ATOMIC BOTS INICIALIZADO" >> /var/log/attomos/init.log
+  - echo "[$(date)] Listo para desplegar hasta 100 AtomicBots" >> /var/log/attomos/init.log
+  - /opt/health_check.sh >> /var/log/attomos/init.log 2>&1
+`
+}
+
+// CreateServer crea un nuevo servidor en Hetzner (para BuilderBot - usuarios individuales)
 func (h *HetznerService) CreateServer(serverName string, userID uint) (*ServerResponse, error) {
 	url := "https://api.hetzner.cloud/v1/servers"
 
@@ -116,7 +328,7 @@ func (h *HetznerService) CreateServer(serverName string, userID uint) (*ServerRe
 	return &serverResp, nil
 }
 
-// getCloudInitScript genera el script de inicialización
+// getCloudInitScript genera el script de inicialización para BuilderBot
 func (h *HetznerService) getCloudInitScript(userID uint) string {
 	return `#cloud-config
 

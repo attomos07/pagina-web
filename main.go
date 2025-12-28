@@ -44,7 +44,8 @@ func main() {
 		&models.Agent{},
 		&models.Subscription{},
 		&models.Payment{},
-		&models.GoogleCloudProject{}, // ← NUEVO
+		&models.GoogleCloudProject{},
+		&models.GlobalServer{}, // ← NUEVO: Servidor compartido global para AtomicBots
 	); err != nil {
 		log.Fatal("❌ Error en migración:", err)
 	}
@@ -305,6 +306,10 @@ func main() {
 	log.Printf("║ 🚀 Servidor Attomos iniciado exitosamente               ║")
 	log.Printf("║ 📍 Puerto: %s                                           ║", port)
 	log.Printf("║ 🌐 URL Local: http://localhost:%s                       ║", port)
+	log.Println("║                                                          ║")
+	log.Println("║ 📊 Arquitectura de Bots:                                 ║")
+	log.Println("║    • Plan GRATUITO → AtomicBot (Servidor Compartido)    ║")
+	log.Println("║    • Plan de PAGO  → BuilderBot (Servidor Individual)   ║")
 	log.Println("╚══════════════════════════════════════════════════════════╝")
 
 	if err := router.Run(":" + port); err != nil {
