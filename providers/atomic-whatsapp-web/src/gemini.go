@@ -25,16 +25,29 @@ type AppointmentAnalysis struct {
 
 // InitGemini inicializa el cliente de Gemini AI
 func InitGemini() error {
+	log.Println("🔧 Intentando inicializar Gemini AI...")
+
 	apiKey := os.Getenv("GEMINI_API_KEY")
 	if apiKey == "" {
 		geminiEnabled = false
+		log.Println("❌ GEMINI_API_KEY no está configurada en el .env")
 		return fmt.Errorf("GEMINI_API_KEY no configurada")
 	}
+
+	// Validar formato de API Key
+	if !strings.HasPrefix(apiKey, "AIzaSy") {
+		geminiEnabled = false
+		log.Printf("❌ GEMINI_API_KEY tiene formato inválido (debe comenzar con 'AIzaSy'): %s...\n", apiKey[:10])
+		return fmt.Errorf("GEMINI_API_KEY tiene formato inválido")
+	}
+
+	log.Printf("✅ GEMINI_API_KEY encontrada: %s...%s\n", apiKey[:10], apiKey[len(apiKey)-4:])
 
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
 		geminiEnabled = false
+		log.Printf("❌ Error creando cliente Gemini: %v\n", err)
 		return fmt.Errorf("error creando cliente Gemini: %w", err)
 	}
 
@@ -47,8 +60,27 @@ func InitGemini() error {
 	geminiModel.SetTopP(0.9)
 	geminiModel.SetTopK(40)
 
+	// Hacer una prueba rápida
+	log.Println("🧪 Probando conexión con Gemini...")
+	testResp, err := geminiModel.GenerateContent(ctx, genai.Text("Di 'OK' si funcionas correctamente"))
+	if err != nil {
+		geminiEnabled = false
+		log.Printf("❌ Error en prueba de Gemini: %v\n", err)
+		return fmt.Errorf("error en prueba de Gemini: %w", err)
+	}
+
+	if testResp == nil || len(testResp.Candidates) == 0 {
+		geminiEnabled = false
+		log.Println("❌ Gemini no retornó respuesta en prueba")
+		return fmt.Errorf("Gemini no retornó respuesta")
+	}
+
 	geminiEnabled = true
-	log.Println("✅ Gemini AI inicializado correctamente")
+	log.Println("✅ Gemini AI inicializado y verificado correctamente")
+	log.Println("📊 Modelo: gemini-2.0-flash-exp")
+	log.Println("🎯 Temperatura: 0.7")
+	log.Println("📝 Max Tokens: 1024")
+
 	return nil
 }
 
@@ -59,9 +91,19 @@ func IsGeminiEnabled() bool {
 
 // Chat función principal para chatear con Gemini usando configuración dinámica
 func Chat(promptContext, userMessage, conversationHistory string) (string, error) {
+	if !geminiEnabled {
+		log.Println("⚠️  Chat llamado pero Gemini no está habilitado")
+		return "", fmt.Errorf("Gemini no está habilitado")
+	}
+
 	if geminiClient == nil {
+		log.Println("❌ geminiClient es nil")
 		return "", fmt.Errorf("Gemini no inicializado")
 	}
+
+	log.Printf("💬 Generando respuesta con Gemini...\n")
+	log.Printf("   📝 Mensaje del usuario: %s\n", userMessage)
+	log.Printf("   🎯 Contexto: %s\n", promptContext)
 
 	ctx := context.Background()
 
@@ -90,13 +132,22 @@ RESPUESTA:`,
 		promptContext,
 		userMessage)
 
+	log.Println("🚀 Enviando petición a Gemini...")
+
 	// Generar respuesta
 	resp, err := geminiModel.GenerateContent(ctx, genai.Text(fullPrompt))
 	if err != nil {
+		log.Printf("❌ Error generando respuesta de Gemini: %v\n", err)
 		return "", fmt.Errorf("error generando respuesta: %w", err)
 	}
 
-	if resp == nil || len(resp.Candidates) == 0 {
+	if resp == nil {
+		log.Println("❌ Gemini retornó respuesta nula")
+		return "¿Podrías repetir eso?", nil
+	}
+
+	if len(resp.Candidates) == 0 {
+		log.Println("❌ Gemini retornó 0 candidatos")
 		return "¿Podrías repetir eso?", nil
 	}
 
@@ -118,18 +169,27 @@ RESPUESTA:`,
 	}
 
 	if result == "" {
+		log.Println("❌ Gemini generó respuesta vacía")
 		return "¿Podrías repetir eso?", nil
 	}
 
+	log.Printf("✅ Respuesta de Gemini generada: %s\n", result)
 	return result, nil
 }
 
 // AnalyzeForAppointment analiza si el mensaje indica intención de agendamiento
 func AnalyzeForAppointment(message, conversationHistory string, isCurrentlyScheduling bool) (*AppointmentAnalysis, error) {
-	if geminiClient == nil {
-		// Fallback sin Gemini
+	if !geminiEnabled {
+		log.Println("⚠️  AnalyzeForAppointment: Gemini no habilitado, usando fallback")
 		return fallbackAnalysis(message), nil
 	}
+
+	if geminiClient == nil {
+		log.Println("❌ AnalyzeForAppointment: geminiClient es nil, usando fallback")
+		return fallbackAnalysis(message), nil
+	}
+
+	log.Printf("🔍 Analizando mensaje para agendamiento: %s\n", message)
 
 	ctx := context.Background()
 
@@ -196,14 +256,17 @@ RESPONDE EN JSON:
 		message,
 		isCurrentlyScheduling)
 
+	log.Println("🚀 Enviando análisis a Gemini...")
+
 	// Generar análisis
 	resp, err := geminiModel.GenerateContent(ctx, genai.Text(analysisPrompt))
 	if err != nil {
-		log.Printf("⚠️  Error en análisis, usando fallback: %v\n", err)
+		log.Printf("⚠️  Error en análisis de Gemini: %v, usando fallback\n", err)
 		return fallbackAnalysis(message), nil
 	}
 
 	if resp == nil || len(resp.Candidates) == 0 {
+		log.Println("⚠️  Gemini no retornó candidatos en análisis, usando fallback")
 		return fallbackAnalysis(message), nil
 	}
 
@@ -217,21 +280,25 @@ RESPONDE EN JSON:
 		}
 	}
 
+	log.Printf("📄 Respuesta de análisis de Gemini:\n%s\n", responseText)
+
 	// Extraer JSON de la respuesta
 	jsonStart := strings.Index(responseText, "{")
 	jsonEnd := strings.LastIndex(responseText, "}")
 
 	if jsonStart == -1 || jsonEnd == -1 {
-		log.Printf("⚠️  No se pudo extraer JSON, usando fallback")
+		log.Printf("⚠️  No se pudo extraer JSON de la respuesta, usando fallback\n")
 		return fallbackAnalysis(message), nil
 	}
 
 	jsonStr := responseText[jsonStart : jsonEnd+1]
+	log.Printf("📊 JSON extraído: %s\n", jsonStr)
 
 	// Parsear JSON
 	var analysis AppointmentAnalysis
 	if err := json.Unmarshal([]byte(jsonStr), &analysis); err != nil {
 		log.Printf("⚠️  Error parseando JSON: %v, usando fallback\n", err)
+		log.Printf("   JSON que falló: %s\n", jsonStr)
 		return fallbackAnalysis(message), nil
 	}
 
@@ -240,7 +307,7 @@ RESPONDE EN JSON:
 		analysis.ExtractedData = make(map[string]string)
 	}
 
-	log.Printf("📊 Análisis: wantsToSchedule=%v, confidence=%.2f, data=%v",
+	log.Printf("✅ Análisis completado: wantsToSchedule=%v, confidence=%.2f, data=%v\n",
 		analysis.WantsToSchedule,
 		analysis.Confidence,
 		analysis.ExtractedData)
@@ -250,6 +317,8 @@ RESPONDE EN JSON:
 
 // fallbackAnalysis análisis simple sin Gemini
 func fallbackAnalysis(message string) *AppointmentAnalysis {
+	log.Println("🔄 Usando análisis fallback (sin Gemini)")
+
 	lowerMessage := strings.ToLower(message)
 	keywords := []string{"cita", "agendar", "turno", "reservar", "apartar"}
 
@@ -257,35 +326,63 @@ func fallbackAnalysis(message string) *AppointmentAnalysis {
 	for _, keyword := range keywords {
 		if strings.Contains(lowerMessage, keyword) {
 			wantsToSchedule = true
+			log.Printf("   ✅ Palabra clave encontrada: %s\n", keyword)
 			break
 		}
 	}
 
-	return &AppointmentAnalysis{
+	result := &AppointmentAnalysis{
 		WantsToSchedule: wantsToSchedule,
 		ExtractedData:   make(map[string]string),
 		Confidence:      0.6,
 	}
+
+	log.Printf("   📊 Resultado fallback: wantsToSchedule=%v\n", wantsToSchedule)
+	return result
 }
 
 // CheckGeminiHealth verifica que Gemini esté funcionando
 func CheckGeminiHealth() bool {
-	if geminiClient == nil {
+	if !geminiEnabled {
+		log.Println("⚠️  CheckGeminiHealth: Gemini no está habilitado")
 		return false
 	}
 
-	_, err := Chat("", "test", "")
-	return err == nil
+	if geminiClient == nil {
+		log.Println("❌ CheckGeminiHealth: geminiClient es nil")
+		return false
+	}
+
+	log.Println("🏥 Verificando salud de Gemini...")
+
+	ctx := context.Background()
+	resp, err := geminiModel.GenerateContent(ctx, genai.Text("test"))
+
+	if err != nil {
+		log.Printf("❌ Health check falló: %v\n", err)
+		return false
+	}
+
+	if resp == nil || len(resp.Candidates) == 0 {
+		log.Println("❌ Health check: sin respuesta")
+		return false
+	}
+
+	log.Println("✅ Gemini está funcionando correctamente")
+	return true
 }
 
 // GenerateWelcomeMessage genera un mensaje de bienvenida personalizado
 func GenerateWelcomeMessage() string {
 	if BusinessCfg == nil {
+		log.Println("⚠️  BusinessCfg es nil, usando mensaje genérico")
 		return "¡Hola! ¿En qué puedo ayudarte hoy?"
 	}
 
 	// Si hay Gemini, generar mensaje dinámico
-	if geminiEnabled {
+	if geminiEnabled && geminiClient != nil {
+		log.Println("💬 Generando mensaje de bienvenida con Gemini...")
+
 		ctx := context.Background()
 		prompt := fmt.Sprintf(`Genera un mensaje de bienvenida breve (2-3 líneas) para %s, un %s.
 
@@ -312,12 +409,21 @@ RESPONDE SOLO CON EL MENSAJE, SIN EXPLICACIONES.`,
 				}
 			}
 			if msg.Len() > 0 {
-				return strings.TrimSpace(msg.String())
+				result := strings.TrimSpace(msg.String())
+				log.Printf("✅ Mensaje de bienvenida generado: %s\n", result)
+				return result
 			}
+		} else {
+			log.Printf("⚠️  Error generando mensaje de bienvenida: %v\n", err)
 		}
+	} else {
+		log.Println("⚠️  Gemini no disponible para generar mensaje de bienvenida")
 	}
 
 	// Mensaje por defecto
-	return fmt.Sprintf("¡Hola! Bienvenido a %s 👋\n\nPuedo ayudarte con información sobre nuestros servicios, horarios o agendar una cita. ¿En qué te puedo ayudar?",
+	defaultMsg := fmt.Sprintf("¡Hola! Bienvenido a %s 👋\n\nPuedo ayudarte con información sobre nuestros servicios, horarios o agendar una cita. ¿En qué te puedo ayudar?",
 		BusinessCfg.AgentName)
+
+	log.Printf("📝 Usando mensaje de bienvenida por defecto\n")
+	return defaultMsg
 }

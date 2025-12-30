@@ -160,6 +160,7 @@ func main() {
 		protected.GET("/agents", handlers.GetUserAgents)
 		protected.GET("/agents/:id", handlers.GetAgent)
 		protected.GET("/agents/:id/qr", handlers.GetAgentQRCode)
+		protected.GET("/agents/:id/logs", handlers.GetAgentLogs)
 		protected.PUT("/agents/:id", handlers.UpdateAgent)
 		protected.DELETE("/agents/:id", handlers.DeleteAgent)
 		protected.PATCH("/agents/:id/toggle", handlers.ToggleAgentStatus)
