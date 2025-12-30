@@ -12,7 +12,15 @@ import (
 
 // GetAgentLogs obtiene los logs de un agente conectándose por SSH
 func GetAgentLogs(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	// Obtener usuario autenticado
+	userInterface, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autenticado"})
+		return
+	}
+	user := userInterface.(*models.User)
+	userID := user.ID
+
 	agentIDStr := c.Param("id")
 
 	agentID, err := strconv.ParseUint(agentIDStr, 10, 32)
