@@ -187,7 +187,7 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 	// PASO 3: Guardar todo en la base de datos
 	now := time.Now()
 	agent.GoogleToken = string(tokenJSON)
-	agent.GoogleCalendarID = userEmail // Usar email del usuario en lugar del calendar ID
+	agent.GoogleCalendarID = calendarID
 	agent.GoogleSheetID = spreadsheetID
 	agent.GoogleConnected = true
 	agent.GoogleConnectedAt = &now
@@ -201,34 +201,43 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 	log.Printf("🎉 [Agent %d] Integración completada exitosamente", agent.ID)
 	log.Printf("📧 [Agent %d] Email de Google Calendar: %s", agent.ID, userEmail)
 	log.Printf("📊 [Agent %d] Spreadsheet ID: %s", agent.ID, spreadsheetID)
+	log.Printf("📅 [Agent %d] Calendar ID: %s", agent.ID, calendarID)
 
 	// PASO 4: Actualizar .env del bot en el servidor (SOLO para AtomicBot)
-	if agent.IsAtomicBot() && user.SharedServerIP != "" && user.SharedServerPassword != "" {
-		log.Printf("🔄 [Agent %d] Actualizando .env en el servidor...", agent.ID)
+	if agent.IsAtomicBot() {
+		log.Printf("🔄 [Agent %d] Actualizando .env en el servidor AtomicBot...", agent.ID)
 
-		// Crear servicio de deploy
-		deployService := services.NewAtomicBotDeployService(user.SharedServerIP, user.SharedServerPassword)
-
-		// Conectar al servidor
-		if err := deployService.Connect(); err != nil {
-			log.Printf("⚠️  [Agent %d] Error conectando al servidor para actualizar .env: %v", agent.ID, err)
-			// No fallar completamente, la integración ya está guardada en BD
+		// Obtener servidor compartido global
+		serverManager := services.GetGlobalServerManager()
+		servers, err := serverManager.ListAllServers()
+		if err != nil || len(servers) == 0 {
+			log.Printf("⚠️  [Agent %d] No se encontró servidor compartido global", agent.ID)
 		} else {
-			defer deployService.Close()
+			globalServer := servers[0]
+			atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 
-			// Actualizar variables de entorno y reiniciar bot
-			if err := deployService.RestartBotAfterGoogleIntegration(&agent, nil); err != nil {
-				log.Printf("⚠️  [Agent %d] Error actualizando .env en servidor: %v", agent.ID, err)
-				// No fallar completamente, la integración ya está guardada en BD
+			// Conectar al servidor
+			if err := atomicService.Connect(); err != nil {
+				log.Printf("⚠️  [Agent %d] Error conectando al servidor: %v", agent.ID, err)
 			} else {
-				log.Printf("✅ [Agent %d] .env actualizado y bot reiniciado en servidor", agent.ID)
+				defer atomicService.Close()
+
+				// Leer google.json del token
+				googleCredentials := []byte(tokenJSON)
+
+				// Actualizar variables de entorno y reiniciar bot
+				if err := atomicService.RestartBotAfterGoogleIntegration(&agent, googleCredentials); err != nil {
+					log.Printf("⚠️  [Agent %d] Error actualizando .env en servidor: %v", agent.ID, err)
+				} else {
+					log.Printf("✅ [Agent %d] .env actualizado y bot reiniciado en servidor", agent.ID)
+				}
 			}
 		}
 	}
 
 	// Redirigir con éxito
-	redirectURL := fmt.Sprintf("/my-agents?success=true&agent_id=%d&calendar_email=%s&sheet_id=%s",
-		agent.ID, userEmail, spreadsheetID)
+	redirectURL := fmt.Sprintf("/my-agents?success=true&agent_id=%d&calendar_id=%s&sheet_id=%s",
+		agent.ID, calendarID, spreadsheetID)
 	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 }
 
@@ -270,20 +279,25 @@ func (h *GoogleIntegrationHandler) DisconnectGoogle(c *gin.Context) {
 	log.Printf("✅ [Agent %d] Google desconectado", agent.ID)
 
 	// Actualizar .env del bot en el servidor (SOLO para AtomicBot)
-	if agent.IsAtomicBot() && user.SharedServerIP != "" && user.SharedServerPassword != "" {
+	if agent.IsAtomicBot() {
 		log.Printf("🔄 [Agent %d] Limpiando variables de Google del .env en el servidor...", agent.ID)
 
-		deployService := services.NewAtomicBotDeployService(user.SharedServerIP, user.SharedServerPassword)
+		serverManager := services.GetGlobalServerManager()
+		servers, err := serverManager.ListAllServers()
+		if err == nil && len(servers) > 0 {
+			globalServer := servers[0]
+			atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 
-		if err := deployService.Connect(); err != nil {
-			log.Printf("⚠️  [Agent %d] Error conectando al servidor: %v", agent.ID, err)
-		} else {
-			defer deployService.Close()
-
-			if err := deployService.RestartBotAfterGoogleIntegration(&agent, nil); err != nil {
-				log.Printf("⚠️  [Agent %d] Error limpiando .env: %v", agent.ID, err)
+			if err := atomicService.Connect(); err != nil {
+				log.Printf("⚠️  [Agent %d] Error conectando al servidor: %v", agent.ID, err)
 			} else {
-				log.Printf("✅ [Agent %d] Variables de Google limpiadas del .env", agent.ID)
+				defer atomicService.Close()
+
+				if err := atomicService.RestartBotAfterGoogleIntegration(&agent, nil); err != nil {
+					log.Printf("⚠️  [Agent %d] Error limpiando .env: %v", agent.ID, err)
+				} else {
+					log.Printf("✅ [Agent %d] Variables de Google limpiadas del .env", agent.ID)
+				}
 			}
 		}
 	}

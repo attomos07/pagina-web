@@ -172,18 +172,30 @@ func (s *AtomicBotDeployService) UpdateGoogleIntegrationEnv(agent *models.Agent)
 		trimmedLine := strings.TrimSpace(line)
 
 		// Actualizar SPREADSHEETID si existe
-		if strings.HasPrefix(trimmedLine, "SPREADSHEETID") && agent.GoogleSheetID != "" {
-			updatedLines = append(updatedLines, fmt.Sprintf("SPREADSHEETID=%s", agent.GoogleSheetID))
-			hasSpreadsheetID = true
-			log.Printf("   ✅ SPREADSHEETID actualizado: %s", agent.GoogleSheetID)
+		if strings.HasPrefix(trimmedLine, "SPREADSHEETID") {
+			if agent.GoogleSheetID != "" {
+				updatedLines = append(updatedLines, fmt.Sprintf("SPREADSHEETID=%s", agent.GoogleSheetID))
+				hasSpreadsheetID = true
+				log.Printf("   ✅ SPREADSHEETID actualizado: %s", agent.GoogleSheetID)
+			} else {
+				updatedLines = append(updatedLines, "#SPREADSHEETID=")
+				hasSpreadsheetID = true
+				log.Printf("   ✅ SPREADSHEETID comentado (eliminado)")
+			}
 			continue
 		}
 
 		// Actualizar GOOGLE_CALENDAR_ID si existe
-		if strings.HasPrefix(trimmedLine, "GOOGLE_CALENDAR_ID") && agent.GoogleCalendarID != "" {
-			updatedLines = append(updatedLines, fmt.Sprintf("GOOGLE_CALENDAR_ID=%s", agent.GoogleCalendarID))
-			hasCalendarID = true
-			log.Printf("   ✅ GOOGLE_CALENDAR_ID actualizado: %s", agent.GoogleCalendarID)
+		if strings.HasPrefix(trimmedLine, "GOOGLE_CALENDAR_ID") {
+			if agent.GoogleCalendarID != "" {
+				updatedLines = append(updatedLines, fmt.Sprintf("GOOGLE_CALENDAR_ID=%s", agent.GoogleCalendarID))
+				hasCalendarID = true
+				log.Printf("   ✅ GOOGLE_CALENDAR_ID actualizado: %s", agent.GoogleCalendarID)
+			} else {
+				updatedLines = append(updatedLines, "#GOOGLE_CALENDAR_ID=")
+				hasCalendarID = true
+				log.Printf("   ✅ GOOGLE_CALENDAR_ID comentado (eliminado)")
+			}
 			continue
 		}
 
@@ -379,28 +391,24 @@ func (s *AtomicBotDeployService) UpdateGeminiAPIKey(agent *models.Agent, apiKey 
 	// Si no existía la key, agregarla
 	if !hasGeminiKey && apiKey != "" {
 		if geminiSectionIndex == -1 {
-			// No existe la sección, agregarla al principio (después de configuración básica)
+			// No existe la sección, agregarla después de PORT
 			insertIndex := 0
 			for i, line := range updatedLines {
-				if strings.Contains(line, "# Configuración del Bot") {
-					// Buscar el final de la sección de configuración básica
-					for j := i + 1; j < len(updatedLines); j++ {
-						if strings.TrimSpace(updatedLines[j]) == "" {
-							insertIndex = j + 1
-							break
-						}
-					}
+				if strings.HasPrefix(strings.TrimSpace(line), "PORT=") {
+					insertIndex = i + 1
 					break
 				}
 			}
 
-			newLines := make([]string, 0, len(updatedLines)+3)
-			newLines = append(newLines, updatedLines[:insertIndex]...)
-			newLines = append(newLines, "# Gemini AI")
-			newLines = append(newLines, fmt.Sprintf("GEMINI_API_KEY=%s", apiKey))
-			newLines = append(newLines, "")
-			newLines = append(newLines, updatedLines[insertIndex:]...)
-			updatedLines = newLines
+			if insertIndex > 0 {
+				newLines := make([]string, 0, len(updatedLines)+3)
+				newLines = append(newLines, updatedLines[:insertIndex]...)
+				newLines = append(newLines, "")
+				newLines = append(newLines, "# Gemini AI")
+				newLines = append(newLines, fmt.Sprintf("GEMINI_API_KEY=%s", apiKey))
+				newLines = append(newLines, updatedLines[insertIndex:]...)
+				updatedLines = newLines
+			}
 		} else {
 			// Insertar después de la sección Gemini AI
 			insertIndex := geminiSectionIndex + 1
