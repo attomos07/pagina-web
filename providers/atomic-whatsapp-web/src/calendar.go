@@ -2,11 +2,13 @@ package src
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
+	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
 )
@@ -15,7 +17,7 @@ var calendarService *calendar.Service
 var calendarID string
 var calendarEnabled bool
 
-// InitCalendar inicializa el servicio de Google Calendar
+// InitCalendar inicializa el servicio de Google Calendar usando OAuth token
 func InitCalendar() error {
 	calendarID = os.Getenv("GOOGLE_CALENDAR_ID")
 	if calendarID == "" {
@@ -29,8 +31,36 @@ func InitCalendar() error {
 		return fmt.Errorf("archivo google.json no encontrado")
 	}
 
+	// Leer el archivo google.json (que contiene el OAuth token)
+	tokenJSON, err := os.ReadFile("google.json")
+	if err != nil {
+		calendarEnabled = false
+		return fmt.Errorf("error leyendo google.json: %w", err)
+	}
+
+	// Intentar parsear como OAuth token
+	var token oauth2.Token
+	if err := json.Unmarshal(tokenJSON, &token); err != nil {
+		calendarEnabled = false
+		return fmt.Errorf("error parseando token de google.json: %w", err)
+	}
+
+	// Validar que el token tenga access_token
+	if token.AccessToken == "" {
+		calendarEnabled = false
+		return fmt.Errorf("token no contiene access_token válido")
+	}
+
 	ctx := context.Background()
-	srv, err := calendar.NewService(ctx, option.WithCredentialsFile("google.json"))
+
+	// Crear token source que maneje el refresh automáticamente
+	tokenSource := oauth2.StaticTokenSource(&token)
+
+	// Crear cliente HTTP autenticado con el token
+	client := oauth2.NewClient(ctx, tokenSource)
+
+	// Crear servicio de Calendar con el cliente HTTP
+	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		calendarEnabled = false
 		return fmt.Errorf("error creando servicio Calendar: %w", err)
@@ -103,9 +133,9 @@ func CreateCalendarEvent(data map[string]string) (*calendar.Event, error) {
 		Reminders: &calendar.EventReminders{
 			UseDefault: false,
 			Overrides: []*calendar.EventReminder{
-				{Method: "email", Minutes: 1440},  // 1 día antes
-				{Method: "popup", Minutes: 60},    // 1 hora antes
-				{Method: "popup", Minutes: 10},    // 10 minutos antes
+				{Method: "email", Minutes: 1440}, // 1 día antes
+				{Method: "popup", Minutes: 60},   // 1 hora antes
+				{Method: "popup", Minutes: 10},   // 10 minutos antes
 			},
 		},
 		Status:       "confirmed",

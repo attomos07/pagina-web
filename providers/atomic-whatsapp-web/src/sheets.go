@@ -2,10 +2,12 @@ package src
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 
+	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 )
@@ -14,7 +16,7 @@ var sheetsService *sheets.Service
 var spreadsheetID string
 var sheetsEnabled bool
 
-// InitSheets inicializa el servicio de Google Sheets
+// InitSheets inicializa el servicio de Google Sheets usando OAuth token
 func InitSheets() error {
 	spreadsheetID = os.Getenv("SPREADSHEETID")
 	if spreadsheetID == "" {
@@ -28,8 +30,36 @@ func InitSheets() error {
 		return fmt.Errorf("archivo google.json no encontrado")
 	}
 
+	// Leer el archivo google.json (que contiene el OAuth token)
+	tokenJSON, err := os.ReadFile("google.json")
+	if err != nil {
+		sheetsEnabled = false
+		return fmt.Errorf("error leyendo google.json: %w", err)
+	}
+
+	// Intentar parsear como OAuth token
+	var token oauth2.Token
+	if err := json.Unmarshal(tokenJSON, &token); err != nil {
+		sheetsEnabled = false
+		return fmt.Errorf("error parseando token de google.json: %w", err)
+	}
+
+	// Validar que el token tenga access_token
+	if token.AccessToken == "" {
+		sheetsEnabled = false
+		return fmt.Errorf("token no contiene access_token válido")
+	}
+
 	ctx := context.Background()
-	srv, err := sheets.NewService(ctx, option.WithCredentialsFile("google.json"))
+
+	// Crear token source que maneje el refresh automáticamente
+	tokenSource := oauth2.StaticTokenSource(&token)
+
+	// Crear cliente HTTP autenticado con el token
+	client := oauth2.NewClient(ctx, tokenSource)
+
+	// Crear servicio de Sheets con el cliente HTTP
+	srv, err := sheets.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		sheetsEnabled = false
 		return fmt.Errorf("error creando servicio Sheets: %w", err)
