@@ -3,6 +3,8 @@ package src
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -74,14 +76,32 @@ func GetDayOfWeek(fecha time.Time) string {
 
 // ParseFecha parsea una fecha en formato DD/MM/YYYY
 func ParseFecha(fechaStr string) (time.Time, error) {
-	partes := strings.Split(fechaStr, "/")
-	if len(partes) != 3 {
-		return time.Time{}, fmt.Errorf("formato de fecha inválido")
+	// Limpiar espacios
+	fechaStr = strings.TrimSpace(fechaStr)
+
+	// Intentar formato DD/MM/YYYY
+	layout := "02/01/2006"
+	fecha, err := time.Parse(layout, fechaStr)
+	if err != nil {
+		// Intentar formato D/M/YYYY o DD/M/YYYY o D/MM/YYYY
+		partes := strings.Split(fechaStr, "/")
+		if len(partes) == 3 {
+			dia, err1 := strconv.Atoi(partes[0])
+			mes, err2 := strconv.Atoi(partes[1])
+			año, err3 := strconv.Atoi(partes[2])
+
+			if err1 == nil && err2 == nil && err3 == nil {
+				// Validar rangos
+				if dia >= 1 && dia <= 31 && mes >= 1 && mes <= 12 && año >= 2000 {
+					fecha = time.Date(año, time.Month(mes), dia, 0, 0, 0, 0, time.Local)
+					return fecha, nil
+				}
+			}
+		}
+		return time.Time{}, fmt.Errorf("formato de fecha inválido: %s (use DD/MM/YYYY)", fechaStr)
 	}
 
-	// Formato: DD/MM/YYYY
-	layout := "02/01/2006"
-	return time.Parse(layout, fechaStr)
+	return fecha, nil
 }
 
 // FormatFecha formatea una fecha a DD/MM/YYYY
@@ -89,35 +109,74 @@ func FormatFecha(fecha time.Time) string {
 	return fecha.Format("02/01/2006")
 }
 
-// ConvertirFechaADia convierte una fecha a día de la semana
+// ConvertirFechaADia convierte una fecha a día de la semana y calcula la fecha exacta
 func ConvertirFechaADia(fecha string) (string, string, error) {
 	fechaLower := NormalizeText(fecha)
 
-	// Si ya es un día de la semana
+	// Si ya es un día de la semana válido
 	if _, exists := COLUMNAS_DIAS[fechaLower]; exists {
 		fechaExacta := CalcularFechaDelDia(fechaLower)
 		return fechaLower, fechaExacta, nil
 	}
 
-	// Convertir palabras comunes
+	// Conversiones de palabras comunes a día de la semana
 	conversiones := map[string]string{
-		"hoy":           GetDayOfWeek(time.Now()),
-		"mañana":        GetDayOfWeek(time.Now().AddDate(0, 0, 1)),
-		"pasado mañana": GetDayOfWeek(time.Now().AddDate(0, 0, 2)),
-		"el lunes":      "lunes",
-		"el martes":     "martes",
-		"el miercoles":  "miércoles",
-		"el miércoles":  "miércoles",
-		"el jueves":     "jueves",
-		"el viernes":    "viernes",
-		"el sabado":     "sábado",
-		"el sábado":     "sábado",
-		"el domingo":    "domingo",
+		"hoy":               GetDayOfWeek(time.Now()),
+		"mañana":            GetDayOfWeek(time.Now().AddDate(0, 0, 1)),
+		"pasado mañana":     GetDayOfWeek(time.Now().AddDate(0, 0, 2)),
+		"pasado manana":     GetDayOfWeek(time.Now().AddDate(0, 0, 2)),
+		"el lunes":          "lunes",
+		"el martes":         "martes",
+		"el miercoles":      "miércoles",
+		"el miércoles":      "miércoles",
+		"el jueves":         "jueves",
+		"el viernes":        "viernes",
+		"el sabado":         "sábado",
+		"el sábado":         "sábado",
+		"el domingo":        "domingo",
+		"este lunes":        "lunes",
+		"este martes":       "martes",
+		"este miercoles":    "miércoles",
+		"este miércoles":    "miércoles",
+		"este jueves":       "jueves",
+		"este viernes":      "viernes",
+		"este sabado":       "sábado",
+		"este sábado":       "sábado",
+		"este domingo":      "domingo",
+		"proximo lunes":     "lunes",
+		"próximo lunes":     "lunes",
+		"proximo martes":    "martes",
+		"próximo martes":    "martes",
+		"proximo miercoles": "miércoles",
+		"próximo miércoles": "miércoles",
+		"proximo jueves":    "jueves",
+		"próximo jueves":    "jueves",
+		"proximo viernes":   "viernes",
+		"próximo viernes":   "viernes",
+		"proximo sabado":    "sábado",
+		"próximo sábado":    "sábado",
+		"proximo domingo":   "domingo",
+		"próximo domingo":   "domingo",
 	}
 
 	if dia, exists := conversiones[fechaLower]; exists {
 		fechaExacta := CalcularFechaDelDia(dia)
 		return dia, fechaExacta, nil
+	}
+
+	// Intentar extraer día de la semana del texto
+	diasSemana := []string{"lunes", "martes", "miércoles", "miercoles", "jueves", "viernes", "sábado", "sabado", "domingo"}
+	for _, dia := range diasSemana {
+		if strings.Contains(fechaLower, dia) {
+			diaKey := dia
+			if dia == "miercoles" {
+				diaKey = "miércoles"
+			} else if dia == "sabado" {
+				diaKey = "sábado"
+			}
+			fechaExacta := CalcularFechaDelDia(diaKey)
+			return diaKey, fechaExacta, nil
+		}
 	}
 
 	// Intentar parsear fecha DD/MM/YYYY
@@ -127,12 +186,25 @@ func ConvertirFechaADia(fecha string) (string, string, error) {
 		return diaSemana, FormatFecha(fechaObj), nil
 	}
 
-	return "", "", fmt.Errorf("formato de fecha no reconocido")
+	// Intentar extraer fecha con regex (números separados por / o -)
+	re := regexp.MustCompile(`(\d{1,2})[/-](\d{1,2})[/-](\d{4})`)
+	matches := re.FindStringSubmatch(fecha)
+	if len(matches) == 4 {
+		fechaFormateada := fmt.Sprintf("%s/%s/%s", matches[1], matches[2], matches[3])
+		fechaObj, err := ParseFecha(fechaFormateada)
+		if err == nil {
+			diaSemana := GetDayOfWeek(fechaObj)
+			return diaSemana, FormatFecha(fechaObj), nil
+		}
+	}
+
+	return "", "", fmt.Errorf("formato de fecha no reconocido: '%s'. Use un día de la semana (lunes, martes, etc.) o formato DD/MM/YYYY", fecha)
 }
 
 // CalcularFechaDelDia calcula la fecha exacta del próximo día especificado
 func CalcularFechaDelDia(diaSemana string) string {
 	hoy := time.Now()
+
 	diasSemanaNum := map[string]time.Weekday{
 		"domingo":   time.Sunday,
 		"lunes":     time.Monday,
@@ -145,10 +217,18 @@ func CalcularFechaDelDia(diaSemana string) string {
 		"sabado":    time.Saturday,
 	}
 
-	diaObjetivo := diasSemanaNum[NormalizeText(diaSemana)]
+	diaObjetivo, exists := diasSemanaNum[NormalizeText(diaSemana)]
+	if !exists {
+		// Fallback: retornar fecha de hoy
+		return FormatFecha(hoy)
+	}
+
 	diaActual := hoy.Weekday()
 
+	// Calcular días hasta el objetivo
 	diasHastaObjetivo := int(diaObjetivo - diaActual)
+
+	// Si el día ya pasó esta semana, programar para la próxima semana
 	if diasHastaObjetivo <= 0 {
 		diasHastaObjetivo += 7
 	}
@@ -161,7 +241,71 @@ func CalcularFechaDelDia(diaSemana string) string {
 func NormalizarHora(hora string) (string, error) {
 	horaLower := NormalizeText(hora)
 
-	// Conversiones comunes
+	// Extraer números de la hora
+	re := regexp.MustCompile(`(\d+)`)
+	matches := re.FindAllString(horaLower, -1)
+
+	var numeroHora int
+	var minutos int = 0
+
+	if len(matches) > 0 {
+		num, _ := strconv.Atoi(matches[0])
+		numeroHora = num
+
+		// Si hay minutos especificados
+		if len(matches) > 1 {
+			min, _ := strconv.Atoi(matches[1])
+			minutos = min
+		}
+	}
+
+	// Detectar si es AM o PM
+	esPM := strings.Contains(horaLower, "tarde") ||
+		strings.Contains(horaLower, "pm") ||
+		strings.Contains(horaLower, "noche")
+
+	esAM := strings.Contains(horaLower, "mañana") ||
+		strings.Contains(horaLower, "manana") ||
+		strings.Contains(horaLower, "am") ||
+		strings.Contains(horaLower, "madrugada")
+
+	// Ajustar para formato 12h
+	if numeroHora > 0 {
+		// Si es PM y no es 12
+		if esPM && numeroHora < 12 {
+			numeroHora += 12
+		}
+		// Si es AM y es 12
+		if esAM && numeroHora == 12 {
+			numeroHora = 0
+		}
+
+		// Convertir a formato de 12h con AM/PM
+		var horaFormateada string
+		if numeroHora == 0 {
+			horaFormateada = fmt.Sprintf("12:%02d AM", minutos)
+		} else if numeroHora < 12 {
+			horaFormateada = fmt.Sprintf("%d:%02d AM", numeroHora, minutos)
+		} else if numeroHora == 12 {
+			horaFormateada = fmt.Sprintf("12:%02d PM", minutos)
+		} else {
+			horaFormateada = fmt.Sprintf("%d:%02d PM", numeroHora-12, minutos)
+		}
+
+		// Buscar coincidencia exacta en HORARIOS
+		for _, h := range HORARIOS {
+			if h == horaFormateada {
+				return h, nil
+			}
+			// Buscar coincidencia aproximada (misma hora, diferentes minutos)
+			if strings.HasPrefix(h, fmt.Sprintf("%d:", numeroHora%12)) ||
+				strings.HasPrefix(h, fmt.Sprintf("%d:", (numeroHora%12)+12)) {
+				return h, nil
+			}
+		}
+	}
+
+	// Conversiones directas comunes
 	conversiones := map[string]string{
 		"9":               "9:00 AM",
 		"10":              "10:00 AM",
@@ -186,8 +330,11 @@ func NormalizarHora(hora string) (string, error) {
 		"6 pm":            "6:00 PM",
 		"7 pm":            "7:00 PM",
 		"9 de la mañana":  "9:00 AM",
+		"9 de la manana":  "9:00 AM",
 		"10 de la mañana": "10:00 AM",
+		"10 de la manana": "10:00 AM",
 		"11 de la mañana": "11:00 AM",
+		"11 de la manana": "11:00 AM",
 		"12 del dia":      "12:00 PM",
 		"1 de la tarde":   "1:00 PM",
 		"2 de la tarde":   "2:00 PM",
@@ -196,47 +343,143 @@ func NormalizarHora(hora string) (string, error) {
 		"5 de la tarde":   "5:00 PM",
 		"6 de la tarde":   "6:00 PM",
 		"7 de la tarde":   "7:00 PM",
+		"7 de la noche":   "7:00 PM",
 		"mañana":          "10:00 AM",
+		"manana":          "10:00 AM",
 		"tarde":           "3:00 PM",
 		"en la mañana":    "10:00 AM",
+		"en la manana":    "10:00 AM",
 		"en la tarde":     "3:00 PM",
+		"por la mañana":   "10:00 AM",
+		"por la manana":   "10:00 AM",
+		"por la tarde":    "3:00 PM",
 	}
 
 	if normalized, exists := conversiones[horaLower]; exists {
 		return normalized, nil
 	}
 
-	// Buscar en horarios disponibles
+	// Buscar en horarios disponibles por coincidencia parcial
 	for _, h := range HORARIOS {
-		if strings.Contains(horaLower, NormalizeText(h)) {
+		if strings.Contains(horaLower, strings.ToLower(h)) ||
+			strings.Contains(NormalizeText(h), horaLower) {
 			return h, nil
 		}
 	}
 
-	return "", fmt.Errorf("hora no válida")
+	return "", fmt.Errorf("hora no válida: '%s'. Horas disponibles: %v", hora, HORARIOS)
 }
 
 // ConvertirHoraA24h convierte hora de formato 12h a 24h
 func ConvertirHoraA24h(hora string) (int, int, error) {
-	// Extraer números y determinar AM/PM
+	// Limpiar hora
+	hora = strings.TrimSpace(hora)
+
 	var horas, minutos int
 	var periodo string
 
-	// Parsear formatos comunes
-	if strings.Contains(hora, "AM") || strings.Contains(hora, "PM") {
-		_, err := fmt.Sscanf(hora, "%d:%d %s", &horas, &minutos, &periodo)
+	// Intentar parsear formato "HH:MM AM/PM"
+	_, err := fmt.Sscanf(hora, "%d:%d %s", &horas, &minutos, &periodo)
+	if err != nil {
+		// Intentar formato "H:MM AM/PM"
+		_, err = fmt.Sscanf(hora, "%d:%d%s", &horas, &minutos, &periodo)
 		if err != nil {
-			return 0, 0, err
+			return 0, 0, fmt.Errorf("formato de hora inválido: %s", hora)
 		}
+	}
 
-		if strings.ToUpper(periodo) == "PM" && horas != 12 {
-			horas += 12
-		} else if strings.ToUpper(periodo) == "AM" && horas == 12 {
-			horas = 0
-		}
-	} else {
-		return 0, 0, fmt.Errorf("formato de hora inválido")
+	periodo = strings.ToUpper(strings.TrimSpace(periodo))
+
+	// Convertir a 24h
+	if periodo == "PM" && horas != 12 {
+		horas += 12
+	} else if periodo == "AM" && horas == 12 {
+		horas = 0
+	}
+
+	// Validar rangos
+	if horas < 0 || horas > 23 || minutos < 0 || minutos > 59 {
+		return 0, 0, fmt.Errorf("hora fuera de rango: %d:%d", horas, minutos)
 	}
 
 	return horas, minutos, nil
+}
+
+// GetNearestAvailableTime obtiene la hora disponible más cercana
+func GetNearestAvailableTime(horaDeseada string) (string, error) {
+	// Intentar normalizar la hora deseada
+	horaNormalizada, err := NormalizarHora(horaDeseada)
+	if err == nil {
+		return horaNormalizada, nil
+	}
+
+	// Si no se puede normalizar, retornar la primera hora disponible
+	if len(HORARIOS) > 0 {
+		return HORARIOS[0], nil
+	}
+
+	return "", fmt.Errorf("no hay horarios disponibles")
+}
+
+// ValidateDateInFuture verifica que una fecha sea en el futuro
+func ValidateDateInFuture(fechaStr string) error {
+	fecha, err := ParseFecha(fechaStr)
+	if err != nil {
+		return err
+	}
+
+	hoy := time.Now()
+	hoy = time.Date(hoy.Year(), hoy.Month(), hoy.Day(), 0, 0, 0, 0, hoy.Location())
+
+	if fecha.Before(hoy) {
+		return fmt.Errorf("la fecha debe ser hoy o en el futuro")
+	}
+
+	return nil
+}
+
+// GetWeekdayInSpanish convierte time.Weekday a español
+func GetWeekdayInSpanish(weekday time.Weekday) string {
+	dias := map[time.Weekday]string{
+		time.Sunday:    "domingo",
+		time.Monday:    "lunes",
+		time.Tuesday:   "martes",
+		time.Wednesday: "miércoles",
+		time.Thursday:  "jueves",
+		time.Friday:    "viernes",
+		time.Saturday:  "sábado",
+	}
+	return dias[weekday]
+}
+
+// ParseHumanDate parsea fechas en lenguaje natural
+func ParseHumanDate(texto string) (string, error) {
+	textoLower := NormalizeText(texto)
+
+	// Casos especiales
+	if strings.Contains(textoLower, "hoy") {
+		return FormatFecha(time.Now()), nil
+	}
+
+	if strings.Contains(textoLower, "mañana") || strings.Contains(textoLower, "manana") {
+		return FormatFecha(time.Now().AddDate(0, 0, 1)), nil
+	}
+
+	if strings.Contains(textoLower, "pasado mañana") || strings.Contains(textoLower, "pasado manana") {
+		return FormatFecha(time.Now().AddDate(0, 0, 2)), nil
+	}
+
+	// Intentar como día de la semana
+	_, fechaExacta, err := ConvertirFechaADia(texto)
+	if err == nil {
+		return fechaExacta, nil
+	}
+
+	// Intentar como fecha DD/MM/YYYY
+	fecha, err := ParseFecha(texto)
+	if err == nil {
+		return FormatFecha(fecha), nil
+	}
+
+	return "", fmt.Errorf("no se pudo interpretar la fecha: %s", texto)
 }
