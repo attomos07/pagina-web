@@ -18,6 +18,7 @@ type RegisterRequest struct {
 	Email        string `json:"email" binding:"required,email"`
 	Password     string `json:"password" binding:"required,min=8"`
 	BusinessType string `json:"businessType" binding:"required"`
+	BusinessSize string `json:"businessSize" binding:"required"` // ✨ NUEVO
 }
 
 type LoginRequest struct {
@@ -41,6 +42,23 @@ func Register(c *gin.Context) {
 	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 	req.PhoneNumber = strings.TrimSpace(req.PhoneNumber)
 	req.BusinessName = strings.TrimSpace(req.BusinessName)
+	req.BusinessType = strings.TrimSpace(req.BusinessType)
+	req.BusinessSize = strings.TrimSpace(req.BusinessSize) // ✨ NUEVO
+
+	// ✨ NUEVO: Validar que businessSize sea uno de los valores permitidos
+	validSizes := map[string]bool{
+		"microempresa": true,
+		"pequena":      true,
+		"mediana":      true,
+		"grande":       true,
+	}
+
+	if !validSizes[req.BusinessSize] {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Tamaño de empresa no válido. Valores permitidos: microempresa, pequena, mediana, grande",
+		})
+		return
+	}
 
 	// Verificar si el email ya existe
 	var existingUser models.User
@@ -58,6 +76,7 @@ func Register(c *gin.Context) {
 		Email:                req.Email,
 		Company:              req.BusinessName,
 		BusinessType:         req.BusinessType,
+		BusinessSize:         req.BusinessSize, // ✨ NUEVO
 		PhoneNumber:          req.PhoneNumber,
 		SharedServerStatus:   "pending",
 		SharedServerID:       0,
@@ -82,8 +101,8 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	log.Printf("✅ [User %d] Usuario creado exitosamente: %s (Tel: %s, Negocio: %s)",
-		user.ID, user.Email, user.PhoneNumber, user.Company)
+	log.Printf("✅ [User %d] Usuario creado exitosamente: %s (Tel: %s, Negocio: %s, Tamaño: %s)",
+		user.ID, user.Email, user.PhoneNumber, user.Company, user.BusinessSize) // ✨ ACTUALIZADO
 
 	// Generar token JWT
 	token, err := utils.GenerateToken(user.ID, user.Email)
@@ -109,6 +128,7 @@ func Register(c *gin.Context) {
 			"email":        user.Email,
 			"company":      user.Company,
 			"businessType": user.BusinessType,
+			"businessSize": user.BusinessSize, // ✨ NUEVO
 			"phoneNumber":  user.PhoneNumber,
 		},
 		"info": "Selecciona tu plan para continuar",
@@ -167,6 +187,7 @@ func Login(c *gin.Context) {
 			"email":        user.Email,
 			"company":      user.Company,
 			"businessType": user.BusinessType,
+			"businessSize": user.BusinessSize, // ✨ NUEVO
 			"phoneNumber":  user.PhoneNumber,
 		},
 	})
@@ -204,6 +225,7 @@ func GetCurrentUser(c *gin.Context) {
 			"email":         user.Email,
 			"company":       user.Company,
 			"businessType":  user.BusinessType,
+			"businessSize":  user.BusinessSize, // ✨ NUEVO
 			"phoneNumber":   user.PhoneNumber,
 			"projectStatus": user.GetGCPProjectStatus(),
 		},

@@ -15,6 +15,7 @@ type User struct {
 	Password     string `gorm:"size:255;not null" json:"-"`
 	Company      string `gorm:"size:255" json:"company"`
 	BusinessType string `gorm:"size:100" json:"businessType"`
+	BusinessSize string `gorm:"size:50;index" json:"businessSize"` // ✨ NUEVO
 	PhoneNumber  string `gorm:"size:50" json:"phoneNumber"`
 
 	// Servidor Compartido de Hetzner

@@ -206,6 +206,45 @@
                             <div class="form-error" id="businessTypeError"></div>
                         </div>
 
+                        <!-- NUEVO: Tamaño de Negocio -->
+                        <div class="form-group">
+                            <label for="businessSize" class="form-label">Tamaño de Negocio</label>
+                            <div class="input-container">
+                                <i class="lni lni-layers input-icon"></i>
+                                <div class="custom-select-wrapper">
+                                    <input type="text" 
+                                           id="businessSize" 
+                                           name="businessSize" 
+                                           class="form-input form-select" 
+                                           readonly
+                                           required>
+                                    <i class="lni lni-chevron-down select-arrow"></i>
+                                    <div class="select-dropdown" id="businessSizeDropdown">
+                                        <div class="select-options-container" id="selectSizeOptionsContainer">
+                                            <div class="select-option" data-value="micro" data-keywords="micro microempresa pequeño muy pequeno 1-10 empleados">
+                                                <i class="lni lni-user"></i>
+                                                <span>Microempresa (1-10 empleados)</span>
+                                            </div>
+                                            <div class="select-option" data-value="pequena" data-keywords="pequeña pequena small 11-50 empleados">
+                                                <i class="lni lni-users"></i>
+                                                <span>Pequeña Empresa (11-50 empleados)</span>
+                                            </div>
+                                            <div class="select-option" data-value="mediana" data-keywords="mediana medium 51-250 empleados">
+                                                <i class="lni lni-network"></i>
+                                                <span>Mediana Empresa (51-250 empleados)</span>
+                                            </div>
+                                            <div class="select-option" data-value="grande" data-keywords="grande big large 250+ empleados corporativo">
+                                                <i class="lni lni-apartment"></i>
+                                                <span>Grande Empresa (250+ empleados)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="input-hint">¿Cuántos empleados tiene tu empresa?</small>
+                            <div class="form-error" id="businessSizeError"></div>
+                        </div>
+
                         <div class="form-group">
                             <label for="password" class="form-label">Contraseña</label>
                             <div class="input-container">

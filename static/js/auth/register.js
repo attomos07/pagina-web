@@ -1,5 +1,5 @@
 // ============================================
-// REGISTER JAVASCRIPT - CON API REAL Y GOOGLE OAUTH
+// REGISTER JAVASCRIPT - CON TAMAÑO DE NEGOCIO
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -11,8 +11,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initSocialRegister();
     initAutoFormat();
     initCustomSelect();
+    initBusinessSizeSelect(); // NUEVO
     initPhoneNumberFormat();
-    checkURLParams(); // NUEVO: Verificar errores de OAuth en URL
+    checkURLParams();
     
     console.log('✅ Register funcionalidades inicializadas');
 });
@@ -36,8 +37,6 @@ function checkURLParams() {
     
     if (error && errorMessages[error]) {
         showNotificationIOS(errorMessages[error], 'error');
-        
-        // Limpiar URL sin recargar página
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 }
@@ -126,8 +125,9 @@ function validateRegisterField(field) {
             break;
 
         case 'businessType':
+        case 'businessSize':
             if (!value) {
-                errorMessage = 'Selecciona el giro de tu negocio';
+                errorMessage = fieldName === 'businessType' ? 'Selecciona el giro de tu negocio' : 'Selecciona el tamaño de tu negocio';
                 isValid = false;
             }
             break;
@@ -154,28 +154,22 @@ function initPhoneNumberFormat() {
 
     // ===== CÓDIGO DE PAÍS (LADA) =====
     
-    // Auto-agregar "+" al inicio
     phoneCodeInput.addEventListener('focus', function() {
         if (!this.value.startsWith('+')) {
             this.value = '+' + this.value.replace(/\+/g, '');
         }
     });
 
-    // Formatear código de país
     phoneCodeInput.addEventListener('input', function(e) {
         let value = this.value;
-        
-        // Remover todo excepto números y el primer +
         value = value.replace(/[^\d+]/g, '');
         
-        // Asegurar que solo haya un + al inicio
         if (value.startsWith('+')) {
             value = '+' + value.substring(1).replace(/\+/g, '');
         } else {
             value = '+' + value.replace(/\+/g, '');
         }
         
-        // Limitar a 4 caracteres (+XXX)
         if (value.length > 4) {
             value = value.substring(0, 4);
         }
@@ -183,23 +177,18 @@ function initPhoneNumberFormat() {
         this.value = value;
     });
 
-    // Si borra todo, mantener el +
     phoneCodeInput.addEventListener('blur', function() {
         if (this.value === '' || this.value === '+') {
-            this.value = '+52'; // México por defecto
+            this.value = '+52';
         }
     });
 
     // ===== NÚMERO DE TELÉFONO =====
     
-    // Formatear número mientras escribe
     phoneNumberInput.addEventListener('input', function(e) {
-        let value = this.value.replace(/[^\d\s]/g, ''); // Solo números y espacios
+        let value = this.value.replace(/[^\d\s]/g, '');
+        value = value.replace(/\s/g, '');
         
-        // Auto-formatear con espacios cada 3 dígitos
-        value = value.replace(/\s/g, ''); // Remover espacios existentes
-        
-        // Aplicar formato: XXX XXX XXXX
         if (value.length > 6) {
             value = value.substring(0, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6, 10);
         } else if (value.length > 3) {
@@ -209,7 +198,6 @@ function initPhoneNumberFormat() {
         this.value = value;
     });
 
-    // Inicializar con código de México
     if (!phoneCodeInput.value) {
         phoneCodeInput.value = '+52';
     }
@@ -218,7 +206,6 @@ function initPhoneNumberFormat() {
 }
 
 function isValidPhoneNumber(phoneCode, phoneNumber) {
-    // Validar código de país
     const cleanCode = phoneCode.replace(/\s/g, '');
     const codeRegex = /^\+\d{1,3}$/;
     
@@ -226,7 +213,6 @@ function isValidPhoneNumber(phoneCode, phoneNumber) {
         return false;
     }
     
-    // Validar número (debe tener al menos 7 dígitos)
     const cleanNumber = phoneNumber.replace(/\s/g, '');
     const numberRegex = /^\d{7,15}$/;
     
@@ -338,9 +324,8 @@ async function handleRegisterSubmit(e) {
     
     // Validar todos los campos requeridos
     let isValid = true;
-    const requiredFields = ['businessName', 'phoneNumber', 'email', 'password', 'businessType'];
+    const requiredFields = ['businessName', 'phoneNumber', 'email', 'password', 'businessType', 'businessSize']; // AGREGADO businessSize
     
-    // Validar phoneCode por separado
     const phoneCodeField = form.querySelector('#phoneCode');
     if (phoneCodeField && !phoneCodeField.value.trim()) {
         showFieldError(phoneCodeField, 'Código de país requerido');
@@ -354,7 +339,6 @@ async function handleRegisterSubmit(e) {
         }
     });
 
-    // Validar términos y condiciones
     const termsCheckbox = document.getElementById('terms');
     if (!termsCheckbox.checked) {
         showNotificationIOS('Debes aceptar los términos y condiciones', 'error');
@@ -370,50 +354,47 @@ async function handleRegisterSubmit(e) {
         return;
     }
     
-    // Preparar datos - obtener el valor real del select personalizado
+    // Preparar datos
     const businessTypeInput = document.getElementById('businessType');
     const businessTypeValue = businessTypeInput.getAttribute('data-value') || businessTypeInput.value;
     
-    // Obtener código de país y número por separado
+    const businessSizeInput = document.getElementById('businessSize');
+    const businessSizeValue = businessSizeInput.getAttribute('data-value') || businessSizeInput.value;
+    
     const phoneCodeElement = document.getElementById('phoneCode');
     const phoneCodeValue = phoneCodeElement.value.trim();
     const phoneNumberValue = formData.get('phoneNumber').replace(/\s/g, '');
-    
-    // Combinar código + número
     const fullPhoneNumber = phoneCodeValue + phoneNumberValue;
     
     const data = {
         businessName: formData.get('businessName'),
-        phoneNumber: fullPhoneNumber, // +52664123456
+        phoneNumber: fullPhoneNumber,
         email: formData.get('email'),
         password: formData.get('password'),
-        businessType: businessTypeValue
+        businessType: businessTypeValue,
+        businessSize: businessSizeValue // NUEVO
     };
     
     console.log('📤 Datos a enviar:', { ...data, password: '***' });
     
-    // Mostrar loading
     const submitBtn = form.querySelector('.auth-btn');
     setButtonLoading(submitBtn, true);
     
     try {
-        // Enviar petición al servidor
         const response = await fetch('/api/register', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(data),
-            credentials: 'include' // Importante para cookies
+            credentials: 'include'
         });
 
         const result = await response.json();
 
         if (response.ok) {
-            // Registro exitoso
             handleRegisterSuccess(result);
         } else {
-            // Error en registro
             handleRegisterError(result.error || 'Error al crear la cuenta');
             setButtonLoading(submitBtn, false);
         }
@@ -427,16 +408,15 @@ async function handleRegisterSubmit(e) {
 function handleRegisterSuccess(data) {
     console.log('✅ Registro exitoso:', data);
     
-    // Mostrar notificación de éxito con animación iOS
     showNotificationIOS('¡Cuenta creada exitosamente!', 'success');
     
     trackRegisterEvent('register_success', {
         method: 'email',
-        business_type: data.user?.businessType || 'unknown'
+        business_type: data.user?.businessType || 'unknown',
+        business_size: data.user?.businessSize || 'unknown'
     });
     
-    // 🆕 NUEVO: Usar redirect del servidor (select-plan para nuevos usuarios)
-    const redirectUrl = data.redirect || '/dashboard'; // Default a dashboard si no viene redirect
+    const redirectUrl = data.redirect || '/dashboard';
     
     setTimeout(() => {
         window.location.href = redirectUrl;
@@ -471,8 +451,6 @@ function initSocialRegister() {
 function registerWithGoogle() {
     showNotificationIOS('Redirigiendo a Google...', 'info');
     trackRegisterEvent('social_register_attempt', { provider: 'google' });
-    
-    // Redirigir al endpoint de Google OAuth
     window.location.href = '/api/auth/google/login';
 }
 
@@ -485,7 +463,7 @@ function registerWithFacebook() {
 }
 
 // ============================================
-// CUSTOM SELECT DROPDOWN CON ANIMACIÓN CASCADA
+// CUSTOM SELECT DROPDOWN - GIRO DE NEGOCIO
 // ============================================
 
 function initCustomSelect() {
@@ -638,6 +616,96 @@ function initCustomSelect() {
     }
 
     console.log('🎯 Custom select con búsqueda inicializado');
+}
+
+// ============================================
+// CUSTOM SELECT DROPDOWN - TAMAÑO DE NEGOCIO
+// ============================================
+
+function initBusinessSizeSelect() {
+    const selectWrapper = document.querySelector('#businessSize').closest('.custom-select-wrapper');
+    const selectInput = document.getElementById('businessSize');
+    const dropdown = document.getElementById('businessSizeDropdown');
+    const optionsContainer = document.getElementById('selectSizeOptionsContainer');
+    const options = optionsContainer.querySelectorAll('.select-option');
+    
+    if (!selectWrapper || !selectInput || !dropdown) {
+        console.warn('⚠️ Business size select elements no encontrados');
+        return;
+    }
+
+    selectInput.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleSizeDropdown();
+    });
+
+    options.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.stopPropagation();
+            selectSizeOption(this);
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!selectWrapper.contains(e.target)) {
+            closeSizeDropdown();
+        }
+    });
+
+    function toggleSizeDropdown() {
+        const isActive = selectWrapper.classList.contains('active');
+        
+        if (isActive) {
+            closeSizeDropdown();
+        } else {
+            openSizeDropdown();
+        }
+    }
+
+    function openSizeDropdown() {
+        selectWrapper.classList.add('active');
+        selectInput.classList.add('active');
+        
+        const visibleOptions = optionsContainer.querySelectorAll('.select-option');
+        visibleOptions.forEach((option, index) => {
+            option.style.animation = 'none';
+            setTimeout(() => {
+                option.style.animation = '';
+            }, 10);
+        });
+
+        trackRegisterEvent('business_size_dropdown_opened');
+    }
+
+    function closeSizeDropdown() {
+        selectWrapper.classList.remove('active');
+        selectInput.classList.remove('active');
+    }
+
+    function selectSizeOption(option) {
+        const value = option.getAttribute('data-value');
+        const text = option.querySelector('span').textContent;
+
+        selectInput.value = text;
+        selectInput.setAttribute('data-value', value);
+
+        options.forEach(opt => opt.classList.remove('selected'));
+        option.classList.add('selected');
+
+        clearFieldError(selectInput);
+        showFieldSuccess(selectInput);
+
+        closeSizeDropdown();
+
+        trackRegisterEvent('business_size_selected', {
+            business_size: value,
+            business_size_name: text
+        });
+
+        console.log(`✅ Tamaño seleccionado: ${text} (${value})`);
+    }
+
+    console.log('🎯 Business size select inicializado');
 }
 
 // ============================================
