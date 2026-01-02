@@ -349,8 +349,19 @@ func CreateAgent(c *gin.Context) {
 				log.Printf("⚠️  [Agent %d] Sin Gemini API Key, bot funcionará sin IA", agent.ID)
 			}
 
-			// Desplegar AtomicBot
-			if err := atomicService.DeployAtomicBot(&agent, geminiAPIKey, docData); err != nil {
+			// 🔥 CORRECCIÓN AQUÍ: Obtener credenciales de Google del agente
+			var googleCredentials []byte
+			if agent.GoogleConnected && agent.GoogleToken != "" {
+				googleCredentials = []byte(agent.GoogleToken)
+				log.Printf("📊 [Agent %d] Credenciales de Google encontradas para integración", agent.ID)
+				log.Printf("   - Google Sheets ID: %s", agent.GoogleSheetID)
+				log.Printf("   - Google Calendar ID: %s", agent.GoogleCalendarID)
+			} else {
+				log.Printf("⚠️  [Agent %d] Sin integración de Google - las citas no se guardarán en Sheets/Calendar", agent.ID)
+			}
+
+			// Desplegar AtomicBot con las credenciales de Google
+			if err := atomicService.DeployAtomicBot(&agent, geminiAPIKey, googleCredentials); err != nil {
 				log.Printf("❌ [Agent %d] Error desplegando AtomicBot: %v", agent.ID, err)
 				agent.DeployStatus = "error"
 				config.DB.Save(&agent)
@@ -380,6 +391,15 @@ func CreateAgent(c *gin.Context) {
 				log.Printf("   💡 Configura tu Gemini API Key en los ajustes del agente")
 				log.Printf("   🔗 Obtener API Key: https://aistudio.google.com/apikey")
 			}
+
+			if agent.GoogleConnected {
+				log.Printf("   - Google Sheets: Habilitado ✅")
+				log.Printf("   - Google Calendar: Habilitado ✅")
+			} else {
+				log.Printf("   - Google Sheets/Calendar: Sin configurar")
+				log.Printf("   💡 Conecta Google Calendar en los ajustes del agente")
+			}
+
 			log.Printf("========================================")
 
 		} else {
