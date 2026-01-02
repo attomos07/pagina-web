@@ -52,7 +52,8 @@ func InitGemini() error {
 	}
 
 	geminiClient = client
-	geminiModel = client.GenerativeModel("gemini-2.0-flash-exp")
+	// 🔥 CAMBIO AQUÍ: Usar gemini-2.5-flash-lite en lugar de gemini-2.0-flash-exp
+	geminiModel = client.GenerativeModel("gemini-2.5-flash-lite")
 
 	// Configurar parámetros del modelo
 	geminiModel.SetTemperature(0.7)
@@ -77,7 +78,8 @@ func InitGemini() error {
 
 	geminiEnabled = true
 	log.Println("✅ Gemini AI inicializado y verificado correctamente")
-	log.Println("📊 Modelo: gemini-2.0-flash-exp")
+	// 🔥 CAMBIO AQUÍ: Actualizar el log para reflejar el modelo correcto
+	log.Println("📊 Modelo: gemini-2.5-flash-lite")
 	log.Println("🎯 Temperatura: 0.7")
 	log.Println("📝 Max Tokens: 1024")
 
