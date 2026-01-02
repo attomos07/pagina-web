@@ -174,15 +174,15 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 	}
 	log.Printf("✅ [Agent %d] Calendar creado: %s", agent.ID, calendarID)
 
-	// PASO 2: Crear Spreadsheet automáticamente
-	log.Printf("📊 [Agent %d] Creando Google Sheet...", agent.ID)
+	// PASO 2: Crear Spreadsheet automáticamente con formato de calendario semanal
+	log.Printf("📊 [Agent %d] Creando Google Sheet con formato de calendario...", agent.ID)
 	spreadsheetID, err := h.sheetsService.CreateSpreadsheet(ctx, string(tokenJSON), agent.Name)
 	if err != nil {
 		log.Printf("❌ [Agent %d] Error creando Sheet: %v", agent.ID, err)
 		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=sheet_creation_failed")
 		return
 	}
-	log.Printf("✅ [Agent %d] Sheet creado: %s", agent.ID, spreadsheetID)
+	log.Printf("✅ [Agent %d] Sheet creado con formato de calendario: %s", agent.ID, spreadsheetID)
 
 	// PASO 3: Guardar todo en la base de datos
 	now := time.Now()
@@ -365,7 +365,8 @@ func (h *GoogleIntegrationHandler) CreateAppointment(c *gin.Context) {
 		EndTime     time.Time `json:"end_time" binding:"required"`
 		ClientName  string    `json:"client_name" binding:"required"`
 		ClientEmail string    `json:"client_email"`
-		ClientPhone string    `json:"client_phone"`
+		ClientPhone string    `json:"client_phone" binding:"required"`
+		WorkerName  string    `json:"worker_name"` // Nuevo: nombre del trabajador/barbero
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -401,7 +402,7 @@ func (h *GoogleIntegrationHandler) CreateAppointment(c *gin.Context) {
 
 	log.Printf("✅ [Agent %d] Evento creado en Calendar: %s", agent.ID, eventID)
 
-	// Agregar a Sheets
+	// Agregar a Sheets con formato de calendario
 	appointmentData := services.AppointmentData{
 		EventID:     eventID,
 		Date:        req.StartTime.Format("2006-01-02"),
@@ -412,6 +413,7 @@ func (h *GoogleIntegrationHandler) CreateAppointment(c *gin.Context) {
 		ClientPhone: req.ClientPhone,
 		Description: req.Description,
 		Status:      "Confirmada",
+		WorkerName:  req.WorkerName, // Incluir el nombre del trabajador
 	}
 
 	err = h.sheetsService.AddAppointment(ctx, agent.GoogleToken, agent.GoogleSheetID, appointmentData)
@@ -423,11 +425,11 @@ func (h *GoogleIntegrationHandler) CreateAppointment(c *gin.Context) {
 		return
 	}
 
-	log.Printf("✅ [Agent %d] Cita agregada a Sheet", agent.ID)
+	log.Printf("✅ [Agent %d] Cita agregada al calendario en Sheet", agent.ID)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success":  true,
 		"event_id": eventID,
-		"message":  "Cita creada exitosamente",
+		"message":  "Cita creada exitosamente en Calendar y Sheet",
 	})
 }
