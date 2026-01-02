@@ -147,6 +147,15 @@ type Agent struct {
 	// Tipo de bot desplegado: "builderbot" (Node.js) o "atomic" (Go)
 	BotType string `gorm:"size:50;default:builderbot" json:"botType"`
 
+	// =============================================
+	// 🆕 SERVIDOR INDIVIDUAL PARA BUILDERBOT
+	// =============================================
+	// Cada BuilderBot (plan de pago) tiene su propio servidor Hetzner
+	ServerID       int    `gorm:"default:0" json:"serverId"`                   // ID del servidor en Hetzner
+	ServerIP       string `gorm:"size:50" json:"serverIp"`                     // IP del servidor
+	ServerPassword string `gorm:"size:255" json:"-"`                           // Password SSH (oculto en JSON)
+	ServerStatus   string `gorm:"size:50;default:pending" json:"serverStatus"` // Estado: pending, creating, ready, error
+
 	// Credenciales de Chatwoot
 	ChatwootEmail       string `gorm:"size:255" json:"chatwootEmail"`
 	ChatwootPassword    string `gorm:"size:255" json:"-"`
@@ -213,6 +222,11 @@ func (a *Agent) IsAtomicBot() bool {
 // IsBuilderBot verifica si el agente usa BuilderBot
 func (a *Agent) IsBuilderBot() bool {
 	return a.BotType == "builderbot" || a.BotType == ""
+}
+
+// HasOwnServer verifica si el agente tiene servidor individual (BuilderBot)
+func (a *Agent) HasOwnServer() bool {
+	return a.IsBuilderBot() && a.ServerID > 0
 }
 
 // GetEnvVarsForBot genera las variables de entorno para el bot

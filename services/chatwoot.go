@@ -267,7 +267,7 @@ func (c *ChatwootService) CreateAccountAndUser(user *models.User, agent *models.
 	accountID, inboxID, _, err := c.createCompleteSetupViaConsole(
 		email,
 		password,
-		user.FirstName+" "+user.LastName,
+		user.Company, // Usar nombre del negocio en lugar de FirstName + LastName
 		accountName,
 		inboxName,
 		agent.PhoneNumber,

@@ -8,14 +8,13 @@ import (
 	"strings"
 
 	"attomos/config"
-	"attomos/models"
 
 	"github.com/joho/godotenv"
 )
 
 func main() {
 	fmt.Println("╔═══════════════════════════════════════════════════════════════╗")
-	fmt.Println("║     🧹 LIMPIEZA: ELIMINAR COLUMNAS OBSOLETAS DE USERS        ║")
+	fmt.Println("║  🧹 LIMPIEZA DEFINITIVA: ELIMINAR COLUMNAS OBSOLETAS         ║")
 	fmt.Println("╚═══════════════════════════════════════════════════════════════╝")
 	fmt.Println()
 
@@ -29,9 +28,16 @@ func main() {
 	config.ConnectDatabase()
 	fmt.Println("✅ Conectado a la base de datos\n")
 
-	fmt.Println("📋 Esta migración eliminará las siguientes columnas de 'users':")
+	// Mostrar columnas actuales ANTES de la migración
+	fmt.Println("📋 COLUMNAS ACTUALES EN 'users':")
+	fmt.Println(strings.Repeat("─", 65))
+	showCurrentColumns()
+
 	fmt.Println()
-	fmt.Println("   ❌ Columnas de Meta WhatsApp:")
+	fmt.Println("❌ COLUMNAS QUE SE ELIMINARÁN:")
+	fmt.Println(strings.Repeat("─", 65))
+	fmt.Println()
+	fmt.Println("   📱 Meta WhatsApp (8 columnas):")
 	fmt.Println("      • meta_access_token")
 	fmt.Println("      • meta_waba_id")
 	fmt.Println("      • meta_phone_number_id")
@@ -41,39 +47,33 @@ func main() {
 	fmt.Println("      • meta_connected_at")
 	fmt.Println("      • meta_token_expires_at")
 	fmt.Println()
-	fmt.Println("   ❌ Columnas de Servidor Compartido:")
+	fmt.Println("   🖥️  Servidor Compartido (4 columnas):")
 	fmt.Println("      • shared_server_id")
 	fmt.Println("      • shared_server_ip")
 	fmt.Println("      • shared_server_password")
 	fmt.Println("      • shared_server_status")
 	fmt.Println()
-	fmt.Println("   ❌ Columnas de Nombres:")
+	fmt.Println("   👤 Nombres (2 columnas):")
 	fmt.Println("      • first_name")
 	fmt.Println("      • last_name")
 	fmt.Println()
-	fmt.Println("💡 Estas columnas ya no son utilizadas en el sistema")
+	fmt.Println("⚠️  TOTAL: 14 columnas serán eliminadas")
 	fmt.Println()
-	fmt.Print("¿Continuar? (escribe 'SI' para continuar): ")
+	fmt.Print("¿Continuar? (escribe 'SI ELIMINAR' para confirmar): ")
 
 	reader := bufio.NewReader(os.Stdin)
 	confirmation, _ := reader.ReadString('\n')
-	confirmation = strings.TrimSpace(strings.ToUpper(confirmation))
+	confirmation = strings.TrimSpace(confirmation)
 
-	if confirmation != "SI" {
+	if confirmation != "SI ELIMINAR" {
 		fmt.Println("❌ Migración cancelada")
 		return
 	}
 
 	fmt.Println()
 	fmt.Println("═══════════════════════════════════════════════════════════════")
-	fmt.Println("INICIANDO LIMPIEZA")
+	fmt.Println("INICIANDO ELIMINACIÓN")
 	fmt.Println("═══════════════════════════════════════════════════════════════")
-
-	// Verificar que la tabla users existe
-	fmt.Println("\n🔍 Verificando que tabla 'users' existe...")
-	var userCount int64
-	config.DB.Model(&models.User{}).Count(&userCount)
-	fmt.Printf("✅ Tabla users existe con %d registros\n", userCount)
 
 	// Lista de columnas a eliminar
 	columnsToRemove := []string{
@@ -96,53 +96,67 @@ func main() {
 		"last_name",
 	}
 
-	fmt.Println("\n📝 Eliminando columnas obsoletas...")
+	fmt.Println()
+	fmt.Println("📝 Eliminando columnas...")
 	fmt.Println(strings.Repeat("─", 65))
 
 	successCount := 0
 	skipCount := 0
 	errorCount := 0
 
-	for _, column := range columnsToRemove {
-		fmt.Printf("   → Procesando: %s... ", column)
+	for i, column := range columnsToRemove {
+		fmt.Printf("   [%2d/14] %-30s ", i+1, column)
 
 		// Verificar si la columna existe
 		if !columnExists(column, "users") {
-			fmt.Printf("⏭️  No existe (saltando)\n")
+			fmt.Printf("⏭️  No existe\n")
 			skipCount++
 			continue
 		}
 
-		// Eliminar la columna
-		dropSQL := fmt.Sprintf("ALTER TABLE users DROP COLUMN %s", column)
+		// Intentar eliminar con DROP COLUMN (sin IF EXISTS para forzar error si falla)
+		dropSQL := fmt.Sprintf("ALTER TABLE users DROP COLUMN `%s`", column)
 		if err := config.DB.Exec(dropSQL).Error; err != nil {
-			fmt.Printf("❌ Error: %v\n", err)
+			fmt.Printf("❌ Error\n")
+			fmt.Printf("        └─ %v\n", err)
 			errorCount++
+
+			// Intentar método alternativo
+			fmt.Printf("        └─ Intentando método alternativo...\n")
+			altDropSQL := fmt.Sprintf("ALTER TABLE users DROP `%s`", column)
+			if err := config.DB.Exec(altDropSQL).Error; err != nil {
+				fmt.Printf("        └─ ❌ Falló también\n")
+			} else {
+				fmt.Printf("        └─ ✅ Eliminada con método alternativo\n")
+				successCount++
+			}
 		} else {
 			fmt.Printf("✅ Eliminada\n")
 			successCount++
 		}
 	}
 
-	// Eliminar índices relacionados si existen
-	fmt.Println("\n📝 Eliminando índices obsoletos...")
+	// Eliminar índices relacionados
+	fmt.Println()
+	fmt.Println("📝 Eliminando índices obsoletos...")
 	fmt.Println(strings.Repeat("─", 65))
 
 	indicesToRemove := []string{
 		"idx_users_meta_connected",
 		"idx_users_meta_phone_number_id",
 		"idx_users_shared_server_status",
+		"idx_users_business_size",
 	}
 
 	for _, index := range indicesToRemove {
-		fmt.Printf("   → Procesando índice: %s... ", index)
+		fmt.Printf("   → %-40s ", index)
 
 		if !indexExists(index, "users") {
-			fmt.Printf("⏭️  No existe (saltando)\n")
+			fmt.Printf("⏭️  No existe\n")
 			continue
 		}
 
-		dropIndexSQL := fmt.Sprintf("DROP INDEX %s ON users", index)
+		dropIndexSQL := fmt.Sprintf("DROP INDEX `%s` ON users", index)
 		if err := config.DB.Exec(dropIndexSQL).Error; err != nil {
 			fmt.Printf("⚠️  Error: %v\n", err)
 		} else {
@@ -151,69 +165,71 @@ func main() {
 	}
 
 	// Resumen
+	fmt.Println()
 	fmt.Println(strings.Repeat("─", 65))
-	fmt.Printf("\n📊 Resumen:\n")
-	fmt.Printf("   ✅ Columnas eliminadas: %d\n", successCount)
-	fmt.Printf("   ⏭️  Columnas saltadas (no existían): %d\n", skipCount)
+	fmt.Printf("\n📊 RESUMEN:\n")
+	fmt.Printf("   ✅ Eliminadas exitosamente: %d columnas\n", successCount)
+	fmt.Printf("   ⏭️  Saltadas (no existían): %d columnas\n", skipCount)
 	if errorCount > 0 {
-		fmt.Printf("   ❌ Errores: %d\n", errorCount)
+		fmt.Printf("   ❌ Errores: %d columnas\n", errorCount)
+		fmt.Println()
+		fmt.Println("⚠️  ATENCIÓN: Hubo errores al eliminar algunas columnas")
+		fmt.Println("   Revisa los mensajes de error arriba para más detalles")
 	}
 
 	// Verificación final
-	fmt.Println("\n🔍 Verificando estructura actual de 'users'...")
-
-	type TableColumn struct {
-		Field   string
-		Type    string
-		Null    string
-		Key     string
-		Default *string
-		Extra   string
-	}
-
-	var userColumns []TableColumn
-	config.DB.Raw("DESCRIBE users").Scan(&userColumns)
-
-	fmt.Println("\n📋 Columnas actuales en 'users':")
-	for _, col := range userColumns {
-		fmt.Printf("   • %s (%s)\n", col.Field, col.Type)
-	}
-
-	// Verificar que no queden columnas obsoletas
-	hasObsoleteColumns := false
-	for _, col := range userColumns {
-		for _, obsolete := range columnsToRemove {
-			if col.Field == obsolete {
-				hasObsoleteColumns = true
-				fmt.Printf("   ⚠️  Columna obsoleta todavía presente: %s\n", obsolete)
-			}
-		}
-	}
+	fmt.Println()
+	fmt.Println("═══════════════════════════════════════════════════════════════")
+	fmt.Println("VERIFICACIÓN FINAL")
+	fmt.Println("═══════════════════════════════════════════════════════════════")
 
 	fmt.Println()
-	if !hasObsoleteColumns {
+	fmt.Println("📋 COLUMNAS RESTANTES EN 'users':")
+	fmt.Println(strings.Repeat("─", 65))
+	showCurrentColumns()
+
+	// Verificar que no queden columnas obsoletas
+	fmt.Println()
+	remainingObsolete := checkRemainingObsoleteColumns(columnsToRemove)
+
+	fmt.Println()
+	if len(remainingObsolete) == 0 {
 		fmt.Println("═══════════════════════════════════════════════════════════════")
 		fmt.Println("✅ LIMPIEZA COMPLETADA EXITOSAMENTE")
 		fmt.Println("═══════════════════════════════════════════════════════════════")
 		fmt.Println()
+		fmt.Println("🎉 Todas las columnas obsoletas han sido eliminadas")
+		fmt.Println()
 		fmt.Println("📋 Próximos pasos:")
-		fmt.Println("   1. Reinicia tu aplicación")
-		fmt.Println("   2. Verifica que todo funcione correctamente")
-		fmt.Println("   3. Las columnas obsoletas han sido eliminadas")
-		fmt.Println()
-		fmt.Println("💡 Estructura simplificada:")
-		fmt.Println("   • Columnas de Meta: Eliminadas")
-		fmt.Println("   • Columnas de servidor compartido: Eliminadas")
-		fmt.Println("   • Columnas de nombres: Eliminadas (usar businessName)")
-		fmt.Println()
-		fmt.Println("📊 Total de usuarios en sistema: ", userCount)
+		fmt.Println("   1. ✅ Actualiza models/user.go (elimina campos obsoletos)")
+		fmt.Println("   2. ✅ Actualiza handlers/auth.go (elimina referencias)")
+		fmt.Println("   3. ✅ Actualiza handlers/user.go (elimina referencias)")
+		fmt.Println("   4. 🔄 Reinicia tu aplicación")
+		fmt.Println("   5. ✅ Verifica que todo funcione correctamente")
 	} else {
-		fmt.Println("⚠️  Todavía quedan columnas obsoletas. Intenta ejecutar manualmente:")
+		fmt.Println("═══════════════════════════════════════════════════════════════")
+		fmt.Println("⚠️  LIMPIEZA INCOMPLETA")
+		fmt.Println("═══════════════════════════════════════════════════════════════")
 		fmt.Println()
-		for _, col := range columnsToRemove {
-			fmt.Printf("   ALTER TABLE users DROP COLUMN IF EXISTS %s;\n", col)
+		fmt.Printf("❌ Quedan %d columnas obsoletas sin eliminar:\n", len(remainingObsolete))
+		for _, col := range remainingObsolete {
+			fmt.Printf("   • %s\n", col)
+		}
+		fmt.Println()
+		fmt.Println("💡 Intenta ejecutar manualmente en MySQL:")
+		fmt.Println()
+		for _, col := range remainingObsolete {
+			fmt.Printf("   ALTER TABLE users DROP COLUMN `%s`;\n", col)
+		}
+		fmt.Println()
+		fmt.Println("O conéctate directamente a MySQL y ejecuta:")
+		fmt.Println("   USE tu_base_de_datos;")
+		for _, col := range remainingObsolete {
+			fmt.Printf("   ALTER TABLE users DROP COLUMN IF EXISTS `%s`;\n", col)
 		}
 	}
+
+	fmt.Println()
 }
 
 // columnExists verifica si una columna existe en una tabla
@@ -242,4 +258,58 @@ func indexExists(indexName, tableName string) bool {
 	`
 	config.DB.Raw(query, tableName, indexName).Scan(&count)
 	return count > 0
+}
+
+// showCurrentColumns muestra todas las columnas actuales de la tabla users
+func showCurrentColumns() {
+	type TableColumn struct {
+		Field   string
+		Type    string
+		Null    string
+		Key     string
+		Default *string
+		Extra   string
+	}
+
+	var columns []TableColumn
+	config.DB.Raw("DESCRIBE users").Scan(&columns)
+
+	for _, col := range columns {
+		keyIndicator := "   "
+		if col.Key == "PRI" {
+			keyIndicator = "🔑 "
+		} else if col.Key == "MUL" {
+			keyIndicator = "📇 "
+		}
+		fmt.Printf("   %s %-30s %s\n", keyIndicator, col.Field, col.Type)
+	}
+
+	fmt.Printf("\n   Total: %d columnas\n", len(columns))
+}
+
+// checkRemainingObsoleteColumns verifica si quedan columnas obsoletas
+func checkRemainingObsoleteColumns(obsoleteColumns []string) []string {
+	var remaining []string
+
+	type TableColumn struct {
+		Field string
+	}
+
+	var columns []TableColumn
+	config.DB.Raw("SELECT COLUMN_NAME as Field FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'").Scan(&columns)
+
+	for _, col := range columns {
+		for _, obsolete := range obsoleteColumns {
+			if col.Field == obsolete {
+				remaining = append(remaining, col.Field)
+				fmt.Printf("   ⚠️  Columna obsoleta aún presente: %s\n", obsolete)
+			}
+		}
+	}
+
+	if len(remaining) == 0 {
+		fmt.Println("   ✅ No quedan columnas obsoletas")
+	}
+
+	return remaining
 }

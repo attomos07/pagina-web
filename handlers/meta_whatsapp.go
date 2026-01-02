@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -52,7 +53,7 @@ func NewMetaWhatsAppHandler() (*MetaWhatsAppHandler, error) {
 	return &MetaWhatsAppHandler{config: config}, nil
 }
 
-// InitiateConnection genera la URL de OAuth para conectar WhatsApp
+// InitiateConnection genera la URL de OAuth para conectar WhatsApp a un agente específico
 func (h *MetaWhatsAppHandler) InitiateConnection(c *gin.Context) {
 	// Obtener usuario autenticado
 	userInterface, exists := c.Get("user")
@@ -63,8 +64,29 @@ func (h *MetaWhatsAppHandler) InitiateConnection(c *gin.Context) {
 
 	user := userInterface.(*models.User)
 
+	// Obtener agent_id de los parámetros
+	agentIDStr := c.Query("agent_id")
+	if agentIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "agent_id es requerido"})
+		return
+	}
+
+	agentID, err := strconv.ParseUint(agentIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "agent_id inválido"})
+		return
+	}
+
+	// Verificar que el agente pertenece al usuario
+	var agent models.Agent
+	if err := config.DB.Where("id = ? AND user_id = ?", agentID, user.ID).First(&agent).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Agente no encontrado"})
+		return
+	}
+
 	// Generar state token para CSRF protection
-	stateToken := fmt.Sprintf("%d:%d", user.ID, time.Now().Unix())
+	// Formato: user_id:agent_id:timestamp
+	stateToken := fmt.Sprintf("%d:%d:%d", user.ID, agentID, time.Now().Unix())
 	stateEncoded := base64.URLEncoding.EncodeToString([]byte(stateToken))
 
 	// Guardar state en cookie (expira en 10 minutos)
@@ -89,6 +111,7 @@ func (h *MetaWhatsAppHandler) InitiateConnection(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"auth_url": authURL,
+		"agent_id": agentID,
 	})
 }
 
@@ -99,89 +122,91 @@ func (h *MetaWhatsAppHandler) HandleCallback(c *gin.Context) {
 	state := c.Query("state")
 
 	if code == "" {
-		c.Redirect(http.StatusFound, "/business-portfolio?error=authorization_failed")
+		c.Redirect(http.StatusFound, "/integrations?error=authorization_failed")
 		return
 	}
 
 	// Validar state token (CSRF protection)
 	savedState, err := c.Cookie("meta_oauth_state")
 	if err != nil || savedState != state {
-		c.Redirect(http.StatusFound, "/business-portfolio?error=invalid_state")
+		c.Redirect(http.StatusFound, "/integrations?error=invalid_state")
 		return
 	}
 
 	// Limpiar cookie de state
 	c.SetCookie("meta_oauth_state", "", -1, "/", "", false, true)
 
-	// Decodificar state para obtener user_id
+	// Decodificar state para obtener user_id y agent_id
 	stateDecoded, err := base64.URLEncoding.DecodeString(state)
 	if err != nil {
-		c.Redirect(http.StatusFound, "/business-portfolio?error=invalid_state")
+		c.Redirect(http.StatusFound, "/integrations?error=invalid_state")
 		return
 	}
 
 	parts := strings.Split(string(stateDecoded), ":")
-	if len(parts) < 2 {
-		c.Redirect(http.StatusFound, "/business-portfolio?error=invalid_state")
+	if len(parts) < 3 {
+		c.Redirect(http.StatusFound, "/integrations?error=invalid_state")
 		return
 	}
 
-	var userID uint
+	var userID, agentID uint
 	fmt.Sscanf(parts[0], "%d", &userID)
+	fmt.Sscanf(parts[1], "%d", &agentID)
 
 	// Intercambiar code por access token
 	accessToken, err := h.exchangeCodeForToken(code)
 	if err != nil {
-		log.Printf("Error intercambiando código: %v", err)
-		c.Redirect(http.StatusFound, "/business-portfolio?error=token_exchange_failed")
+		log.Printf("❌ Error intercambiando código: %v", err)
+		c.Redirect(http.StatusFound, "/integrations?error=token_exchange_failed")
 		return
 	}
 
 	// Obtener WABA ID
 	wabaID, err := h.getWABAID(accessToken)
 	if err != nil {
-		log.Printf("Error obteniendo WABA ID: %v", err)
-		c.Redirect(http.StatusFound, "/business-portfolio?error=waba_not_found")
+		log.Printf("❌ Error obteniendo WABA ID: %v", err)
+		c.Redirect(http.StatusFound, "/integrations?error=waba_not_found")
 		return
 	}
 
 	// Obtener información del número de teléfono
 	phoneInfo, err := h.getPhoneNumberInfo(accessToken, wabaID)
 	if err != nil {
-		log.Printf("Error obteniendo info del teléfono: %v", err)
-		c.Redirect(http.StatusFound, "/business-portfolio?error=phone_info_failed")
+		log.Printf("❌ Error obteniendo info del teléfono: %v", err)
+		c.Redirect(http.StatusFound, "/integrations?error=phone_info_failed")
 		return
 	}
 
-	// Guardar credenciales en el usuario
-	var user models.User
-	if err := config.DB.First(&user, userID).Error; err != nil {
-		c.Redirect(http.StatusFound, "/business-portfolio?error=user_not_found")
+	// Verificar que el agente existe y pertenece al usuario
+	var agent models.Agent
+	if err := config.DB.Where("id = ? AND user_id = ?", agentID, userID).First(&agent).Error; err != nil {
+		c.Redirect(http.StatusFound, "/integrations?error=agent_not_found")
 		return
 	}
 
+	// Guardar credenciales en el agente
 	now := time.Now()
 	tokenExpires := now.Add(60 * 24 * time.Hour) // 60 días
 
-	user.MetaAccessToken = accessToken
-	user.MetaWABAID = wabaID
-	user.MetaPhoneNumberID = phoneInfo.PhoneNumberID
-	user.MetaDisplayNumber = phoneInfo.DisplayNumber
-	user.MetaVerifiedName = phoneInfo.VerifiedName
-	user.MetaConnected = true
-	user.MetaConnectedAt = &now
-	user.MetaTokenExpiresAt = &tokenExpires
+	agent.MetaAccessToken = accessToken
+	agent.MetaWABAID = wabaID
+	agent.MetaPhoneNumberID = phoneInfo.PhoneNumberID
+	agent.MetaDisplayNumber = phoneInfo.DisplayNumber
+	agent.MetaVerifiedName = phoneInfo.VerifiedName
+	agent.MetaConnected = true
+	agent.MetaConnectedAt = &now
+	agent.MetaTokenExpiresAt = &tokenExpires
 
-	if err := config.DB.Save(&user).Error; err != nil {
-		log.Printf("Error guardando credenciales: %v", err)
-		c.Redirect(http.StatusFound, "/business-portfolio?error=save_failed")
+	if err := config.DB.Save(&agent).Error; err != nil {
+		log.Printf("❌ Error guardando credenciales: %v", err)
+		c.Redirect(http.StatusFound, "/integrations?error=save_failed")
 		return
 	}
 
-	log.Printf("✅ WhatsApp conectado para usuario %d: %s (%s)", userID, phoneInfo.DisplayNumber, phoneInfo.VerifiedName)
+	log.Printf("✅ WhatsApp conectado para agente %d: %s (%s)", agentID, phoneInfo.DisplayNumber, phoneInfo.VerifiedName)
 
 	// Redirigir al frontend con éxito
-	c.Redirect(http.StatusFound, "/business-portfolio?success=whatsapp_connected")
+	c.Redirect(http.StatusFound, fmt.Sprintf("/agents/%d?success=whatsapp_connected", agentID))
 }
 
 // exchangeCodeForToken intercambia el código de autorización por un access token
@@ -319,7 +344,7 @@ func (h *MetaWhatsAppHandler) getPhoneNumberInfo(accessToken, wabaID string) (*P
 	}, nil
 }
 
-// GetConnectionStatus obtiene el estado de conexión del usuario
+// GetConnectionStatus obtiene el estado de conexión de un agente específico
 func (h *MetaWhatsAppHandler) GetConnectionStatus(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
@@ -329,17 +354,40 @@ func (h *MetaWhatsAppHandler) GetConnectionStatus(c *gin.Context) {
 
 	user := userInterface.(*models.User)
 
+	// Obtener agent_id de los parámetros
+	agentIDStr := c.Param("agent_id")
+	if agentIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "agent_id es requerido"})
+		return
+	}
+
+	agentID, err := strconv.ParseUint(agentIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "agent_id inválido"})
+		return
+	}
+
+	// Verificar que el agente pertenece al usuario
+	var agent models.Agent
+	if err := config.DB.Where("id = ? AND user_id = ?", agentID, user.ID).First(&agent).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Agente no encontrado"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"connected":        user.MetaConnected,
-		"phone_number_id":  user.MetaPhoneNumberID,
-		"display_number":   user.MetaDisplayNumber,
-		"verified_name":    user.MetaVerifiedName,
-		"connected_at":     user.MetaConnectedAt,
-		"token_expires_at": user.MetaTokenExpiresAt,
+		"agent_id":         agent.ID,
+		"connected":        agent.MetaConnected,
+		"phone_number_id":  agent.MetaPhoneNumberID,
+		"display_number":   agent.MetaDisplayNumber,
+		"verified_name":    agent.MetaVerifiedName,
+		"connected_at":     agent.MetaConnectedAt,
+		"token_expires_at": agent.MetaTokenExpiresAt,
+		"days_remaining":   agent.GetMetaTokenDaysRemaining(),
+		"token_expired":    agent.IsMetaTokenExpired(),
 	})
 }
 
-// DisconnectWhatsApp desconecta WhatsApp del usuario
+// DisconnectWhatsApp desconecta WhatsApp de un agente específico
 func (h *MetaWhatsAppHandler) DisconnectWhatsApp(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
@@ -349,25 +397,46 @@ func (h *MetaWhatsAppHandler) DisconnectWhatsApp(c *gin.Context) {
 
 	user := userInterface.(*models.User)
 
-	// Limpiar credenciales de Meta
-	user.MetaAccessToken = ""
-	user.MetaWABAID = ""
-	user.MetaPhoneNumberID = ""
-	user.MetaDisplayNumber = ""
-	user.MetaVerifiedName = ""
-	user.MetaConnected = false
-	user.MetaConnectedAt = nil
-	user.MetaTokenExpiresAt = nil
+	// Obtener agent_id de los parámetros
+	agentIDStr := c.Param("agent_id")
+	if agentIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "agent_id es requerido"})
+		return
+	}
 
-	if err := config.DB.Save(&user).Error; err != nil {
+	agentID, err := strconv.ParseUint(agentIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "agent_id inválido"})
+		return
+	}
+
+	// Verificar que el agente pertenece al usuario
+	var agent models.Agent
+	if err := config.DB.Where("id = ? AND user_id = ?", agentID, user.ID).First(&agent).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Agente no encontrado"})
+		return
+	}
+
+	// Limpiar credenciales de Meta
+	agent.MetaAccessToken = ""
+	agent.MetaWABAID = ""
+	agent.MetaPhoneNumberID = ""
+	agent.MetaDisplayNumber = ""
+	agent.MetaVerifiedName = ""
+	agent.MetaConnected = false
+	agent.MetaConnectedAt = nil
+	agent.MetaTokenExpiresAt = nil
+
+	if err := config.DB.Save(&agent).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al desconectar"})
 		return
 	}
 
-	log.Printf("✅ WhatsApp desconectado para usuario %d", user.ID)
+	log.Printf("✅ WhatsApp desconectado para agente %d", agent.ID)
 
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "WhatsApp desconectado exitosamente",
+		"success":  true,
+		"message":  "WhatsApp desconectado exitosamente",
+		"agent_id": agent.ID,
 	})
 }

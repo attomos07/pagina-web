@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"attomos/config"
 	"attomos/models"
@@ -88,29 +87,11 @@ func DeleteAccount(c *gin.Context) {
 	log.Printf("🗑️  [User %d] Iniciando eliminación de cuenta: %s", user.ID, user.Email)
 
 	// ==================== PASO 1: Eliminar Agentes ====================
-	log.Printf("📋 [User %d] PASO 1/5: Eliminando agentes...", user.ID)
+	log.Printf("📋 [User %d] PASO 1/4: Eliminando agentes...", user.ID)
 
 	var agents []models.Agent
 	if err := config.DB.Where("user_id = ?", user.ID).Find(&agents).Error; err != nil {
 		log.Printf("❌ [User %d] Error obteniendo agentes: %v", user.ID, err)
-	}
-
-	// Detener y eliminar bots del servidor
-	if user.SharedServerIP != "" && user.SharedServerPassword != "" {
-		deployService := services.NewBotDeployService(user.SharedServerIP, user.SharedServerPassword)
-		if err := deployService.Connect(); err != nil {
-			log.Printf("⚠️  [User %d] Error conectando a servidor: %v", user.ID, err)
-		} else {
-			defer deployService.Close()
-
-			for _, agent := range agents {
-				if err := deployService.StopAndRemoveBot(agent.ID); err != nil {
-					log.Printf("⚠️  [Agent %d] Error eliminando bot: %v", agent.ID, err)
-				} else {
-					log.Printf("✅ [Agent %d] Bot eliminado del servidor", agent.ID)
-				}
-			}
-		}
 	}
 
 	// Eliminar agentes de BD
@@ -120,40 +101,8 @@ func DeleteAccount(c *gin.Context) {
 		log.Printf("✅ [User %d] %d agentes eliminados de BD", user.ID, len(agents))
 	}
 
-	// ==================== PASO 2: Eliminar Servidor Hetzner ====================
-	log.Printf("📋 [User %d] PASO 2/5: Eliminando servidor Hetzner...", user.ID)
-
-	if user.SharedServerID > 0 {
-		hetznerService, err := services.NewHetznerService()
-		if err != nil {
-			log.Printf("⚠️  [User %d] Error inicializando Hetzner: %v", user.ID, err)
-		} else {
-			if err := hetznerService.DeleteServer(user.SharedServerID); err != nil {
-				log.Printf("⚠️  [User %d] Error eliminando servidor Hetzner: %v", user.ID, err)
-			} else {
-				log.Printf("✅ [User %d] Servidor Hetzner %d eliminado", user.ID, user.SharedServerID)
-			}
-		}
-	} else {
-		log.Printf("ℹ️  [User %d] Sin servidor Hetzner que eliminar", user.ID)
-	}
-
-	// ==================== PASO 3: Eliminar DNS de Cloudflare ====================
-	log.Printf("📋 [User %d] PASO 3/5: Eliminando DNS de Cloudflare...", user.ID)
-
-	cloudflareService, err := services.NewCloudflareService()
-	if err != nil {
-		log.Printf("⚠️  [User %d] Error inicializando Cloudflare: %v", user.ID, err)
-	} else {
-		if err := cloudflareService.DeleteChatwootDNS(user.ID); err != nil {
-			log.Printf("⚠️  [User %d] Error eliminando DNS: %v", user.ID, err)
-		} else {
-			log.Printf("✅ [User %d] DNS eliminado de Cloudflare", user.ID)
-		}
-	}
-
-	// ==================== PASO 4: Eliminar Suscripciones y Pagos ====================
-	log.Printf("📋 [User %d] PASO 4/5: Eliminando suscripciones y pagos...", user.ID)
+	// ==================== PASO 2: Eliminar Suscripciones y Pagos ====================
+	log.Printf("📋 [User %d] PASO 2/4: Eliminando suscripciones y pagos...", user.ID)
 
 	// Cancelar suscripciones en Stripe (si existen)
 	var subscriptions []models.Subscription
@@ -193,11 +142,11 @@ func DeleteAccount(c *gin.Context) {
 		log.Printf("✅ [User %d] Pagos eliminados de BD", user.ID)
 	}
 
-	// ==================== PASO 5: Eliminar Proyecto GCP ====================
-	log.Printf("📋 [User %d] PASO 5/5: Eliminando proyecto Google Cloud...", user.ID)
+	// ==================== PASO 3: Eliminar Proyecto GCP ====================
+	log.Printf("📋 [User %d] PASO 3/4: Eliminando proyecto Google Cloud...", user.ID)
 
 	var gcpProject models.GoogleCloudProject
-	err = config.DB.Where("user_id = ?", user.ID).First(&gcpProject).Error
+	err := config.DB.Where("user_id = ?", user.ID).First(&gcpProject).Error
 
 	if err == nil && gcpProject.ProjectID != "" {
 		// Eliminar proyecto de GCP
@@ -223,8 +172,8 @@ func DeleteAccount(c *gin.Context) {
 		log.Printf("ℹ️  [User %d] Sin proyecto GCP que eliminar", user.ID)
 	}
 
-	// ==================== PASO 6: Eliminar Usuario ====================
-	log.Printf("📋 [User %d] PASO 6/6: Eliminando usuario...", user.ID)
+	// ==================== PASO 4: Eliminar Usuario ====================
+	log.Printf("📋 [User %d] PASO 4/4: Eliminando usuario...", user.ID)
 
 	if err := config.DB.Delete(&user).Error; err != nil {
 		log.Printf("❌ [User %d] Error eliminando usuario: %v", user.ID, err)
@@ -269,35 +218,15 @@ func GetUserProfile(c *gin.Context) {
 	hasActiveSubscription := config.DB.Where("user_id = ? AND status IN (?)",
 		user.ID, []string{"active", "trialing"}).First(&activeSubscription).Error == nil
 
-	// Calcular días restantes del token de Meta
-	var metaTokenDaysRemaining int
-	if user.MetaConnected && user.MetaTokenExpiresAt != nil {
-		duration := time.Until(*user.MetaTokenExpiresAt)
-		metaTokenDaysRemaining = int(duration.Hours() / 24)
-		if metaTokenDaysRemaining < 0 {
-			metaTokenDaysRemaining = 0
-		}
-	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"user": gin.H{
-			"id":                     user.ID,
-			"firstName":              user.FirstName,
-			"lastName":               user.LastName,
-			"email":                  user.Email,
-			"company":                user.Company,
-			"businessType":           user.BusinessType,
-			"phoneNumber":            user.PhoneNumber,
-			"sharedServerId":         user.SharedServerID,
-			"sharedServerIp":         user.SharedServerIP,
-			"sharedServerStatus":     user.SharedServerStatus,
-			"metaConnected":          user.MetaConnected,
-			"metaWabaId":             user.MetaWABAID,
-			"metaPhoneNumberId":      user.MetaPhoneNumberID,
-			"metaDisplayNumber":      user.MetaDisplayNumber,
-			"metaVerifiedName":       user.MetaVerifiedName,
-			"metaTokenDaysRemaining": metaTokenDaysRemaining,
-			"createdAt":              user.CreatedAt,
+			"id":           user.ID,
+			"email":        user.Email,
+			"company":      user.Company,
+			"businessType": user.BusinessType,
+			"businessSize": user.BusinessSize,
+			"phoneNumber":  user.PhoneNumber,
+			"createdAt":    user.CreatedAt,
 		},
 		"stats": gin.H{
 			"agentCount": agentCount,
@@ -326,10 +255,9 @@ func UpdateUserProfile(c *gin.Context) {
 	user := userInterface.(*models.User)
 
 	type UpdateProfileRequest struct {
-		FirstName    string `json:"firstName"`
-		LastName     string `json:"lastName"`
 		Company      string `json:"company"`
 		BusinessType string `json:"businessType"`
+		BusinessSize string `json:"businessSize"`
 		PhoneNumber  string `json:"phoneNumber"`
 	}
 
@@ -343,17 +271,23 @@ func UpdateUserProfile(c *gin.Context) {
 	}
 
 	// Actualizar campos si no están vacíos
-	if req.FirstName != "" {
-		user.FirstName = req.FirstName
-	}
-	if req.LastName != "" {
-		user.LastName = req.LastName
-	}
 	if req.Company != "" {
 		user.Company = req.Company
 	}
 	if req.BusinessType != "" {
 		user.BusinessType = req.BusinessType
+	}
+	if req.BusinessSize != "" {
+		// Validar businessSize
+		validSizes := map[string]bool{
+			"microempresa": true,
+			"pequena":      true,
+			"mediana":      true,
+			"grande":       true,
+		}
+		if validSizes[req.BusinessSize] {
+			user.BusinessSize = req.BusinessSize
+		}
 	}
 	if req.PhoneNumber != "" {
 		user.PhoneNumber = req.PhoneNumber
@@ -374,11 +308,10 @@ func UpdateUserProfile(c *gin.Context) {
 		"message": "Perfil actualizado exitosamente",
 		"user": gin.H{
 			"id":           user.ID,
-			"firstName":    user.FirstName,
-			"lastName":     user.LastName,
 			"email":        user.Email,
 			"company":      user.Company,
 			"businessType": user.BusinessType,
+			"businessSize": user.BusinessSize,
 			"phoneNumber":  user.PhoneNumber,
 		},
 	})
@@ -471,7 +404,7 @@ func ResetPassword(c *gin.Context) {
 	})
 }
 
-// GetServerInfo obtiene información del servidor compartido
+// GetServerInfo obtiene información básica del usuario (compatibilidad)
 func GetServerInfo(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
@@ -485,12 +418,12 @@ func GetServerInfo(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"server": gin.H{
-			"id":       user.SharedServerID,
-			"ip":       user.SharedServerIP,
-			"status":   user.SharedServerStatus,
-			"hasSSH":   user.SharedServerPassword != "",
-			"sshUser":  "root",
-			"endpoint": fmt.Sprintf("https://chat-user%d.attomos.com", user.ID),
+			"id":       0,
+			"ip":       "",
+			"status":   "not_applicable",
+			"hasSSH":   false,
+			"sshUser":  "",
+			"endpoint": fmt.Sprintf("https://api.attomos.com/user/%d", user.ID),
 		},
 	})
 }

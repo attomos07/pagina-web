@@ -157,7 +157,7 @@ func main() {
 
 		// Agentes
 		protected.POST("/agents", handlers.CreateAgent)
-		protected.GET("/agents", handlers.GetUserAgents)
+		protected.GET("/agents", handlers.GetAgents)
 		protected.GET("/agents/:id", handlers.GetAgent)
 		protected.GET("/agents/:id/qr", handlers.GetAgentQRCode)
 		protected.GET("/agents/:id/logs", handlers.GetAgentLogs)
@@ -310,7 +310,7 @@ func main() {
 		port = "8080"
 	}
 
-	log.Println("╔══════════════════════════════════════════════════════════╗")
+	log.Println("╔═══════════════════════════════════════════════════════════╗")
 	log.Printf("║ 🚀 Servidor Attomos iniciado exitosamente               ║")
 	log.Printf("║ 📍 Puerto: %s                                           ║", port)
 	log.Printf("║ 🌐 URL Local: http://localhost:%s                       ║", port)
@@ -318,7 +318,7 @@ func main() {
 	log.Println("║ 📊 Arquitectura de Bots:                                 ║")
 	log.Println("║    • Plan GRATUITO → AtomicBot (Servidor Compartido)    ║")
 	log.Println("║    • Plan de PAGO  → BuilderBot (Servidor Individual)   ║")
-	log.Println("╚══════════════════════════════════════════════════════════╝")
+	log.Println("╚═══════════════════════════════════════════════════════════╝")
 
 	if err := router.Run(":" + port); err != nil {
 		log.Fatal("❌ Error al iniciar servidor:", err)

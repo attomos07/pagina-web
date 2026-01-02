@@ -105,13 +105,11 @@ func GoogleCallback(c *gin.Context) {
 	if result.Error != nil {
 		// Usuario no existe, crear cuenta nueva
 		user = models.User{
-			FirstName:          userInfo.GivenName,
-			LastName:           userInfo.FamilyName,
-			Email:              userInfo.Email,
-			Company:            userInfo.Name,
-			BusinessType:       "otro",
-			PhoneNumber:        "",
-			SharedServerStatus: "pending",
+			Email:        userInfo.Email,
+			Company:      userInfo.Name, // Usar nombre completo como company
+			BusinessType: "otro",
+			BusinessSize: "microempresa", // Valor por defecto
+			PhoneNumber:  "",
 		}
 
 		// Generar contraseña aleatoria (no será usada, pero es requerida)

@@ -69,19 +69,13 @@ func GetAgentLogs(c *gin.Context) {
 		}
 
 	} else {
-		// BuilderBot = servidor individual del usuario
-		var user models.User
-		if err := config.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Usuario no encontrado"})
+		// BuilderBot = servidor individual del agente
+		if !agent.HasOwnServer() {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Agente no tiene servidor asignado"})
 			return
 		}
 
-		if user.SharedServerIP == "" || user.SharedServerPassword == "" {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Servidor del usuario no está configurado"})
-			return
-		}
-
-		deployService := services.NewBotDeployService(user.SharedServerIP, user.SharedServerPassword)
+		deployService := services.NewBotDeployService(agent.ServerIP, agent.ServerPassword)
 		if err := deployService.Connect(); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error conectando al servidor: " + err.Error()})
 			return

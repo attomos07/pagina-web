@@ -384,7 +384,7 @@ func CreateAgent(c *gin.Context) {
 
 		} else {
 			// ========================
-			// BUILDER BOT (Node.js) - SERVIDOR POR USUARIO
+			// BUILDER BOT (Node.js) - SERVIDOR INDIVIDUAL POR AGENTE
 			// ========================
 			log.Println("\n" + strings.Repeat("═", 80))
 			log.Printf("║ %s ║", centerText("DESPLIEGUE DE BUILDER BOT (NODE.JS)", 76))
@@ -440,140 +440,124 @@ func CreateAgent(c *gin.Context) {
 				}
 			}
 
-			// PASO 2: Crear servidor compartido si es el primer agente (CRÍTICO)
-			if isFirstAgent {
-				log.Println("\n" + strings.Repeat("═", 80))
-				log.Printf("║ %s ║", centerText("PASO 2/5: INFRAESTRUCTURA CLOUD", 76))
-				log.Println(strings.Repeat("═", 80))
-				log.Printf("🖥️  [User %d] Creando infraestructura compartida\n", user.ID)
+			// PASO 2: Crear servidor individual para este BuilderBot (CRÍTICO)
+			log.Println("\n" + strings.Repeat("═", 80))
+			log.Printf("║ %s ║", centerText("PASO 2/5: CREAR SERVIDOR INDIVIDUAL", 76))
+			log.Println(strings.Repeat("═", 80))
+			log.Printf("🖥️  [Agent %d] Creando servidor individual para BuilderBot\n", agent.ID)
 
-				user.SharedServerStatus = "creating"
-				config.DB.Save(&user)
+			agent.ServerStatus = "creating"
+			config.DB.Save(&agent)
 
-				hetznerService, err := services.NewHetznerService()
-				if err != nil {
-					log.Printf("❌ [User %d] Error inicializando servicio Hetzner: %v", user.ID, err)
-					user.SharedServerStatus = "error"
-					agent.DeployStatus = "error"
-					config.DB.Save(&user)
-					config.DB.Save(&agent)
-					return
-				}
-
-				serverName := fmt.Sprintf("attomos-user-%d", user.ID)
-				serverResp, err := hetznerService.CreateServer(serverName, user.ID)
-				if err != nil {
-					log.Printf("❌ [User %d] Error creando infraestructura: %v", user.ID, err)
-					user.SharedServerStatus = "error"
-					agent.DeployStatus = "error"
-					config.DB.Save(&user)
-					config.DB.Save(&agent)
-					return
-				}
-
-				user.SharedServerID = serverResp.Server.ID
-				user.SharedServerIP = serverResp.Server.PublicNet.IPv4.IP
-				user.SharedServerPassword = serverResp.RootPassword
-				user.SharedServerStatus = "provisioning"
-				config.DB.Save(&user)
-
-				log.Printf("✅ [User %d] Infraestructura creada exitosamente:", user.ID)
-				log.Printf("   - ID: %d", serverResp.Server.ID)
-				log.Printf("   - IP: %s", serverResp.Server.PublicNet.IPv4.IP)
-
-				// Esperar a que el servidor esté en estado "running"
-				log.Printf("⏳ [User %d] Esperando que la infraestructura esté lista...", user.ID)
-				if err := hetznerService.WaitForServer(serverResp.Server.ID, 5*time.Minute); err != nil {
-					log.Printf("❌ [User %d] Timeout esperando infraestructura: %v", user.ID, err)
-					user.SharedServerStatus = "error"
-					agent.DeployStatus = "error"
-					config.DB.Save(&user)
-					config.DB.Save(&agent)
-					return
-				}
-
-				log.Printf("✅ [User %d] Infraestructura en estado 'running'", user.ID)
-
-				user.SharedServerStatus = "initializing"
-				config.DB.Save(&user)
-
-				go hetznerService.MonitorCloudInitLogs(user.SharedServerIP, user.SharedServerPassword, 10*time.Minute)
-
-			} else {
-				log.Printf("========================================")
-				log.Printf("ℹ️ [User %d] USANDO INFRAESTRUCTURA COMPARTIDA EXISTENTE", user.ID)
-				log.Printf("   - IP: %s", user.SharedServerIP)
-				log.Printf("   - Estado: %s", user.SharedServerStatus)
-				log.Printf("========================================")
+			hetznerService, err := services.NewHetznerService()
+			if err != nil {
+				log.Printf("❌ [Agent %d] Error inicializando servicio Hetzner: %v", agent.ID, err)
+				agent.ServerStatus = "error"
+				agent.DeployStatus = "error"
+				config.DB.Save(&agent)
+				return
 			}
 
-			// PASO 3: Configurar DNS en Cloudflare (NO BLOQUEANTE)
-			if isFirstAgent {
-				log.Println("\n" + strings.Repeat("═", 80))
-				log.Printf("║ %s ║", centerText("PASO 3/5: CONFIGURAR DNS EN CLOUDFLARE", 76))
-				log.Println(strings.Repeat("═", 80))
+			serverName := fmt.Sprintf("attomos-agent-%d", agent.ID)
+			serverResp, err := hetznerService.CreateServer(serverName, user.ID)
+			if err != nil {
+				log.Printf("❌ [Agent %d] Error creando servidor: %v", agent.ID, err)
+				agent.ServerStatus = "error"
+				agent.DeployStatus = "error"
+				config.DB.Save(&agent)
+				return
+			}
 
-				cloudflareService, err := services.NewCloudflareService()
-				if err != nil {
-					log.Printf("⚠️  [User %d] Cloudflare no configurado (NO CRÍTICO): %v", user.ID, err)
-					log.Printf("⚠️  Tendrás que configurar el DNS manualmente:")
-					log.Printf("    - Tipo: A")
-					log.Printf("    - Nombre: chat-user%d", user.ID)
-					log.Printf("    - Contenido: %s", user.SharedServerIP)
-					log.Printf("    - Proxy: Activado")
+			agent.ServerID = serverResp.Server.ID
+			agent.ServerIP = serverResp.Server.PublicNet.IPv4.IP
+			agent.ServerPassword = serverResp.RootPassword
+			agent.ServerStatus = "provisioning"
+			config.DB.Save(&agent)
+
+			log.Printf("✅ [Agent %d] Servidor individual creado exitosamente:", agent.ID)
+			log.Printf("   - Hetzner ID: %d", serverResp.Server.ID)
+			log.Printf("   - IP: %s", serverResp.Server.PublicNet.IPv4.IP)
+
+			// Esperar a que el servidor esté en estado "running"
+			log.Printf("⏳ [Agent %d] Esperando que el servidor esté listo...", agent.ID)
+			if err := hetznerService.WaitForServer(serverResp.Server.ID, 5*time.Minute); err != nil {
+				log.Printf("❌ [Agent %d] Timeout esperando servidor: %v", agent.ID, err)
+				agent.ServerStatus = "error"
+				agent.DeployStatus = "error"
+				config.DB.Save(&agent)
+				return
+			}
+
+			log.Printf("✅ [Agent %d] Servidor en estado 'running'", agent.ID)
+
+			agent.ServerStatus = "initializing"
+			config.DB.Save(&agent)
+
+			go hetznerService.MonitorCloudInitLogs(agent.ServerIP, agent.ServerPassword, 10*time.Minute)
+
+			// PASO 3: Configurar DNS en Cloudflare (NO BLOQUEANTE)
+			log.Println("\n" + strings.Repeat("═", 80))
+			log.Printf("║ %s ║", centerText("PASO 3/5: CONFIGURAR DNS EN CLOUDFLARE", 76))
+			log.Println(strings.Repeat("═", 80))
+
+			cloudflareService, err := services.NewCloudflareService()
+			if err != nil {
+				log.Printf("⚠️  [Agent %d] Cloudflare no configurado (NO CRÍTICO): %v", agent.ID, err)
+				log.Printf("⚠️  Tendrás que configurar el DNS manualmente:")
+				log.Printf("    - Tipo: A")
+				log.Printf("    - Nombre: agent-%d", agent.ID)
+				log.Printf("    - Contenido: %s", agent.ServerIP)
+				log.Printf("    - Proxy: Activado")
+			} else {
+				if err := cloudflareService.CreateOrUpdateChatwootDNS(agent.ServerIP, user.ID); err != nil {
+					log.Printf("⚠️  [Agent %d] Error configurando DNS (NO CRÍTICO): %v", agent.ID, err)
+					log.Printf("⚠️  Configura el DNS manualmente en Cloudflare")
 				} else {
-					if err := cloudflareService.CreateOrUpdateChatwootDNS(user.SharedServerIP, user.ID); err != nil {
-						log.Printf("⚠️  [User %d] Error configurando DNS (NO CRÍTICO): %v", user.ID, err)
-						log.Printf("⚠️  Configura el DNS manualmente en Cloudflare")
-					} else {
-						log.Printf("✅ [User %d] DNS configurado automáticamente", user.ID)
-						log.Printf("   URL: https://chat-user%d.attomos.com", user.ID)
-					}
+					log.Printf("✅ [Agent %d] DNS configurado automáticamente", agent.ID)
+					log.Printf("   URL: https://agent-%d.attomos.com", agent.ID)
 				}
 			}
 
 			// PASO 4: Configurar Chatwoot (NO BLOQUEANTE)
-			if isFirstAgent {
-				log.Println("\n" + strings.Repeat("═", 80))
-				log.Printf("║ %s ║", centerText("PASO 4/5: CONFIGURAR CHATWOOT", 76))
-				log.Println(strings.Repeat("═", 80))
+			log.Println("\n" + strings.Repeat("═", 80))
+			log.Printf("║ %s ║", centerText("PASO 4/5: CONFIGURAR CHATWOOT", 76))
+			log.Println(strings.Repeat("═", 80))
 
-				chatwootService := services.NewChatwootService(user.SharedServerIP, user.ID, user.SharedServerPassword)
+			chatwootService := services.NewChatwootService(agent.ServerIP, user.ID, agent.ServerPassword)
 
-				credentials, err := chatwootService.CreateAccountAndUser(user, &agent)
-				if err != nil {
-					log.Printf("⚠️ [Agent %d] Error configurando Chatwoot (NO CRÍTICO): %v", agent.ID, err)
-					log.Printf("⚠️ Puedes configurar Chatwoot manualmente después")
-					// NO RETORNAR - CONTINUAR CON EL DESPLIEGUE
-				} else {
-					// Guardar credenciales en el agente
-					agent.ChatwootEmail = credentials.Email
-					agent.ChatwootPassword = credentials.Password
-					agent.ChatwootAccountID = credentials.AccountID
-					agent.ChatwootAccountName = credentials.AccountName
-					agent.ChatwootInboxID = credentials.InboxID
-					agent.ChatwootInboxName = credentials.InboxName
-					agent.ChatwootURL = credentials.ChatwootURL
-					config.DB.Save(&agent)
+			credentials, err := chatwootService.CreateAccountAndUser(user, &agent)
+			if err != nil {
+				log.Printf("⚠️ [Agent %d] Error configurando Chatwoot (NO CRÍTICO): %v", agent.ID, err)
+				log.Printf("⚠️ Puedes configurar Chatwoot manualmente después")
+				// NO RETORNAR - CONTINUAR CON EL DESPLIEGUE
+			} else {
+				// Guardar credenciales en el agente
+				agent.ChatwootEmail = credentials.Email
+				agent.ChatwootPassword = credentials.Password
+				agent.ChatwootAccountID = credentials.AccountID
+				agent.ChatwootAccountName = credentials.AccountName
+				agent.ChatwootInboxID = credentials.InboxID
+				agent.ChatwootInboxName = credentials.InboxName
+				agent.ChatwootURL = credentials.ChatwootURL
+				config.DB.Save(&agent)
 
-					log.Printf("✅ [Agent %d] Chatwoot configurado exitosamente", agent.ID)
-					log.Printf("   URL: %s", credentials.ChatwootURL)
-				}
+				log.Printf("✅ [Agent %d] Chatwoot configurado exitosamente", agent.ID)
+				log.Printf("   URL: %s", credentials.ChatwootURL)
 			}
 
-			// PASO 5: Desplegar bot en el servidor compartido (CRÍTICO)
+			// PASO 5: Desplegar bot en el servidor individual (CRÍTICO)
 			log.Println("\n" + strings.Repeat("═", 80))
 			log.Printf("║ %s ║", centerText("PASO 5/5: DESPLIEGUE DEL BOT", 76))
 			log.Println(strings.Repeat("═", 80))
 			log.Printf("🤖 [Agent %d] Tipo de bot: %s", agent.ID, agent.BotType)
 			log.Printf("   - Puerto: %d", agent.Port)
-			log.Printf("   - Infraestructura: %s", user.SharedServerIP)
+			log.Printf("   - Servidor Individual: %s", agent.ServerIP)
 			log.Printf("========================================")
 
 			agent.DeployStatus = "deploying"
 			config.DB.Save(&agent)
 
-			deployService := services.NewBotDeployService(user.SharedServerIP, user.SharedServerPassword)
+			deployService := services.NewBotDeployService(agent.ServerIP, agent.ServerPassword)
 
 			// Reintentar conexión SSH (el servidor puede tardar en estar listo)
 			maxRetries := 30
@@ -585,7 +569,7 @@ func CreateAgent(c *gin.Context) {
 
 				connectErr = deployService.Connect()
 				if connectErr == nil {
-					log.Printf("✅ [Agent %d] Conectado exitosamente a la infraestructura", agent.ID)
+					log.Printf("✅ [Agent %d] Conectado exitosamente al servidor individual", agent.ID)
 					break
 				}
 
@@ -599,14 +583,20 @@ func CreateAgent(c *gin.Context) {
 			if connectErr != nil {
 				log.Printf("❌ [Agent %d] No se pudo conectar después de %d intentos: %v", agent.ID, maxRetries, connectErr)
 				agent.DeployStatus = "error"
+				agent.ServerStatus = "error"
 				config.DB.Save(&agent)
 				return
 			}
 
 			defer deployService.Close()
 
-			// DeployBot incluye toda la lógica de espera y verificación
-			log.Printf("📦 [Agent %d] Iniciando despliegue (10-20 minutos)...", agent.ID)
+			// Obtener Gemini API Key
+			geminiAPIKey := user.GetGeminiAPIKey()
+			if geminiAPIKey == "" {
+				log.Printf("⚠️  [Agent %d] Sin Gemini API Key, bot funcionará sin IA", agent.ID)
+			}
+
+			// Desplegar BuilderBot
 			if err := deployService.DeployBot(&agent, docData); err != nil {
 				log.Printf("❌ [Agent %d] Error desplegando BuilderBot: %v", agent.ID, err)
 				agent.DeployStatus = "error"
@@ -614,47 +604,37 @@ func CreateAgent(c *gin.Context) {
 				return
 			}
 
-			// Actualizar servidor a "ready" si es primer agente y fue exitoso
-			if isFirstAgent {
-				user.SharedServerStatus = "ready"
-				config.DB.Save(&user)
-				log.Printf("✅ [User %d] Infraestructura marcada como 'ready'", user.ID)
-			}
-
-			// Marcar agente como activo y corriendo
+			// Marcar servidor y agente como ready
 			agent.IsActive = true
 			agent.DeployStatus = "running"
+			agent.ServerStatus = "ready"
 			config.DB.Save(&agent)
 
 			log.Printf("========================================")
 			log.Printf("🎉 [Agent %d] BUILDER BOT DESPLEGADO EXITOSAMENTE", agent.ID)
-			log.Printf("   - Tipo: %s", agent.BotType)
-			log.Printf("   - Infraestructura: %s", user.SharedServerIP)
+			log.Printf("   - Servidor Individual: %s", agent.ServerIP)
 			log.Printf("   - Puerto: %d", agent.Port)
-			log.Printf("   - Estado: running")
-			log.Printf("   - Tecnología: Meta WhatsApp Business API (Node.js)")
+			log.Printf("   - Tecnología: BuilderBot (Node.js)")
+			log.Printf("   - WhatsApp: Meta Business API")
 
-			if agent.ChatwootEmail != "" {
+			if agent.ChatwootURL != "" {
 				log.Printf("   - Chatwoot: %s", agent.ChatwootURL)
-				log.Printf("   - Chatwoot Email: %s", agent.ChatwootEmail)
-			} else {
-				log.Printf("   ⚠️ Chatwoot no configurado (puedes hacerlo manualmente)")
+				log.Printf("   - Email: %s", agent.ChatwootEmail)
 			}
 
-			// Precargar proyecto GCP
-			config.DB.Preload("GoogleCloudProject").First(&user, user.ID)
-			if user.GoogleCloudProject != nil && user.GoogleCloudProject.ProjectID != "" {
-				log.Printf("   - Proyecto GCP: %s", user.GoogleCloudProject.ProjectID)
+			if geminiAPIKey != "" {
+				log.Printf("   - IA: Gemini AI habilitada ✅")
 			} else {
-				log.Printf("   ⚠️ Proyecto GCP no creado (puedes hacerlo manualmente)")
+				log.Printf("   - IA: Sin configurar")
 			}
+
 			log.Printf("========================================")
 		}
 	}()
 }
 
-// GetUserAgents obtiene todos los agentes del usuario
-func GetUserAgents(c *gin.Context) {
+// GetAgents obtiene todos los agentes del usuario
+func GetAgents(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -668,35 +648,40 @@ func GetUserAgents(c *gin.Context) {
 	var agents []models.Agent
 	if err := config.DB.Where("user_id = ?", user.ID).Find(&agents).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Error al obtener agentes",
+			"error": "Error obteniendo agentes",
 		})
 		return
 	}
 
-	// Obtener información del servidor compartido global si tiene AtomicBots
-	var globalServerInfo map[string]interface{}
-	hasAtomicBot := false
-	for _, agent := range agents {
-		if agent.IsAtomicBot() {
-			hasAtomicBot = true
-			break
+	// Enriquecer respuesta con información adicional
+	response := make([]gin.H, len(agents))
+	for i, agent := range agents {
+		agentData := gin.H{
+			"id":            agent.ID,
+			"name":          agent.Name,
+			"phoneNumber":   agent.PhoneNumber,
+			"businessType":  agent.BusinessType,
+			"port":          agent.Port,
+			"deployStatus":  agent.DeployStatus,
+			"isActive":      agent.IsActive,
+			"botType":       agent.BotType,
+			"config":        agent.Config,
+			"createdAt":     agent.CreatedAt,
+			"chatwootUrl":   agent.ChatwootURL,
+			"chatwootEmail": agent.ChatwootEmail,
 		}
-	}
 
-	if hasAtomicBot {
-		serverManager := services.GetGlobalServerManager()
-		servers, err := serverManager.ListAllServers()
-		if err == nil && len(servers) > 0 {
-			globalServer := servers[0] // Obtener el servidor principal
-			globalServerInfo = serverManager.GetServerMetrics(&globalServer)
+		// Agregar info de servidor si es BuilderBot
+		if agent.IsBuilderBot() && agent.HasOwnServer() {
+			agentData["serverIp"] = agent.ServerIP
+			agentData["serverStatus"] = agent.ServerStatus
 		}
+
+		response[i] = agentData
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"agents":           agents,
-		"total":            len(agents),
-		"serverIp":         user.SharedServerIP,
-		"globalServerInfo": globalServerInfo,
+		"agents": response,
 	})
 }
 
@@ -876,18 +861,30 @@ func DeleteAgent(c *gin.Context) {
 				serverManager.ReleaseAgentPort(&globalServer)
 			}
 		} else {
-			// BuilderBot - servidor por usuario
-			deployService := services.NewBotDeployService(user.SharedServerIP, user.SharedServerPassword)
-			if err := deployService.Connect(); err != nil {
-				log.Printf("⚠️  [Agent %d] Error conectando a infraestructura: %v", agent.ID, err)
-				return
-			}
-			defer deployService.Close()
+			// BuilderBot - servidor individual
+			if agent.HasOwnServer() {
+				deployService := services.NewBotDeployService(agent.ServerIP, agent.ServerPassword)
+				if err := deployService.Connect(); err != nil {
+					log.Printf("⚠️  [Agent %d] Error conectando al servidor: %v", agent.ID, err)
+					return
+				}
+				defer deployService.Close()
 
-			if err := deployService.StopAndRemoveBot(agent.ID); err != nil {
-				log.Printf("⚠️  [Agent %d] Error eliminando bot: %v", agent.ID, err)
-			} else {
-				log.Printf("✅ [Agent %d] Bot eliminado de la infraestructura", agent.ID)
+				if err := deployService.StopAndRemoveBot(agent.ID); err != nil {
+					log.Printf("⚠️  [Agent %d] Error eliminando bot: %v", agent.ID, err)
+				} else {
+					log.Printf("✅ [Agent %d] Bot eliminado del servidor individual", agent.ID)
+				}
+
+				// Eliminar servidor de Hetzner
+				hetznerService, err := services.NewHetznerService()
+				if err == nil {
+					if err := hetznerService.DeleteServer(agent.ServerID); err != nil {
+						log.Printf("⚠️  [Agent %d] Error eliminando servidor Hetzner: %v", agent.ID, err)
+					} else {
+						log.Printf("✅ [Agent %d] Servidor Hetzner eliminado: ID=%d", agent.ID, agent.ServerID)
+					}
+				}
 			}
 		}
 	}()

@@ -79,10 +79,16 @@ func SaveGeminiKey(c *gin.Context) {
 		serverIP = globalServer.IPAddress
 		serverPassword = globalServer.RootPassword
 	} else {
-		// BuilderBot - servidor individual del usuario
+		// BuilderBot - servidor individual del agente
 		isAtomicBot = false
-		serverIP = user.SharedServerIP
-		serverPassword = user.SharedServerPassword
+		if !agent.HasOwnServer() {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Agente no tiene servidor asignado",
+			})
+			return
+		}
+		serverIP = agent.ServerIP
+		serverPassword = agent.ServerPassword
 	}
 
 	if serverIP == "" || serverPassword == "" {
@@ -186,8 +192,14 @@ func RemoveGeminiKey(c *gin.Context) {
 		serverPassword = globalServer.RootPassword
 	} else {
 		isAtomicBot = false
-		serverIP = user.SharedServerIP
-		serverPassword = user.SharedServerPassword
+		if !agent.HasOwnServer() {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Agente no tiene servidor asignado",
+			})
+			return
+		}
+		serverIP = agent.ServerIP
+		serverPassword = agent.ServerPassword
 	}
 
 	if serverIP == "" || serverPassword == "" {
@@ -288,8 +300,14 @@ func GetGeminiStatus(c *gin.Context) {
 		serverPassword = globalServer.RootPassword
 	} else {
 		isAtomicBot = false
-		serverIP = user.SharedServerIP
-		serverPassword = user.SharedServerPassword
+		if !agent.HasOwnServer() {
+			c.JSON(http.StatusOK, gin.H{
+				"has_api_key": false,
+			})
+			return
+		}
+		serverIP = agent.ServerIP
+		serverPassword = agent.ServerPassword
 	}
 
 	if serverIP == "" || serverPassword == "" {

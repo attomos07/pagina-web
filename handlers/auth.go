@@ -18,7 +18,7 @@ type RegisterRequest struct {
 	Email        string `json:"email" binding:"required,email"`
 	Password     string `json:"password" binding:"required,min=8"`
 	BusinessType string `json:"businessType" binding:"required"`
-	BusinessSize string `json:"businessSize" binding:"required"` // ✨ NUEVO
+	BusinessSize string `json:"businessSize" binding:"required"`
 }
 
 type LoginRequest struct {
@@ -26,7 +26,7 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// Register registra un nuevo usuario SIN crear proyecto GCP
+// Register registra un nuevo usuario
 func Register(c *gin.Context) {
 	var req RegisterRequest
 
@@ -43,9 +43,9 @@ func Register(c *gin.Context) {
 	req.PhoneNumber = strings.TrimSpace(req.PhoneNumber)
 	req.BusinessName = strings.TrimSpace(req.BusinessName)
 	req.BusinessType = strings.TrimSpace(req.BusinessType)
-	req.BusinessSize = strings.TrimSpace(req.BusinessSize) // ✨ NUEVO
+	req.BusinessSize = strings.TrimSpace(req.BusinessSize)
 
-	// ✨ NUEVO: Validar que businessSize sea uno de los valores permitidos
+	// Validar que businessSize sea uno de los valores permitidos
 	validSizes := map[string]bool{
 		"microempresa": true,
 		"pequena":      true,
@@ -69,19 +69,13 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Crear usuario SIN proyecto GCP (se creará al crear primer agente)
+	// Crear usuario
 	user := models.User{
-		FirstName:            req.BusinessName,
-		LastName:             "",
-		Email:                req.Email,
-		Company:              req.BusinessName,
-		BusinessType:         req.BusinessType,
-		BusinessSize:         req.BusinessSize, // ✨ NUEVO
-		PhoneNumber:          req.PhoneNumber,
-		SharedServerStatus:   "pending",
-		SharedServerID:       0,
-		SharedServerIP:       "",
-		SharedServerPassword: "",
+		Email:        req.Email,
+		Company:      req.BusinessName,
+		BusinessType: req.BusinessType,
+		BusinessSize: req.BusinessSize,
+		PhoneNumber:  req.PhoneNumber,
 	}
 
 	if err := user.HashPassword(req.Password); err != nil {
@@ -102,7 +96,7 @@ func Register(c *gin.Context) {
 	}
 
 	log.Printf("✅ [User %d] Usuario creado exitosamente: %s (Tel: %s, Negocio: %s, Tamaño: %s)",
-		user.ID, user.Email, user.PhoneNumber, user.Company, user.BusinessSize) // ✨ ACTUALIZADO
+		user.ID, user.Email, user.PhoneNumber, user.Company, user.BusinessSize)
 
 	// Generar token JWT
 	token, err := utils.GenerateToken(user.ID, user.Email)
@@ -123,12 +117,10 @@ func Register(c *gin.Context) {
 		"redirect": "/select-plan",
 		"user": gin.H{
 			"id":           user.ID,
-			"firstName":    user.FirstName,
-			"lastName":     user.LastName,
 			"email":        user.Email,
 			"company":      user.Company,
 			"businessType": user.BusinessType,
-			"businessSize": user.BusinessSize, // ✨ NUEVO
+			"businessSize": user.BusinessSize,
 			"phoneNumber":  user.PhoneNumber,
 		},
 		"info": "Selecciona tu plan para continuar",
@@ -182,12 +174,10 @@ func Login(c *gin.Context) {
 		"token":   token,
 		"user": gin.H{
 			"id":           user.ID,
-			"firstName":    user.FirstName,
-			"lastName":     user.LastName,
 			"email":        user.Email,
 			"company":      user.Company,
 			"businessType": user.BusinessType,
-			"businessSize": user.BusinessSize, // ✨ NUEVO
+			"businessSize": user.BusinessSize,
 			"phoneNumber":  user.PhoneNumber,
 		},
 	})
@@ -220,12 +210,10 @@ func GetCurrentUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"user": gin.H{
 			"id":            user.ID,
-			"firstName":     user.FirstName,
-			"lastName":      user.LastName,
 			"email":         user.Email,
 			"company":       user.Company,
 			"businessType":  user.BusinessType,
-			"businessSize":  user.BusinessSize, // ✨ NUEVO
+			"businessSize":  user.BusinessSize,
 			"phoneNumber":   user.PhoneNumber,
 			"projectStatus": user.GetGCPProjectStatus(),
 		},
