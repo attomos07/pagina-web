@@ -85,6 +85,8 @@ func WriteToSheet(values [][]interface{}, rangeStr string) error {
 		return fmt.Errorf("Google Sheets no habilitado")
 	}
 
+	log.Printf("📝 WriteToSheet: Escribiendo en rango %s\n", rangeStr)
+
 	valueRange := &sheets.ValueRange{
 		Values: values,
 	}
@@ -96,10 +98,11 @@ func WriteToSheet(values [][]interface{}, rangeStr string) error {
 	).ValueInputOption("USER_ENTERED").Do()
 
 	if err != nil {
+		log.Printf("❌ WriteToSheet ERROR: %v\n", err)
 		return fmt.Errorf("error escribiendo en Sheets: %w", err)
 	}
 
-	log.Printf("✅ Datos escritos en Sheets: %s\n", rangeStr)
+	log.Printf("✅ WriteToSheet EXITOSO: Datos escritos en %s\n", rangeStr)
 	return nil
 }
 
@@ -109,11 +112,15 @@ func ReadSheet(rangeStr string) ([][]interface{}, error) {
 		return nil, fmt.Errorf("Google Sheets no habilitado")
 	}
 
+	log.Printf("📖 ReadSheet: Leyendo rango %s\n", rangeStr)
+
 	resp, err := sheetsService.Spreadsheets.Values.Get(spreadsheetID, rangeStr).Do()
 	if err != nil {
+		log.Printf("❌ ReadSheet ERROR: %v\n", err)
 		return nil, fmt.Errorf("error leyendo Sheets: %w", err)
 	}
 
+	log.Printf("✅ ReadSheet EXITOSO: %d filas leídas\n", len(resp.Values))
 	return resp.Values, nil
 }
 
@@ -161,59 +168,101 @@ func InitializeWeeklyCalendar() error {
 // SaveAppointmentToCalendar guarda una cita en el calendario semanal
 func SaveAppointmentToCalendar(data map[string]string) error {
 	if !sheetsEnabled {
-		log.Println("⚠️  Google Sheets no habilitado, saltando guardado en Sheets")
+		log.Println("⚠️  Google Sheets NO HABILITADO - Saltando guardado")
 		return nil
 	}
 
-	log.Printf("💾 Guardando cita en Sheets...")
-	log.Printf("   📋 Datos recibidos: %v\n", data)
+	log.Println("")
+	log.Println("╔════════════════════════════════════════════════════════╗")
+	log.Println("║                                                        ║")
+	log.Println("║       📊 GUARDANDO EN GOOGLE SHEETS - INICIO           ║")
+	log.Println("║                                                        ║")
+	log.Println("╚════════════════════════════════════════════════════════╝")
+	log.Println("")
+
+	log.Println("📋 DATOS RECIBIDOS PARA GUARDAR:")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	for key, value := range data {
+		log.Printf("   %s: %s\n", key, value)
+	}
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("")
 
 	// Convertir fecha a día de semana y calcular fecha exacta
+	log.Println("🔄 PASO 1: Convirtiendo fecha a día de semana...")
 	dia, fechaExacta, err := ConvertirFechaADia(data["fecha"])
 	if err != nil {
-		log.Printf("❌ Error convirtiendo fecha '%s': %v\n", data["fecha"], err)
+		log.Println("❌ ERROR en conversión de fecha:")
+		log.Printf("   📅 Fecha original: %s\n", data["fecha"])
+		log.Printf("   ⚠️  Error: %v\n", err)
 		return fmt.Errorf("error convirtiendo fecha: %w", err)
 	}
 
-	log.Printf("   📅 Fecha original: %s", data["fecha"])
-	log.Printf("   📅 Día de la semana: %s", dia)
-	log.Printf("   📅 Fecha exacta calculada: %s", fechaExacta)
+	log.Println("✅ Conversión de fecha exitosa:")
+	log.Printf("   📅 Fecha original: %s\n", data["fecha"])
+	log.Printf("   📅 Día de la semana: %s\n", dia)
+	log.Printf("   📅 Fecha exacta calculada: %s\n", fechaExacta)
+	log.Println("")
 
 	// Normalizar hora
+	log.Println("🔄 PASO 2: Normalizando hora...")
 	horaNormalizada, err := NormalizarHora(data["hora"])
 	if err != nil {
-		log.Printf("❌ Error normalizando hora '%s': %v\n", data["hora"], err)
+		log.Println("❌ ERROR en normalización de hora:")
+		log.Printf("   ⏰ Hora original: %s\n", data["hora"])
+		log.Printf("   ⚠️  Error: %v\n", err)
 		return fmt.Errorf("error normalizando hora: %w", err)
 	}
 
-	log.Printf("   ⏰ Hora original: %s", data["hora"])
-	log.Printf("   ⏰ Hora normalizada: %s", horaNormalizada)
+	log.Println("✅ Normalización de hora exitosa:")
+	log.Printf("   ⏰ Hora original: %s\n", data["hora"])
+	log.Printf("   ⏰ Hora normalizada: %s\n", horaNormalizada)
+	log.Println("")
 
 	// Obtener columna del día
+	log.Println("🔄 PASO 3: Obteniendo columna del día...")
 	columna, exists := COLUMNAS_DIAS[dia]
 	if !exists {
-		log.Printf("❌ Día no válido: %s\n", dia)
+		log.Println("❌ ERROR: Día no válido")
+		log.Printf("   ❌ Día recibido: %s\n", dia)
 		log.Printf("   💡 Días disponibles: %v\n", getDiasDisponibles())
 		return fmt.Errorf("día no válido: %s", dia)
 	}
 
-	log.Printf("   📍 Columna asignada: %s (%s)", columna, dia)
+	log.Println("✅ Columna obtenida:")
+	log.Printf("   📍 Día: %s\n", dia)
+	log.Printf("   📍 Columna: %s\n", columna)
+	log.Println("")
 
 	// Obtener fila de la hora
+	log.Println("🔄 PASO 4: Obteniendo fila de la hora...")
 	fila := GetFilaHora(horaNormalizada)
 	if fila == -1 {
-		log.Printf("❌ Hora no válida: %s\n", horaNormalizada)
+		log.Println("❌ ERROR: Hora no válida")
+		log.Printf("   ❌ Hora recibida: %s\n", horaNormalizada)
 		log.Printf("   💡 Horas disponibles: %v\n", HORARIOS)
 		return fmt.Errorf("hora no válida: %s", horaNormalizada)
 	}
 
-	log.Printf("   📍 Fila asignada: %d (hora: %s)", fila, horaNormalizada)
+	log.Println("✅ Fila obtenida:")
+	log.Printf("   ⏰ Hora: %s\n", horaNormalizada)
+	log.Printf("   📍 Fila: %d\n", fila)
+	log.Println("")
+
+	// Calcular celda objetivo
+	celdaRango := fmt.Sprintf("Sheet1!%s%d", columna, fila)
+	log.Println("🎯 CELDA OBJETIVO CALCULADA:")
+	log.Printf("   📍 Celda: %s\n", celdaRango)
+	log.Printf("   📅 Día: %s (columna %s)\n", dia, columna)
+	log.Printf("   ⏰ Hora: %s (fila %d)\n", horaNormalizada, fila)
+	log.Println("")
 
 	// Leer contenido actual de la celda
-	celdaRango := fmt.Sprintf("Sheet1!%s%d", columna, fila)
-	log.Printf("   🎯 Celda objetivo: %s", celdaRango)
-
-	contenidoActual, _ := ReadSheet(celdaRango)
+	log.Println("🔄 PASO 5: Leyendo contenido actual de la celda...")
+	contenidoActual, err := ReadSheet(celdaRango)
+	if err != nil {
+		log.Printf("⚠️  Advertencia leyendo celda: %v (probablemente está vacía)\n", err)
+	}
 
 	// Formatear información de la cita con TODOS los datos importantes
 	infoCita := fmt.Sprintf("👤 %s\n📞 %s\n✂️ %s\n💈 Barbero: %s\n📅 %s",
@@ -224,7 +273,11 @@ func SaveAppointmentToCalendar(data map[string]string) error {
 		fechaExacta,
 	)
 
-	log.Printf("   📝 Información de la cita:\n%s", infoCita)
+	log.Println("📝 INFORMACIÓN DE LA CITA A GUARDAR:")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println(infoCita)
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("")
 
 	var contenidoFinal string
 	if len(contenidoActual) > 0 && len(contenidoActual[0]) > 0 {
@@ -232,31 +285,55 @@ func SaveAppointmentToCalendar(data map[string]string) error {
 		existente := fmt.Sprintf("%v", contenidoActual[0][0])
 		if strings.TrimSpace(existente) != "" {
 			contenidoFinal = fmt.Sprintf("%s\n\n---\n\n%s", existente, infoCita)
-			log.Printf("   ℹ️  Agregando a contenido existente")
+			log.Println("ℹ️  La celda ya tiene contenido - Agregando nueva cita con separador")
+			log.Println("📄 Contenido existente:")
+			log.Println(existente)
 		} else {
 			contenidoFinal = infoCita
-			log.Printf("   ℹ️  Creando nueva cita (celda vacía)")
+			log.Println("ℹ️  Celda vacía - Creando primera cita")
 		}
 	} else {
 		contenidoFinal = infoCita
-		log.Printf("   ℹ️  Creando nueva cita")
+		log.Println("ℹ️  Celda vacía - Creando primera cita")
 	}
+	log.Println("")
 
 	// Guardar en la celda específica
+	log.Println("🔄 PASO 6: Escribiendo en Google Sheets...")
+	log.Printf("   🎯 Escribiendo en celda: %s\n", celdaRango)
+
 	if err := WriteToSheet([][]interface{}{{contenidoFinal}}, celdaRango); err != nil {
-		log.Printf("❌ Error escribiendo en celda %s: %v\n", celdaRango, err)
+		log.Println("")
+		log.Println("╔════════════════════════════════════════════════════════╗")
+		log.Println("║                                                        ║")
+		log.Println("║         ❌ ERROR GUARDANDO EN SHEETS                   ║")
+		log.Println("║                                                        ║")
+		log.Println("╚════════════════════════════════════════════════════════╝")
+		log.Printf("❌ ERROR: %v\n", err)
+		log.Printf("   📍 Celda: %s\n", celdaRango)
+		log.Println("")
 		return fmt.Errorf("error escribiendo en Sheets: %w", err)
 	}
 
+	log.Println("")
+	log.Println("╔════════════════════════════════════════════════════════╗")
+	log.Println("║                                                        ║")
+	log.Println("║       ✅ CITA GUARDADA EN SHEETS EXITOSAMENTE          ║")
+	log.Println("║                                                        ║")
+	log.Println("╚════════════════════════════════════════════════════════╝")
+	log.Println("")
+	log.Println("📊 RESUMEN DEL GUARDADO:")
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-	log.Printf("✅ CITA GUARDADA EXITOSAMENTE EN SHEETS")
-	log.Printf("   📍 Celda: %s", celdaRango)
-	log.Printf("   📅 Día: %s", dia)
-	log.Printf("   ⏰ Hora: %s", horaNormalizada)
-	log.Printf("   📆 Fecha exacta: %s", fechaExacta)
-	log.Printf("   👤 Cliente: %s", data["nombre"])
-	log.Printf("   ✂️  Servicio: %s", data["servicio"])
+	log.Printf("   📍 Celda: %s\n", celdaRango)
+	log.Printf("   📅 Día: %s\n", dia)
+	log.Printf("   ⏰ Hora: %s\n", horaNormalizada)
+	log.Printf("   📆 Fecha exacta: %s\n", fechaExacta)
+	log.Printf("   👤 Cliente: %s\n", data["nombre"])
+	log.Printf("   📞 Teléfono: %s\n", data["telefono"])
+	log.Printf("   ✂️  Servicio: %s\n", data["servicio"])
+	log.Printf("   💈 Barbero: %s\n", data["barbero"])
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("")
 
 	return nil
 }
