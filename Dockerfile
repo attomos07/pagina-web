@@ -1,41 +1,32 @@
-# Build stage
 FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-# Copiar archivos de dependencias primero (aprovecha cache de Docker)
+RUN apk add --no-cache git ca-certificates tzdata
+
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copiar código fuente
 COPY . .
 
-# Build con optimizaciones
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -a -installsuffix cgo -o out
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -a -installsuffix cgo -o attomos .
 
-# Runtime stage - imagen mínima
 FROM alpine:latest
 
-# Instalar certificados SSL (importante para APIs externas)
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates tzdata
 
-WORKDIR /root/
+WORKDIR /app
 
-# Copiar solo el binario del build stage
-COPY --from=builder /app/out .
+COPY --from=builder /app/attomos .
+COPY --from=builder /app/static ./static
+COPY --from=builder /app/templates ./templates
 
-# Puerto (ajusta según tu app)
+ENV PORT=8080
+ENV GIN_MODE=release
+ENV ENVIRONMENT=production
+
 EXPOSE 8080
 
-CMD ["./out"]
-```
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
-**2. (Opcional) Crea un `.dockerignore`:**
-```
-.git
-.env
-*.md
-.gitignore
-.DS_Store
-tmp/
-vendor/
+CMD ["./attomos"]
