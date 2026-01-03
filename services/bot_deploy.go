@@ -1274,3 +1274,8 @@ func (b *BotDeployService) CheckGeminiAPIKey(agent *models.Agent) bool {
 
 	return false
 }
+
+// GetSSHClient retorna el cliente SSH (para streaming de logs en tiempo real)
+func (b *BotDeployService) GetSSHClient() *ssh.Client {
+	return b.sshClient
+}

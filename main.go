@@ -160,7 +160,8 @@ func main() {
 		protected.GET("/agents", handlers.GetAgents)
 		protected.GET("/agents/:id", handlers.GetAgent)
 		protected.GET("/agents/:id/qr", handlers.GetAgentQRCode)
-		protected.GET("/agents/:id/logs", handlers.GetAgentLogs)
+		protected.GET("/agents/:id/logs", handlers.GetAgentLogs)           // Logs estáticos
+		protected.GET("/agents/:id/logs/stream", handlers.StreamAgentLogs) // 🔥 NUEVO: Logs en tiempo real
 		protected.PUT("/agents/:id", handlers.UpdateAgent)
 		protected.DELETE("/agents/:id", handlers.DeleteAgent)
 		protected.PATCH("/agents/:id/toggle", handlers.ToggleAgentStatus)

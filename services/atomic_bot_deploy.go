@@ -1322,3 +1322,8 @@ func (s *AtomicBotDeployService) DiagnoseBotFailure(agentID uint, userID uint) s
 
 	return diagnosis.String()
 }
+
+// GetSSHClient retorna el cliente SSH (para streaming de logs en tiempo real)
+func (s *AtomicBotDeployService) GetSSHClient() *ssh.Client {
+	return s.sshClient
+}
