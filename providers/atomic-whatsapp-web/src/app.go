@@ -96,17 +96,17 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 
 	// Enviar respuesta
 	if response != "" {
-		log.Printf("📤 ENVIANDO RESPUESTA a %s...\n", senderName)
+		log.Printf("📤 ENVIANDO RESPUESTA a %s...", senderName)
 		if err := SendMessage(msg.Info.Chat, response); err != nil {
-			log.Printf("❌ ERROR enviando mensaje: %v\n", err)
+			log.Printf("❌ ERROR enviando mensaje: %v", err)
 		} else {
-			log.Printf("✅ RESPUESTA ENVIADA correctamente\n")
-			log.Printf("   📝 Contenido: %s\n", response)
+			log.Printf("✅ RESPUESTA ENVIADA correctamente")
+			log.Printf("   📝 Contenido: %s", response)
 		}
 	} else {
-		log.Printf("⚠️  No se generó respuesta para este mensaje\n")
+		log.Printf("⚠️  No se generó respuesta para este mensaje")
 	}
-	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 }
 
 // ProcessMessage procesa un mensaje y genera respuesta usando Gemini
@@ -117,28 +117,27 @@ func ProcessMessage(message, userID, userName string) string {
 	log.Println("╔════════════════════════════════════════╗")
 	log.Println("║     PROCESANDO MENSAJE                 ║")
 	log.Println("╚════════════════════════════════════════╝")
-	log.Printf("📊 Estado del usuario %s:\n", userName)
-	log.Printf("   🔄 isScheduling: %v\n", state.IsScheduling)
-	log.Printf("   💾 appointmentSaved: %v\n", state.AppointmentSaved)
-	log.Printf("   📋 Datos recopilados: %v\n", state.Data)
-	log.Printf("   📝 Pasos completados: %d\n", state.Step)
+	log.Printf("📊 Estado del usuario %s:", userName)
+	log.Printf("   🔄 isScheduling: %v", state.IsScheduling)
+	log.Printf("   💾 appointmentSaved: %v", state.AppointmentSaved)
+	log.Printf("   📋 Datos recopilados: %v", state.Data)
+	log.Printf("   📝 Pasos completados: %d", state.Step)
 
 	// 🔥 CAMBIO IMPORTANTE: Reducir tiempo de bloqueo después de guardar cita
 	// Cambiar de 5 segundos a 2 segundos
 	if state.AppointmentSaved {
 		timeSinceLastMessage := time.Now().Unix() - state.LastMessageTime
-		log.Printf("⏱️  Tiempo desde último mensaje: %d segundos\n", timeSinceLastMessage)
+		log.Printf("⏱️  Tiempo desde último mensaje: %d segundos", timeSinceLastMessage)
 
 		// Solo bloquear durante 2 segundos después de guardar
 		if timeSinceLastMessage < 2 {
 			log.Println("⏭️  MENSAJE IGNORADO - Cita recién guardada (esperando 2 segundos)")
 			return ""
-		} else {
-			// Después de 2 segundos, reiniciar estado automáticamente
-			log.Println("🔄 REINICIANDO ESTADO - Ya pasaron 2 segundos desde guardar cita")
-			ClearUserState(userID)
-			state = GetUserState(userID)
 		}
+		// Después de 2 segundos, reiniciar estado automáticamente
+		log.Println("🔄 REINICIANDO ESTADO - Ya pasaron 2 segundos desde guardar cita")
+		ClearUserState(userID)
+		state = GetUserState(userID)
 	}
 
 	// Agregar al historial
@@ -152,44 +151,34 @@ func ProcessMessage(message, userID, userName string) string {
 		state.IsScheduling,
 	)
 	if err != nil {
-		log.Printf("⚠️  Error en análisis: %v\n", err)
+		log.Printf("⚠️  Error en análisis: %v", err)
 		log.Println("📞 Usando conversación normal como fallback")
-		return handleNormalConversation(message, userName, state)
+		return handleNormalConversation(message, state)
 	}
 
-	log.Printf("✅ Análisis completado:\n")
-	log.Printf("   🎯 Quiere agendar: %v\n", analysis.WantsToSchedule)
-	log.Printf("   📊 Confianza: %.2f\n", analysis.Confidence)
-	log.Printf("   📋 Datos extraídos: %v\n", analysis.ExtractedData)
+	log.Printf("✅ Análisis completado:")
+	log.Printf("   🎯 Quiere agendar: %v", analysis.WantsToSchedule)
+	log.Printf("   📊 Confianza: %.2f", analysis.Confidence)
+	log.Printf("   📋 Datos extraídos: %v", analysis.ExtractedData)
 
 	// Si quiere agendar y no está agendando
 	if analysis.WantsToSchedule && !state.IsScheduling {
 		log.Println("🎯 INICIANDO PROCESO DE AGENDAMIENTO")
-		return startAppointmentFlow(state, analysis, message, userName)
+		return startAppointmentFlow(state, analysis, message)
 	}
 
 	// Si está agendando, continuar
 	if state.IsScheduling {
 		log.Println("📝 CONTINUANDO PROCESO DE AGENDAMIENTO")
-		return continueAppointmentFlow(state, analysis, message, userID, userName)
+		return continueAppointmentFlow(state, analysis, message, userID)
 	}
 
 	// Conversación normal con Gemini
 	log.Println("💬 CONVERSACIÓN NORMAL")
-	return handleNormalConversation(message, userName, state)
+	return handleNormalConversation(message, state)
 }
 
-func processNewMessage(message, userID, userName string, state *UserState) string {
-	analysis, _ := AnalyzeForAppointment(message, joinHistory(state.ConversationHistory), false)
-
-	if analysis != nil && analysis.WantsToSchedule {
-		return startAppointmentFlow(state, analysis, message, userName)
-	}
-
-	return handleNormalConversation(message, userName, state)
-}
-
-func startAppointmentFlow(state *UserState, analysis *AppointmentAnalysis, message, userName string) string {
+func startAppointmentFlow(state *UserState, analysis *AppointmentAnalysis, message string) string {
 	log.Println("╔════════════════════════════════════════╗")
 	log.Println("║  INICIANDO FLUJO DE AGENDAMIENTO       ║")
 	log.Println("╚════════════════════════════════════════╝")
@@ -203,15 +192,15 @@ func startAppointmentFlow(state *UserState, analysis *AppointmentAnalysis, messa
 		for key, value := range analysis.ExtractedData {
 			if value != "" && value != "null" {
 				state.Data[key] = value
-				log.Printf("   ✅ %s = %s\n", key, value)
+				log.Printf("   ✅ %s = %s", key, value)
 			}
 		}
 	}
 
 	// Determinar qué falta
 	missingData := getMissingData(state.Data)
-	log.Printf("📊 Datos completos: %v\n", state.Data)
-	log.Printf("❓ Datos faltantes: %v\n", missingData)
+	log.Printf("📊 Datos completos: %v", state.Data)
+	log.Printf("❓ Datos faltantes: %v", missingData)
 
 	var promptContext string
 	if len(missingData) > 0 {
@@ -225,7 +214,7 @@ func startAppointmentFlow(state *UserState, analysis *AppointmentAnalysis, messa
 
 	response, err := Chat(promptContext, message, joinHistory(state.ConversationHistory))
 	if err != nil {
-		log.Printf("❌ Error en chat: %v\n", err)
+		log.Printf("❌ Error en chat: %v", err)
 		return "¡Perfecto! Vamos a agendar tu cita. ¿Cuál es tu nombre completo?"
 	}
 
@@ -233,7 +222,7 @@ func startAppointmentFlow(state *UserState, analysis *AppointmentAnalysis, messa
 	return response
 }
 
-func continueAppointmentFlow(state *UserState, analysis *AppointmentAnalysis, message, userID, userName string) string {
+func continueAppointmentFlow(state *UserState, analysis *AppointmentAnalysis, message, userID string) string {
 	log.Println("╔════════════════════════════════════════╗")
 	log.Println("║  CONTINUANDO FLUJO DE AGENDAMIENTO     ║")
 	log.Println("╚════════════════════════════════════════╝")
@@ -242,20 +231,20 @@ func continueAppointmentFlow(state *UserState, analysis *AppointmentAnalysis, me
 	if analysis.ExtractedData != nil {
 		log.Println("📋 Extrayendo datos del mensaje actual:")
 		for key, value := range analysis.ExtractedData {
-			if value != "" && value != "null" && state.Data[key] == "" {
+			if value != "" && value != "null" {
 				state.Data[key] = value
-				log.Printf("   ✅ %s = %s\n", key, value)
+				log.Printf("   ✅ %s = %s", key, value)
 			}
 		}
 	}
 
 	// Verificar datos faltantes
 	missingData := getMissingData(state.Data)
-	log.Printf("📋 Datos actuales: %v\n", state.Data)
-	log.Printf("❓ Datos faltantes: %v\n", missingData)
+	log.Printf("📋 Datos actuales: %v", state.Data)
+	log.Printf("❓ Datos faltantes: %v", missingData)
 
 	if len(missingData) > 0 {
-		log.Printf("⚠️  Faltan %d datos, solicitando: %s\n", len(missingData), missingData[0])
+		log.Printf("⚠️  Faltan %d datos, solicitando: %s", len(missingData), missingData[0])
 
 		// Pedir siguiente dato usando Gemini
 		promptContext := fmt.Sprintf(
@@ -275,10 +264,10 @@ func continueAppointmentFlow(state *UserState, analysis *AppointmentAnalysis, me
 
 	// Todos los datos completos - guardar
 	log.Println("🎉 TODOS LOS DATOS COMPLETOS - PROCEDIENDO A GUARDAR")
-	return saveAppointment(state, userID, userName)
+	return saveAppointment(state, userID)
 }
 
-func saveAppointment(state *UserState, userID, userName string) string {
+func saveAppointment(state *UserState, userID string) string {
 	log.Println("")
 	log.Println("╔════════════════════════════════════════════════════════╗")
 	log.Println("║                                                        ║")
@@ -293,20 +282,20 @@ func saveAppointment(state *UserState, userID, userName string) string {
 	log.Println("📅 Procesando fecha...")
 	_, fechaExacta, err := ConvertirFechaADia(state.Data["fecha"])
 	if err != nil {
-		log.Printf("❌ ERROR convirtiendo fecha '%s': %v\n", state.Data["fecha"], err)
+		log.Printf("❌ ERROR convirtiendo fecha '%s': %v", state.Data["fecha"], err)
 		fechaExacta = state.Data["fecha"]
 	} else {
-		log.Printf("✅ Fecha convertida: %s → %s\n", state.Data["fecha"], fechaExacta)
+		log.Printf("✅ Fecha convertida: %s → %s", state.Data["fecha"], fechaExacta)
 	}
 
 	// Normalizar hora
 	log.Println("⏰ Procesando hora...")
 	horaNormalizada, err := NormalizarHora(state.Data["hora"])
 	if err != nil {
-		log.Printf("❌ ERROR normalizando hora '%s': %v\n", state.Data["hora"], err)
+		log.Printf("❌ ERROR normalizando hora '%s': %v", state.Data["hora"], err)
 		horaNormalizada = state.Data["hora"]
 	} else {
-		log.Printf("✅ Hora normalizada: %s → %s\n", state.Data["hora"], horaNormalizada)
+		log.Printf("✅ Hora normalizada: %s → %s", state.Data["hora"], horaNormalizada)
 	}
 
 	appointmentData := map[string]string{
@@ -323,7 +312,7 @@ func saveAppointment(state *UserState, userID, userName string) string {
 	log.Println("📋 DATOS DE LA CITA A GUARDAR:")
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	for key, value := range appointmentData {
-		log.Printf("   %s: %s\n", key, value)
+		log.Printf("   %s: %s", key, value)
 	}
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Println("")
@@ -332,7 +321,7 @@ func saveAppointment(state *UserState, userID, userName string) string {
 	log.Println("📊 PASO 1/2: Guardando en Google Sheets...")
 	sheetsErr := SaveAppointmentToCalendar(appointmentData)
 	if sheetsErr != nil {
-		log.Printf("❌ ERROR guardando en Sheets: %v\n", sheetsErr)
+		log.Printf("❌ ERROR guardando en Sheets: %v", sheetsErr)
 	} else {
 		log.Println("✅ GUARDADO EN SHEETS EXITOSO")
 	}
@@ -342,11 +331,11 @@ func saveAppointment(state *UserState, userID, userName string) string {
 	log.Println("📅 PASO 2/2: Creando evento en Google Calendar...")
 	calendarEvent, calendarErr := CreateCalendarEvent(appointmentData)
 	if calendarErr != nil {
-		log.Printf("❌ ERROR creando evento en Calendar: %v\n", calendarErr)
+		log.Printf("❌ ERROR creando evento en Calendar: %v", calendarErr)
 	} else {
 		log.Println("✅ EVENTO EN CALENDAR CREADO EXITOSO")
 		if calendarEvent != nil {
-			log.Printf("   🔗 Link: %s\n", calendarEvent.HtmlLink)
+			log.Printf("   🔗 Link: %s", calendarEvent.HtmlLink)
 		}
 	}
 
@@ -360,10 +349,10 @@ func saveAppointment(state *UserState, userID, userName string) string {
 	if sheetsErr != nil || calendarErr != nil {
 		log.Println("⚠️  RESUMEN DE ERRORES:")
 		if sheetsErr != nil {
-			log.Printf("   📊 Sheets: %v\n", sheetsErr)
+			log.Printf("   📊 Sheets: %v", sheetsErr)
 		}
 		if calendarErr != nil {
-			log.Printf("   📅 Calendar: %v\n", calendarErr)
+			log.Printf("   📅 Calendar: %v", calendarErr)
 		}
 	} else {
 		log.Println("🎉 CITA GUARDADA EXITOSAMENTE EN AMBOS SERVICIOS")
@@ -371,7 +360,7 @@ func saveAppointment(state *UserState, userID, userName string) string {
 	log.Println("")
 
 	// Construir mensaje de confirmación usando Gemini si está disponible
-	confirmation := generateConfirmationMessage(state.Data, fechaExacta, horaNormalizada, calendarEvent)
+	confirmation := generateConfirmationMessage(state.Data, fechaExacta, horaNormalizada)
 
 	log.Println("✅ Mensaje de confirmación generado")
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -380,7 +369,7 @@ func saveAppointment(state *UserState, userID, userName string) string {
 	return confirmation
 }
 
-func generateConfirmationMessage(data map[string]string, fechaExacta, horaNormalizada string, calendarEvent interface{}) string {
+func generateConfirmationMessage(data map[string]string, fechaExacta, horaNormalizada string) string {
 	// Intentar generar con Gemini
 	if geminiEnabled && BusinessCfg != nil {
 		promptContext := fmt.Sprintf(`Genera un mensaje de confirmación de cita breve y profesional.
@@ -425,7 +414,7 @@ Máximo 4-5 líneas.`,
 	return confirmation
 }
 
-func handleNormalConversation(message, userName string, state *UserState) string {
+func handleNormalConversation(message string, state *UserState) string {
 	log.Println("💬 Manejando conversación normal con Gemini")
 
 	// Contexto: si pregunta por servicios, horarios, ubicación, etc.
@@ -452,7 +441,7 @@ func handleNormalConversation(message, userName string, state *UserState) string
 
 	response, err := Chat(promptContext, message, joinHistory(state.ConversationHistory))
 	if err != nil {
-		log.Printf("❌ Error en Gemini: %v\n", err)
+		log.Printf("❌ Error en Gemini: %v", err)
 		// Fallback simple
 		return "Disculpa, ¿podrías repetir tu pregunta?"
 	}

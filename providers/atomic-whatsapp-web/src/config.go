@@ -139,7 +139,7 @@ func GetBusinessInfoPrompt() string {
 	var sb strings.Builder
 
 	// Información básica
-	sb.WriteString(fmt.Sprintf("**INFORMACIÓN DEL NEGOCIO:**\n"))
+	sb.WriteString("**INFORMACIÓN DEL NEGOCIO:**\n")
 	sb.WriteString(fmt.Sprintf("- Nombre: %s\n", BusinessCfg.AgentName))
 	sb.WriteString(fmt.Sprintf("- Tipo: %s\n", BusinessCfg.BusinessType))
 
