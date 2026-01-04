@@ -190,8 +190,8 @@ func InitSheets() error {
 	log.Println("📋 PASO 8/8: Probando permisos de ESCRITURA...")
 	log.Println("   🧪 Intentando escribir una celda de prueba...")
 
-	testCellRange := "Sheet1!Z1000" // Celda lejana para no molestar
-	testValue := [][]interface{}{{"TEST_PERMISOS"}}
+	testCellRange := "Sheet1!A1" // Usar celda accesible
+	testValue := [][]interface{}{{"Hora"}}
 	testValueRange := &sheets.ValueRange{Values: testValue}
 
 	_, writeErr := srv.Spreadsheets.Values.Update(
@@ -233,7 +233,7 @@ func InitSheets() error {
 	).ValueInputOption("USER_ENTERED").Do()
 
 	log.Println("   ✅ Permisos de ESCRITURA verificados")
-	log.Println("   🧹 Celda de prueba limpiada")
+	log.Println("   ℹ️  Celda A1 restaurada al valor original (header)")
 	log.Println("")
 
 	sheetsService = srv
