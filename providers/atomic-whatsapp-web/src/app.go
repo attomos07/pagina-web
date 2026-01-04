@@ -319,7 +319,14 @@ func saveAppointment(state *UserState, userID string) string {
 
 	// Guardar en Sheets
 	log.Println("📊 PASO 1/2: Guardando en Google Sheets...")
-	sheetsErr := SaveAppointmentToCalendar(appointmentData)
+	sheetsErr := SaveAppointmentToSheets(
+		appointmentData["nombre"],
+		appointmentData["telefono"],
+		appointmentData["fechaExacta"],
+		appointmentData["hora"],
+		appointmentData["servicio"],
+		appointmentData["barbero"],
+	)
 	if sheetsErr != nil {
 		log.Printf("❌ ERROR guardando en Sheets: %v", sheetsErr)
 	} else {

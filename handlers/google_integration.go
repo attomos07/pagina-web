@@ -14,6 +14,10 @@ import (
 	"attomos/services"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/drive/v3"
+	"google.golang.org/api/option"
 )
 
 type GoogleIntegrationHandler struct {
@@ -57,6 +61,48 @@ func NewGoogleIntegrationHandler() (*GoogleIntegrationHandler, error) {
 			RedirectURL:  redirectURL,
 		},
 	}, nil
+}
+
+// MakeSpreadsheetPublicEditor hace el Spreadsheet público con permisos de Editor
+func (h *GoogleIntegrationHandler) MakeSpreadsheetPublicEditor(ctx context.Context, tokenJSON, spreadsheetID string) error {
+	var token oauth2.Token
+	if err := json.Unmarshal([]byte(tokenJSON), &token); err != nil {
+		return fmt.Errorf("error parsing token: %w", err)
+	}
+
+	// Crear configuración OAuth con scope de Drive
+	config := &oauth2.Config{
+		ClientID:     h.sheetsService.ClientID,
+		ClientSecret: h.sheetsService.ClientSecret,
+		RedirectURL:  h.sheetsService.RedirectURL,
+		Scopes: []string{
+			"https://www.googleapis.com/auth/drive.file",
+		},
+		Endpoint: google.Endpoint,
+	}
+
+	client := config.Client(ctx, &token)
+
+	// Crear servicio de Drive
+	driveService, err := drive.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return fmt.Errorf("error creando servicio Drive: %w", err)
+	}
+
+	// Crear permiso público de EDITOR
+	permission := &drive.Permission{
+		Type: "anyone", // Cualquier persona con el link
+		Role: "writer", // Permisos de EDITOR (writer = puede editar)
+	}
+
+	// Aplicar el permiso
+	_, err = driveService.Permissions.Create(spreadsheetID, permission).Do()
+	if err != nil {
+		return fmt.Errorf("error creando permiso público: %w", err)
+	}
+
+	log.Printf("✅ [Spreadsheet %s] Ahora es público con permisos de Editor", spreadsheetID)
+	return nil
 }
 
 // InitiateGoogleIntegration inicia el flujo OAuth2 para Calendar y Sheets
@@ -183,6 +229,16 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 		return
 	}
 	log.Printf("✅ [Agent %d] Sheet creado con formato de calendario: %s", agent.ID, spreadsheetID)
+
+	// ✨ NUEVO: Hacer el Spreadsheet público automáticamente
+	log.Printf("🔓 [Agent %d] Haciendo Spreadsheet público con permisos de Editor...", agent.ID)
+	if err := h.MakeSpreadsheetPublicEditor(ctx, string(tokenJSON), spreadsheetID); err != nil {
+		log.Printf("⚠️  [Agent %d] No se pudo hacer público automáticamente: %v", agent.ID, err)
+		log.Printf("💡 [Agent %d] El usuario tendrá que compartir manualmente", agent.ID)
+		// NO RETORNAR - continuar con el flujo
+	} else {
+		log.Printf("✅ [Agent %d] Spreadsheet ahora es público con permisos de Editor", agent.ID)
+	}
 
 	// PASO 3: Guardar todo en la base de datos
 	now := time.Now()
