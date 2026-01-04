@@ -23,34 +23,52 @@ import (
 var globalClient *whatsmeow.Client
 
 func main() {
+	// Configurar logs con timestamps
+	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
+	log.SetOutput(os.Stdout)
+
 	printBanner()
 
-	// Cargar variables de entorno (no falla si no existe)
+	// Cargar variables de entorno
+	log.Println("📋 Cargando configuración...")
 	if err := godotenv.Load(); err != nil {
 		log.Println("ℹ️  Archivo .env no encontrado, usando variables de entorno del sistema")
 	} else {
 		log.Println("✅ Archivo .env cargado correctamente")
 	}
+	log.Println("")
 
 	// Cargar configuración del negocio
+	log.Println("🏢 Cargando configuración del negocio...")
 	if err := src.LoadBusinessConfig(); err != nil {
 		log.Printf("⚠️  Error cargando business_config.json: %v\n", err)
 		log.Println("💡 El bot continuará con configuración por defecto")
 	} else {
 		log.Println("✅ Configuración del negocio cargada correctamente")
+		if src.BusinessCfg != nil {
+			log.Printf("   📍 Negocio: %s\n", src.BusinessCfg.AgentName)
+			log.Printf("   🏪 Tipo: %s\n", src.BusinessCfg.BusinessType)
+		}
 	}
+	log.Println("")
 
 	// Mostrar estado de configuración
 	showConfigurationStatus()
 
 	// Inicializar servicios
-	log.Println("\n🚀 Inicializando servicios...")
-	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("")
+	log.Println("╔════════════════════════════════════════════════════════╗")
+	log.Println("║                                                        ║")
+	log.Println("║              INICIALIZANDO SERVICIOS                   ║")
+	log.Println("║                                                        ║")
+	log.Println("╚════════════════════════════════════════════════════════╝")
+	log.Println("")
 
 	// Inicializar Gemini AI
 	geminiStatus := "❌ No disponible"
+	log.Println("🤖 Inicializando Gemini AI...")
 	if err := src.InitGemini(); err != nil {
-		log.Printf("⚠️  Gemini AI: %v\n", err)
+		log.Printf("⚠️  Gemini AI no disponible: %v\n", err)
 		log.Println("💡 El bot funcionará con respuestas básicas (sin IA)")
 	} else {
 		geminiStatus = "✅ Conectado"
@@ -59,25 +77,27 @@ func main() {
 
 	// Inicializar Google Sheets
 	sheetsStatus := "❌ No disponible"
-	if err := src.InitSheets(); err != nil {
-		log.Printf("⚠️  Google Sheets: %v\n", err)
-		log.Println("💡 Las citas no se guardarán en Sheets")
+	sheetsErr := src.InitSheets()
+	if sheetsErr != nil {
+		log.Printf("❌ Google Sheets NO disponible: %v\n", sheetsErr)
+		log.Println("💡 Las citas NO se guardarán en Sheets")
+		sheetsStatus = "❌ No disponible"
 	} else {
 		sheetsStatus = "✅ Conectado"
-		log.Println("✅ Google Sheets inicializado correctamente")
+		log.Println("✅ Google Sheets disponible")
 	}
 
 	// Inicializar Google Calendar
 	calendarStatus := "❌ No disponible"
-	if err := src.InitCalendar(); err != nil {
-		log.Printf("⚠️  Google Calendar: %v\n", err)
-		log.Println("💡 Las citas no se crearán en Calendar")
+	calendarErr := src.InitCalendar()
+	if calendarErr != nil {
+		log.Printf("❌ Google Calendar NO disponible: %v\n", calendarErr)
+		log.Println("💡 Las citas NO se crearán en Calendar")
+		calendarStatus = "❌ No disponible"
 	} else {
 		calendarStatus = "✅ Conectado"
-		log.Println("✅ Google Calendar inicializado correctamente")
+		log.Println("✅ Google Calendar disponible")
 	}
-
-	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 	// Iniciar watchdog para recargar configuración
 	go configWatchdog()
@@ -94,7 +114,7 @@ func main() {
 		dbFile = "whatsapp.db"
 	}
 
-	log.Printf("📁 Base de datos: %s\n", dbFile)
+	log.Printf("\n📁 Base de datos: %s\n", dbFile)
 
 	// Crear contenedor de store SQLite
 	container, err := sqlstore.New(ctx, "sqlite3", fmt.Sprintf("file:%s?_foreign_keys=on", dbFile), dbLog)
@@ -170,6 +190,7 @@ func main() {
 
 	// Crear calendario semanal si está habilitado
 	if src.IsSheetsEnabled() {
+		log.Println("\n📅 Configurando calendario semanal...")
 		if err := src.InitializeWeeklyCalendar(); err != nil {
 			log.Printf("⚠️  No se pudo inicializar calendario semanal: %v\n", err)
 		} else {
@@ -202,7 +223,8 @@ func printBanner() {
 
 // Mostrar estado de configuración
 func showConfigurationStatus() {
-	log.Println("\n📋 Estado de Configuración:")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("📊 VERIFICACIÓN DE ARCHIVOS")
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 	// Verificar .env
@@ -214,28 +236,41 @@ func showConfigurationStatus() {
 	}
 
 	// Verificar google.json
-	if _, err := os.Stat("google.json"); err == nil {
-		log.Println("✅ Archivo google.json: Encontrado")
+	if info, err := os.Stat("google.json"); err == nil {
+		log.Printf("✅ Archivo google.json: Encontrado (%d bytes)\n", info.Size())
 	} else {
 		log.Println("⚠️  Archivo google.json: No encontrado")
 		log.Println("   💡 Necesario para Google Sheets y Calendar")
 	}
 
+	// Verificar business_config.json
+	if info, err := os.Stat("business_config.json"); err == nil {
+		log.Printf("✅ Archivo business_config.json: Encontrado (%d bytes)\n", info.Size())
+	} else {
+		log.Println("⚠️  Archivo business_config.json: No encontrado")
+	}
+
+	log.Println("")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("🔑 VARIABLES DE ENTORNO")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
 	// Verificar variables de entorno
 	vars := map[string]string{
+		"AGENT_ID":           "ID del Agente",
 		"GEMINI_API_KEY":     "Gemini AI",
 		"SPREADSHEETID":      "Google Sheets",
 		"GOOGLE_CALENDAR_ID": "Google Calendar",
+		"DATABASE_FILE":      "Base de Datos",
 	}
 
-	log.Println("\n📊 Variables de Entorno:")
-	for env, service := range vars {
+	for env, description := range vars {
 		value := os.Getenv(env)
 		if value != "" {
 			masked := maskValue(value)
-			log.Printf("   ✅ %s: %s\n", env, masked)
+			log.Printf("✅ %-20s: %s (%s)\n", env, masked, description)
 		} else {
-			log.Printf("   ⚠️  %s: No configurada (necesaria para %s)\n", env, service)
+			log.Printf("⚠️  %-20s: No configurada (%s)\n", env, description)
 		}
 	}
 }
@@ -259,12 +294,30 @@ func printFinalStatus(gemini, sheets, calendar string) {
 		fmt.Printf("📱 Tipo: %s\n", src.BusinessCfg.BusinessType)
 	}
 
-	fmt.Println("\n📊 Estado de Servicios:")
+	fmt.Println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println("📊 ESTADO DE SERVICIOS")
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-	fmt.Printf("   🧠 Gemini AI:        %s\n", gemini)
-	fmt.Printf("   📊 Google Sheets:    %s\n", sheets)
-	fmt.Printf("   📅 Google Calendar:  %s\n", calendar)
+	fmt.Printf("🧠 Gemini AI:        %s\n", gemini)
+	fmt.Printf("📊 Google Sheets:    %s\n", sheets)
+	fmt.Printf("📅 Google Calendar:  %s\n", calendar)
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+	// Advertencias si hay servicios deshabilitados
+	if sheets == "❌ No disponible" || calendar == "❌ No disponible" {
+		fmt.Println("\n⚠️  ADVERTENCIA:")
+		if sheets == "❌ No disponible" {
+			fmt.Println("   📊 Google Sheets deshabilitado - Las citas NO se guardarán")
+		}
+		if calendar == "❌ No disponible" {
+			fmt.Println("   📅 Google Calendar deshabilitado - Los eventos NO se crearán")
+		}
+		fmt.Println("\n💡 SOLUCIÓN:")
+		fmt.Println("   1. Verifica que google.json exista y tenga credenciales válidas")
+		fmt.Println("   2. Verifica que SPREADSHEETID y GOOGLE_CALENDAR_ID estén en .env")
+		fmt.Println("   3. Verifica que el token no esté expirado")
+		fmt.Println("   4. Revisa los logs arriba para más detalles")
+	}
+
 	fmt.Println("\n📱 Esperando mensajes de WhatsApp...")
 	fmt.Println("💡 Presiona Ctrl+C para detener el bot\n")
 }

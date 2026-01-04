@@ -20,37 +20,116 @@ var sheetsEnabled bool
 
 // InitSheets inicializa el servicio de Google Sheets usando OAuth token
 func InitSheets() error {
+	log.Println("")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("🔧 INICIANDO GOOGLE SHEETS")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("")
+
+	// PASO 1: Verificar SPREADSHEETID
 	spreadsheetID = os.Getenv("SPREADSHEETID")
+	log.Println("📋 PASO 1/8: Verificando SPREADSHEETID...")
 	if spreadsheetID == "" {
 		sheetsEnabled = false
+		log.Println("   ❌ SPREADSHEETID no configurado en .env")
+		log.Println("   💡 Agrega SPREADSHEETID=tu_id en el archivo .env")
 		return fmt.Errorf("SPREADSHEETID no configurado")
 	}
+	log.Printf("   ✅ SPREADSHEETID encontrado: %s\n", spreadsheetID)
+	log.Println("")
 
-	// Verificar credenciales
+	// PASO 2: Verificar archivo google.json
+	log.Println("📋 PASO 2/8: Verificando archivo google.json...")
+	wd, _ := os.Getwd()
+	log.Printf("   📂 Directorio actual: %s\n", wd)
+
 	if _, err := os.Stat("google.json"); os.IsNotExist(err) {
 		sheetsEnabled = false
+		log.Println("   ❌ Archivo google.json NO encontrado")
+		log.Printf("   📂 Buscado en: %s/google.json\n", wd)
+		log.Println("   💡 Crea el archivo google.json con tus credenciales OAuth")
 		return fmt.Errorf("archivo google.json no encontrado")
 	}
+	log.Println("   ✅ Archivo google.json existe")
+	log.Println("")
 
-	// Leer el archivo google.json (que contiene el OAuth token)
+	// PASO 3: Leer google.json
+	log.Println("📋 PASO 3/8: Leyendo google.json...")
 	tokenJSON, err := os.ReadFile("google.json")
 	if err != nil {
 		sheetsEnabled = false
+		log.Printf("   ❌ Error leyendo google.json: %v\n", err)
 		return fmt.Errorf("error leyendo google.json: %w", err)
 	}
+	log.Printf("   ✅ Archivo leído: %d bytes\n", len(tokenJSON))
 
-	// Intentar parsear como OAuth token
+	// Mostrar primeros caracteres para debug
+	preview := string(tokenJSON)
+	if len(preview) > 100 {
+		preview = preview[:100] + "..."
+	}
+	log.Printf("   📄 Contenido: %s\n", preview)
+	log.Println("")
+
+	// PASO 4: Parsear token
+	log.Println("📋 PASO 4/8: Parseando token OAuth...")
 	var token oauth2.Token
 	if err := json.Unmarshal(tokenJSON, &token); err != nil {
 		sheetsEnabled = false
+		log.Printf("   ❌ Error parseando token: %v\n", err)
+		log.Println("   💡 Verifica que google.json tenga formato JSON válido")
+
+		// Mostrar más contexto del error
+		if len(tokenJSON) < 500 {
+			log.Printf("   📄 JSON completo: %s\n", string(tokenJSON))
+		}
 		return fmt.Errorf("error parseando token de google.json: %w", err)
 	}
+	log.Println("   ✅ Token parseado correctamente")
+	log.Println("")
 
-	// Validar que el token tenga access_token
+	// PASO 5: Validar token
+	log.Println("📋 PASO 5/8: Validando contenido del token...")
+
 	if token.AccessToken == "" {
 		sheetsEnabled = false
+		log.Println("   ❌ Token no contiene access_token")
+		log.Println("   💡 El archivo google.json debe tener un access_token válido")
 		return fmt.Errorf("token no contiene access_token válido")
 	}
+
+	// Mostrar preview del access token (primeros y últimos caracteres)
+	accessTokenPreview := token.AccessToken
+	if len(accessTokenPreview) > 30 {
+		accessTokenPreview = accessTokenPreview[:20] + "..." + accessTokenPreview[len(accessTokenPreview)-10:]
+	}
+	log.Printf("   ✅ access_token presente: %s\n", accessTokenPreview)
+
+	// Verificar expiración
+	if !token.Expiry.IsZero() {
+		if token.Expiry.Before(time.Now()) {
+			log.Printf("   ⚠️  TOKEN EXPIRADO: %s (hace %v)\n",
+				token.Expiry.Format("2006-01-02 15:04:05"),
+				time.Since(token.Expiry))
+			log.Println("   💡 Necesitas renovar el token desde el panel de Attomos")
+		} else {
+			log.Printf("   ✅ Token válido hasta: %s (en %v)\n",
+				token.Expiry.Format("2006-01-02 15:04:05"),
+				time.Until(token.Expiry))
+		}
+	} else {
+		log.Println("   ℹ️  Token sin fecha de expiración")
+	}
+
+	if token.RefreshToken != "" {
+		log.Println("   ✅ refresh_token presente (auto-renovación habilitada)")
+	} else {
+		log.Println("   ⚠️  No hay refresh_token (el token no se auto-renovará)")
+	}
+	log.Println("")
+
+	// PASO 6: Crear servicio
+	log.Println("📋 PASO 6/8: Creando servicio de Google Sheets...")
 
 	ctx := context.Background()
 
@@ -64,13 +143,110 @@ func InitSheets() error {
 	srv, err := sheets.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		sheetsEnabled = false
+		log.Printf("   ❌ Error creando servicio Sheets: %v\n", err)
+		log.Println("   💡 Verifica tu conexión a internet y que el token sea válido")
 		return fmt.Errorf("error creando servicio Sheets: %w", err)
 	}
+	log.Println("   ✅ Servicio de Sheets creado exitosamente")
+	log.Println("")
+
+	// PASO 7: Probar acceso de LECTURA al Spreadsheet
+	log.Println("📋 PASO 7/8: Probando acceso de LECTURA al Spreadsheet...")
+	log.Printf("   🔍 Intentando acceder a: %s\n", spreadsheetID)
+
+	spreadsheet, testErr := srv.Spreadsheets.Get(spreadsheetID).Do()
+	if testErr != nil {
+		sheetsEnabled = false
+		log.Printf("   ❌ Error accediendo al Spreadsheet: %v\n", testErr)
+		log.Println("")
+		log.Println("   💡 POSIBLES CAUSAS:")
+		log.Println("      1️⃣  El Spreadsheet ID es incorrecto")
+		log.Println("      2️⃣  La cuenta no tiene permisos (el Spreadsheet está RESTRINGIDO)")
+		log.Println("      3️⃣  El token está expirado/inválido")
+		log.Println("      4️⃣  El Spreadsheet fue eliminado")
+		log.Println("")
+		log.Println("   📋 CÓMO VERIFICAR:")
+		log.Printf("      Abre: https://docs.google.com/spreadsheets/d/%s\n", spreadsheetID)
+		log.Println("")
+		log.Println("   🔓 SOLUCIÓN SI ESTÁ RESTRINGIDO:")
+		log.Println("      1. Abre el Spreadsheet")
+		log.Println("      2. Click en 'Compartir' (arriba a la derecha)")
+		log.Println("      3. En 'Acceso general', cambia de 'Restringido' a:")
+		log.Println("         → 'Cualquier persona con el vínculo' puede EDITAR")
+		log.Println("      O bien:")
+		log.Println("      4. Agrega la cuenta de servicio como Editor")
+		log.Println("")
+		return fmt.Errorf("error accediendo al Spreadsheet: %w", testErr)
+	}
+
+	log.Println("   ✅ Acceso de LECTURA verificado")
+	if spreadsheet.Properties != nil {
+		log.Printf("   📊 Título: %s\n", spreadsheet.Properties.Title)
+		log.Printf("   📄 Hojas: %d\n", len(spreadsheet.Sheets))
+	}
+	log.Println("")
+
+	// PASO 8: Probar permisos de ESCRITURA
+	log.Println("📋 PASO 8/8: Probando permisos de ESCRITURA...")
+	log.Println("   🧪 Intentando escribir una celda de prueba...")
+
+	testCellRange := "Sheet1!Z1000" // Celda lejana para no molestar
+	testValue := [][]interface{}{{"TEST_PERMISOS"}}
+	testValueRange := &sheets.ValueRange{Values: testValue}
+
+	_, writeErr := srv.Spreadsheets.Values.Update(
+		spreadsheetID,
+		testCellRange,
+		testValueRange,
+	).ValueInputOption("USER_ENTERED").Do()
+
+	if writeErr != nil {
+		sheetsEnabled = false
+		log.Printf("   ❌ Error escribiendo en el Spreadsheet: %v\n", writeErr)
+		log.Println("")
+		log.Println("   💡 DIAGNÓSTICO:")
+		log.Println("      ✅ Tienes permisos de LECTURA")
+		log.Println("      ❌ NO tienes permisos de ESCRITURA")
+		log.Println("")
+		log.Println("   🔓 SOLUCIÓN:")
+		log.Println("      El Spreadsheet debe tener permisos de EDICIÓN, no solo lectura")
+		log.Println("")
+		log.Println("   📋 PASOS:")
+		log.Printf("      1. Abre: https://docs.google.com/spreadsheets/d/%s\n", spreadsheetID)
+		log.Println("      2. Click en 'Compartir' (botón arriba a la derecha)")
+		log.Println("      3. En 'Acceso general':")
+		log.Println("         → Cambia de 'Restringido' a 'Cualquier persona con el vínculo'")
+		log.Println("         → En el dropdown de permisos, selecciona 'Editor'")
+		log.Println("      4. Guarda los cambios")
+		log.Println("      5. Reinicia el bot: systemctl restart atomic-bot-109")
+		log.Println("")
+		return fmt.Errorf("sin permisos de escritura en el Spreadsheet")
+	}
+
+	// Limpiar la celda de prueba
+	clearValue := [][]interface{}{{""}}
+	clearValueRange := &sheets.ValueRange{Values: clearValue}
+	srv.Spreadsheets.Values.Update(
+		spreadsheetID,
+		testCellRange,
+		clearValueRange,
+	).ValueInputOption("USER_ENTERED").Do()
+
+	log.Println("   ✅ Permisos de ESCRITURA verificados")
+	log.Println("   🧹 Celda de prueba limpiada")
+	log.Println("")
 
 	sheetsService = srv
 	sheetsEnabled = true
 
-	log.Println("✅ Google Sheets inicializado correctamente")
+	log.Println("╔════════════════════════════════════════════════════════╗")
+	log.Println("║                                                        ║")
+	log.Println("║     ✅ GOOGLE SHEETS INICIALIZADO EXITOSAMENTE        ║")
+	log.Println("║        CON PERMISOS DE LECTURA Y ESCRITURA            ║")
+	log.Println("║                                                        ║")
+	log.Println("╚════════════════════════════════════════════════════════╝")
+	log.Println("")
+
 	return nil
 }
 
@@ -273,61 +449,51 @@ func SaveAppointmentToCalendar(data map[string]string) error {
 		fechaExacta,
 	)
 
-	log.Println("📝 INFORMACIÓN DE LA CITA A GUARDAR:")
+	log.Println("📝 CONTENIDO A ESCRIBIR:")
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Println(infoCita)
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Println("")
 
-	var contenidoFinal string
+	// Si la celda ya tiene contenido, agregar separador
 	if len(contenidoActual) > 0 && len(contenidoActual[0]) > 0 {
-		// Ya hay contenido, agregar separador
-		existente := fmt.Sprintf("%v", contenidoActual[0][0])
-		if strings.TrimSpace(existente) != "" {
-			contenidoFinal = fmt.Sprintf("%s\n\n---\n\n%s", existente, infoCita)
-			log.Println("ℹ️  La celda ya tiene contenido - Agregando nueva cita con separador")
-			log.Println("📄 Contenido existente:")
-			log.Println(existente)
-		} else {
-			contenidoFinal = infoCita
-			log.Println("ℹ️  Celda vacía - Creando primera cita")
+		contenidoExistente := fmt.Sprintf("%v", contenidoActual[0][0])
+		if strings.TrimSpace(contenidoExistente) != "" {
+			log.Println("⚠️  Celda ya ocupada, agregando segunda cita con separador...")
+			infoCita = contenidoExistente + "\n\n---\n\n" + infoCita
 		}
-	} else {
-		contenidoFinal = infoCita
-		log.Println("ℹ️  Celda vacía - Creando primera cita")
 	}
-	log.Println("")
 
-	// Guardar en la celda específica
+	// Escribir en la celda
 	log.Println("🔄 PASO 6: Escribiendo en Google Sheets...")
-	log.Printf("   🎯 Escribiendo en celda: %s\n", celdaRango)
-
-	if err := WriteToSheet([][]interface{}{{contenidoFinal}}, celdaRango); err != nil {
+	if err := WriteToSheet([][]interface{}{{infoCita}}, celdaRango); err != nil {
 		log.Println("")
 		log.Println("╔════════════════════════════════════════════════════════╗")
 		log.Println("║                                                        ║")
-		log.Println("║         ❌ ERROR GUARDANDO EN SHEETS                   ║")
+		log.Println("║        ❌ ERROR GUARDANDO EN SHEETS                    ║")
 		log.Println("║                                                        ║")
 		log.Println("╚════════════════════════════════════════════════════════╝")
 		log.Printf("❌ ERROR: %v\n", err)
 		log.Printf("   📍 Celda: %s\n", celdaRango)
+		log.Printf("   📅 Día: %s\n", dia)
+		log.Printf("   ⏰ Hora: %s\n", horaNormalizada)
 		log.Println("")
-		return fmt.Errorf("error escribiendo en Sheets: %w", err)
+		return fmt.Errorf("error guardando en Sheets: %w", err)
 	}
 
 	log.Println("")
 	log.Println("╔════════════════════════════════════════════════════════╗")
 	log.Println("║                                                        ║")
-	log.Println("║       ✅ CITA GUARDADA EN SHEETS EXITOSAMENTE          ║")
+	log.Println("║      ✅ CITA GUARDADA EN SHEETS EXITOSAMENTE           ║")
 	log.Println("║                                                        ║")
 	log.Println("╚════════════════════════════════════════════════════════╝")
 	log.Println("")
-	log.Println("📊 RESUMEN DEL GUARDADO:")
+	log.Println("📊 RESUMEN:")
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Printf("   📍 Celda: %s\n", celdaRango)
 	log.Printf("   📅 Día: %s\n", dia)
 	log.Printf("   ⏰ Hora: %s\n", horaNormalizada)
-	log.Printf("   📆 Fecha exacta: %s\n", fechaExacta)
+	log.Printf("   📅 Fecha: %s\n", fechaExacta)
 	log.Printf("   👤 Cliente: %s\n", data["nombre"])
 	log.Printf("   📞 Teléfono: %s\n", data["telefono"])
 	log.Printf("   ✂️  Servicio: %s\n", data["servicio"])

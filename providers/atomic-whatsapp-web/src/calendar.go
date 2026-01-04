@@ -19,41 +19,115 @@ var calendarEnabled bool
 
 // InitCalendar inicializa el servicio de Google Calendar usando OAuth token
 func InitCalendar() error {
+	log.Println("")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("🔧 INICIANDO GOOGLE CALENDAR")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("")
+
+	// PASO 1: Verificar GOOGLE_CALENDAR_ID
 	calendarID = os.Getenv("GOOGLE_CALENDAR_ID")
+	log.Println("📋 PASO 1/7: Verificando GOOGLE_CALENDAR_ID...")
 	if calendarID == "" {
 		calendarEnabled = false
+		log.Println("   ❌ GOOGLE_CALENDAR_ID no configurado en .env")
+		log.Println("   💡 Agrega GOOGLE_CALENDAR_ID=tu_id en el archivo .env")
 		return fmt.Errorf("GOOGLE_CALENDAR_ID no configurado")
 	}
+	log.Printf("   ✅ GOOGLE_CALENDAR_ID encontrado: %s\n", calendarID)
+	log.Println("")
 
-	// Verificar credenciales
+	// PASO 2: Verificar archivo google.json
+	log.Println("📋 PASO 2/7: Verificando archivo google.json...")
+	wd, _ := os.Getwd()
+	log.Printf("   📂 Directorio actual: %s\n", wd)
+
 	if _, err := os.Stat("google.json"); os.IsNotExist(err) {
 		calendarEnabled = false
+		log.Println("   ❌ Archivo google.json NO encontrado")
+		log.Printf("   📂 Buscado en: %s/google.json\n", wd)
+		log.Println("   💡 Crea el archivo google.json con tus credenciales OAuth")
 		return fmt.Errorf("archivo google.json no encontrado")
 	}
+	log.Println("   ✅ Archivo google.json existe")
+	log.Println("")
 
-	// Leer el archivo google.json (que contiene el OAuth token)
+	// PASO 3: Leer google.json
+	log.Println("📋 PASO 3/7: Leyendo google.json...")
 	tokenJSON, err := os.ReadFile("google.json")
 	if err != nil {
 		calendarEnabled = false
+		log.Printf("   ❌ Error leyendo google.json: %v\n", err)
 		return fmt.Errorf("error leyendo google.json: %w", err)
 	}
+	log.Printf("   ✅ Archivo leído: %d bytes\n", len(tokenJSON))
 
-	// Intentar parsear como OAuth token
+	// Mostrar primeros caracteres para debug
+	preview := string(tokenJSON)
+	if len(preview) > 100 {
+		preview = preview[:100] + "..."
+	}
+	log.Printf("   📄 Contenido: %s\n", preview)
+	log.Println("")
+
+	// PASO 4: Parsear token
+	log.Println("📋 PASO 4/7: Parseando token OAuth...")
 	var token oauth2.Token
 	if err := json.Unmarshal(tokenJSON, &token); err != nil {
 		calendarEnabled = false
+		log.Printf("   ❌ Error parseando token: %v\n", err)
+		log.Println("   💡 Verifica que google.json tenga formato JSON válido")
 		return fmt.Errorf("error parseando token de google.json: %w", err)
 	}
+	log.Println("   ✅ Token parseado correctamente")
+	log.Println("")
 
-	// Validar que el token tenga access_token
+	// PASO 5: Validar token
+	log.Println("📋 PASO 5/7: Validando contenido del token...")
+
 	if token.AccessToken == "" {
 		calendarEnabled = false
+		log.Println("   ❌ Token no contiene access_token")
+		log.Println("   💡 El archivo google.json debe tener un access_token válido")
 		return fmt.Errorf("token no contiene access_token válido")
 	}
 
+	// Mostrar preview del access token
+	accessTokenPreview := token.AccessToken
+	if len(accessTokenPreview) > 30 {
+		accessTokenPreview = accessTokenPreview[:20] + "..." + accessTokenPreview[len(accessTokenPreview)-10:]
+	}
+	log.Printf("   ✅ access_token presente: %s\n", accessTokenPreview)
+
+	// Verificar expiración
+	if !token.Expiry.IsZero() {
+		if token.Expiry.Before(time.Now()) {
+			log.Printf("   ⚠️  TOKEN EXPIRADO: %s (hace %v)\n",
+				token.Expiry.Format("2006-01-02 15:04:05"),
+				time.Since(token.Expiry))
+			log.Println("   💡 Necesitas renovar el token desde el panel de Attomos")
+		} else {
+			log.Printf("   ✅ Token válido hasta: %s (en %v)\n",
+				token.Expiry.Format("2006-01-02 15:04:05"),
+				time.Until(token.Expiry))
+		}
+	} else {
+		log.Println("   ℹ️  Token sin fecha de expiración")
+	}
+
+	if token.RefreshToken != "" {
+		log.Println("   ✅ refresh_token presente (auto-renovación habilitada)")
+	} else {
+		log.Println("   ⚠️  No hay refresh_token (el token no se auto-renovará)")
+	}
+	log.Println("")
+
+	// PASO 6: Crear servicio
+	log.Println("📋 PASO 6/7: Creando servicio de Google Calendar...")
+
 	ctx := context.Background()
 
-	// Crear token source que maneje el refresh automáticamente
+	// Crear token source
 	tokenSource := oauth2.StaticTokenSource(&token)
 
 	// Crear cliente HTTP autenticado con el token
@@ -63,13 +137,52 @@ func InitCalendar() error {
 	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		calendarEnabled = false
+		log.Printf("   ❌ Error creando servicio Calendar: %v\n", err)
+		log.Println("   💡 Verifica tu conexión a internet y que el token sea válido")
 		return fmt.Errorf("error creando servicio Calendar: %w", err)
 	}
+	log.Println("   ✅ Servicio de Calendar creado exitosamente")
+	log.Println("")
+
+	// PASO 7: Probar acceso al Calendar
+	log.Println("📋 PASO 7/7: Probando acceso al Calendar...")
+	log.Printf("   🔍 Intentando acceder a: %s\n", calendarID)
+
+	cal, testErr := srv.Calendars.Get(calendarID).Do()
+	if testErr != nil {
+		calendarEnabled = false
+		log.Printf("   ❌ Error accediendo al Calendar: %v\n", testErr)
+		log.Println("")
+		log.Println("   💡 POSIBLES CAUSAS:")
+		log.Println("      1️⃣  El Calendar ID es incorrecto")
+		log.Println("      2️⃣  La cuenta no tiene permisos de edición")
+		log.Println("      3️⃣  El token está expirado/inválido")
+		log.Println("      4️⃣  El Calendar fue eliminado")
+		log.Println("")
+		log.Println("   📋 CÓMO VERIFICAR:")
+		log.Printf("      Abre: https://calendar.google.com/calendar/u/0/r/settings/calendar/%s\n", calendarID)
+		log.Println("      Asegúrate de tener permisos de Editor")
+		log.Println("")
+		return fmt.Errorf("error accediendo al Calendar: %w", testErr)
+	}
+
+	log.Println("   ✅ Acceso al Calendar verificado")
+	if cal.Summary != "" {
+		log.Printf("   📅 Calendario: %s\n", cal.Summary)
+		log.Printf("   🌍 Zona horaria: %s\n", cal.TimeZone)
+	}
+	log.Println("")
 
 	calendarService = srv
 	calendarEnabled = true
 
-	log.Println("✅ Google Calendar inicializado correctamente")
+	log.Println("╔════════════════════════════════════════════════════════╗")
+	log.Println("║                                                        ║")
+	log.Println("║    ✅ GOOGLE CALENDAR INICIALIZADO EXITOSAMENTE       ║")
+	log.Println("║                                                        ║")
+	log.Println("╚════════════════════════════════════════════════════════╝")
+	log.Println("")
+
 	return nil
 }
 
@@ -191,7 +304,7 @@ func CreateCalendarEvent(data map[string]string) (*calendar.Event, error) {
 	log.Println("")
 
 	log.Println("🔄 PASO 5: Enviando evento a Google Calendar API...")
-	log.Printf("   📍 Calendar ID: %s\n", calendarID)
+	log.Printf("   📅 Calendar ID: %s\n", calendarID)
 
 	createdEvent, err := calendarService.Events.Insert(calendarID, event).Do()
 	if err != nil {
