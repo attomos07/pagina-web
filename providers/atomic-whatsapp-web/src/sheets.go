@@ -327,11 +327,19 @@ func guardarCitaEnSheets(cita *CitaData) error {
 	log.Printf("   Servicio: %s\n", cita.Servicio)
 	log.Printf("   Trabajador: %s\n", cita.NombreTrabajador)
 
-	// Determinar la columna según el día de la semana
-	fechaObj, err := time.Parse("2006-01-02", cita.Fecha)
+	// Parsear fecha en formato DD/MM/YYYY a objeto time.Time
+	var fechaObj time.Time
+	var err error
+
+	// Intentar parsear como DD/MM/YYYY
+	fechaObj, err = time.Parse("02/01/2006", cita.Fecha)
 	if err != nil {
-		log.Printf("❌ Error parseando fecha: %v\n", err)
-		return err
+		// Si falla, intentar como YYYY-MM-DD
+		fechaObj, err = time.Parse("2006-01-02", cita.Fecha)
+		if err != nil {
+			log.Printf("❌ Error parseando fecha: %v\n", err)
+			return err
+		}
 	}
 
 	weekday := int(fechaObj.Weekday())
