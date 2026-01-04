@@ -363,10 +363,17 @@ func guardarCitaEnSheets(cita *CitaData) error {
 	}
 
 	// Parsear la hora para obtener la fila
-	horaObj, err := time.Parse("15:04", cita.Hora)
+	var horaObj time.Time
+
+	// Intentar primero con formato 12h (AM/PM)
+	horaObj, err = time.Parse("3:04 PM", cita.Hora)
 	if err != nil {
-		log.Printf("❌ Error parseando hora: %v\n", err)
-		return err
+		// Si falla, intentar con formato 24h
+		horaObj, err = time.Parse("15:04", cita.Hora)
+		if err != nil {
+			log.Printf("❌ Error parseando hora: %v\n", err)
+			return err
+		}
 	}
 
 	hour := horaObj.Hour()
