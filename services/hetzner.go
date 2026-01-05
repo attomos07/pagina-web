@@ -68,7 +68,7 @@ func (h *HetznerService) CreateAtomicBotsGlobalServer(serverName string) (*Serve
 
 	payload := map[string]interface{}{
 		"name":        serverName,
-		"server_type": "cx33", // Más potente para múltiples bots
+		"server_type": "cx23",
 		"image":       "ubuntu-22.04",
 		"location":    "nbg1",
 		"ssh_keys":    []string{},
