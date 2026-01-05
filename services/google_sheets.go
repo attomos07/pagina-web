@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -68,7 +69,7 @@ func (s *GoogleSheetsService) CreateSheetsService(ctx context.Context, tokenJSON
 }
 
 // CreateSpreadsheet crea una nueva hoja de cálculo para el agente con formato de calendario semanal
-func (s *GoogleSheetsService) CreateSpreadsheet(ctx context.Context, tokenJSON, agentName string) (string, error) {
+func (s *GoogleSheetsService) CreateSpreadsheet(ctx context.Context, tokenJSON, agentName string, schedule Schedule) (string, error) {
 	service, err := s.CreateSheetsService(ctx, tokenJSON)
 	if err != nil {
 		return "", err
@@ -100,8 +101,8 @@ func (s *GoogleSheetsService) CreateSpreadsheet(ctx context.Context, tokenJSON, 
 		return "", fmt.Errorf("error creating spreadsheet: %w", err)
 	}
 
-	// Configurar el calendario semanal
-	err = s.SetupWeeklyCalendar(ctx, tokenJSON, created.SpreadsheetId)
+	// Configurar el calendario semanal con los horarios del agente
+	err = s.SetupWeeklyCalendar(ctx, tokenJSON, created.SpreadsheetId, schedule)
 	if err != nil {
 		return "", fmt.Errorf("error setting up weekly calendar: %w", err)
 	}
@@ -109,8 +110,8 @@ func (s *GoogleSheetsService) CreateSpreadsheet(ctx context.Context, tokenJSON, 
 	return created.SpreadsheetId, nil
 }
 
-// SetupWeeklyCalendar configura el formato de calendario semanal
-func (s *GoogleSheetsService) SetupWeeklyCalendar(ctx context.Context, tokenJSON, spreadsheetID string) error {
+// SetupWeeklyCalendar configura el formato de calendario semanal usando los horarios del agente
+func (s *GoogleSheetsService) SetupWeeklyCalendar(ctx context.Context, tokenJSON, spreadsheetID string, schedule Schedule) error {
 	service, err := s.CreateSheetsService(ctx, tokenJSON)
 	if err != nil {
 		return err
@@ -154,11 +155,12 @@ func (s *GoogleSheetsService) SetupWeeklyCalendar(ctx context.Context, tokenJSON
 		return fmt.Errorf("error updating headers: %w", err)
 	}
 
-	// PASO 2: Generar horarios (9:00 AM - 7:00 PM)
-	timeSlots := [][]interface{}{}
-	startHour := 9
-	endHour := 19
+	// PASO 2: Determinar horarios basados en el schedule del agente
+	startHour, endHour := getBusinessHours(schedule)
 
+	log.Printf("📅 Configurando calendario con horarios: %d:00 - %d:00", startHour, endHour)
+
+	timeSlots := [][]interface{}{}
 	for hour := startHour; hour <= endHour; hour++ {
 		var timeStr string
 		if hour < 12 {
@@ -171,13 +173,17 @@ func (s *GoogleSheetsService) SetupWeeklyCalendar(ctx context.Context, tokenJSON
 		timeSlots = append(timeSlots, []interface{}{timeStr})
 	}
 
+	// Calcular la última fila basada en la cantidad de horarios
+	lastRow := 1 + len(timeSlots)
+	rangeName := fmt.Sprintf("Calendario!A2:A%d", lastRow)
+
 	timeSlotsRange := &sheets.ValueRange{
 		Values: timeSlots,
 	}
 
 	_, err = service.Spreadsheets.Values.Update(
 		spreadsheetID,
-		"Calendario!A2:A12",
+		rangeName,
 		timeSlotsRange,
 	).ValueInputOption("RAW").Do()
 
@@ -213,12 +219,13 @@ func (s *GoogleSheetsService) SetupWeeklyCalendar(ctx context.Context, tokenJSON
 				Fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)",
 			},
 		},
-		// Formato de columna de horas (negrita)
+		// Formato de columna de horas (negrita) - SOLO hasta la última fila de horarios
 		{
 			RepeatCell: &sheets.RepeatCellRequest{
 				Range: &sheets.GridRange{
 					SheetId:          sheetId,
 					StartRowIndex:    1,
+					EndRowIndex:      int64(lastRow), // ✅ FIX: Solo hasta la última fila de horarios
 					StartColumnIndex: 0,
 					EndColumnIndex:   1,
 				},
@@ -269,14 +276,14 @@ func (s *GoogleSheetsService) SetupWeeklyCalendar(ctx context.Context, tokenJSON
 				Fields: "pixelSize",
 			},
 		},
-		// Ajustar altura de filas
+		// Ajustar altura de filas - dinámico basado en horarios
 		{
 			UpdateDimensionProperties: &sheets.UpdateDimensionPropertiesRequest{
 				Range: &sheets.DimensionRange{
 					SheetId:    sheetId,
 					Dimension:  "ROWS",
 					StartIndex: 1,
-					EndIndex:   13, // Filas de horarios
+					EndIndex:   int64(lastRow), // ✅ Dinámico
 				},
 				Properties: &sheets.DimensionProperties{
 					PixelSize: 100,
@@ -284,13 +291,13 @@ func (s *GoogleSheetsService) SetupWeeklyCalendar(ctx context.Context, tokenJSON
 				Fields: "pixelSize",
 			},
 		},
-		// Bordes para toda la tabla
+		// Bordes para toda la tabla - dinámico basado en horarios
 		{
 			UpdateBorders: &sheets.UpdateBordersRequest{
 				Range: &sheets.GridRange{
 					SheetId:          sheetId,
 					StartRowIndex:    0,
-					EndRowIndex:      13,
+					EndRowIndex:      int64(lastRow), // ✅ Dinámico
 					StartColumnIndex: 0,
 					EndColumnIndex:   8,
 				},
@@ -326,12 +333,13 @@ func (s *GoogleSheetsService) SetupWeeklyCalendar(ctx context.Context, tokenJSON
 				},
 			},
 		},
-		// Alineación vertical en el medio para celdas de datos
+		// Alineación vertical en el medio para celdas de datos - SOLO celdas de días
 		{
 			RepeatCell: &sheets.RepeatCellRequest{
 				Range: &sheets.GridRange{
 					SheetId:          sheetId,
 					StartRowIndex:    1,
+					EndRowIndex:      int64(lastRow), // ✅ FIX: Solo hasta la última fila de horarios
 					StartColumnIndex: 1,
 					EndColumnIndex:   8,
 				},
@@ -356,7 +364,52 @@ func (s *GoogleSheetsService) SetupWeeklyCalendar(ctx context.Context, tokenJSON
 		return fmt.Errorf("error formatting calendar: %w", err)
 	}
 
+	log.Printf("✅ Calendario configurado con %d horarios (%d:00 - %d:00)", len(timeSlots), startHour, endHour)
 	return nil
+}
+
+// getBusinessHours determina los horarios de negocio basándose en el schedule del agente
+func getBusinessHours(schedule Schedule) (int, int) {
+	// Por defecto 9 AM - 7 PM
+	startHour := 9
+	endHour := 19
+
+	// Revisar todos los días para encontrar el horario más amplio
+	days := []DaySchedule{
+		schedule.Monday,
+		schedule.Tuesday,
+		schedule.Wednesday,
+		schedule.Thursday,
+		schedule.Friday,
+		schedule.Saturday,
+		schedule.Sunday,
+	}
+
+	for _, day := range days {
+		if day.Open && day.Start != "" && day.End != "" {
+			// Parsear hora de inicio
+			var startH int
+			fmt.Sscanf(day.Start, "%d:", &startH)
+			if startH > 0 && startH < startHour {
+				startHour = startH
+			}
+
+			// Parsear hora de cierre
+			var endH int
+			fmt.Sscanf(day.End, "%d:", &endH)
+			if endH > endHour {
+				endHour = endH
+			}
+		}
+	}
+
+	// Asegurar que sea un rango válido
+	if startHour >= endHour {
+		startHour = 9
+		endHour = 19
+	}
+
+	return startHour, endHour
 }
 
 // AddAppointment agrega una nueva cita a la hoja de calendario

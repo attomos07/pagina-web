@@ -25,6 +25,23 @@ type GoogleIntegrationHandler struct {
 	sheetsService   *services.GoogleSheetsService
 }
 
+type Schedule struct {
+	Monday    DaySchedule `json:"monday"`
+	Tuesday   DaySchedule `json:"tuesday"`
+	Wednesday DaySchedule `json:"wednesday"`
+	Thursday  DaySchedule `json:"thursday"`
+	Friday    DaySchedule `json:"friday"`
+	Saturday  DaySchedule `json:"saturday"`
+	Sunday    DaySchedule `json:"sunday"`
+	Timezone  string      `json:"timezone"`
+}
+
+type DaySchedule struct {
+	Open  bool   `json:"open"`
+	Start string `json:"start"`
+	End   string `json:"end"`
+}
+
 // NewGoogleIntegrationHandler crea una nueva instancia del handler
 func NewGoogleIntegrationHandler() (*GoogleIntegrationHandler, error) {
 	// Intentar primero con variables específicas de integración
@@ -222,7 +239,16 @@ func (h *GoogleIntegrationHandler) HandleGoogleCallback(c *gin.Context) {
 
 	// PASO 2: Crear Spreadsheet automáticamente con formato de calendario semanal
 	log.Printf("📊 [Agent %d] Creando Google Sheet con formato de calendario...", agent.ID)
-	spreadsheetID, err := h.sheetsService.CreateSpreadsheet(ctx, string(tokenJSON), agent.Name)
+	spreadsheetID, err := h.sheetsService.CreateSpreadsheet(ctx, string(tokenJSON), agent.Name, services.Schedule{
+		Monday:    convertDaySchedule(agent.Config.Schedule.Monday),
+		Tuesday:   convertDaySchedule(agent.Config.Schedule.Tuesday),
+		Wednesday: convertDaySchedule(agent.Config.Schedule.Wednesday),
+		Thursday:  convertDaySchedule(agent.Config.Schedule.Thursday),
+		Friday:    convertDaySchedule(agent.Config.Schedule.Friday),
+		Saturday:  convertDaySchedule(agent.Config.Schedule.Saturday),
+		Sunday:    convertDaySchedule(agent.Config.Schedule.Sunday),
+		Timezone:  agent.Config.Schedule.Timezone,
+	})
 	if err != nil {
 		log.Printf("❌ [Agent %d] Error creando Sheet: %v", agent.ID, err)
 		c.Redirect(http.StatusTemporaryRedirect, "/my-agents?error=sheet_creation_failed")
@@ -488,4 +514,13 @@ func (h *GoogleIntegrationHandler) CreateAppointment(c *gin.Context) {
 		"event_id": eventID,
 		"message":  "Cita creada exitosamente en Calendar y Sheet",
 	})
+}
+
+// convertDaySchedule convierte un DaySchedule del modelo a un DaySchedule de services
+func convertDaySchedule(day models.DaySchedule) services.DaySchedule {
+	return services.DaySchedule{
+		Open:  day.Open,
+		Start: day.Start,
+		End:   day.End,
+	}
 }
