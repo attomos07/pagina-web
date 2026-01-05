@@ -67,7 +67,10 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 		return
 	}
 
-	sender := msg.Info.Sender.User
+	// Usar Chat.User en lugar de Sender.User para obtener el número real
+	// Chat.User = número de teléfono del usuario (ej: 5216624045267)
+	// Sender.User = puede ser device ID (ej: 122432455233651)
+	phoneNumber := msg.Info.Chat.User
 	senderName := msg.Info.PushName
 	if senderName == "" {
 		senderName = "Cliente"
@@ -87,12 +90,12 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Printf("📨 MENSAJE RECIBIDO")
-	log.Printf("   👤 De: %s (%s)", senderName, sender)
+	log.Printf("   👤 De: %s (%s)", senderName, phoneNumber)
 	log.Printf("   💬 Texto: %s", messageText)
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 	// Procesar mensaje
-	response := ProcessMessage(messageText, sender, senderName)
+	response := ProcessMessage(messageText, phoneNumber, senderName)
 
 	// Enviar respuesta
 	if response != "" {
@@ -276,7 +279,10 @@ func saveAppointment(state *UserState, userID string) string {
 	log.Println("╚════════════════════════════════════════════════════════╝")
 
 	state.AppointmentSaved = true
-	telefono := userID
+
+	// Limpiar el número de teléfono
+	telefono := cleanPhoneNumber(userID)
+	log.Printf("📞 Teléfono procesado: %s → %s", userID, telefono)
 
 	// Convertir fecha a fecha exacta
 	log.Println("📅 Procesando fecha...")
@@ -487,4 +493,25 @@ func joinHistory(history []string) string {
 		result += history[i] + "\n"
 	}
 	return result
+}
+
+// cleanPhoneNumber limpia el número de teléfono de WhatsApp
+// Maneja formatos:
+// - "5216624045267" → "5216624045267" (ya limpio)
+// - "122432455233651" → número sin prefijo 1224... (linked device)
+func cleanPhoneNumber(userID string) string {
+	// Si el número empieza con "122" probablemente es un linked device ID
+	// En ese caso, intentamos extraer el número real
+	// Por ahora, devolvemos el userID como está
+	// TODO: Implementar lógica más sofisticada si es necesario
+
+	// Remover caracteres no numéricos
+	cleaned := ""
+	for _, char := range userID {
+		if char >= '0' && char <= '9' {
+			cleaned += string(char)
+		}
+	}
+
+	return cleaned
 }
