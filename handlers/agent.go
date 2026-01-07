@@ -119,12 +119,12 @@ func CreateAgent(c *gin.Context) {
 	log.Printf("✅ [User %d] Suscripción encontrada: Plan=%s, Status=%s", user.ID, subscription.Plan, subscription.Status)
 
 	// Determinar el tipo de bot según el plan
-	botType := "builderbot" // Default para planes de pago
+	botType := "orbital" // Default para planes de pago (NUEVO: OrbitalBot reemplaza BuilderBot)
 	if subscription.Plan == "gratuito" {
 		botType = "atomic"
-		log.Printf("📋 [User %d] Plan gratuito detectado → usando AtomicBot (Go)", user.ID)
+		log.Printf("📋 [User %d] Plan gratuito detectado → usando AtomicBot (Go + WhatsApp Web)", user.ID)
 	} else {
-		log.Printf("📋 [User %d] Plan de pago (%s) → usando BuilderBot (Node.js)", user.ID, subscription.Plan)
+		log.Printf("📋 [User %d] Plan de pago (%s) → usando OrbitalBot (Go + Meta API)", user.ID, subscription.Plan)
 	}
 
 	// Si BusinessType está vacío, usar el del usuario
@@ -169,7 +169,7 @@ func CreateAgent(c *gin.Context) {
 		log.Printf("✅ Documento procesado: %s (%d bytes)", metaDocFilename, len(docData))
 	}
 
-	// Asignar puerto único para este agente (se determinará según el tipo de servidor)
+	// Asignar puerto único para este agente
 	nextPort := 3001 + int(agentCount)
 
 	// Crear agente en la base de datos
@@ -349,7 +349,7 @@ func CreateAgent(c *gin.Context) {
 				log.Printf("⚠️  [Agent %d] Sin Gemini API Key, bot funcionará sin IA", agent.ID)
 			}
 
-			// 🔥 CORRECCIÓN AQUÍ: Obtener credenciales de Google del agente
+			// Obtener credenciales de Google del agente
 			var googleCredentials []byte
 			if agent.GoogleConnected && agent.GoogleToken != "" {
 				googleCredentials = []byte(agent.GoogleToken)
@@ -404,10 +404,10 @@ func CreateAgent(c *gin.Context) {
 
 		} else {
 			// ========================
-			// BUILDER BOT (Node.js) - SERVIDOR INDIVIDUAL POR AGENTE
+			// ORBITAL BOT (Go + Meta API) - SERVIDOR INDIVIDUAL POR AGENTE
 			// ========================
 			log.Println("\n" + strings.Repeat("═", 80))
-			log.Printf("║ %s ║", centerText("DESPLIEGUE DE BUILDER BOT (NODE.JS)", 76))
+			log.Printf("║ %s ║", centerText("DESPLIEGUE DE ORBITAL BOT (GO + META API)", 76))
 			log.Println(strings.Repeat("═", 80))
 
 			// PASO 1: Crear proyecto GCP si es necesario (NO BLOQUEANTE)
@@ -460,11 +460,11 @@ func CreateAgent(c *gin.Context) {
 				}
 			}
 
-			// PASO 2: Crear servidor individual para este BuilderBot (CRÍTICO)
+			// PASO 2: Crear servidor individual para este OrbitalBot (CRÍTICO)
 			log.Println("\n" + strings.Repeat("═", 80))
 			log.Printf("║ %s ║", centerText("PASO 2/5: CREAR SERVIDOR INDIVIDUAL", 76))
 			log.Println(strings.Repeat("═", 80))
-			log.Printf("🖥️  [Agent %d] Creando servidor individual para BuilderBot\n", agent.ID)
+			log.Printf("🖥️  [Agent %d] Creando servidor individual para OrbitalBot\n", agent.ID)
 
 			agent.ServerStatus = "creating"
 			config.DB.Save(&agent)
@@ -478,7 +478,7 @@ func CreateAgent(c *gin.Context) {
 				return
 			}
 
-			serverName := fmt.Sprintf("attomos-agent-%d", agent.ID)
+			serverName := fmt.Sprintf("attomos-orbital-%d", agent.ID)
 			serverResp, err := hetznerService.CreateServer(serverName, user.ID)
 			if err != nil {
 				log.Printf("❌ [Agent %d] Error creando servidor: %v", agent.ID, err)
@@ -565,9 +565,9 @@ func CreateAgent(c *gin.Context) {
 				log.Printf("   URL: %s", credentials.ChatwootURL)
 			}
 
-			// PASO 5: Desplegar bot en el servidor individual (CRÍTICO)
+			// PASO 5: Desplegar OrbitalBot en el servidor individual (CRÍTICO)
 			log.Println("\n" + strings.Repeat("═", 80))
-			log.Printf("║ %s ║", centerText("PASO 5/5: DESPLIEGUE DEL BOT", 76))
+			log.Printf("║ %s ║", centerText("PASO 5/5: DESPLIEGUE DEL ORBITAL BOT", 76))
 			log.Println(strings.Repeat("═", 80))
 			log.Printf("🤖 [Agent %d] Tipo de bot: %s", agent.ID, agent.BotType)
 			log.Printf("   - Puerto: %d", agent.Port)
@@ -577,7 +577,7 @@ func CreateAgent(c *gin.Context) {
 			agent.DeployStatus = "deploying"
 			config.DB.Save(&agent)
 
-			deployService := services.NewBotDeployService(agent.ServerIP, agent.ServerPassword)
+			orbitalService := services.NewOrbitalBotDeployService(agent.ServerIP, agent.ServerPassword)
 
 			// Reintentar conexión SSH (el servidor puede tardar en estar listo)
 			maxRetries := 30
@@ -587,7 +587,7 @@ func CreateAgent(c *gin.Context) {
 			for attempt := 1; attempt <= maxRetries; attempt++ {
 				log.Printf("🔌 [Agent %d] Intento de conexión SSH %d/%d...", agent.ID, attempt, maxRetries)
 
-				connectErr = deployService.Connect()
+				connectErr = orbitalService.Connect()
 				if connectErr == nil {
 					log.Printf("✅ [Agent %d] Conectado exitosamente al servidor individual", agent.ID)
 					break
@@ -608,7 +608,7 @@ func CreateAgent(c *gin.Context) {
 				return
 			}
 
-			defer deployService.Close()
+			defer orbitalService.Close()
 
 			// Obtener Gemini API Key
 			geminiAPIKey := user.GetGeminiAPIKey()
@@ -616,9 +616,20 @@ func CreateAgent(c *gin.Context) {
 				log.Printf("⚠️  [Agent %d] Sin Gemini API Key, bot funcionará sin IA", agent.ID)
 			}
 
-			// Desplegar BuilderBot
-			if err := deployService.DeployBot(&agent, docData); err != nil {
-				log.Printf("❌ [Agent %d] Error desplegando BuilderBot: %v", agent.ID, err)
+			// Obtener credenciales de Google del agente
+			var googleCredentials []byte
+			if agent.GoogleConnected && agent.GoogleToken != "" {
+				googleCredentials = []byte(agent.GoogleToken)
+				log.Printf("📊 [Agent %d] Credenciales de Google encontradas para integración", agent.ID)
+				log.Printf("   - Google Sheets ID: %s", agent.GoogleSheetID)
+				log.Printf("   - Google Calendar ID: %s", agent.GoogleCalendarID)
+			} else {
+				log.Printf("⚠️  [Agent %d] Sin integración de Google - las citas no se guardarán en Sheets/Calendar", agent.ID)
+			}
+
+			// Desplegar OrbitalBot
+			if err := orbitalService.DeployOrbitalBot(&agent, geminiAPIKey, googleCredentials); err != nil {
+				log.Printf("❌ [Agent %d] Error desplegando OrbitalBot: %v", agent.ID, err)
 				agent.DeployStatus = "error"
 				config.DB.Save(&agent)
 				return
@@ -631,11 +642,11 @@ func CreateAgent(c *gin.Context) {
 			config.DB.Save(&agent)
 
 			log.Printf("========================================")
-			log.Printf("🎉 [Agent %d] BUILDER BOT DESPLEGADO EXITOSAMENTE", agent.ID)
+			log.Printf("🎉 [Agent %d] ORBITAL BOT DESPLEGADO EXITOSAMENTE", agent.ID)
 			log.Printf("   - Servidor Individual: %s", agent.ServerIP)
 			log.Printf("   - Puerto: %d", agent.Port)
-			log.Printf("   - Tecnología: BuilderBot (Node.js)")
-			log.Printf("   - WhatsApp: Meta Business API")
+			log.Printf("   - Tecnología: Go + Meta Business API")
+			log.Printf("   - Webhook: https://%s:%d/webhook", agent.ServerIP, agent.Port)
 
 			if agent.ChatwootURL != "" {
 				log.Printf("   - Chatwoot: %s", agent.ChatwootURL)
@@ -646,6 +657,25 @@ func CreateAgent(c *gin.Context) {
 				log.Printf("   - IA: Gemini AI habilitada ✅")
 			} else {
 				log.Printf("   - IA: Sin configurar")
+				log.Printf("   💡 Configura tu Gemini API Key en los ajustes del agente")
+				log.Printf("   🔗 Obtener API Key: https://aistudio.google.com/apikey")
+			}
+
+			if agent.GoogleConnected {
+				log.Printf("   - Google Sheets: Habilitado ✅")
+				log.Printf("   - Google Calendar: Habilitado ✅")
+			} else {
+				log.Printf("   - Google Sheets/Calendar: Sin configurar")
+				log.Printf("   💡 Conecta Google Calendar en los ajustes del agente")
+			}
+
+			if agent.MetaConnected {
+				log.Printf("   - Meta WhatsApp: Conectado ✅")
+				log.Printf("   - Número: %s", agent.MetaDisplayNumber)
+				log.Printf("   - WABA ID: %s", agent.MetaWABAID)
+			} else {
+				log.Printf("   - Meta WhatsApp: Sin configurar")
+				log.Printf("   💡 Conecta WhatsApp Business en los ajustes del agente")
 			}
 
 			log.Printf("========================================")
@@ -691,8 +721,8 @@ func GetAgents(c *gin.Context) {
 			"chatwootEmail": agent.ChatwootEmail,
 		}
 
-		// Agregar info de servidor si es BuilderBot
-		if agent.IsBuilderBot() && agent.HasOwnServer() {
+		// Agregar info de servidor si tiene servidor individual
+		if agent.HasOwnServer() {
 			agentData["serverIp"] = agent.ServerIP
 			agentData["serverStatus"] = agent.ServerStatus
 		}
@@ -855,7 +885,7 @@ func DeleteAgent(c *gin.Context) {
 	// Detener el bot en el servidor correspondiente
 	go func() {
 		if agent.IsAtomicBot() {
-			// Obtener servidor compartido global
+			// AtomicBot - servidor compartido global
 			serverManager := services.GetGlobalServerManager()
 			servers, err := serverManager.ListAllServers()
 			if err != nil || len(servers) == 0 {
@@ -875,25 +905,25 @@ func DeleteAgent(c *gin.Context) {
 			if err := atomicService.StopBot(agent.ID); err != nil {
 				log.Printf("⚠️  [Agent %d] Error deteniendo bot: %v", agent.ID, err)
 			} else {
-				log.Printf("✅ [Agent %d] Bot detenido del servidor compartido", agent.ID)
+				log.Printf("✅ [Agent %d] AtomicBot detenido del servidor compartido", agent.ID)
 
 				// Liberar puerto
 				serverManager.ReleaseAgentPort(&globalServer)
 			}
 		} else {
-			// BuilderBot - servidor individual
+			// OrbitalBot - servidor individual (REEMPLAZA A BUILDERBOT)
 			if agent.HasOwnServer() {
-				deployService := services.NewBotDeployService(agent.ServerIP, agent.ServerPassword)
-				if err := deployService.Connect(); err != nil {
+				orbitalService := services.NewOrbitalBotDeployService(agent.ServerIP, agent.ServerPassword)
+				if err := orbitalService.Connect(); err != nil {
 					log.Printf("⚠️  [Agent %d] Error conectando al servidor: %v", agent.ID, err)
 					return
 				}
-				defer deployService.Close()
+				defer orbitalService.Close()
 
-				if err := deployService.StopAndRemoveBot(agent.ID); err != nil {
+				if err := orbitalService.StopAndRemoveBot(agent.ID); err != nil {
 					log.Printf("⚠️  [Agent %d] Error eliminando bot: %v", agent.ID, err)
 				} else {
-					log.Printf("✅ [Agent %d] Bot eliminado del servidor individual", agent.ID)
+					log.Printf("✅ [Agent %d] OrbitalBot eliminado del servidor individual", agent.ID)
 				}
 
 				// Eliminar servidor de Hetzner
@@ -920,28 +950,6 @@ func DeleteAgent(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Agente eliminado exitosamente",
 	})
-}
-
-// Helper: sanitizar nombre de archivo
-func sanitizeFilename(name string) string {
-	name = strings.ToLower(name)
-	name = strings.ReplaceAll(name, " ", "_")
-	name = strings.Map(func(r rune) rune {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' || r == '-' {
-			return r
-		}
-		return -1
-	}, name)
-	return name
-}
-
-// Helper: centrar texto
-func centerText(text string, width int) string {
-	if len(text) >= width {
-		return text[:width]
-	}
-	padding := (width - len(text)) / 2
-	return strings.Repeat(" ", padding) + text + strings.Repeat(" ", width-len(text)-padding)
 }
 
 // GetAgentQRCode obtiene el QR code del agente (solo para AtomicBot)
@@ -1035,4 +1043,26 @@ func GetAgentQRCode(c *gin.Context) {
 		"qrCode":    nil,
 		"message":   "Generando QR code...",
 	})
+}
+
+// Helper: sanitizar nombre de archivo
+func sanitizeFilename(name string) string {
+	name = strings.ToLower(name)
+	name = strings.ReplaceAll(name, " ", "_")
+	name = strings.Map(func(r rune) rune {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' || r == '-' {
+			return r
+		}
+		return -1
+	}, name)
+	return name
+}
+
+// Helper: centrar texto
+func centerText(text string, width int) string {
+	if len(text) >= width {
+		return text[:width]
+	}
+	padding := (width - len(text)) / 2
+	return strings.Repeat(" ", padding) + text + strings.Repeat(" ", width-len(text)-padding)
 }

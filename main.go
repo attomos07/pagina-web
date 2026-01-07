@@ -45,7 +45,7 @@ func main() {
 		&models.Subscription{},
 		&models.Payment{},
 		&models.GoogleCloudProject{},
-		&models.GlobalServer{}, // ← NUEVO: Servidor compartido global para AtomicBots
+		&models.GlobalServer{}, // ← Servidor compartido global para AtomicBots
 	); err != nil {
 		log.Fatal("❌ Error en migración:", err)
 	}
@@ -161,7 +161,7 @@ func main() {
 		protected.GET("/agents/:id", handlers.GetAgent)
 		protected.GET("/agents/:id/qr", handlers.GetAgentQRCode)
 		protected.GET("/agents/:id/logs", handlers.GetAgentLogs)           // Logs estáticos
-		protected.GET("/agents/:id/logs/stream", handlers.StreamAgentLogs) // 🔥 NUEVO: Logs en tiempo real
+		protected.GET("/agents/:id/logs/stream", handlers.StreamAgentLogs) // Logs en tiempo real
 		protected.PUT("/agents/:id", handlers.UpdateAgent)
 		protected.DELETE("/agents/:id", handlers.DeleteAgent)
 		protected.PATCH("/agents/:id/toggle", handlers.ToggleAgentStatus)
@@ -317,8 +317,12 @@ func main() {
 	log.Printf("║ 🌐 URL Local: http://localhost:%s                       ║", port)
 	log.Println("║                                                          ║")
 	log.Println("║ 📊 Arquitectura de Bots:                                 ║")
-	log.Println("║    • Plan GRATUITO → AtomicBot (Servidor Compartido)    ║")
-	log.Println("║    • Plan de PAGO  → BuilderBot (Servidor Individual)   ║")
+	log.Println("║    • Plan GRATUITO  → AtomicBot (Go + WhatsApp Web)     ║")
+	log.Println("║    • Plan de PAGO   → OrbitalBot (Go + Meta API)        ║")
+	log.Println("║                                                          ║")
+	log.Println("║ 🔧 Tecnología:                                           ║")
+	log.Println("║    • AtomicBot:  Servidor Compartido (€5/mes total)     ║")
+	log.Println("║    • OrbitalBot: Servidor Individual (€5/mes c/u)       ║")
 	log.Println("╚═══════════════════════════════════════════════════════════╝")
 
 	if err := router.Run(":" + port); err != nil {

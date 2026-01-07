@@ -137,20 +137,19 @@ type Agent struct {
 	// Configuración personalizada
 	Config AgentConfig `gorm:"type:json" json:"config"`
 
-	// Puerto en el servidor compartido del usuario
+	// Puerto en el servidor
 	Port         int    `gorm:"default:0" json:"port"`
 	DeployStatus string `gorm:"size:50;default:pending" json:"deployStatus"`
 
 	// Estado del agente
 	IsActive bool `gorm:"default:false" json:"isActive"`
 
-	// Tipo de bot desplegado: "builderbot" (Node.js) o "atomic" (Go)
-	BotType string `gorm:"size:50;default:builderbot" json:"botType"`
+	// Tipo de bot desplegado: "atomic" (Go + WhatsApp Web), "orbital" (Go + Meta API)
+	BotType string `gorm:"size:50;default:orbital" json:"botType"`
 
 	// =============================================
-	// 🆕 SERVIDOR INDIVIDUAL PARA BUILDERBOT
+	// 🆕 SERVIDOR INDIVIDUAL (para OrbitalBot)
 	// =============================================
-	// Cada BuilderBot (plan de pago) tiene su propio servidor Hetzner
 	ServerID       int    `gorm:"default:0" json:"serverId"`                   // ID del servidor en Hetzner
 	ServerIP       string `gorm:"size:50" json:"serverIp"`                     // IP del servidor
 	ServerPassword string `gorm:"size:255" json:"-"`                           // Password SSH (oculto en JSON)
@@ -214,19 +213,24 @@ func (Agent) TableName() string {
 	return "agents"
 }
 
-// IsAtomicBot verifica si el agente usa el bot de Go
+// IsAtomicBot verifica si el agente usa AtomicBot (Go + WhatsApp Web)
 func (a *Agent) IsAtomicBot() bool {
 	return a.BotType == "atomic"
 }
 
-// IsBuilderBot verifica si el agente usa BuilderBot
-func (a *Agent) IsBuilderBot() bool {
-	return a.BotType == "builderbot" || a.BotType == ""
+// IsOrbitalBot verifica si el agente usa OrbitalBot (Go + Meta API)
+func (a *Agent) IsOrbitalBot() bool {
+	return a.BotType == "orbital"
 }
 
-// HasOwnServer verifica si el agente tiene servidor individual (BuilderBot)
+// IsBuilderBot verifica si el agente usa BuilderBot (DEPRECADO - compatibilidad)
+func (a *Agent) IsBuilderBot() bool {
+	return a.BotType == "builderbot" || a.BotType == "orbital" || a.BotType == ""
+}
+
+// HasOwnServer verifica si el agente tiene servidor individual (OrbitalBot o BuilderBot legacy)
 func (a *Agent) HasOwnServer() bool {
-	return a.IsBuilderBot() && a.ServerID > 0
+	return (a.IsOrbitalBot() || a.BotType == "builderbot") && a.ServerID > 0
 }
 
 // GetEnvVarsForBot genera las variables de entorno para el bot
