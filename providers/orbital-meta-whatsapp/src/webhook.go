@@ -1,0 +1,262 @@
+package src
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+)
+
+// StartWebhookServer inicia el servidor webhook
+func StartWebhookServer(client *MetaClient) {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	verifyToken := os.Getenv("WEBHOOK_VERIFY_TOKEN")
+	if verifyToken == "" {
+		log.Fatal("❌ WEBHOOK_VERIFY_TOKEN no está configurado")
+	}
+
+	http.HandleFunc("/webhook", func(w http.ResponseWriter, r *http.Request) {
+		handleWebhook(w, r, client, verifyToken)
+	})
+
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
+	log.Printf("🌐 Servidor webhook iniciado en puerto %s", port)
+	log.Printf("📡 Endpoint: http://localhost:%s/webhook", port)
+	log.Printf("💚 Health check: http://localhost:%s/health", port)
+
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Fatalf("❌ Error iniciando servidor: %v", err)
+	}
+}
+
+// handleWebhook maneja las peticiones del webhook de Meta
+func handleWebhook(w http.ResponseWriter, r *http.Request, client *MetaClient, verifyToken string) {
+	// GET: Verificación del webhook
+	if r.Method == http.MethodGet {
+		handleWebhookVerification(w, r, verifyToken)
+		return
+	}
+
+	// POST: Mensajes entrantes
+	if r.Method == http.MethodPost {
+		handleIncomingMessage(w, r, client)
+		return
+	}
+
+	w.WriteHeader(http.StatusMethodNotAllowed)
+}
+
+// handleWebhookVerification maneja la verificación inicial del webhook
+func handleWebhookVerification(w http.ResponseWriter, r *http.Request, verifyToken string) {
+	mode := r.URL.Query().Get("hub.mode")
+	token := r.URL.Query().Get("hub.verify_token")
+	challenge := r.URL.Query().Get("hub.challenge")
+
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("🔐 VERIFICACIÓN DE WEBHOOK")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Printf("   Mode: %s", mode)
+	log.Printf("   Token: %s", maskSensitiveData(token))
+	log.Printf("   Challenge: %s", challenge)
+
+	if mode == "subscribe" && token == verifyToken {
+		log.Println("✅ Token verificado correctamente")
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(challenge))
+		return
+	}
+
+	log.Println("❌ Token de verificación inválido")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	w.WriteHeader(http.StatusForbidden)
+	w.Write([]byte("Forbidden"))
+}
+
+// handleIncomingMessage maneja los mensajes entrantes
+func handleIncomingMessage(w http.ResponseWriter, r *http.Request, client *MetaClient) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("❌ Error leyendo body: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	var payload MetaWebhookPayload
+	if err := json.Unmarshal(body, &payload); err != nil {
+		log.Printf("❌ Error parseando JSON: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Responder inmediatamente a Meta (200 OK)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+
+	// Procesar mensajes en goroutine
+	go processWebhookPayload(&payload, client)
+}
+
+// processWebhookPayload procesa el payload del webhook
+func processWebhookPayload(payload *MetaWebhookPayload, client *MetaClient) {
+	if payload.Object != "whatsapp_business_account" {
+		return
+	}
+
+	for _, entry := range payload.Entry {
+		for _, change := range entry.Changes {
+			if change.Field != "messages" {
+				continue
+			}
+
+			// Procesar mensajes
+			for _, message := range change.Value.Messages {
+				processMessage(&message, &change.Value, client)
+			}
+
+			// Procesar estados (opcional - para logs)
+			for _, status := range change.Value.Statuses {
+				processStatus(&status)
+			}
+		}
+	}
+}
+
+// processMessage procesa un mensaje individual
+func processMessage(message *struct {
+	From      string `json:"from"`
+	ID        string `json:"id"`
+	Timestamp string `json:"timestamp"`
+	Type      string `json:"type"`
+	Text      struct {
+		Body string `json:"body"`
+	} `json:"text"`
+}, value *struct {
+	MessagingProduct string `json:"messaging_product"`
+	Metadata         struct {
+		DisplayPhoneNumber string `json:"display_phone_number"`
+		PhoneNumberID      string `json:"phone_number_id"`
+	} `json:"metadata"`
+	Contacts []struct {
+		Profile struct {
+			Name string `json:"name"`
+		} `json:"profile"`
+		WAID string `json:"wa_id"`
+	} `json:"contacts"`
+	Messages []struct {
+		From      string `json:"from"`
+		ID        string `json:"id"`
+		Timestamp string `json:"timestamp"`
+		Type      string `json:"type"`
+		Text      struct {
+			Body string `json:"body"`
+		} `json:"text"`
+	} `json:"messages"`
+	Statuses []struct {
+		ID           string `json:"id"`
+		Status       string `json:"status"`
+		Timestamp    string `json:"timestamp"`
+		RecipientID  string `json:"recipient_id"`
+		Conversation struct {
+			ID     string `json:"id"`
+			Origin struct {
+				Type string `json:"type"`
+			} `json:"origin"`
+		} `json:"conversation"`
+		Pricing struct {
+			Billable     bool   `json:"billable"`
+			PricingModel string `json:"pricing_model"`
+			Category     string `json:"category"`
+		} `json:"pricing"`
+	} `json:"statuses"`
+}, client *MetaClient) {
+
+	// Solo procesar mensajes de texto
+	if message.Type != "text" {
+		log.Printf("ℹ️  Mensaje de tipo '%s' ignorado", message.Type)
+		return
+	}
+
+	phoneNumber := message.From
+	messageText := message.Text.Body
+	messageID := message.ID
+
+	// Obtener nombre del contacto
+	senderName := "Cliente"
+	if len(value.Contacts) > 0 {
+		senderName = value.Contacts[0].Profile.Name
+	}
+
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Printf("📨 MENSAJE RECIBIDO")
+	log.Printf("   👤 De: %s (%s)", senderName, phoneNumber)
+	log.Printf("   💬 Texto: %s", messageText)
+	log.Printf("   🆔 Message ID: %s", messageID)
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+	// Marcar como leído
+	if err := client.MarkAsRead(messageID); err != nil {
+		log.Printf("⚠️  Error marcando mensaje como leído: %v", err)
+	}
+
+	// Procesar mensaje (usar la misma lógica de AtomicBot)
+	response := ProcessMessage(messageText, phoneNumber, senderName)
+
+	// Enviar respuesta
+	if response != "" {
+		log.Printf("📤 ENVIANDO RESPUESTA a %s...", senderName)
+		if err := client.SendMessage(phoneNumber, response); err != nil {
+			log.Printf("❌ ERROR enviando mensaje: %v", err)
+		} else {
+			log.Printf("✅ RESPUESTA ENVIADA correctamente")
+			log.Printf("   📝 Contenido: %s", response)
+		}
+	} else {
+		log.Printf("⚠️  No se generó respuesta para este mensaje")
+	}
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+}
+
+// processStatus procesa actualizaciones de estado de mensajes
+func processStatus(status *struct {
+	ID           string `json:"id"`
+	Status       string `json:"status"`
+	Timestamp    string `json:"timestamp"`
+	RecipientID  string `json:"recipient_id"`
+	Conversation struct {
+		ID     string `json:"id"`
+		Origin struct {
+			Type string `json:"type"`
+		} `json:"origin"`
+	} `json:"conversation"`
+	Pricing struct {
+		Billable     bool   `json:"billable"`
+		PricingModel string `json:"pricing_model"`
+		Category     string `json:"category"`
+	} `json:"pricing"`
+}) {
+	statusMap := map[string]string{
+		"sent":      "✓ Enviado",
+		"delivered": "✓✓ Entregado",
+		"read":      "✓✓ Leído",
+		"failed":    "❌ Fallido",
+	}
+
+	statusEmoji := statusMap[status.Status]
+	if statusEmoji == "" {
+		statusEmoji = fmt.Sprintf("ℹ️  %s", status.Status)
+	}
+
+	log.Printf("%s Mensaje %s - Destinatario: %s", statusEmoji, status.ID[:8], status.RecipientID)
+}
