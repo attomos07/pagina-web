@@ -933,6 +933,7 @@ input:checked + .toggle-slider:before {
     margin-bottom: 8px;
     cursor: pointer;
     -webkit-appearance: none;
+    appearance: none;
 }
 
 .gb-slider::-webkit-slider-thumb {
