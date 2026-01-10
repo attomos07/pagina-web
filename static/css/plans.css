@@ -183,18 +183,18 @@ input:checked + .toggle-slider:before {
     transform: translateX(24px);
 }
 
-/* Pricing Grid */
+/* Pricing Grid - 4 columnas */
 .pricing-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
     margin-bottom: 4rem;
 }
 
 .pricing-card {
     background: white;
     border-radius: 20px;
-    padding: 2.5rem;
+    padding: 2rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
@@ -210,6 +210,49 @@ input:checked + .toggle-slider:before {
 .pricing-card.featured {
     border-color: #06b6d4;
     background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, white 100%);
+}
+
+/* Estilo especial para plan gratuito */
+.pricing-card[data-plan="gratuito"] {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, white 100%);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.pricing-card[data-plan="gratuito"] .plan-name {
+    color: #10b981;
+}
+
+.pricing-card[data-plan="gratuito"] .price-amount {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.plan-button.free-trial {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.plan-button.free-trial:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+}
+
+.free-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.5rem 1.25rem;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
 
 .popular-badge {
@@ -260,6 +303,7 @@ input:checked + .toggle-slider:before {
     color: #6b7280;
     margin-bottom: 2rem;
     line-height: 1.6;
+    font-size: 0.875rem;
 }
 
 .plan-features {
@@ -271,20 +315,21 @@ input:checked + .toggle-slider:before {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem 0;
+    padding: 0.5rem 0;
     color: #374151;
+    font-size: 0.875rem;
 }
 
 .check-icon {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 12px;
+    font-size: 10px;
     flex-shrink: 0;
 }
 
@@ -522,6 +567,12 @@ input:checked + .toggle-slider:before {
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+    .pricing-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 768px) {
     .app-container {
         flex-direction: column;

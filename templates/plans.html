@@ -8,50 +8,6 @@
     <link rel="stylesheet" href="/static/css/sidebar.css">
     <link rel="stylesheet" href="/static/css/userbar.css">
     <link rel="stylesheet" href="/static/css/plans.css">
-    <style>
-        /* Estilo especial para plan gratuito */
-        .pricing-card[data-plan="gratuito"] {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, white 100%);
-            border-color: rgba(16, 185, 129, 0.3);
-        }
-
-        .pricing-card[data-plan="gratuito"] .plan-name {
-            color: #10b981;
-        }
-
-        .pricing-card[data-plan="gratuito"] .price-amount {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .plan-button.free-trial {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-        }
-
-        .plan-button.free-trial:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
-        }
-
-        .free-badge {
-            position: absolute;
-            top: -12px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 0.5rem 1.25rem;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-        }
-    </style>
 </head>
 <body>
     <div class="app-container">
@@ -93,7 +49,7 @@
                     {{end}}
                     {{end}}
 
-                    <!-- Toggle de Periodo de Facturación (ocultar para plan gratuito) -->
+                    <!-- Toggle de Periodo de Facturación -->
                     <div class="billing-toggle" id="billingToggleContainer">
                         <span class="toggle-label">Mensual</span>
                         <label class="toggle-switch">
@@ -103,7 +59,7 @@
                         <span class="toggle-label">Anual</span>
                     </div>
 
-                    <!-- Pricing Cards (Dinámico desde Stripe) -->
+                    <!-- Pricing Cards -->
                     <div class="pricing-grid">
                         {{range .plans}}
                         <div class="pricing-card {{if .popular}}featured{{end}} {{if .isFree}}free-plan{{end}}" data-plan="{{.id}}">
@@ -168,63 +124,112 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td class="feature-name">Número de Chatbots</td>
+                                        <td class="feature-name">Número de Agentes</td>
                                         <td>1</td>
-                                        <td>1</td>
-                                        <td class="featured-cell">3</td>
+                                        <td>Ilimitados</td>
+                                        <td class="featured-cell">Ilimitados</td>
                                         <td>Ilimitados</td>
                                     </tr>
                                     <tr>
-                                        <td class="feature-name">Tipo de Bot</td>
-                                        <td>AtomicBot</td>
-                                        <td>BuilderBot</td>
-                                        <td class="featured-cell">BuilderBot</td>
-                                        <td>BuilderBot</td>
-                                    </tr>
-                                    <tr>
                                         <td class="feature-name">WhatsApp</td>
-                                        <td>Web</td>
+                                        <td>Web (QR)</td>
                                         <td>Business API</td>
                                         <td class="featured-cell">Business API</td>
                                         <td>Business API</td>
                                     </tr>
                                     <tr>
-                                        <td class="feature-name">Mensajes mensuales</td>
-                                        <td>100</td>
-                                        <td>1,000</td>
-                                        <td class="featured-cell">10,000</td>
+                                        <td class="feature-name">Mensajes</td>
+                                        <td>Ilimitados</td>
+                                        <td>Ilimitados</td>
+                                        <td class="featured-cell">Ilimitados</td>
                                         <td>Ilimitados</td>
                                     </tr>
                                     <tr>
-                                        <td class="feature-name">Panel de Mensajes</td>
+                                        <td class="feature-name">IA</td>
+                                        <td>Gemini</td>
+                                        <td>Gemini Avanzada</td>
+                                        <td class="featured-cell">Gemini Avanzada</td>
+                                        <td>Gemini Avanzada</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">CRM</td>
                                         <td><i class="lni lni-close"></i></td>
+                                        <td>Chatwoot</td>
+                                        <td class="featured-cell">Chatwoot</td>
+                                        <td>Chatwoot</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Google Sheets</td>
                                         <td><i class="lni lni-checkmark"></i></td>
-                                        <td class="featured-cell"><i class="lni lni-checkmark"></i></td>
-                                        <td><i class="lni lni-checkmark"></i></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="feature-name">Analytics</td>
-                                        <td>Básico</td>
-                                        <td>Básico</td>
-                                        <td class="featured-cell">Avanzado</td>
-                                        <td>Personalizado</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="feature-name">Soporte</td>
-                                        <td>Email</td>
-                                        <td>Email</td>
-                                        <td class="featured-cell">Prioritario</td>
-                                        <td>Dedicado 24/7</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="feature-name">Integraciones CRM</td>
-                                        <td><i class="lni lni-close"></i></td>
                                         <td><i class="lni lni-close"></i></td>
                                         <td class="featured-cell"><i class="lni lni-checkmark"></i></td>
                                         <td><i class="lni lni-checkmark"></i></td>
                                     </tr>
                                     <tr>
-                                        <td class="feature-name">API Personalizada</td>
+                                        <td class="feature-name">Google Calendar</td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                        <td class="featured-cell"><i class="lni lni-checkmark"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Catálogo</td>
+                                        <td>Servicios</td>
+                                        <td>Servicios</td>
+                                        <td class="featured-cell">Productos</td>
+                                        <td>Productos</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Promociones</td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                        <td class="featured-cell">Packs</td>
+                                        <td>Packs</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Ofertas de Trabajo</td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                        <td class="featured-cell"><i class="lni lni-checkmark"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Página Web + App</td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td class="featured-cell"><i class="lni lni-checkmark"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Sistema de Inventario</td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td class="featured-cell"><i class="lni lni-checkmark"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Punto de Venta (POS)</td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td class="featured-cell"><i class="lni lni-checkmark"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Llamadas con IA</td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td class="featured-cell"><i class="lni lni-close"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">Voz Natural IA</td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td><i class="lni lni-close"></i></td>
+                                        <td class="featured-cell"><i class="lni lni-close"></i></td>
+                                        <td><i class="lni lni-checkmark"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="feature-name">IVR Inteligente</td>
                                         <td><i class="lni lni-close"></i></td>
                                         <td><i class="lni lni-close"></i></td>
                                         <td class="featured-cell"><i class="lni lni-close"></i></td>
@@ -266,7 +271,7 @@
                                     </div>
                                 </div>
                                 <div class="faq-answer">
-                                    <p>Puedes adquirir paquetes adicionales de mensajes o actualizar a un plan superior.</p>
+                                    <p>Todos nuestros planes incluyen mensajes ilimitados, por lo que no tendrás que preocuparte por límites.</p>
                                 </div>
                             </div>
 
