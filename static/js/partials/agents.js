@@ -1,380 +1,335 @@
 // ============================================
-// CHATBOTS.JS - FUNCIONALIDADES ESPECÍFICAS
+// AGENTS PAGE JAVASCRIPT
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🤖 Chatbots page loaded');
+    console.log('🚀 Agents page cargado correctamente');
     
-    // Inicializar funcionalidades específicas de chatbots
-    initPlatformAnimations();
-    initChatbotCards();
-    initDemoButtons();
-    initMockupVideos();
-    initPlatformsSlider();
+    // Inicializar todas las funcionalidades
+    initNavbar();
+    initParticles();
+    initFilterButtons();
+    initAgentCards();
+    setActiveNavLink();
     
-    // Inicializar FAQ (heredada de index.js)
-    if (typeof window.ChatBotHub?.initFAQ === 'function') {
-        window.ChatBotHub.initFAQ();
-    }
-    
-    console.log('✅ Chatbots functionality initialized');
+    console.log('✅ Todas las funcionalidades de agents inicializadas');
 });
 
 // ============================================
-// PLATFORM ANIMATIONS
+// NAVBAR FUNCTIONALITY
 // ============================================
-function initPlatformAnimations() {
-    const platformSections = document.querySelectorAll('.platform-section');
-    const platformBlocks = document.querySelectorAll('.platform-block');
-    
-    if (platformSections.length === 0 && platformBlocks.length === 0) return;
-    
-    const observerOptions = {
-        threshold: 0.2,
-        rootMargin: '0px 0px -100px 0px'
-    };
+function initNavbar() {
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const navMenu = document.getElementById('navMenu');
+    const navbar = document.getElementById('navbar');
 
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-                
-                // Animar cards dentro de la sección con delay
-                const cards = entry.target.querySelectorAll('.chatbot-card');
-                cards.forEach((card, index) => {
-                    setTimeout(() => {
-                        card.classList.add('visible');
-                    }, index * 150);
-                });
+    if (mobileMenuBtn && navMenu) {
+        mobileMenuBtn.classList.remove('active');
+        navMenu.classList.remove('active');
+        document.body.classList.remove('menu-open');
+    }
+
+    window.addEventListener('scroll', function() {
+        if (navbar) {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
             }
-        });
-    }, observerOptions);
-
-    // Observar secciones de plataforma
-    platformSections.forEach(section => {
-        observer.observe(section);
+        }
     });
-    
-    // Observar bloques de plataforma (si existen)
-    platformBlocks.forEach(block => {
-        observer.observe(block);
-    });
-}
 
-// ============================================
-// CHATBOT CARDS INTERACTIONS
-// ============================================
-function initChatbotCards() {
-    const chatbotCards = document.querySelectorAll('.chatbot-card');
-    
-    if (chatbotCards.length === 0) return;
-    
-    chatbotCards.forEach(card => {
-        // Hover effect mejorado
-        card.addEventListener('mouseenter', function() {
-            this.classList.add('hovered');
-            
-            // Pausar video si existe
-            const video = this.querySelector('video');
-            if (video) {
-                video.style.animationPlayState = 'paused';
-            }
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.classList.remove('hovered');
-            
-            // Reanudar video si existe
-            const video = this.querySelector('video');
-            if (video) {
-                video.style.animationPlayState = 'running';
-            }
-        });
-        
-        // Click effect
-        card.addEventListener('click', function(e) {
-            // No procesar si se hizo click en el botón demo
-            if (e.target.closest('.demo-btn')) return;
-            
-            this.classList.add('clicked');
-            
-            setTimeout(() => {
-                this.classList.remove('clicked');
-            }, 200);
-            
-            // Analytics tracking
-            trackChatbotCardClick(this);
-        });
-    });
-}
+    function closeMobileMenu() {
+        if (mobileMenuBtn && navMenu) {
+            mobileMenuBtn.classList.remove('active');
+            navMenu.classList.remove('active');
+            document.body.classList.remove('menu-open');
+        }
+    }
 
-// ============================================
-// DEMO BUTTONS FUNCTIONALITY
-// ============================================
-function initDemoButtons() {
-    const demoButtons = document.querySelectorAll('.demo-btn');
-    
-    if (demoButtons.length === 0) return;
-    
-    demoButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
+    if (mobileMenuBtn && navMenu) {
+        mobileMenuBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             
-            const card = this.closest('.chatbot-card');
-            const chatbotName = card?.querySelector('.chatbot-name')?.textContent || 'Unknown';
-            const platformSection = card?.closest('.platform-section');
-            const platformName = platformSection?.querySelector('.platform-title')?.textContent || 'Unknown';
+            const isMenuActive = navMenu.classList.contains('active');
+            
+            if (isMenuActive) {
+                closeMobileMenu();
+            } else {
+                mobileMenuBtn.classList.add('active');
+                navMenu.classList.add('active');
+                document.body.classList.add('menu-open');
+            }
+        });
+    }
+
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            closeMobileMenu();
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (navMenu && navMenu.classList.contains('active')) {
+            const clickedInsideMenu = navMenu.contains(e.target);
+            const clickedOnButton = mobileMenuBtn && mobileMenuBtn.contains(e.target);
+            
+            if (!clickedInsideMenu && !clickedOnButton) {
+                closeMobileMenu();
+            }
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (navMenu && navMenu.classList.contains('active')) {
+                closeMobileMenu();
+            }
+        }
+    });
+}
+
+function setActiveNavLink() {
+    const navLinks = document.querySelectorAll('.nav-link:not(.nav-cta):not(.nav-login)');
+    
+    navLinks.forEach(link => link.classList.remove('active'));
+    
+    const agentsLink = document.querySelector('.nav-link[href="/agents"]');
+    if (agentsLink) {
+        agentsLink.classList.add('active');
+    }
+}
+
+// ============================================
+// FILTER BUTTONS
+// ============================================
+function initFilterButtons() {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const agentCards = document.querySelectorAll('.agent-card');
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            
+            // Update active button
+            filterBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filter cards
+            agentCards.forEach(card => {
+                const category = card.getAttribute('data-category');
+                
+                if (filter === 'all' || category === filter) {
+                    card.style.display = 'block';
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, 10);
+                } else {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(30px)';
+                    setTimeout(() => {
+                        card.style.display = 'none';
+                    }, 300);
+                }
+            });
+            
+            console.log(`🔍 Filtro aplicado: ${filter}`);
+        });
+    });
+}
+
+// ============================================
+// AGENT CARDS
+// ============================================
+function initAgentCards() {
+    const agentBtns = document.querySelectorAll('.agent-btn');
+    
+    agentBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const card = this.closest('.agent-card');
+            const agentName = card.querySelector('.agent-name').textContent;
+            
+            console.log(`🤖 Agente seleccionado: ${agentName}`);
             
             // Animación de click
             this.style.transform = 'scale(0.95)';
             setTimeout(() => {
-                this.style.transform = 'scale(1)';
+                this.style.transform = 'translateY(-3px)';
             }, 150);
             
-            // Tracking
-            trackDemoButtonClick(chatbotName, platformName);
-            
-            // Generar mensaje personalizado para WhatsApp
-            const message = generateDemoMessage(chatbotName, platformName);
-            openWhatsAppWithMessage(message);
+            // Aquí puedes agregar la lógica para abrir modal o redirigir
+            openWhatsApp(agentName);
         });
     });
 }
 
 // ============================================
-// MOCKUP VIDEOS FUNCTIONALITY
+// WHATSAPP FUNCTION
 // ============================================
-function initMockupVideos() {
-    const mockupVideos = document.querySelectorAll('.phone-screen-video');
+function openWhatsApp(agentName = null) {
+    const phoneNumber = '+528123092839';
+    let message = '¡Hola! Me gustaría obtener más información sobre los chatbots de IA. ';
     
-    if (mockupVideos.length === 0) return;
+    if (agentName) {
+        message += `\n\nEstoy interesado en el agente: ${agentName}`;
+    }
     
-    const videoObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            const video = entry.target;
-            
-            if (entry.isIntersecting) {
-                // Añadir delay para mejor experiencia
-                setTimeout(() => {
-                    video.play().catch(e => {
-                        console.log('Error playing mockup video:', e);
-                        // Ocultar video si no puede reproducirse
-                        video.style.opacity = '0';
-                    });
-                }, 300);
-            } else {
-                video.pause();
-            }
-        });
-    }, { 
-        threshold: 0.3,
-        rootMargin: '0px 0px -100px 0px'
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+    
+    window.open(whatsappUrl, '_blank');
+    
+    console.log('📱 WhatsApp abierto con mensaje:', message);
+}
+
+// ============================================
+// PARTICLES SYSTEM
+// ============================================
+function initParticles() {
+    const canvas = document.getElementById('particles-canvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let mouse = { x: null, y: null, radius: 150 };
+
+    canvas.width = canvas.parentElement.offsetWidth;
+    canvas.height = canvas.parentElement.offsetHeight;
+
+    canvas.parentElement.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
     });
 
-    mockupVideos.forEach(video => {
-        videoObserver.observe(video);
-        
-        // Configuración de video optimizada
-        video.setAttribute('preload', 'metadata');
-        video.setAttribute('playsinline', 'true');
-        video.muted = true;
-        video.loop = true;
-        
-        // Manejar errores de carga
-        video.addEventListener('error', function(e) {
-            console.log('Error loading mockup video:', e);
-            this.style.display = 'none';
+    canvas.parentElement.addEventListener('mouseout', () => {
+        mouse.x = null;
+        mouse.y = null;
+    });
+
+    window.addEventListener('resize', () => {
+        canvas.width = canvas.parentElement.offsetWidth;
+        canvas.height = canvas.parentElement.offsetHeight;
+        init();
+    });
+
+    class Particle {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.size = Math.random() * 2.5 + 1.5;
+            this.vx = (Math.random() - 0.5) * 0.5;
+            this.vy = (Math.random() - 0.5) * 0.5;
             
-            // Mostrar imagen de fallback si existe
-            const fallbackImg = this.nextElementSibling;
-            if (fallbackImg && fallbackImg.classList.contains('mockup-image')) {
-                fallbackImg.style.display = 'block';
-            }
-        });
-        
-        // Optimización para móviles
-        if (window.ChatBotHub?.isMobileDevice?.() || window.innerWidth <= 768) {
-            video.setAttribute('preload', 'none');
+            const colors = [
+                'rgba(6, 182, 212, ',
+                'rgba(8, 145, 178, ',
+                'rgba(34, 211, 238, ',
+                'rgba(14, 165, 233, '
+            ];
+            this.color = colors[Math.floor(Math.random() * colors.length)];
         }
-    });
-}
 
-// ============================================
-// PLATFORMS SLIDER FUNCTIONALITY
-// ============================================
-function initPlatformsSlider() {
-    const sliderContainer = document.querySelector('.platforms-slider');
-    
-    if (!sliderContainer) return;
-    
-    // Pausar animación al hover
-    sliderContainer.addEventListener('mouseenter', function() {
-        this.style.animationPlayState = 'paused';
-    });
-    
-    sliderContainer.addEventListener('mouseleave', function() {
-        this.style.animationPlayState = 'running';
-    });
-    
-    // Intersection Observer para pausar cuando no está visible
-    const sliderObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.animationPlayState = 'running';
-            } else {
-                entry.target.style.animationPlayState = 'paused';
-            }
-        });
-    }, { threshold: 0.1 });
-    
-    sliderObserver.observe(sliderContainer);
-    
-    // Manejar videos del slider
-    const sliderVideos = document.querySelectorAll('.slider-video');
-    
-    sliderVideos.forEach(video => {
-        video.setAttribute('preload', 'metadata');
-        video.setAttribute('playsinline', 'true');
-        
-        const videoObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    video.play().catch(e => console.log('Error playing slider video:', e));
-                } else {
-                    video.pause();
+        draw() {
+            ctx.fillStyle = this.color + '0.9)';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = this.color + '0.5)';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size + 3, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+
+            if (this.x < -10) this.x = canvas.width + 10;
+            if (this.x > canvas.width + 10) this.x = -10;
+            if (this.y < -10) this.y = canvas.height + 10;
+            if (this.y > canvas.height + 10) this.y = -10;
+
+            if (mouse.x != null && mouse.y != null) {
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < mouse.radius) {
+                    let force = (mouse.radius - distance) / mouse.radius;
+                    let angle = Math.atan2(dy, dx);
+                    this.vx -= Math.cos(angle) * force * 0.3;
+                    this.vy -= Math.sin(angle) * force * 0.3;
                 }
-            });
-        }, { threshold: 0.5 });
-        
-        videoObserver.observe(video);
-        
-        video.addEventListener('error', (e) => {
-            console.log('Error cargando video del slider:', e);
-            video.style.display = 'none';
-        });
-    });
-}
-
-// ============================================
-// PLATFORM ICON INTERACTIONS
-// ============================================
-function initPlatformIconInteractions() {
-    const platformIcons = document.querySelectorAll('.platform-icon-large');
-    
-    platformIcons.forEach(icon => {
-        icon.addEventListener('mouseenter', function() {
-            this.style.transform = 'scale(1.1) rotate(5deg)';
-        });
-        
-        icon.addEventListener('mouseleave', function() {
-            this.style.transform = 'scale(1) rotate(0deg)';
-        });
-        
-        icon.addEventListener('click', function() {
-            this.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                this.style.transform = 'scale(1.1) rotate(5deg)';
-            }, 150);
-        });
-    });
-}
-
-// ============================================
-// UTILITY FUNCTIONS ESPECÍFICAS
-// ============================================
-function generateDemoMessage(chatbotName, platformName) {
-    const messages = {
-        'WhatsApp': `¡Hola! Me interesa el demo del chatbot para ${chatbotName} en WhatsApp Business. ¿Pueden mostrármelo?`,
-        'Facebook': `¡Hola! Quisiera ver el demo del chatbot para ${chatbotName} en Facebook Messenger. ¿Está disponible?`,
-        'Instagram': `¡Hola! Me gustaría conocer el demo del chatbot para ${chatbotName} en Instagram Direct. ¿Pueden ayudarme?`,
-        'Telegram': `¡Hola! Estoy interesado en el demo del bot para ${chatbotName} en Telegram. ¿Pueden mostrármelo?`,
-        'Web': `¡Hola! Me interesa el demo del widget de ${chatbotName} para sitio web. ¿Pueden demostrármelo?`
-    };
-    
-    return messages[platformName] || `¡Hola! Me interesa el demo del chatbot para ${chatbotName}. ¿Pueden ayudarme?`;
-}
-
-function openWhatsAppWithMessage(customMessage) {
-    const phoneNumber = '5491234567890';
-    const encodedMessage = encodeURIComponent(customMessage);
-    const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-    window.open(whatsappURL, '_blank');
-}
-
-// ============================================
-// ANALYTICS Y TRACKING
-// ============================================
-function trackChatbotCardClick(card) {
-    const chatbotName = card.querySelector('.chatbot-name')?.textContent || 'Unknown';
-    const platformSection = card.closest('.platform-section');
-    const platformName = platformSection?.querySelector('.platform-title')?.textContent || 'Unknown';
-    
-    console.log(`Chatbot card clicked: ${chatbotName} on ${platformName}`);
-    
-    if (typeof gtag !== 'undefined') {
-        gtag('event', 'chatbot_card_click', {
-            'chatbot_name': chatbotName,
-            'platform': platformName,
-            'event_category': 'engagement',
-            'event_label': `${platformName}-${chatbotName}`
-        });
-    }
-}
-
-function trackDemoButtonClick(chatbotName, platformName) {
-    console.log(`Demo button clicked: ${chatbotName} on ${platformName}`);
-    
-    if (typeof gtag !== 'undefined') {
-        gtag('event', 'demo_request', {
-            'chatbot_name': chatbotName,
-            'platform': platformName,
-            'event_category': 'conversion',
-            'event_label': `demo-${platformName}-${chatbotName}`
-        });
-    }
-}
-
-// ============================================
-// PERFORMANCE OPTIMIZATIONS
-// ============================================
-function optimizeChatbotsPageForMobile() {
-    if (window.innerWidth <= 768) {
-        // Reducir cantidad de videos activos en móvil
-        const videos = document.querySelectorAll('.phone-screen-video');
-        videos.forEach((video, index) => {
-            if (index > 2) { // Solo mantener activos los primeros 3
-                video.setAttribute('preload', 'none');
-                video.pause();
             }
-        });
-        
-        // Simplificar animaciones del slider
-        const slider = document.querySelector('.platforms-slider');
-        if (slider) {
-            slider.style.animationDuration = '80s';
+
+            const maxSpeed = 1.2;
+            const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            if (speed > maxSpeed) {
+                this.vx = (this.vx / speed) * maxSpeed;
+                this.vy = (this.vy / speed) * maxSpeed;
+            }
+
+            this.vx *= 0.98;
+            this.vy *= 0.98;
+
+            if (Math.abs(this.vx) < 0.1) this.vx += (Math.random() - 0.5) * 0.08;
+            if (Math.abs(this.vy) < 0.1) this.vy += (Math.random() - 0.5) * 0.08;
         }
     }
-}
 
-// ============================================
-// INITIALIZATION ON LOAD
-// ============================================
-window.addEventListener('load', () => {
-    initPlatformIconInteractions();
-    optimizeChatbotsPageForMobile();
-    
-    // Verificar si todos los videos críticos se cargaron
-    setTimeout(() => {
-        const videos = document.querySelectorAll('.phone-screen-video');
-        videos.forEach(video => {
-            if (video.readyState === 0) {
-                console.warn('Video no cargado:', video.src);
+    function init() {
+        particles = [];
+        const numberOfParticles = Math.floor((canvas.width * canvas.height) / 10000);
+        
+        for (let i = 0; i < numberOfParticles; i++) {
+            let x = Math.random() * canvas.width;
+            let y = Math.random() * canvas.height;
+            particles.push(new Particle(x, y));
+        }
+    }
+
+    function connect() {
+        for (let a = 0; a < particles.length; a++) {
+            for (let b = a + 1; b < particles.length; b++) {
+                let dx = particles[a].x - particles[b].x;
+                let dy = particles[a].y - particles[b].y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 120) {
+                    let opacity = 1 - (distance / 120);
+                    
+                    ctx.strokeStyle = `rgba(6, 182, 212, ${opacity * 0.5})`;
+                    ctx.lineWidth = opacity * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(particles[a].x, particles[a].y);
+                    ctx.lineTo(particles[b].x, particles[b].y);
+                    ctx.stroke();
+                }
             }
-        });
-    }, 2000);
-});
+        }
+    }
 
-window.addEventListener('resize', window.ChatBotHub?.debounce?.(optimizeChatbotsPageForMobile, 250));
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        for (let i = 0; i < particles.length; i++) {
+            particles[i].update();
+            particles[i].draw();
+        }
+        
+        connect();
+        requestAnimationFrame(animate);
+    }
 
-console.log('📱 Chatbots.js loaded successfully');
+    init();
+    animate();
+    
+    console.log('✅ Sistema de partículas inicializado');
+}
