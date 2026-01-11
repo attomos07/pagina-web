@@ -180,6 +180,9 @@ func main() {
 		// Select Plan
 		protected.POST("/select-plan", handlers.SelectPlan)
 
+		// Plans Data API - Obtener datos de planes dinámicamente
+		protected.GET("/plans-data", handlers.GetPlansDataAPI)
+
 		// ============================================
 		// GOOGLE INTEGRATION - Calendar & Sheets
 		// ============================================
@@ -311,7 +314,7 @@ func main() {
 		port = "8080"
 	}
 
-	log.Println("╔═══════════════════════════════════════════════════════════╗")
+	log.Println("╔══════════════════════════════════════════════════════════╗")
 	log.Printf("║ 🚀 Servidor Attomos iniciado exitosamente               ║")
 	log.Printf("║ 📍 Puerto: %s                                           ║", port)
 	log.Printf("║ 🌐 URL Local: http://localhost:%s                       ║", port)
@@ -323,7 +326,7 @@ func main() {
 	log.Println("║ 🔧 Tecnología:                                           ║")
 	log.Println("║    • AtomicBot:  Servidor Compartido (€5/mes total)     ║")
 	log.Println("║    • OrbitalBot: Servidor Individual (€5/mes c/u)       ║")
-	log.Println("╚═══════════════════════════════════════════════════════════╝")
+	log.Println("╚══════════════════════════════════════════════════════════╝")
 
 	if err := router.Run(":" + port); err != nil {
 		log.Fatal("❌ Error al iniciar servidor:", err)

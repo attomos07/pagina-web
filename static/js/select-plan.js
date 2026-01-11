@@ -3,6 +3,7 @@
 // ============================================
 
 let currentBillingCycle = 'monthly';
+let plansData = null;
 
 // ============================================
 // INICIALIZACIÓN
@@ -13,9 +14,135 @@ document.addEventListener('DOMContentLoaded', function() {
     
     initBillingToggle();
     initBillingOptions();
+    loadPlansData();
     
     console.log('✅ Select Plan funcionalidades inicializadas');
 });
+
+// ============================================
+// CARGAR DATOS DE PLANES DESDE LA API
+// ============================================
+
+async function loadPlansData() {
+    try {
+        const response = await fetch('/api/plans-data', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok || !data.success) {
+            throw new Error('Error al cargar los datos de los planes');
+        }
+        
+        plansData = data.plans;
+        console.log('✅ Datos de planes cargados:', plansData);
+        
+        // Renderizar los planes en la página
+        renderPlans();
+        
+    } catch (error) {
+        console.error('❌ Error cargando planes:', error);
+        // Mantener los planes estáticos del HTML si falla la carga
+    }
+}
+
+// ============================================
+// RENDERIZAR PLANES DINÁMICAMENTE
+// ============================================
+
+function renderPlans() {
+    if (!plansData) return;
+    
+    const plansGrid = document.querySelector('.plans-grid');
+    if (!plansGrid) return;
+    
+    plansGrid.innerHTML = '';
+    
+    plansData.forEach(plan => {
+        const planCard = createPlanCard(plan);
+        plansGrid.appendChild(planCard);
+    });
+    
+    // Actualizar precios según el ciclo actual
+    updatePrices();
+}
+
+// ============================================
+// CREAR TARJETA DE PLAN
+// ============================================
+
+function createPlanCard(plan) {
+    const card = document.createElement('div');
+    card.className = 'plan-card';
+    
+    // Agregar clases especiales
+    if (plan.isFree) {
+        card.classList.add('free-trial');
+    }
+    if (plan.popular) {
+        card.classList.add('featured');
+    }
+    
+    // Badge
+    let badgeHTML = '';
+    if (plan.badge) {
+        badgeHTML = `<div class="plan-badge ${plan.badgeClass || ''}">${plan.badge}</div>`;
+    }
+    
+    // Header
+    const monthlyPrice = plan.monthly.amount || 0;
+    const annualPrice = plan.annual.amount || 0;
+    
+    const headerHTML = `
+        <div class="plan-header">
+            <h2>${plan.displayName || plan.name}</h2>
+            <div class="plan-price">
+                <span class="price" data-monthly="${monthlyPrice}" data-annual="${annualPrice}">$${monthlyPrice}</span>
+                <span class="period">/ mes</span>
+            </div>
+            <p class="plan-subtitle">${plan.subtitle || plan.description}</p>
+        </div>
+    `;
+    
+    // Features
+    const featuresHTML = plan.features.map(feature => {
+        const isDisabled = feature.startsWith('✗') || feature.startsWith('Sin ');
+        const icon = isDisabled ? '✗' : '✓';
+        const iconClass = isDisabled ? 'disabled' : '';
+        const featureText = feature.replace(/^[✓✗]\s*/, '');
+        
+        return `<li><span class="icon ${iconClass}">${icon}</span> ${featureText}</li>`;
+    }).join('');
+    
+    // Button
+    const buttonText = plan.isFree ? 'Comenzar Gratis' : `Seleccionar ${plan.displayName || plan.name}`;
+    const buttonAction = plan.isFree 
+        ? `selectPlan('${plan.id}', 'monthly')` 
+        : `selectPlan('${plan.id}', getCurrentBillingCycle())`;
+    
+    const buttonHTML = `
+        <button class="plan-button primary" onclick="${buttonAction}">
+            ${buttonText}
+        </button>
+    `;
+    
+    // Ensamblar la tarjeta
+    card.innerHTML = `
+        ${badgeHTML}
+        ${headerHTML}
+        <ul class="plan-features">
+            ${featuresHTML}
+        </ul>
+        ${buttonHTML}
+    `;
+    
+    return card;
+}
 
 // ============================================
 // TOGGLE DE FACTURACIÓN
@@ -150,7 +277,7 @@ async function selectPlan(plan, billingCycle) {
         if (data.trial) {
             updateLoadingMessage('✨ ¡Plan gratuito activado! Redirigiendo al dashboard...');
         } else {
-            updateLoadingMessage('🔐 Redirigiendo a checkout seguro...');
+            updateLoadingMessage('🔒 Redirigiendo a checkout seguro...');
         }
         
         // Redirigir después de 1.5 segundos

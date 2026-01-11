@@ -59,13 +59,29 @@ func GetIndexPage(c *gin.Context) {
 	})
 }
 
+// GetPlansDataAPI devuelve los datos de los planes en formato JSON
+func GetPlansDataAPI(c *gin.Context) {
+	// Configurar Stripe
+	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+
+	// Obtener datos de los planes
+	plans := getPlansData()
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"plans":   plans,
+	})
+}
+
 // getPlansData obtiene los datos de los planes con precios de Stripe
 func getPlansData() []gin.H {
 	return []gin.H{
 		{
 			"id":          "gratuito",
 			"name":        "Plan Gratuito",
+			"displayName": "Gratuito",
 			"description": "Perfecto para empezar sin compromisos",
+			"subtitle":    "Perfecto para probar sin compromisos",
 			"monthly": gin.H{
 				"amount":  0,
 				"priceId": "",
@@ -84,14 +100,18 @@ func getPlansData() []gin.H {
 				"Horarios personalizados de atención",
 				"Catálogo de servicios",
 				"Promociones de servicios",
-				"🔜 Ofertas de trabajo",
+				"📜 Ofertas de trabajo",
 			},
-			"isFree": true,
+			"isFree":     true,
+			"badge":      "✨ Prueba Gratis",
+			"badgeClass": "trial",
 		},
 		{
 			"id":          "proton",
 			"name":        "Plan Protón",
+			"displayName": "Protón",
 			"description": "Ideal para empresas de servicios",
+			"subtitle":    "Ideal para comenzar tu negocio",
 			"monthly": gin.H{
 				"amount":  getStripePriceAmount("STRIPE_PROTON_MONTHLY_PRICE_ID"),
 				"priceId": os.Getenv("STRIPE_PROTON_MONTHLY_PRICE_ID"),
@@ -110,15 +130,19 @@ func getPlansData() []gin.H {
 				"Horarios personalizados de atención",
 				"Catálogo de servicios",
 				"Promociones de servicios",
-				"🔜 Ofertas de trabajo",
+				"📜 Ofertas de trabajo",
 			},
 		},
 		{
 			"id":          "neutron",
 			"name":        "Plan Neutrón",
+			"displayName": "Neutrón",
 			"description": "Ideal para e-commerce",
+			"subtitle":    "Para negocios en crecimiento",
 			"popular":     true,
 			"comingSoon":  true,
+			"badge":       "🔥 Más Popular",
+			"badgeClass":  "popular",
 			"monthly": gin.H{
 				"amount":  getStripePriceAmount("STRIPE_NEUTRON_MONTHLY_PRICE_ID"),
 				"priceId": os.Getenv("STRIPE_NEUTRON_MONTHLY_PRICE_ID"),
@@ -145,8 +169,12 @@ func getPlansData() []gin.H {
 		{
 			"id":          "electron",
 			"name":        "Plan Electrón",
+			"displayName": "Electrón",
 			"description": "Agente telefónico con voz IA",
+			"subtitle":    "Para empresas grandes",
 			"comingSoon":  true,
+			"badge":       "⚡ Enterprise",
+			"badgeClass":  "enterprise",
 			"monthly": gin.H{
 				"amount":  getStripePriceAmount("STRIPE_ELECTRON_MONTHLY_PRICE_ID"),
 				"priceId": os.Getenv("STRIPE_ELECTRON_MONTHLY_PRICE_ID"),
