@@ -39,7 +39,7 @@ func main() {
 	} else {
 		log.Println("✅ Configuración del negocio cargada correctamente")
 		if src.BusinessCfg != nil {
-			log.Printf("   📍 Negocio: %s\n", src.BusinessCfg.AgentName)
+			log.Printf("   📝 Negocio: %s\n", src.BusinessCfg.AgentName)
 			log.Printf("   🏪 Tipo: %s\n", src.BusinessCfg.BusinessType)
 		}
 	}
@@ -50,11 +50,11 @@ func main() {
 
 	// Inicializar servicios
 	log.Println("")
-	log.Println("╔════════════════════════════════════════════════════════╗")
-	log.Println("║                                                        ║")
-	log.Println("║              INICIALIZANDO SERVICIOS                   ║")
-	log.Println("║                                                        ║")
-	log.Println("╚════════════════════════════════════════════════════════╝")
+	log.Println("╔══════════════════════════════════════════════════════╗")
+	log.Println("║                                                      ║")
+	log.Println("║              INICIALIZANDO SERVICIOS                 ║")
+	log.Println("║                                                      ║")
+	log.Println("╚══════════════════════════════════════════════════════╝")
 	log.Println("")
 
 	// Inicializar Gemini AI
@@ -97,7 +97,7 @@ func main() {
 
 	// Inicializar Meta WhatsApp Client
 	log.Println("\n📱 Inicializando Meta WhatsApp Client...")
-	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 	ctx := context.Background()
 	client, err := src.NewMetaClient(ctx)
@@ -150,9 +150,9 @@ func printBanner() {
 
 // Mostrar estado de configuración
 func showConfigurationStatus() {
-	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Println("📊 VERIFICACIÓN DE ARCHIVOS")
-	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 	// Verificar .env
 	if _, err := os.Stat(".env"); err == nil {
@@ -178,9 +178,9 @@ func showConfigurationStatus() {
 	}
 
 	log.Println("")
-	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Println("🔑 VARIABLES DE ENTORNO")
-	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 	// Verificar variables de entorno
 	vars := map[string]string{
@@ -225,14 +225,14 @@ func printFinalStatus(gemini, sheets, calendar string) {
 		fmt.Printf("📱 Tipo: %s\n", src.BusinessCfg.BusinessType)
 	}
 
-	fmt.Println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	fmt.Println("📊 ESTADO DE SERVICIOS")
-	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	fmt.Printf("🧠 Gemini AI:        %s\n", gemini)
 	fmt.Printf("📊 Google Sheets:    %s\n", sheets)
 	fmt.Printf("📅 Google Calendar:  %s\n", calendar)
-	fmt.Printf("🚀 Meta API:         ✅ Conectado\n")
-	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println("🚀 Meta API:         ✅ Conectado")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 	// Advertencias si hay servicios deshabilitados
 	if sheets == "❌ No disponible" || calendar == "❌ No disponible" {
@@ -252,7 +252,7 @@ func printFinalStatus(gemini, sheets, calendar string) {
 
 	fmt.Println("\n📱 Esperando mensajes de WhatsApp vía Meta API...")
 	fmt.Println("🌐 Webhook activo en el puerto configurado")
-	fmt.Println("💡 Presiona Ctrl+C para detener el bot\n")
+	fmt.Println("💡 Presiona Ctrl+C para detener el bot")
 }
 
 // Watchdog para recargar configuración automáticamente
