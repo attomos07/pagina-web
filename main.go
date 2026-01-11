@@ -136,6 +136,9 @@ func main() {
 	router.POST("/api/login", handlers.Login)
 	router.POST("/api/logout", handlers.Logout)
 
+	// Plans Data API - Obtener datos de planes dinámicamente (PÚBLICO)
+	router.GET("/api/plans-data", handlers.GetPlansDataAPI)
+
 	// ============================================
 	// GOOGLE OAUTH ROUTES
 	// ============================================
@@ -179,9 +182,6 @@ func main() {
 
 		// Select Plan
 		protected.POST("/select-plan", handlers.SelectPlan)
-
-		// Plans Data API - Obtener datos de planes dinámicamente
-		protected.GET("/plans-data", handlers.GetPlansDataAPI)
 
 		// ============================================
 		// GOOGLE INTEGRATION - Calendar & Sheets

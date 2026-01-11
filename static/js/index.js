@@ -1,6 +1,8 @@
 // ============================================
-// MAIN JAVASCRIPT - CON CARRUSEL DE PLATAFORMAS
+// MAIN JAVASCRIPT - CON CARRUSEL DE PLATAFORMAS Y PRECIOS DINÁMICOS
 // ============================================
+
+let plansData = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 ChatBot Hub cargado correctamente');
@@ -14,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initSocialPlatforms();
     initPlatformsCarousel();
     initFAQ();
+    loadPlansDataForIndex(); // ← Nueva función para cargar precios
     initPricingAnimations();
     initVideoControls();
     initTooltips();
@@ -23,6 +26,70 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('✅ Todas las funcionalidades inicializadas');
 });
+
+// ============================================
+// CARGAR DATOS DE PLANES DESDE LA API (PARA INDEX)
+// ============================================
+
+async function loadPlansDataForIndex() {
+    try {
+        const response = await fetch('/api/plans-data', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok || !data.success) {
+            console.warn('⚠️ No se pudieron cargar precios de Stripe, usando valores del HTML');
+            return;
+        }
+        
+        plansData = data.plans;
+        console.log('✅ Datos de planes cargados para index:', plansData);
+        
+        // Actualizar precios en las tarjetas existentes
+        updatePricingCards();
+        
+    } catch (error) {
+        console.error('❌ Error cargando planes:', error);
+        // Mantener los precios estáticos del HTML si falla la carga
+    }
+}
+
+// ============================================
+// ACTUALIZAR TARJETAS DE PRECIOS CON DATOS DE STRIPE
+// ============================================
+
+function updatePricingCards() {
+    if (!plansData) return;
+    
+    plansData.forEach(plan => {
+        const planCard = document.querySelector(`.pricing-card[data-plan="${plan.id}"]`);
+        if (!planCard) return;
+        
+        const priceElement = planCard.querySelector('.price-amount');
+        if (!priceElement) return;
+        
+        // Actualizar atributos de precio
+        const monthlyPrice = plan.monthly.amount || 0;
+        const annualPrice = plan.annual.amount || 0;
+        
+        priceElement.setAttribute('data-monthly', monthlyPrice);
+        priceElement.setAttribute('data-annual', annualPrice);
+        
+        // Actualizar el texto mostrado según el billing toggle actual
+        const billingToggle = document.getElementById('billingToggle');
+        const isAnnual = billingToggle && billingToggle.checked;
+        
+        priceElement.textContent = `$${isAnnual ? annualPrice : monthlyPrice}`;
+        
+        console.log(`💰 Precio actualizado para ${plan.id}: Monthly=$${monthlyPrice}, Annual=$${annualPrice}`);
+    });
+}
 
 // ============================================
 // TYPEWRITER EFFECT FOR HERO TITLE
