@@ -278,12 +278,12 @@ body {
 }
 
 /* ============================================
-   CTA SECTION - CON FONDO DE COLOR
+   CTA SECTION - CAMBIADO A FONDO BLANCO
    ============================================ */
 
 .agents-cta-section {
     padding: 100px 20px;
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    background: #ffffff;
 }
 
 .cta-content {

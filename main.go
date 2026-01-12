@@ -260,6 +260,15 @@ func main() {
 		})
 	})
 
+	// ============================================
+	// RUTA BLOG - CORREGIDA
+	// ============================================
+	router.GET("/blog", func(c *gin.Context) {
+		c.HTML(200, "blog.html", gin.H{
+			"title": "Blog - Attomos",
+		})
+	})
+
 	router.GET("/pricing", func(c *gin.Context) {
 		c.HTML(200, "pricing.html", gin.H{
 			"title": "Precios - Attomos",
