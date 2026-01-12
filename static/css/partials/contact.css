@@ -1,4 +1,7 @@
-/* Contact Page Styles */
+/* ============================================
+   CONTACT PAGE STYLES - CORREGIDO
+   ============================================ */
+
 * {
     margin: 0;
     padding: 0;
@@ -18,7 +21,10 @@ body {
     padding: 0 20px;
 }
 
-/* Hero */
+/* ============================================
+   HERO SECTION
+   ============================================ */
+
 #particles-canvas {
     position: absolute;
     top: 0;
@@ -59,6 +65,7 @@ body {
     background: linear-gradient(135deg, #06b6d4, #0891b2);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .hero-subtitle {
@@ -68,10 +75,13 @@ body {
     margin: 0 auto;
 }
 
-/* Contact Methods */
+/* ============================================
+   CONTACT METHODS - FONDO BLANCO
+   ============================================ */
+
 .contact-methods-section {
     padding: 80px 20px;
-    background: #f9fafb;
+    background: #ffffff;
 }
 
 .contact-methods-grid {
@@ -94,20 +104,37 @@ body {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
 
+/* ============================================
+   ICONOS - ANILLOS CIRCULARES CIAN CON FONDO BLANCO
+   ============================================ */
+
 .method-icon {
     width: 70px;
     height: 70px;
     margin: 0 auto 24px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #06b6d4;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.15);
 }
 
 .method-icon i {
     font-size: 32px;
-    color: white;
+    color: #06b6d4;
+}
+
+.contact-method-card:hover .method-icon {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 10px 30px rgba(6, 182, 212, 0.4);
+    border-color: #0891b2;
+}
+
+.contact-method-card:hover .method-icon i {
+    color: #0891b2;
 }
 
 .method-title {
@@ -141,7 +168,10 @@ body {
     box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
 }
 
-/* Contact Form & Info */
+/* ============================================
+   CONTACT FORM & INFO - FONDO BLANCO
+   ============================================ */
+
 .contact-form-section {
     padding: 100px 20px;
     background: #ffffff;
@@ -227,7 +257,10 @@ body {
     box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
 }
 
-/* Info Cards */
+/* ============================================
+   INFO CARDS
+   ============================================ */
+
 .info-card {
     background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
     padding: 32px;
@@ -248,20 +281,27 @@ body {
     margin-bottom: 24px;
 }
 
+.info-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Info Icons - ANILLOS CIRCULARES CIAN CON FONDO BLANCO */
 .info-icon {
     width: 48px;
     height: 48px;
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    background: #ffffff;
+    border: 3px solid #06b6d4;
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.15);
 }
 
 .info-icon i {
     font-size: 24px;
-    color: white;
+    color: #06b6d4;
 }
 
 .info-content h4 {
@@ -277,7 +317,10 @@ body {
     line-height: 1.6;
 }
 
-/* Social Card */
+/* ============================================
+   SOCIAL CARD - ICONOS VISIBLES
+   ============================================ */
+
 .social-card {
     background: white;
     padding: 32px;
@@ -297,27 +340,46 @@ body {
     display: flex;
     gap: 12px;
     justify-content: center;
+    flex-wrap: wrap;
 }
 
+/* ICONOS REDES SOCIALES - ANILLOS CIRCULARES CIAN VISIBLES */
 .social-link {
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    width: 50px;
+    height: 50px;
+    background: #ffffff;
+    border: 3px solid #06b6d4;
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    font-size: 20px;
-    transition: all 0.3s ease;
+    color: #06b6d4;
+    font-size: 24px;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.15);
 }
 
 .social-link:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
+    transform: translateY(-5px) scale(1.1);
+    box-shadow: 0 10px 30px rgba(6, 182, 212, 0.4);
+    border-color: #0891b2;
+    background: #ffffff;
 }
 
-/* Map Section */
+.social-link:hover i {
+    color: #0891b2;
+}
+
+.social-link i {
+    color: #06b6d4;
+    font-size: 24px;
+}
+
+/* ============================================
+   MAP SECTION
+   ============================================ */
+
 .map-section {
     padding: 100px 20px;
     background: #f9fafb;
@@ -331,6 +393,7 @@ body {
     background: linear-gradient(135deg, #1a1a1a, #06b6d4);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .map-container {
@@ -341,7 +404,10 @@ body {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
 }
 
-/* WhatsApp Float */
+/* ============================================
+   WHATSAPP FLOAT
+   ============================================ */
+
 .whatsapp-float {
     position: fixed;
     bottom: 30px;
@@ -388,13 +454,26 @@ body {
     transition: all 0.3s ease;
 }
 
+.whatsapp-tooltip::after {
+    content: '';
+    position: absolute;
+    right: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 5px solid transparent;
+    border-left-color: #1f2937;
+}
+
 .whatsapp-float:hover .whatsapp-tooltip {
     opacity: 1;
     visibility: visible;
     transform: translateY(-50%) translateX(-10px);
 }
 
-/* Responsive */
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
 @media (max-width: 968px) {
     .contact-methods-grid {
         grid-template-columns: 1fr;
@@ -428,6 +507,10 @@ body {
         font-size: 32px;
     }
     
+    .contact-methods-grid {
+        gap: 20px;
+    }
+    
     .whatsapp-float {
         bottom: 20px;
         right: 20px;
@@ -438,5 +521,15 @@ body {
     
     .whatsapp-tooltip {
         display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-title {
+        font-size: 32px;
+    }
+    
+    .form-title {
+        font-size: 28px;
     }
 }

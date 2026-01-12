@@ -1,5 +1,5 @@
 /* ============================================
-   AGENTS PAGE STYLES
+   AGENTS PAGE STYLES - CORREGIDO
    ============================================ */
 
 * {
@@ -80,12 +80,12 @@ body {
 }
 
 /* ============================================
-   FILTER SECTION
+   FILTER SECTION - FONDO BLANCO
    ============================================ */
 
 .agents-filter-section {
     padding: 60px 20px 40px 20px;
-    background: #f9fafb;
+    background: #ffffff;
 }
 
 .filter-controls {
@@ -129,7 +129,7 @@ body {
 }
 
 /* ============================================
-   AGENTS GRID
+   AGENTS GRID - FONDO BLANCO
    ============================================ */
 
 .agents-grid-section {
@@ -179,26 +179,37 @@ body {
     border-color: rgba(6, 182, 212, 0.3);
 }
 
+/* ============================================
+   ICONOS - ANILLOS CIRCULARES CIAN CON FONDO BLANCO
+   ============================================ */
+
 .agent-icon {
     width: 70px;
     height: 70px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #06b6d4;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 24px;
     transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.15);
 }
 
 .agent-icon i {
     font-size: 32px;
-    color: white;
+    color: #06b6d4;
 }
 
 .agent-card:hover .agent-icon {
     transform: scale(1.1) rotate(5deg);
     box-shadow: 0 10px 30px rgba(6, 182, 212, 0.4);
+    border-color: #0891b2;
+}
+
+.agent-card:hover .agent-icon i {
+    color: #0891b2;
 }
 
 .agent-name {
@@ -267,7 +278,7 @@ body {
 }
 
 /* ============================================
-   CTA SECTION
+   CTA SECTION - CON FONDO DE COLOR
    ============================================ */
 
 .agents-cta-section {
