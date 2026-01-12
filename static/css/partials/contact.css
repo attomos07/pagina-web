@@ -1,5 +1,5 @@
 /* ============================================
-   CONTACT PAGE STYLES - CORREGIDO SIN FOOTER
+   CONTACT PAGE STYLES - CORREGIDO
    ============================================ */
 
 * {
@@ -208,6 +208,10 @@ body {
     gap: 20px;
 }
 
+.form-group {
+    position: relative;
+}
+
 .form-group label {
     display: block;
     font-weight: 600;
@@ -235,6 +239,56 @@ body {
     box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
 }
 
+.form-group input.error,
+.form-group select.error,
+.form-group textarea.error {
+    border-color: #ef4444;
+    animation: shakeError 0.5s ease;
+}
+
+/* ============================================
+   FIELD ERROR MESSAGES - ANIMADAS
+   ============================================ */
+
+.field-error {
+    color: #ef4444;
+    font-size: 13px;
+    font-weight: 500;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    animation: slideInError 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.field-error::before {
+    content: '⚠';
+    font-size: 14px;
+    animation: pulseWarning 1s ease-in-out infinite;
+}
+
+@keyframes shakeError {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+@keyframes slideInError {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulseWarning {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
 .submit-btn {
     padding: 16px 32px;
     background: linear-gradient(135deg, #06b6d4, #0891b2);
@@ -255,6 +309,12 @@ body {
 .submit-btn:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
+}
+
+.submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
 /* ============================================
@@ -343,41 +403,106 @@ body {
     flex-wrap: wrap;
 }
 
-/* ICONOS REDES SOCIALES - ANILLOS CIRCULARES CIAN VISIBLES */
+/* ICONOS REDES SOCIALES - MISMO ESTILO QUE FOOTER */
 .social-link {
-    width: 50px;
-    height: 50px;
-    background: #ffffff;
-    border: 3px solid #06b6d4;
-    border-radius: 12px;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #06b6d4;
-    font-size: 24px;
-    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    color: white;
     text-decoration: none;
-    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.15);
+    font-size: 18px;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    position: relative;
+    overflow: hidden;
+    background: rgba(6, 182, 212, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.social-link::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(6, 182, 212, 0.3);
+    border-radius: 50%;
+    transition: all 0.4s ease;
+    transform: translate(-50%, -50%);
+}
+
+.social-link:hover::before {
+    width: 100px;
+    height: 100px;
 }
 
 .social-link:hover {
     transform: translateY(-5px) scale(1.1);
-    box-shadow: 0 10px 30px rgba(6, 182, 212, 0.4);
-    border-color: #0891b2;
-    background: #ffffff;
-}
-
-.social-link:hover i {
-    color: #0891b2;
+    box-shadow: 0 15px 35px rgba(6, 182, 212, 0.3);
+    background: rgba(6, 182, 212, 0.2);
+    border-color: rgba(6, 182, 212, 0.4);
 }
 
 .social-link i {
     color: #06b6d4;
-    font-size: 24px;
+    font-size: 20px;
+    position: relative;
+    z-index: 1;
 }
 
 /* ============================================
-   MAP SECTION
+   SUCCESS MESSAGE
+   ============================================ */
+
+.success-message {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    background: white;
+    padding: 20px 24px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3);
+    border: 2px solid #10b981;
+    z-index: 10000;
+    transform: translateX(400px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.success-message.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.success-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.success-content i {
+    font-size: 32px;
+    color: #10b981;
+}
+
+.success-content h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+}
+
+.success-content p {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+/* ============================================
+   MAP SECTION - PROXIMAMENTE
    ============================================ */
 
 .map-section {
@@ -396,12 +521,41 @@ body {
     background-clip: text;
 }
 
-.map-container {
+.map-placeholder {
     max-width: 1000px;
     margin: 0 auto;
+    background: white;
     border-radius: 20px;
-    overflow: hidden;
+    padding: 80px 40px;
+    text-align: center;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.map-placeholder-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.map-placeholder-content i {
+    font-size: 80px;
+    color: #06b6d4;
+    opacity: 0.3;
+}
+
+.map-placeholder-content h3 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.map-placeholder-content p {
+    font-size: 16px;
+    color: #6b7280;
+    margin: 0;
+    max-width: 500px;
 }
 
 /* ============================================
@@ -521,6 +675,12 @@ body {
     
     .whatsapp-tooltip {
         display: none;
+    }
+
+    .success-message {
+        right: 10px;
+        left: 10px;
+        max-width: calc(100% - 20px);
     }
 }
 

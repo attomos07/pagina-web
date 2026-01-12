@@ -1,25 +1,325 @@
 // ============================================
-// PRICING.JS - FUNCIONALIDADES ESPECÍFICAS
+// PRICING.JS - FUNCIONALIDADES COMPLETAS
 // ============================================
+
+let plansData = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('💰 Pricing page loaded');
     
-    // Inicializar funcionalidades específicas de pricing
+    // Inicializar todas las funcionalidades
+    initNavbar();
+    initParticles();
+    loadPlansData();
     initBillingToggle();
     initPricingAnimations();
-    initCustomPricingPlan();
     initPricingInteractions();
     initComparisonTable();
-    initEnterpriseSection();
-    
-    // Inicializar FAQ (heredada de index.js)
-    if (typeof window.ChatBotHub?.initFAQ === 'function') {
-        window.ChatBotHub.initFAQ();
-    }
+    initFAQ();
+    setActiveNavLink();
     
     console.log('✅ Pricing functionality initialized');
 });
+
+// ============================================
+// CARGAR DATOS DE PLANES DESDE LA API
+// ============================================
+
+async function loadPlansData() {
+    try {
+        const response = await fetch('/api/plans-data', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok || !data.success) {
+            console.warn('⚠️ No se pudieron cargar precios de Stripe, usando valores del HTML');
+            return;
+        }
+        
+        plansData = data.plans;
+        console.log('✅ Datos de planes cargados:', plansData);
+        
+        // Actualizar precios en las tarjetas existentes
+        updatePricingCards();
+        
+    } catch (error) {
+        console.error('❌ Error cargando planes:', error);
+        // Mantener los precios estáticos del HTML si falla la carga
+    }
+}
+
+// ============================================
+// ACTUALIZAR TARJETAS DE PRECIOS CON DATOS DE STRIPE
+// ============================================
+
+function updatePricingCards() {
+    if (!plansData) return;
+    
+    plansData.forEach(plan => {
+        const planCard = document.querySelector(`.pricing-card[data-plan="${plan.id}"]`);
+        if (!planCard) return;
+        
+        const priceElement = planCard.querySelector('.price-amount');
+        if (!priceElement) return;
+        
+        // Actualizar atributos de precio
+        const monthlyPrice = plan.monthly.amount || 0;
+        const annualPrice = plan.annual.amount || 0;
+        
+        priceElement.setAttribute('data-monthly', monthlyPrice);
+        priceElement.setAttribute('data-annual', annualPrice);
+        
+        // Actualizar el texto mostrado según el billing toggle actual
+        const billingToggle = document.getElementById('billingToggle');
+        const isAnnual = billingToggle && billingToggle.checked;
+        
+        priceElement.textContent = `${isAnnual ? annualPrice : monthlyPrice}`;
+        
+        console.log(`💰 Precio actualizado para ${plan.id}: Monthly=${monthlyPrice}, Annual=${annualPrice}`);
+    });
+}
+
+// ============================================
+// NAVBAR FUNCTIONALITY
+// ============================================
+function initNavbar() {
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const navMenu = document.getElementById('navMenu');
+    const navbar = document.getElementById('navbar');
+
+    if (mobileMenuBtn && navMenu) {
+        mobileMenuBtn.classList.remove('active');
+        navMenu.classList.remove('active');
+        document.body.classList.remove('menu-open');
+    }
+
+    window.addEventListener('scroll', function() {
+        if (navbar) {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        }
+    });
+
+    function closeMobileMenu() {
+        if (mobileMenuBtn && navMenu) {
+            mobileMenuBtn.classList.remove('active');
+            navMenu.classList.remove('active');
+            document.body.classList.remove('menu-open');
+        }
+    }
+
+    if (mobileMenuBtn && navMenu) {
+        mobileMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const isMenuActive = navMenu.classList.contains('active');
+            
+            if (isMenuActive) {
+                closeMobileMenu();
+            } else {
+                mobileMenuBtn.classList.add('active');
+                navMenu.classList.add('active');
+                document.body.classList.add('menu-open');
+            }
+        });
+    }
+
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            closeMobileMenu();
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (navMenu && navMenu.classList.contains('active')) {
+            const clickedInsideMenu = navMenu.contains(e.target);
+            const clickedOnButton = mobileMenuBtn && mobileMenuBtn.contains(e.target);
+            
+            if (!clickedInsideMenu && !clickedOnButton) {
+                closeMobileMenu();
+            }
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (navMenu && navMenu.classList.contains('active')) {
+                closeMobileMenu();
+            }
+        }
+    });
+}
+
+function setActiveNavLink() {
+    const navLinks = document.querySelectorAll('.nav-link:not(.nav-cta):not(.nav-login)');
+    
+    navLinks.forEach(link => link.classList.remove('active'));
+    
+    const pricingLink = document.querySelector('.nav-link[href="/pricing"]');
+    if (pricingLink) {
+        pricingLink.classList.add('active');
+    }
+}
+
+// ============================================
+// PARTICLES SYSTEM
+// ============================================
+function initParticles() {
+    const canvas = document.getElementById('particles-canvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let mouse = { x: null, y: null, radius: 150 };
+
+    canvas.width = canvas.parentElement.offsetWidth;
+    canvas.height = canvas.parentElement.offsetHeight;
+
+    canvas.parentElement.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+    });
+
+    canvas.parentElement.addEventListener('mouseout', () => {
+        mouse.x = null;
+        mouse.y = null;
+    });
+
+    window.addEventListener('resize', () => {
+        canvas.width = canvas.parentElement.offsetWidth;
+        canvas.height = canvas.parentElement.offsetHeight;
+        init();
+    });
+
+    class Particle {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.size = Math.random() * 2.5 + 1.5;
+            this.vx = (Math.random() - 0.5) * 0.5;
+            this.vy = (Math.random() - 0.5) * 0.5;
+            
+            const colors = [
+                'rgba(6, 182, 212, ',
+                'rgba(8, 145, 178, ',
+                'rgba(34, 211, 238, ',
+                'rgba(14, 165, 233, '
+            ];
+            this.color = colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        draw() {
+            ctx.fillStyle = this.color + '0.9)';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = this.color + '0.5)';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size + 3, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+
+            if (this.x < -10) this.x = canvas.width + 10;
+            if (this.x > canvas.width + 10) this.x = -10;
+            if (this.y < -10) this.y = canvas.height + 10;
+            if (this.y > canvas.height + 10) this.y = -10;
+
+            if (mouse.x != null && mouse.y != null) {
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < mouse.radius) {
+                    let force = (mouse.radius - distance) / mouse.radius;
+                    let angle = Math.atan2(dy, dx);
+                    this.vx -= Math.cos(angle) * force * 0.3;
+                    this.vy -= Math.sin(angle) * force * 0.3;
+                }
+            }
+
+            const maxSpeed = 1.2;
+            const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            if (speed > maxSpeed) {
+                this.vx = (this.vx / speed) * maxSpeed;
+                this.vy = (this.vy / speed) * maxSpeed;
+            }
+
+            this.vx *= 0.98;
+            this.vy *= 0.98;
+
+            if (Math.abs(this.vx) < 0.1) this.vx += (Math.random() - 0.5) * 0.08;
+            if (Math.abs(this.vy) < 0.1) this.vy += (Math.random() - 0.5) * 0.08;
+        }
+    }
+
+    function init() {
+        particles = [];
+        const numberOfParticles = Math.floor((canvas.width * canvas.height) / 10000);
+        
+        for (let i = 0; i < numberOfParticles; i++) {
+            let x = Math.random() * canvas.width;
+            let y = Math.random() * canvas.height;
+            particles.push(new Particle(x, y));
+        }
+    }
+
+    function connect() {
+        for (let a = 0; a < particles.length; a++) {
+            for (let b = a + 1; b < particles.length; b++) {
+                let dx = particles[a].x - particles[b].x;
+                let dy = particles[a].y - particles[b].y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 120) {
+                    let opacity = 1 - (distance / 120);
+                    
+                    ctx.strokeStyle = `rgba(6, 182, 212, ${opacity * 0.5})`;
+                    ctx.lineWidth = opacity * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(particles[a].x, particles[a].y);
+                    ctx.lineTo(particles[b].x, particles[b].y);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        for (let i = 0; i < particles.length; i++) {
+            particles[i].update();
+            particles[i].draw();
+        }
+        
+        connect();
+        requestAnimationFrame(animate);
+    }
+
+    init();
+    animate();
+    
+    console.log('✅ Sistema de partículas inicializado');
+}
 
 // ============================================
 // BILLING TOGGLE FUNCTIONALITY
@@ -30,38 +330,42 @@ function initBillingToggle() {
     if (!billingToggle) return;
     
     billingToggle.addEventListener('change', function() {
-        const monthlyPrices = document.querySelectorAll('.price-amount.monthly');
-        const yearlyPrices = document.querySelectorAll('.price-amount.yearly');
         const isYearly = this.checked;
+        const allPrices = document.querySelectorAll('.price-amount');
         
         // Animar cambio de precios
-        const allPrices = document.querySelectorAll('.price-amount');
         allPrices.forEach(price => {
             price.style.transform = 'scale(0.8)';
             price.style.opacity = '0.5';
         });
         
         setTimeout(() => {
-            if (isYearly) {
-                monthlyPrices.forEach(price => price.style.display = 'none');
-                yearlyPrices.forEach(price => price.style.display = 'inline');
-            } else {
-                monthlyPrices.forEach(price => price.style.display = 'inline');
-                yearlyPrices.forEach(price => price.style.display = 'none');
-            }
-            
-            // Animar entrada
             allPrices.forEach(price => {
+                const monthly = price.getAttribute('data-monthly');
+                const annual = price.getAttribute('data-annual');
+                
+                if (monthly && annual) {
+                    price.textContent = isYearly ? `$${annual}` : `$${monthly}`;
+                }
+                
                 price.style.transform = 'scale(1)';
                 price.style.opacity = '1';
             });
         }, 200);
         
-        // Tracking
-        trackBillingToggle(isYearly ? 'yearly' : 'monthly');
+        // Actualizar labels
+        const monthlyLabel = document.querySelector('.toggle-label.monthly');
+        const annualLabel = document.querySelector('.toggle-label.annual');
         
-        // Actualizar custom pricing si existe
-        updateCustomPricingDisplay();
+        if (isYearly) {
+            monthlyLabel.style.color = '#6b7280';
+            annualLabel.style.color = '#06b6d4';
+        } else {
+            monthlyLabel.style.color = '#06b6d4';
+            annualLabel.style.color = '#6b7280';
+        }
+        
+        trackBillingToggle(isYearly ? 'yearly' : 'monthly');
     });
 }
 
@@ -88,7 +392,6 @@ function initPricingAnimations() {
     });
 
     pricingCards.forEach((card, index) => {
-        // Añadir delay basado en índice
         card.style.animationDelay = `${index * 100}ms`;
         animationObserver.observe(card);
     });
@@ -108,155 +411,12 @@ function animateTableRows(table) {
 }
 
 // ============================================
-// CUSTOM PRICING PLAN FUNCTIONALITY
-// ============================================
-function initCustomPricingPlan() {
-    const planTypeButtons = document.querySelectorAll('.plan-type-btn');
-    const gbSlider = document.getElementById('gbSlider');
-    const gbValue = document.getElementById('gbValue');
-    const msgSlider = document.getElementById('msgSlider');
-    const msgValue = document.getElementById('msgValue');
-    const customPrice = document.getElementById('customPrice');
-    
-    if (!gbSlider || !gbValue || !customPrice) {
-        console.log('Custom pricing elements not found');
-        return;
-    }
-    
-    // Configuración de precios
-    const pricingConfig = {
-        basePrices: {
-            universal: { monthly: 255, yearly: 204 },
-            ecommerce: { monthly: 655, yearly: 524 }
-        },
-        gbPricing: {
-            universal: { base: 40, pricePerGB: 2.50 },
-            ecommerce: { base: 40, pricePerGB: 3.50 }
-        },
-        msgPricing: {
-            universal: { base: 10000, pricePerThousand: 0.05 },
-            ecommerce: { base: 5000, pricePerThousand: 0.08 }
-        }
-    };
-    
-    let currentPlanType = 'universal';
-    let isYearlyBilling = false;
-    
-    // Función para calcular el precio personalizado
-    function calculateCustomPrice() {
-        const selectedGB = parseInt(gbSlider.value);
-        const selectedMsg = parseInt(msgSlider?.value || 10000);
-        const planConfig = pricingConfig.gbPricing[currentPlanType];
-        const msgConfig = pricingConfig.msgPricing[currentPlanType];
-        const basePrice = pricingConfig.basePrices[currentPlanType];
-        
-        // Calcular costo adicional por GB
-        const additionalGB = Math.max(0, selectedGB - planConfig.base);
-        const gbCost = additionalGB * planConfig.pricePerGB;
-        
-        // Calcular costo adicional por mensajes
-        const additionalMsg = Math.max(0, selectedMsg - msgConfig.base);
-        const msgCost = (additionalMsg / 1000) * msgConfig.pricePerThousand;
-        
-        // Precio base según billing
-        const billing = isYearlyBilling ? 'yearly' : 'monthly';
-        const finalPrice = basePrice[billing] + gbCost + msgCost;
-        
-        return Math.round(finalPrice);
-    }
-    
-    // Función para actualizar el precio mostrado
-    function updateCustomPricingDisplay() {
-        const newPrice = calculateCustomPrice();
-        
-        // Animar cambio de precio
-        customPrice.style.transform = 'scale(0.8)';
-        setTimeout(() => {
-            customPrice.textContent = `$${newPrice}`;
-            customPrice.style.transform = 'scale(1)';
-        }, 150);
-    }
-    
-    // Event listeners para los botones de tipo de plan
-    planTypeButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            planTypeButtons.forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            currentPlanType = this.getAttribute('data-plan-type');
-            
-            // Animación del botón
-            this.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                this.style.transform = 'scale(1)';
-            }, 150);
-            
-            updateCustomPricingDisplay();
-            trackCustomPlanChange('plan_type', currentPlanType);
-        });
-    });
-    
-    // Event listeners para sliders
-    if (gbSlider) {
-        gbSlider.addEventListener('input', function() {
-            gbValue.textContent = this.value;
-            updateCustomPricingDisplay();
-            
-            // Debounced tracking
-            clearTimeout(window.gbTrackingTimeout);
-            window.gbTrackingTimeout = setTimeout(() => {
-                trackCustomPlanChange('storage', this.value);
-            }, 500);
-        });
-    }
-    
-    if (msgSlider) {
-        msgSlider.addEventListener('input', function() {
-            const value = parseInt(this.value);
-            msgValue.textContent = formatNumber(value);
-            updateCustomPricingDisplay();
-            
-            // Debounced tracking
-            clearTimeout(window.msgTrackingTimeout);
-            window.msgTrackingTimeout = setTimeout(() => {
-                trackCustomPlanChange('messages', value);
-            }, 500);
-        });
-    }
-    
-    // Detectar cambios en billing toggle
-    const billingToggle = document.getElementById('billingToggle');
-    if (billingToggle) {
-        billingToggle.addEventListener('change', function() {
-            isYearlyBilling = this.checked;
-            updateCustomPricingDisplay();
-        });
-    }
-    
-    // Inicializar valores
-    if (gbValue) gbValue.textContent = gbSlider.value;
-    if (msgValue && msgSlider) msgValue.textContent = formatNumber(msgSlider.value);
-    updateCustomPricingDisplay();
-    
-    // Función global para obtener el precio actual
-    window.getCurrentCustomPrice = function() {
-        return {
-            planType: currentPlanType,
-            gb: parseInt(gbSlider?.value || 40),
-            messages: parseInt(msgSlider?.value || 10000),
-            billing: isYearlyBilling ? 'yearly' : 'monthly',
-            price: calculateCustomPrice()
-        };
-    };
-}
-
-// ============================================
 // PRICING PLAN INTERACTIONS
 // ============================================
 function initPricingInteractions() {
     const planButtons = document.querySelectorAll('.plan-button');
     const pricingCards = document.querySelectorAll('.pricing-card');
     
-    // Plan buttons
     planButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
@@ -265,62 +425,37 @@ function initPricingInteractions() {
             if (!planCard) return;
             
             const planName = planCard.querySelector('.plan-name')?.textContent || 'Unknown';
-            const planPrice = planCard.querySelector('.price-amount:not([style*="display: none"])')?.textContent || '$0';
+            const planPrice = planCard.querySelector('.price-amount')?.textContent || '$0';
             
-            // Animación de click
             this.style.transform = 'scale(0.95)';
             setTimeout(() => {
                 this.style.transform = 'scale(1)';
             }, 150);
             
-            // Tracking del plan seleccionado
             trackPlanSelection(planName, planPrice);
             
-            // Manejar diferentes tipos de botones
             const buttonText = this.textContent.toLowerCase();
             if (buttonText.includes('contactar')) {
                 handleContactSales(planName);
-            } else if (buttonText.includes('gratis')) {
-                handleFreeTrial(planName);
             } else {
                 handlePlanSelection(planName, planPrice);
             }
         });
     });
     
-    // Card hover effects
     pricingCards.forEach(card => {
         card.addEventListener('mouseenter', function() {
             this.classList.add('hovered');
-            
-            // Scale effect suave
-            this.style.transform = 'scale(1.02)';
         });
         
         card.addEventListener('mouseleave', function() {
             this.classList.remove('hovered');
-            this.style.transform = 'scale(1)';
         });
     });
 }
 
 function handleContactSales(planName) {
-    let message = '¡Hola! Me interesa el plan Personalizado de chatbots.';
-    
-    if (planName === 'Personalizado') {
-        const customData = window.getCurrentCustomPrice?.();
-        if (customData) {
-            message += ` Me gustaría una configuración de ${customData.gb}GB, ${formatNumber(customData.messages)} mensajes/mes, plan base ${customData.planType}, facturación ${customData.billing === 'yearly' ? 'anual' : 'mensual'}. El precio estimado es $${customData.price}/mes.`;
-        }
-    }
-    
-    message += ' ¿Pueden contactarme para más detalles?';
-    
-    openWhatsAppWithMessage(message);
-}
-
-function handleFreeTrial(planName) {
-    const message = `¡Hola! Me interesa comenzar la prueba gratuita del plan ${planName}. ¿Pueden ayudarme con el proceso?`;
+    const message = `¡Hola! Me interesa el plan ${planName} de chatbots. ¿Pueden contactarme para más detalles?`;
     openWhatsAppWithMessage(message);
 }
 
@@ -336,10 +471,8 @@ function initComparisonTable() {
     const table = document.querySelector('.comparison-table');
     if (!table) return;
     
-    // Hacer la tabla responsive
     makeTableResponsive(table);
     
-    // Highlight features on hover
     const featureRows = table.querySelectorAll('tbody tr');
     featureRows.forEach(row => {
         row.addEventListener('mouseenter', function() {
@@ -351,7 +484,6 @@ function initComparisonTable() {
         });
     });
     
-    // Column highlights
     const headers = table.querySelectorAll('th:not(.feature-column)');
     headers.forEach((header, index) => {
         header.addEventListener('mouseenter', function() {
@@ -368,7 +500,6 @@ function makeTableResponsive(table) {
     const wrapper = table.parentElement;
     if (wrapper && wrapper.classList.contains('comparison-table-wrapper')) {
         
-        // Touch scroll indicators
         const scrollIndicator = document.createElement('div');
         scrollIndicator.className = 'scroll-indicator';
         scrollIndicator.textContent = '← Desliza para ver más →';
@@ -402,64 +533,41 @@ function unhighlightColumns(table) {
 }
 
 // ============================================
-// ENTERPRISE SECTION
+// FAQ FUNCTIONALITY
 // ============================================
-function initEnterpriseSection() {
-    const enterpriseBtn = document.querySelector('.enterprise-btn');
-    const enterpriseFeatures = document.querySelectorAll('.enterprise-feature');
+function initFAQ() {
+    const faqItems = document.querySelectorAll('.faq-item');
     
-    if (enterpriseBtn) {
-        enterpriseBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            animateButton(this);
-            trackContactAction('enterprise', 'sales_contact');
-            
-            const message = '¡Hola! Me interesa conocer más sobre las soluciones Enterprise para chatbots. ¿Pueden contactarme un especialista?';
-            openWhatsAppWithMessage(message);
-        });
-    }
-    
-    // Animate enterprise features on scroll
-    if (enterpriseFeatures.length > 0) {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry, index) => {
-                if (entry.isIntersecting) {
-                    setTimeout(() => {
-                        entry.target.classList.add('animate-in');
-                    }, index * 100);
-                }
-            });
-        }, { threshold: 0.5 });
+    faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
         
-        enterpriseFeatures.forEach(feature => {
-            observer.observe(feature);
+        question.addEventListener('click', function() {
+            const wasActive = item.classList.contains('active');
+            
+            faqItems.forEach(otherItem => {
+                otherItem.classList.remove('active');
+            });
+            
+            if (!wasActive) {
+                item.classList.add('active');
+            }
         });
-    }
+    });
 }
 
 // ============================================
 // UTILITY FUNCTIONS
 // ============================================
-function formatNumber(num) {
-    if (num >= 1000) {
-        return (num / 1000).toFixed(0) + 'K';
-    }
-    return num.toString();
-}
-
-function animateButton(button) {
-    button.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-        button.style.transform = 'scale(1)';
-    }, 150);
-}
-
 function openWhatsAppWithMessage(customMessage) {
-    const phoneNumber = '5491234567890';
+    const phoneNumber = '528123092839';
     const encodedMessage = encodeURIComponent(customMessage);
     const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
     window.open(whatsappURL, '_blank');
+}
+
+function openWhatsApp() {
+    const message = '¡Hola! Me gustaría obtener más información sobre los planes de chatbots.';
+    openWhatsAppWithMessage(message);
 }
 
 // ============================================
@@ -488,84 +596,6 @@ function trackPlanSelection(planName, planPrice) {
             'event_label': planName
         });
     }
-    
-    // Tracking especial para plan personalizado
-    if (planName === 'Personalizado') {
-        const customData = window.getCurrentCustomPrice?.();
-        if (customData) {
-            gtag('event', 'custom_plan_config', {
-                'plan_type': customData.planType,
-                'gb_selected': customData.gb,
-                'messages_selected': customData.messages,
-                'billing_type': customData.billing,
-                'calculated_price': customData.price,
-                'event_category': 'pricing',
-                'event_label': 'custom_plan'
-            });
-        }
-    }
 }
-
-function trackCustomPlanChange(configType, value) {
-    console.log(`Custom plan ${configType} changed to: ${value}`);
-    
-    if (typeof gtag !== 'undefined') {
-        gtag('event', 'custom_plan_change', {
-            'config_type': configType,
-            'config_value': value,
-            'event_category': 'pricing',
-            'event_label': `custom-${configType}`
-        });
-    }
-}
-
-function trackContactAction(type, action) {
-    console.log(`Contact action: ${type} - ${action}`);
-    
-    if (typeof gtag !== 'undefined') {
-        gtag('event', 'contact_action', {
-            'action_type': type,
-            'action_name': action,
-            'event_category': 'contact',
-            'event_label': `${type}-${action}`
-        });
-    }
-}
-
-// ============================================
-// MOBILE OPTIMIZATIONS
-// ============================================
-function optimizePricingForMobile() {
-    if (window.innerWidth <= 768) {
-        // Simplificar animaciones en móvil
-        const cards = document.querySelectorAll('.pricing-card');
-        cards.forEach(card => {
-            card.style.animationDuration = '0.3s';
-        });
-        
-        // Ajustar sliders para touch
-        const sliders = document.querySelectorAll('input[type="range"]');
-        sliders.forEach(slider => {
-            slider.style.height = '20px';
-        });
-    }
-}
-
-// ============================================
-// INITIALIZATION ON LOAD
-// ============================================
-window.addEventListener('load', () => {
-    optimizePricingForMobile();
-    
-    // Verificar que todos los elementos estén cargados
-    setTimeout(() => {
-        const customPrice = document.getElementById('customPrice');
-        if (customPrice && customPrice.textContent === '$0') {
-            console.warn('Custom pricing not initialized properly');
-        }
-    }, 1000);
-});
-
-window.addEventListener('resize', window.ChatBotHub?.debounce?.(optimizePricingForMobile, 250));
 
 console.log('💰 Pricing.js loaded successfully');

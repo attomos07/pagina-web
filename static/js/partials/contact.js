@@ -5,34 +5,266 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📞 Contact page loaded');
     
-    // Inicializar funcionalidades específicas de contacto
+    // Inicializar todas las funcionalidades
+    initNavbar();
+    initParticles();
     initContactMethods();
     initContactForm();
     initMapFunctionality();
     initConsultationCard();
-    
-    // Inicializar FAQ (heredada de index.js)
-    if (typeof window.ChatBotHub?.initFAQ === 'function') {
-        window.ChatBotHub.initFAQ();
-    }
+    setActiveNavLink();
     
     console.log('✅ Contact functionality initialized');
 });
 
 // ============================================
+// NAVBAR FUNCTIONALITY
+// ============================================
+function initNavbar() {
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const navMenu = document.getElementById('navMenu');
+    const navbar = document.getElementById('navbar');
+
+    if (mobileMenuBtn && navMenu) {
+        mobileMenuBtn.classList.remove('active');
+        navMenu.classList.remove('active');
+        document.body.classList.remove('menu-open');
+    }
+
+    window.addEventListener('scroll', function() {
+        if (navbar) {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        }
+    });
+
+    function closeMobileMenu() {
+        if (mobileMenuBtn && navMenu) {
+            mobileMenuBtn.classList.remove('active');
+            navMenu.classList.remove('active');
+            document.body.classList.remove('menu-open');
+        }
+    }
+
+    if (mobileMenuBtn && navMenu) {
+        mobileMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const isMenuActive = navMenu.classList.contains('active');
+            
+            if (isMenuActive) {
+                closeMobileMenu();
+            } else {
+                mobileMenuBtn.classList.add('active');
+                navMenu.classList.add('active');
+                document.body.classList.add('menu-open');
+            }
+        });
+    }
+
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            closeMobileMenu();
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (navMenu && navMenu.classList.contains('active')) {
+            const clickedInsideMenu = navMenu.contains(e.target);
+            const clickedOnButton = mobileMenuBtn && mobileMenuBtn.contains(e.target);
+            
+            if (!clickedInsideMenu && !clickedOnButton) {
+                closeMobileMenu();
+            }
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (navMenu && navMenu.classList.contains('active')) {
+                closeMobileMenu();
+            }
+        }
+    });
+}
+
+function setActiveNavLink() {
+    const navLinks = document.querySelectorAll('.nav-link:not(.nav-cta):not(.nav-login)');
+    
+    navLinks.forEach(link => link.classList.remove('active'));
+    
+    const contactLink = document.querySelector('.nav-link[href="/contact"]');
+    if (contactLink) {
+        contactLink.classList.add('active');
+    }
+}
+
+// ============================================
+// PARTICLES SYSTEM
+// ============================================
+function initParticles() {
+    const canvas = document.getElementById('particles-canvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let mouse = { x: null, y: null, radius: 150 };
+
+    canvas.width = canvas.parentElement.offsetWidth;
+    canvas.height = canvas.parentElement.offsetHeight;
+
+    canvas.parentElement.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+    });
+
+    canvas.parentElement.addEventListener('mouseout', () => {
+        mouse.x = null;
+        mouse.y = null;
+    });
+
+    window.addEventListener('resize', () => {
+        canvas.width = canvas.parentElement.offsetWidth;
+        canvas.height = canvas.parentElement.offsetHeight;
+        init();
+    });
+
+    class Particle {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.size = Math.random() * 2.5 + 1.5;
+            this.vx = (Math.random() - 0.5) * 0.5;
+            this.vy = (Math.random() - 0.5) * 0.5;
+            
+            const colors = [
+                'rgba(6, 182, 212, ',
+                'rgba(8, 145, 178, ',
+                'rgba(34, 211, 238, ',
+                'rgba(14, 165, 233, '
+            ];
+            this.color = colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        draw() {
+            ctx.fillStyle = this.color + '0.9)';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = this.color + '0.5)';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size + 3, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+
+            if (this.x < -10) this.x = canvas.width + 10;
+            if (this.x > canvas.width + 10) this.x = -10;
+            if (this.y < -10) this.y = canvas.height + 10;
+            if (this.y > canvas.height + 10) this.y = -10;
+
+            if (mouse.x != null && mouse.y != null) {
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < mouse.radius) {
+                    let force = (mouse.radius - distance) / mouse.radius;
+                    let angle = Math.atan2(dy, dx);
+                    this.vx -= Math.cos(angle) * force * 0.3;
+                    this.vy -= Math.sin(angle) * force * 0.3;
+                }
+            }
+
+            const maxSpeed = 1.2;
+            const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            if (speed > maxSpeed) {
+                this.vx = (this.vx / speed) * maxSpeed;
+                this.vy = (this.vy / speed) * maxSpeed;
+            }
+
+            this.vx *= 0.98;
+            this.vy *= 0.98;
+
+            if (Math.abs(this.vx) < 0.1) this.vx += (Math.random() - 0.5) * 0.08;
+            if (Math.abs(this.vy) < 0.1) this.vy += (Math.random() - 0.5) * 0.08;
+        }
+    }
+
+    function init() {
+        particles = [];
+        const numberOfParticles = Math.floor((canvas.width * canvas.height) / 10000);
+        
+        for (let i = 0; i < numberOfParticles; i++) {
+            let x = Math.random() * canvas.width;
+            let y = Math.random() * canvas.height;
+            particles.push(new Particle(x, y));
+        }
+    }
+
+    function connect() {
+        for (let a = 0; a < particles.length; a++) {
+            for (let b = a + 1; b < particles.length; b++) {
+                let dx = particles[a].x - particles[b].x;
+                let dy = particles[a].y - particles[b].y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 120) {
+                    let opacity = 1 - (distance / 120);
+                    
+                    ctx.strokeStyle = `rgba(6, 182, 212, ${opacity * 0.5})`;
+                    ctx.lineWidth = opacity * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(particles[a].x, particles[a].y);
+                    ctx.lineTo(particles[b].x, particles[b].y);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        for (let i = 0; i < particles.length; i++) {
+            particles[i].update();
+            particles[i].draw();
+        }
+        
+        connect();
+        requestAnimationFrame(animate);
+    }
+
+    init();
+    animate();
+    
+    console.log('✅ Sistema de partículas inicializado');
+}
+
+// ============================================
 // CONTACT METHODS INTERACTIONS
 // ============================================
 function initContactMethods() {
-    const contactMethods = document.querySelectorAll('.contact-method');
+    const contactMethods = document.querySelectorAll('.contact-method-card');
     
     if (contactMethods.length === 0) return;
     
     contactMethods.forEach(method => {
-        // Hover effects
         method.addEventListener('mouseenter', function() {
             this.classList.add('hovered');
             
-            // Animar icono
             const icon = this.querySelector('.method-icon');
             if (icon) {
                 icon.style.transform = 'scale(1.1) rotate(5deg)';
@@ -42,24 +274,13 @@ function initContactMethods() {
         method.addEventListener('mouseleave', function() {
             this.classList.remove('hovered');
             
-            // Restaurar icono
             const icon = this.querySelector('.method-icon');
             if (icon) {
                 icon.style.transform = 'scale(1) rotate(0deg)';
             }
         });
-        
-        // Click tracking
-        method.addEventListener('click', function(e) {
-            // No procesar si se hizo click en el botón
-            if (e.target.closest('.contact-btn')) return;
-            
-            const methodTitle = this.querySelector('.method-title')?.textContent || 'Unknown';
-            trackContactMethodClick(methodTitle);
-        });
     });
     
-    // Botones de contacto específicos
     initContactButtons();
 }
 
@@ -67,62 +288,27 @@ function initContactMethods() {
 // CONTACT BUTTONS FUNCTIONALITY
 // ============================================
 function initContactButtons() {
-    // Botón de WhatsApp
-    const whatsappBtns = document.querySelectorAll('.whatsapp-btn');
+    const whatsappBtns = document.querySelectorAll('.method-link[href*="wa.me"]');
     whatsappBtns.forEach(btn => {
         btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
             animateButton(this);
             trackContactAction('whatsapp', 'button_click');
-            
-            const message = '¡Hola! Me pongo en contacto desde su página web. Me interesa conocer más sobre sus servicios de chatbots.';
-            openWhatsAppWithMessage(message);
         });
     });
     
-    // Botón de Email
-    const emailBtns = document.querySelectorAll('.email-btn');
+    const emailBtns = document.querySelectorAll('.method-link[href^="mailto"]');
     emailBtns.forEach(btn => {
         btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
             animateButton(this);
             trackContactAction('email', 'button_click');
-            
-            // Crear subject y body para el email
-            const subject = encodeURIComponent('Consulta sobre ChatBots - Desde página web');
-            const body = encodeURIComponent('Hola,\n\nMe pongo en contacto desde su página web porque me interesa conocer más sobre sus servicios de chatbots.\n\n[Describa aquí su consulta]\n\nSaludos');
-            
-            window.location.href = `mailto:hello@chatbothub.com?subject=${subject}&body=${body}`;
         });
     });
     
-    // Botón de Teléfono
-    const phoneBtns = document.querySelectorAll('.phone-btn');
+    const phoneBtns = document.querySelectorAll('.method-link[href^="tel"]');
     phoneBtns.forEach(btn => {
         btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
             animateButton(this);
             trackContactAction('phone', 'button_click');
-            
-            window.location.href = 'tel:+526621234567';
-        });
-    });
-    
-    // Botón de Calendario
-    const calendarBtns = document.querySelectorAll('.calendar-btn');
-    calendarBtns.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            animateButton(this);
-            trackContactAction('calendar', 'button_click');
-            
-            // Por ahora redirigir a WhatsApp para agendar
-            const message = '¡Hola! Me gustaría agendar una consultoría gratuita de 30 minutos. ¿Qué horarios tienen disponibles?';
-            openWhatsAppWithMessage(message);
         });
     });
 }
@@ -135,10 +321,8 @@ function initContactForm() {
     
     if (!contactForm) return;
     
-    // Form validation en tiempo real
     initFormValidation(contactForm);
     
-    // Submit handler
     contactForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -146,9 +330,6 @@ function initContactForm() {
             processContactForm(this);
         }
     });
-    
-    // Platform checkboxes interactions
-    initPlatformCheckboxes();
 }
 
 // ============================================
@@ -158,12 +339,10 @@ function initFormValidation(form) {
     const requiredFields = form.querySelectorAll('input[required], textarea[required]');
     
     requiredFields.forEach(field => {
-        // Validation on blur
         field.addEventListener('blur', function() {
             validateField(this);
         });
         
-        // Clear validation on input
         field.addEventListener('input', function() {
             if (this.classList.contains('error')) {
                 this.classList.remove('error');
@@ -172,7 +351,6 @@ function initFormValidation(form) {
         });
     });
     
-    // Email validation específica
     const emailField = form.querySelector('input[type="email"]');
     if (emailField) {
         emailField.addEventListener('blur', function() {
@@ -220,28 +398,18 @@ function validateForm(form) {
         }
     });
     
-    // Validar términos y condiciones
-    const privacyCheckbox = form.querySelector('input[name="privacy"]');
-    if (privacyCheckbox && !privacyCheckbox.checked) {
-        showFieldError(privacyCheckbox, 'Debe aceptar los términos y condiciones');
-        isValid = false;
-    }
-    
     return isValid;
 }
 
 function showFieldError(field, message) {
     field.classList.add('error');
     
-    // Remover error anterior si existe
     clearFieldError(field);
     
-    // Crear mensaje de error
     const errorDiv = document.createElement('div');
     errorDiv.className = 'field-error';
     errorDiv.textContent = message;
     
-    // Insertar después del campo
     field.parentNode.insertBefore(errorDiv, field.nextSibling);
 }
 
@@ -259,54 +427,36 @@ function processContactForm(form) {
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
     
-    // Mostrar loading state
     const submitBtn = form.querySelector('.submit-btn');
     const originalText = submitBtn.textContent;
-    submitBtn.textContent = 'Enviando...';
+    submitBtn.innerHTML = '<i class="lni lni-spinner-arrow"></i> Enviando...';
     submitBtn.disabled = true;
     
-    // Recopilar plataformas seleccionadas
-    const platforms = Array.from(form.querySelectorAll('input[name="platforms"]:checked'))
-                           .map(cb => cb.value);
+    const whatsappMessage = createWhatsAppMessage(data);
     
-    // Crear mensaje para WhatsApp
-    const whatsappMessage = createWhatsAppMessage(data, platforms);
-    
-    // Simular delay de envío
     setTimeout(() => {
-        // Tracking
-        trackFormSubmission(data, platforms);
+        trackFormSubmission(data);
         
-        // Restaurar botón
-        submitBtn.textContent = originalText;
+        submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
         
-        // Mostrar mensaje de éxito
         showSuccessMessage();
         
-        // Abrir WhatsApp con el mensaje
         openWhatsAppWithMessage(whatsappMessage);
         
-        // Reset form
         form.reset();
         
     }, 1500);
 }
 
-function createWhatsAppMessage(data, platforms) {
+function createWhatsAppMessage(data) {
     let message = `¡Hola! Me interesa información sobre sus chatbots.\n\n`;
     message += `*Información de Contacto:*\n`;
     message += `• Nombre: ${data.name}\n`;
     message += `• Email: ${data.email}\n`;
     if (data.phone) message += `• Teléfono: ${data.phone}\n`;
     if (data.company) message += `• Empresa: ${data.company}\n`;
-    if (data.industry) message += `• Industria: ${data.industry}\n`;
-    
-    if (platforms.length > 0) {
-        message += `\n*Plataformas de Interés:*\n• ${platforms.join(', ')}\n`;
-    }
-    
-    if (data.budget) message += `\n*Presupuesto:* ${data.budget}\n`;
+    if (data.subject) message += `• Asunto: ${data.subject}\n`;
     
     message += `\n*Mensaje:*\n${data.message}`;
     
@@ -314,43 +464,11 @@ function createWhatsAppMessage(data, platforms) {
 }
 
 // ============================================
-// PLATFORM CHECKBOXES
-// ============================================
-function initPlatformCheckboxes() {
-    const checkboxes = document.querySelectorAll('input[name="platforms"]');
-    
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const label = this.closest('.checkbox-label');
-            
-            if (this.checked) {
-                label.classList.add('checked');
-                animateCheckbox(label, 'check');
-            } else {
-                label.classList.remove('checked');
-                animateCheckbox(label, 'uncheck');
-            }
-            
-            trackPlatformSelection(this.value, this.checked);
-        });
-    });
-}
-
-// ============================================
 // MAP FUNCTIONALITY
 // ============================================
 function initMapFunctionality() {
-    const mapBtn = document.querySelector('.map-btn');
     const mapContainer = document.querySelector('.map-container');
     
-    if (mapBtn) {
-        mapBtn.addEventListener('click', function() {
-            animateButton(this);
-            openMap();
-        });
-    }
-    
-    // Map hover effect
     if (mapContainer) {
         mapContainer.addEventListener('mouseenter', function() {
             this.style.transform = 'scale(1.02)';
@@ -363,7 +481,7 @@ function initMapFunctionality() {
 }
 
 function openMap() {
-    const mapsURL = 'https://www.google.com/maps/search/?api=1&query=Hermosillo,+Sonora,+Mexico';
+    const mapsURL = 'https://www.google.com/maps/search/?api=1&query=Monterrey,+Nuevo+Leon,+Mexico';
     window.open(mapsURL, '_blank');
     
     trackContactAction('map', 'open_location');
@@ -398,44 +516,25 @@ function animateButton(button) {
     }, 150);
 }
 
-function animateCheckbox(label, action) {
-    const icon = label.querySelector('.platform-icon');
-    if (icon) {
-        if (action === 'check') {
-            icon.style.transform = 'scale(1.2) rotate(10deg)';
-            icon.style.color = '#25D366';
-        } else {
-            icon.style.transform = 'scale(1) rotate(0deg)';
-            icon.style.color = '';
-        }
-        
-        setTimeout(() => {
-            icon.style.transform = 'scale(1) rotate(0deg)';
-        }, 300);
-    }
-}
-
 function showSuccessMessage() {
-    // Crear mensaje de éxito
     const successDiv = document.createElement('div');
     successDiv.className = 'success-message';
     successDiv.innerHTML = `
         <div class="success-content">
             <i class="lni lni-checkmark-circle"></i>
-            <h3>¡Mensaje enviado!</h3>
-            <p>Te contactaremos pronto por WhatsApp</p>
+            <div>
+                <h3>¡Mensaje enviado!</h3>
+                <p>Te contactaremos pronto por WhatsApp</p>
+            </div>
         </div>
     `;
     
-    // Añadir al body
     document.body.appendChild(successDiv);
     
-    // Animar entrada
     setTimeout(() => {
         successDiv.classList.add('show');
     }, 100);
     
-    // Remover después de 5 segundos
     setTimeout(() => {
         successDiv.classList.remove('show');
         setTimeout(() => {
@@ -445,27 +544,20 @@ function showSuccessMessage() {
 }
 
 function openWhatsAppWithMessage(customMessage) {
-    const phoneNumber = '5491234567890';
+    const phoneNumber = '528123092839';
     const encodedMessage = encodeURIComponent(customMessage);
     const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
     window.open(whatsappURL, '_blank');
 }
 
+function openWhatsApp() {
+    const message = '¡Hola! Me gustaría obtener más información sobre los chatbots de IA.';
+    openWhatsAppWithMessage(message);
+}
+
 // ============================================
 // ANALYTICS Y TRACKING
 // ============================================
-function trackContactMethodClick(method) {
-    console.log(`Contact method clicked: ${method}`);
-    
-    if (typeof gtag !== 'undefined') {
-        gtag('event', 'contact_method_click', {
-            'method': method,
-            'event_category': 'contact',
-            'event_label': method.toLowerCase()
-        });
-    }
-}
-
 function trackContactAction(type, action) {
     console.log(`Contact action: ${type} - ${action}`);
     
@@ -479,31 +571,15 @@ function trackContactAction(type, action) {
     }
 }
 
-function trackFormSubmission(data, platforms) {
+function trackFormSubmission(data) {
     console.log('Form submitted:', data);
     
     if (typeof gtag !== 'undefined') {
         gtag('event', 'form_submission', {
             'form_type': 'contact',
-            'industry': data.industry || 'not_specified',
-            'budget': data.budget || 'not_specified',
-            'platforms_count': platforms.length,
-            'platforms': platforms.join(','),
+            'subject': data.subject || 'not_specified',
             'event_category': 'conversion',
             'event_label': 'contact_form'
-        });
-    }
-}
-
-function trackPlatformSelection(platform, checked) {
-    console.log(`Platform ${checked ? 'selected' : 'deselected'}: ${platform}`);
-    
-    if (typeof gtag !== 'undefined') {
-        gtag('event', 'platform_selection', {
-            'platform': platform,
-            'action': checked ? 'select' : 'deselect',
-            'event_category': 'engagement',
-            'event_label': `platform-${platform}`
         });
     }
 }
