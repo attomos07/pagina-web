@@ -1,4 +1,4 @@
-// Appointments functionality
+// Appointments functionality - ACTUALIZADO para Google Sheets
 let appointments = [];
 let agents = [];
 let currentView = 'list';
@@ -10,6 +10,7 @@ let currentFilters = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando página de citas...');
     initializeAppointments();
     setupEventListeners();
 });
@@ -55,7 +56,7 @@ function setupEventListeners() {
 
     // Create appointment button
     document.getElementById('createAppointmentBtn').addEventListener('click', function() {
-        showNotification('Función de crear cita próximamente', 'info');
+        showNotification('Las citas se crean automáticamente desde WhatsApp', 'info');
     });
 
     // Calendar navigation
@@ -79,20 +80,34 @@ function setupEventListeners() {
 
 async function loadAgents() {
     try {
-        const response = await fetch('/api/agents');
+        console.log('📋 Cargando agentes...');
+        const response = await fetch('/api/agents', {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Error al cargar agentes');
+        }
+        
         const data = await response.json();
         
         if (data.agents) {
             agents = data.agents;
+            console.log(`✅ ${agents.length} agentes cargados`);
             populateAgentFilter();
         }
     } catch (error) {
-        console.error('Error loading agents:', error);
+        console.error('❌ Error loading agents:', error);
     }
 }
 
 function populateAgentFilter() {
     const agentFilter = document.getElementById('agentFilter');
+    
+    // Limpiar opciones existentes (excepto "Todos")
+    while (agentFilter.options.length > 1) {
+        agentFilter.remove(1);
+    }
     
     agents.forEach(agent => {
         const option = document.createElement('option');
@@ -104,63 +119,69 @@ function populateAgentFilter() {
 
 async function loadAppointments() {
     try {
-        const response = await fetch('/api/appointments');
+        console.log('📊 Cargando citas desde Google Sheets...');
         
-        if (response.ok) {
-            const data = await response.json();
-            appointments = data.appointments || [];
-        } else {
-            // Mock data si no hay endpoint
-            appointments = generateMockAppointments();
+        const response = await fetch('/api/appointments', {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
         }
+        
+        const data = await response.json();
+        appointments = data.appointments || [];
+        
+        console.log(`✅ ${appointments.length} citas cargadas desde Sheets`);
+        console.log('📋 Citas:', appointments);
+        
+        // Si no hay citas, mostrar estado vacío
+        if (appointments.length === 0) {
+            showEmptyState();
+        } else {
+            hideEmptyState();
+        }
+        
     } catch (error) {
-        console.error('Error loading appointments:', error);
-        appointments = generateMockAppointments();
+        console.error('❌ Error cargando citas:', error);
+        showNotification('Error al cargar las citas. Verifica que tus agentes tengan Google Sheets conectado.', 'error');
+        appointments = [];
+        showEmptyState();
     }
 }
 
-function generateMockAppointments() {
-    const services = ['Corte de Cabello', 'Manicure', 'Pedicure', 'Tinte', 'Facial', 'Masaje'];
-    const statuses = ['confirmed', 'pending', 'completed', 'cancelled'];
-    const clients = ['María García', 'Juan Pérez', 'Ana López', 'Carlos Ruiz', 'Laura Martínez', 'Pedro Sánchez'];
+function showEmptyState() {
+    const emptyState = document.getElementById('emptyState');
+    const appointmentsList = document.getElementById('appointmentsList');
     
-    const mockAppointments = [];
-    const today = new Date();
-    
-    for (let i = 0; i < 20; i++) {
-        const date = new Date(today);
-        date.setDate(date.getDate() + Math.floor(Math.random() * 30) - 15);
-        
-        const hours = 9 + Math.floor(Math.random() * 9);
-        const minutes = Math.random() > 0.5 ? '00' : '30';
-        
-        mockAppointments.push({
-            id: i + 1,
-            client: clients[Math.floor(Math.random() * clients.length)],
-            service: services[Math.floor(Math.random() * services.length)],
-            date: date.toISOString().split('T')[0],
-            time: `${hours.toString().padStart(2, '0')}:${minutes}`,
-            status: statuses[Math.floor(Math.random() * statuses.length)],
-            agentId: agents.length > 0 ? agents[Math.floor(Math.random() * agents.length)].id : 1,
-            phone: '+52 ' + Math.floor(Math.random() * 9000000000 + 1000000000),
-            duration: 60,
-            notes: 'Cliente regular, prefiere estilista específico'
-        });
-    }
-    
-    return mockAppointments.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time));
+    if (emptyState) emptyState.style.display = 'flex';
+    if (appointmentsList) appointmentsList.innerHTML = '';
+}
+
+function hideEmptyState() {
+    const emptyState = document.getElementById('emptyState');
+    if (emptyState) emptyState.style.display = 'none';
 }
 
 function updateStats() {
-    const total = appointments.length;
-    const confirmed = appointments.filter(a => a.status === 'confirmed').length;
-    const pending = appointments.filter(a => a.status === 'pending').length;
-    const uniqueClients = new Set(appointments.map(a => a.client)).size;
+    const today = new Date().toISOString().split('T')[0];
     
-    document.getElementById('totalAppointments').textContent = total;
+    // Citas de hoy
+    const todayAppointments = appointments.filter(a => a.date === today).length;
+    
+    // Citas confirmadas
+    const confirmed = appointments.filter(a => a.status === 'confirmed').length;
+    
+    // Citas canceladas
+    const cancelled = appointments.filter(a => a.status === 'cancelled').length;
+    
+    // Total de citas
+    const total = appointments.length;
+    
+    document.getElementById('totalAppointments').textContent = todayAppointments;
     document.getElementById('confirmedAppointments').textContent = confirmed;
-    document.getElementById('pendingAppointments').textContent = pending;
-    document.getElementById('totalClients').textContent = uniqueClients;
+    document.getElementById('pendingAppointments').textContent = cancelled;
+    document.getElementById('totalClients').textContent = total;
 }
 
 function filterAppointments() {
@@ -211,6 +232,7 @@ function filterAppointments() {
         filtered = filtered.filter(a => 
             a.client.toLowerCase().includes(currentFilters.search) ||
             a.service.toLowerCase().includes(currentFilters.search) ||
+            (a.phone && a.phone.toLowerCase().includes(currentFilters.search)) ||
             a.date.includes(currentFilters.search)
         );
     }
@@ -220,74 +242,113 @@ function filterAppointments() {
 
 function renderAppointments() {
     const filtered = filterAppointments();
-    const container = document.getElementById('appointmentsList');
-    const emptyState = document.getElementById('emptyState');
+    const appointmentsList = document.getElementById('appointmentsList');
     
     if (filtered.length === 0) {
-        container.innerHTML = '';
-        emptyState.style.display = 'block';
+        appointmentsList.innerHTML = `
+            <div style="text-align: center; padding: 3rem; color: #6b7280;">
+                <i class="lni lni-search-alt" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <p style="font-size: 1.125rem; font-weight: 600;">No se encontraron citas</p>
+                <p style="font-size: 0.875rem; margin-top: 0.5rem;">Intenta ajustar los filtros</p>
+            </div>
+        `;
         return;
     }
     
-    emptyState.style.display = 'none';
-    container.innerHTML = '';
-    
-    filtered.forEach(appointment => {
-        const card = createAppointmentCard(appointment);
-        container.appendChild(card);
+    // Ordenar por fecha y hora (más recientes primero)
+    filtered.sort((a, b) => {
+        const dateA = new Date(a.date + ' ' + a.time);
+        const dateB = new Date(b.date + ' ' + b.time);
+        return dateB - dateA;
     });
+    
+    appointmentsList.innerHTML = filtered.map(appointment => createAppointmentCard(appointment)).join('');
 }
 
 function createAppointmentCard(appointment) {
-    const card = document.createElement('div');
-    card.className = 'appointment-card';
-    card.onclick = () => showAppointmentDetails(appointment);
+    const agent = agents.find(a => a.id === appointment.agentId);
+    const agentName = agent ? agent.name : appointment.agentName || 'Agente desconocido';
     
-    const date = new Date(appointment.date + ' ' + appointment.time);
+    const date = new Date(appointment.date);
     const formattedDate = date.toLocaleDateString('es-MX', { 
-        weekday: 'long', 
+        weekday: 'short', 
         year: 'numeric', 
-        month: 'long', 
+        month: 'short', 
         day: 'numeric' 
     });
     
-    const agent = agents.find(a => a.id === appointment.agentId);
-    const agentName = agent ? agent.name : 'Agente desconocido';
-    
-    card.innerHTML = `
-        <div class="appointment-header">
-            <div class="appointment-info">
+    return `
+        <div class="appointment-card" onclick='showAppointmentDetails(${JSON.stringify(appointment)})'>
+            <div class="appointment-header">
                 <div class="appointment-client">
                     <i class="lni lni-user"></i>
-                    ${appointment.client}
+                    <span>${escapeHtml(appointment.client)}</span>
                 </div>
-                <div class="appointment-service">${appointment.service}</div>
+                <span class="appointment-status status-${appointment.status}">
+                    ${getStatusText(appointment.status)}
+                </span>
             </div>
-            <span class="appointment-status status-${appointment.status}">
-                ${getStatusText(appointment.status)}
-            </span>
-        </div>
-        <div class="appointment-details">
-            <div class="detail-item">
-                <i class="lni lni-calendar"></i>
-                <span>${formattedDate}</span>
+            
+            <div class="appointment-body">
+                <div class="appointment-info">
+                    <div class="info-item">
+                        <i class="lni lni-cut"></i>
+                        <span>${escapeHtml(appointment.service)}</span>
+                    </div>
+                    
+                    ${appointment.worker ? `
+                    <div class="info-item">
+                        <i class="lni lni-user"></i>
+                        <span>Con: ${escapeHtml(appointment.worker)}</span>
+                    </div>
+                    ` : ''}
+                    
+                    <div class="info-item">
+                        <i class="lni lni-calendar"></i>
+                        <span>${formattedDate}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="lni lni-clock"></i>
+                        <span>${formatTime(appointment.time)}</span>
+                    </div>
+                    
+                    ${appointment.phone ? `
+                    <div class="info-item">
+                        <i class="lni lni-phone"></i>
+                        <span>${escapeHtml(appointment.phone)}</span>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="appointment-agent">
+                    <i class="lni lni-database"></i>
+                    <span>${escapeHtml(agentName)}</span>
+                </div>
             </div>
-            <div class="detail-item">
-                <i class="lni lni-clock"></i>
-                <span>${appointment.time}</span>
+            
+            ${appointment.sheetUrl ? `
+            <div class="appointment-footer">
+                <a href="${appointment.sheetUrl}" target="_blank" class="sheet-link" onclick="event.stopPropagation()">
+                    <i class="lni lni-text-format"></i>
+                    <span>Ver en Google Sheets</span>
+                </a>
             </div>
-            <div class="detail-item">
-                <i class="lni lni-timer"></i>
-                <span>${appointment.duration} min</span>
-            </div>
-            <div class="detail-item">
-                <i class="lni lni-phone"></i>
-                <span>${appointment.phone}</span>
-            </div>
+            ` : ''}
         </div>
     `;
+}
+
+function formatTime(time) {
+    // Convertir de formato 24h a 12h con AM/PM
+    if (!time) return '';
     
-    return card;
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+    
+    return `${displayHour}:${minutes || '00'} ${ampm}`;
 }
 
 function getStatusText(status) {
@@ -297,14 +358,18 @@ function getStatusText(status) {
         'cancelled': 'Cancelada',
         'completed': 'Completada'
     };
-    return statusMap[status] || status;
+    return statusMap[status] || 'Desconocido';
 }
 
 function showAppointmentDetails(appointment) {
     const modal = document.getElementById('appointmentModal');
     const modalBody = document.getElementById('modalBody');
+    const modalTitle = document.getElementById('modalTitle');
     
-    const date = new Date(appointment.date + ' ' + appointment.time);
+    const agent = agents.find(a => a.id === appointment.agentId);
+    const agentName = agent ? agent.name : appointment.agentName || 'Agente desconocido';
+    
+    const date = new Date(appointment.date);
     const formattedDate = date.toLocaleDateString('es-MX', { 
         weekday: 'long', 
         year: 'numeric', 
@@ -312,80 +377,74 @@ function showAppointmentDetails(appointment) {
         day: 'numeric' 
     });
     
-    const agent = agents.find(a => a.id === appointment.agentId);
-    const agentName = agent ? agent.name : 'Agente desconocido';
+    modalTitle.textContent = 'Detalles de la Cita';
     
     modalBody.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-            <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h4 style="font-size: 1.25rem; color: #1a1a1a; font-weight: 700;">
-                        <i class="lni lni-user"></i> ${appointment.client}
-                    </h4>
-                    <span class="appointment-status status-${appointment.status}">
-                        ${getStatusText(appointment.status)}
-                    </span>
-                </div>
+        <div class="appointment-details">
+            <div class="detail-section">
+                <h4><i class="lni lni-user"></i> Cliente</h4>
+                <p>${escapeHtml(appointment.client)}</p>
             </div>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                <div>
-                    <div style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 0.5rem; text-transform: uppercase;">Servicio</div>
-                    <div style="font-size: 1rem; color: #1a1a1a; font-weight: 600;">${appointment.service}</div>
-                </div>
-                
-                <div>
-                    <div style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 0.5rem; text-transform: uppercase;">Fecha</div>
-                    <div style="font-size: 1rem; color: #1a1a1a; font-weight: 600;">${formattedDate}</div>
-                </div>
-                
-                <div>
-                    <div style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 0.5rem; text-transform: uppercase;">Hora</div>
-                    <div style="font-size: 1rem; color: #1a1a1a; font-weight: 600;">${appointment.time}</div>
-                </div>
-                
-                <div>
-                    <div style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 0.5rem; text-transform: uppercase;">Duración</div>
-                    <div style="font-size: 1rem; color: #1a1a1a; font-weight: 600;">${appointment.duration} minutos</div>
-                </div>
-                
-                <div>
-                    <div style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 0.5rem; text-transform: uppercase;">Teléfono</div>
-                    <div style="font-size: 1rem; color: #1a1a1a; font-weight: 600;">${appointment.phone}</div>
-                </div>
-                
-                <div>
-                    <div style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 0.5rem; text-transform: uppercase;">Agente</div>
-                    <div style="font-size: 1rem; color: #1a1a1a; font-weight: 600;">${agentName}</div>
-                </div>
-            </div>
-            
-            ${appointment.notes ? `
-            <div>
-                <div style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 0.5rem; text-transform: uppercase;">Notas</div>
-                <div style="padding: 1rem; background: #f9fafb; border-radius: 10px; font-size: 0.875rem; color: #374151;">
-                    ${appointment.notes}
-                </div>
+            ${appointment.phone ? `
+            <div class="detail-section">
+                <h4><i class="lni lni-phone"></i> Teléfono</h4>
+                <p><a href="tel:${appointment.phone}">${escapeHtml(appointment.phone)}</a></p>
             </div>
             ` : ''}
             
-            <div style="display: flex; gap: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                ${appointment.status === 'pending' ? `
-                    <button onclick="updateAppointmentStatus(${appointment.id}, 'confirmed')" class="btn-primary" style="flex: 1;">
-                        <i class="lni lni-checkmark"></i>
-                        <span>Confirmar</span>
-                    </button>
-                    <button onclick="updateAppointmentStatus(${appointment.id}, 'cancelled')" class="btn-secondary" style="flex: 1;">
-                        <i class="lni lni-close"></i>
-                        <span>Cancelar</span>
-                    </button>
-                ` : appointment.status === 'confirmed' ? `
-                    <button onclick="updateAppointmentStatus(${appointment.id}, 'completed')" class="btn-primary" style="flex: 1;">
-                        <i class="lni lni-checkmark-circle"></i>
-                        <span>Marcar Completada</span>
-                    </button>
-                ` : ''}
+            <div class="detail-section">
+                <h4><i class="lni lni-cut"></i> Servicio</h4>
+                <p>${escapeHtml(appointment.service)}</p>
             </div>
+            
+            ${appointment.worker ? `
+            <div class="detail-section">
+                <h4><i class="lni lni-user"></i> Trabajador</h4>
+                <p>${escapeHtml(appointment.worker)}</p>
+            </div>
+            ` : ''}
+            
+            <div class="detail-section">
+                <h4><i class="lni lni-calendar"></i> Fecha</h4>
+                <p>${formattedDate}</p>
+            </div>
+            
+            <div class="detail-section">
+                <h4><i class="lni lni-clock"></i> Hora</h4>
+                <p>${formatTime(appointment.time)} (${appointment.duration || 60} minutos)</p>
+            </div>
+            
+            <div class="detail-section">
+                <h4><i class="lni lni-database"></i> Agente</h4>
+                <p>${escapeHtml(agentName)}</p>
+            </div>
+            
+            <div class="detail-section">
+                <h4><i class="lni lni-checkmark-circle"></i> Estado</h4>
+                <p><span class="appointment-status status-${appointment.status}">${getStatusText(appointment.status)}</span></p>
+            </div>
+            
+            ${appointment.sheetUrl ? `
+            <div class="detail-section">
+                <h4><i class="lni lni-text-format"></i> Google Sheet</h4>
+                <p>
+                    <a href="${appointment.sheetUrl}" target="_blank" class="sheet-link">
+                        Abrir en Google Sheets
+                        <i class="lni lni-arrow-right"></i>
+                    </a>
+                </p>
+                <p style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">
+                    Celda: ${appointment.sheetCell}
+                </p>
+            </div>
+            ` : ''}
+        </div>
+        
+        <div class="modal-actions" style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
+            <button class="btn-secondary" onclick="closeAppointmentModal()">
+                Cerrar
+            </button>
         </div>
     `;
     
@@ -395,26 +454,6 @@ function showAppointmentDetails(appointment) {
 function closeAppointmentModal() {
     const modal = document.getElementById('appointmentModal');
     modal.classList.remove('active');
-}
-
-async function updateAppointmentStatus(appointmentId, newStatus) {
-    try {
-        // Aquí iría la llamada a la API
-        // await fetch(`/api/appointments/${appointmentId}/status`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
-        
-        // Mock update
-        const appointment = appointments.find(a => a.id === appointmentId);
-        if (appointment) {
-            appointment.status = newStatus;
-            updateStats();
-            renderAppointments();
-            closeAppointmentModal();
-            showNotification(`Cita ${getStatusText(newStatus).toLowerCase()} correctamente`, 'success');
-        }
-    } catch (error) {
-        console.error('Error updating appointment:', error);
-        showNotification('Error al actualizar la cita', 'error');
-    }
 }
 
 function toggleView() {
@@ -475,7 +514,6 @@ function renderCalendar() {
         if (dayAppointments.length > 0) {
             dayCell.classList.add('has-appointments');
             
-            // Click handler para mostrar citas del día
             dayCell.onclick = () => {
                 showDayAppointments(dateStr, dayAppointments);
             };
@@ -511,9 +549,12 @@ function showDayAppointments(dateStr, dayAppointments) {
         <div style="display: flex; flex-direction: column; gap: 1rem;">
     `;
     
+    // Ordenar por hora
+    dayAppointments.sort((a, b) => a.time.localeCompare(b.time));
+    
     dayAppointments.forEach(appointment => {
         const agent = agents.find(a => a.id === appointment.agentId);
-        const agentName = agent ? agent.name : 'Agente desconocido';
+        const agentName = agent ? agent.name : appointment.agentName || 'Agente desconocido';
         
         appointmentsHtml += `
             <div style="padding: 1.5rem; background: #f9fafb; border-radius: 12px; border: 2px solid #e5e7eb; cursor: pointer; transition: all 0.3s ease;" 
@@ -523,10 +564,10 @@ function showDayAppointments(dateStr, dayAppointments) {
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
                     <div>
                         <div style="font-size: 1.125rem; font-weight: 700; color: #1a1a1a; margin-bottom: 0.25rem;">
-                            <i class="lni lni-user"></i> ${appointment.client}
+                            <i class="lni lni-user"></i> ${escapeHtml(appointment.client)}
                         </div>
                         <div style="font-size: 0.875rem; color: #6b7280; font-weight: 600;">
-                            ${appointment.service}
+                            ${escapeHtml(appointment.service)}
                         </div>
                     </div>
                     <span class="appointment-status status-${appointment.status}">
@@ -536,16 +577,23 @@ function showDayAppointments(dateStr, dayAppointments) {
                 <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.875rem; color: #374151;">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <i class="lni lni-clock" style="color: #06b6d4;"></i>
-                        <span>${appointment.time}</span>
+                        <span>${formatTime(appointment.time)}</span>
                     </div>
+                    ${appointment.worker ? `
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="lni lni-timer" style="color: #06b6d4;"></i>
-                        <span>${appointment.duration} min</span>
+                        <i class="lni lni-user" style="color: #06b6d4;"></i>
+                        <span>${escapeHtml(appointment.worker)}</span>
                     </div>
+                    ` : ''}
+                    ${appointment.phone ? `
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <i class="lni lni-phone" style="color: #06b6d4;"></i>
-                        <span>${appointment.phone}</span>
+                        <span>${escapeHtml(appointment.phone)}</span>
                     </div>
+                    ` : ''}
+                </div>
+                <div style="margin-top: 0.75rem; font-size: 0.75rem; color: #9ca3af;">
+                    <i class="lni lni-database"></i> ${escapeHtml(agentName)}
                 </div>
             </div>
         `;
@@ -603,6 +651,19 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
+// Escape HTML para prevenir XSS
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
 // Add CSS animations
 const style = document.createElement('style');
 style.textContent = `
@@ -613,6 +674,173 @@ style.textContent = `
     @keyframes slideOut {
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(400px); opacity: 0; }
+    }
+    
+    .appointment-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 2px solid #e5e7eb;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 1rem;
+    }
+    
+    .appointment-card:hover {
+        border-color: #06b6d4;
+        box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15);
+        transform: translateY(-2px);
+    }
+    
+    .appointment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .appointment-client {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #1a1a1a;
+    }
+    
+    .appointment-client i {
+        color: #06b6d4;
+        font-size: 1.25rem;
+    }
+    
+    .appointment-status {
+        padding: 0.375rem 0.875rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .status-confirmed {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    
+    .status-cancelled {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    
+    .status-completed {
+        background: #e0e7ff;
+        color: #3730a3;
+    }
+    
+    .appointment-body {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .appointment-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.75rem;
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: #374151;
+    }
+    
+    .info-item i {
+        color: #06b6d4;
+        font-size: 1rem;
+    }
+    
+    .appointment-agent {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        color: #9ca3af;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .appointment-footer {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .sheet-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: #06b6d4;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    
+    .sheet-link:hover {
+        color: #0891b2;
+        text-decoration: underline;
+    }
+    
+    .sheet-link i {
+        font-size: 1rem;
+    }
+    
+    .appointment-details {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .detail-section h4 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+    
+    .detail-section h4 i {
+        color: #06b6d4;
+    }
+    
+    .detail-section p {
+        font-size: 1rem;
+        color: #1a1a1a;
+        margin: 0;
+    }
+    
+    .detail-section a {
+        color: #06b6d4;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    
+    .detail-section a:hover {
+        text-decoration: underline;
     }
 `;
 document.head.appendChild(style);

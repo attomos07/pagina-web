@@ -169,6 +169,11 @@ func main() {
 		protected.DELETE("/agents/:id", handlers.DeleteAgent)
 		protected.PATCH("/agents/:id/toggle", handlers.ToggleAgentStatus)
 
+		// ============================================
+		// ⭐ APPOINTMENTS - Obtener citas desde Google Sheets
+		// ============================================
+		protected.GET("/appointments", handlers.GetAppointments)
+
 		// Billing
 		protected.GET("/billing/data", handlers.GetBillingData)
 
@@ -335,6 +340,10 @@ func main() {
 	log.Println("║ 🔧 Tecnología:                                           ║")
 	log.Println("║    • AtomicBot:  Servidor Compartido (€5/mes total)     ║")
 	log.Println("║    • OrbitalBot: Servidor Individual (€5/mes c/u)       ║")
+	log.Println("║                                                          ║")
+	log.Println("║ ✅ Funcionalidades:                                      ║")
+	log.Println("║    • Appointments integrado con Google Sheets           ║")
+	log.Println("║    • Auto-actualización cada 30 segundos                ║")
 	log.Println("╚══════════════════════════════════════════════════════════╝")
 
 	if err := router.Run(":" + port); err != nil {
