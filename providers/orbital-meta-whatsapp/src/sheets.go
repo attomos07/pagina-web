@@ -2,11 +2,13 @@ package src
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
@@ -15,87 +17,164 @@ import (
 var (
 	sheetsService *sheets.Service
 	spreadsheetID string
+	sheetsEnabled bool
 )
 
 // InitSheets inicializa el servicio de Google Sheets
 func InitSheets() error {
+	log.Println("")
+	log.Println("╔══════════════════════════════════════════════════════╗")
+	log.Println("║              📊 INICIANDO GOOGLE SHEETS              ║")
+	log.Println("╚══════════════════════════════════════════════════════╝")
+	log.Println("")
+
 	spreadsheetID = os.Getenv("SPREADSHEETID")
 	if spreadsheetID == "" {
-		log.Println("⚠️  SPREADSHEETID no configurado - Google Sheets deshabilitado")
-		return nil
+		sheetsEnabled = false
+		log.Println("⚠️  SPREADSHEETID no configurado en .env")
+		log.Println("💡 Google Sheets deshabilitado")
+		return fmt.Errorf("SPREADSHEETID no configurado")
 	}
 
-	// Buscar credenciales
-	credPath := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
-	if credPath == "" {
-		credPath = "credentials.json"
+	log.Printf("✅ SPREADSHEETID: %s\n", maskSensitiveData(spreadsheetID))
+	log.Println("")
+
+	// Verificar archivo google.json (token OAuth)
+	if _, err := os.Stat("google.json"); os.IsNotExist(err) {
+		sheetsEnabled = false
+		log.Println("❌ Archivo google.json NO encontrado")
+		return fmt.Errorf("archivo google.json no encontrado")
 	}
 
-	credData, err := os.ReadFile(credPath)
+	log.Println("✅ Archivo google.json encontrado")
+
+	// Leer google.json (token OAuth)
+	credBytes, err := os.ReadFile("google.json")
 	if err != nil {
-		return fmt.Errorf("error leyendo credentials.json: %w", err)
+		sheetsEnabled = false
+		log.Printf("❌ Error leyendo google.json: %v\n", err)
+		return err
 	}
 
-	config, err := google.JWTConfigFromJSON(credData, sheets.SpreadsheetsScope)
-	if err != nil {
-		return fmt.Errorf("error creando configuración JWT: %w", err)
+	// Parsear token OAuth
+	var token oauth2.Token
+	if err := json.Unmarshal(credBytes, &token); err != nil {
+		sheetsEnabled = false
+		log.Printf("❌ Error parseando token: %v\n", err)
+		return err
+	}
+
+	log.Println("✅ Token OAuth parseado correctamente")
+
+	// Crear servicio de Sheets
+	config := &oauth2.Config{
+		Scopes:   []string{sheets.SpreadsheetsScope},
+		Endpoint: google.Endpoint,
 	}
 
 	ctx := context.Background()
-	client := config.Client(ctx)
+	client := config.Client(ctx, &token)
 
 	srv, err := sheets.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		return fmt.Errorf("error creando servicio Sheets: %w", err)
+		sheetsEnabled = false
+		log.Printf("❌ Error creando servicio Sheets: %v\n", err)
+		return err
 	}
 
 	sheetsService = srv
 
-	log.Println("✅ Google Sheets inicializado correctamente")
-	log.Printf("   📊 Spreadsheet ID: %s", maskSensitiveData(spreadsheetID))
-
-	// Verificar si existe la hoja o crearla
-	if err := ensureSheetExists(); err != nil {
-		log.Printf("⚠️  Error verificando/creando hoja: %v", err)
+	// Probar acceso
+	_, testErr := srv.Spreadsheets.Get(spreadsheetID).Do()
+	if testErr != nil {
+		sheetsEnabled = false
+		log.Printf("❌ Error accediendo al Spreadsheet: %v\n", testErr)
+		return testErr
 	}
+
+	log.Println("✅ Acceso al Spreadsheet verificado")
+	log.Println("")
+
+	sheetsEnabled = true
+
+	log.Println("╔══════════════════════════════════════════════════════╗")
+	log.Println("║        ✅ GOOGLE SHEETS INICIALIZADO                 ║")
+	log.Println("╚══════════════════════════════════════════════════════╝")
+	log.Println("")
 
 	return nil
 }
 
-// SaveAppointment guarda una cita en Google Sheets
+// SaveAppointment guarda una cita en Google Sheets (formato de calendario compatible con AtomicBot)
 func SaveAppointment(clientName, phoneNumber string, appointmentTime time.Time) error {
-	if sheetsService == nil {
-		return fmt.Errorf("Google Sheets no está inicializado")
+	if !sheetsEnabled || sheetsService == nil {
+		return fmt.Errorf("Google Sheets no está habilitado")
 	}
 
-	// Formato de la fecha y hora
-	dateStr := appointmentTime.Format("02/01/2006")
-	timeStr := appointmentTime.Format("15:04")
-	timestampStr := time.Now().Format("02/01/2006 15:04:05")
+	log.Println("")
+	log.Println("📊 GUARDANDO CITA EN GOOGLE SHEETS")
+	log.Printf("   Cliente: %s\n", clientName)
+	log.Printf("   Teléfono: %s\n", phoneNumber)
+	log.Printf("   Fecha/Hora: %s\n", appointmentTime.Format("02/01/2006 15:04"))
 
-	// Datos a insertar
-	values := [][]interface{}{
-		{timestampStr, clientName, phoneNumber, dateStr, timeStr, "Pendiente"},
+	// Determinar columna según día de la semana
+	weekday := int(appointmentTime.Weekday())
+	var columnLetter string
+
+	switch weekday {
+	case 0: // Domingo
+		columnLetter = "H"
+	case 1: // Lunes
+		columnLetter = "B"
+	case 2: // Martes
+		columnLetter = "C"
+	case 3: // Miércoles
+		columnLetter = "D"
+	case 4: // Jueves
+		columnLetter = "E"
+	case 5: // Viernes
+		columnLetter = "F"
+	case 6: // Sábado
+		columnLetter = "G"
 	}
+
+	// Determinar fila según hora (9 AM = fila 2, 10 AM = fila 3, etc.)
+	hour := appointmentTime.Hour()
+	row := hour - 9 + 2
+
+	if row < 2 || row > 12 {
+		return fmt.Errorf("hora fuera del rango del calendario (9:00 AM - 7:00 PM)")
+	}
+
+	// Construir contenido de la celda (formato compatible con AtomicBot)
+	cellContent := fmt.Sprintf("👤 %s\n📞 %s\n✂️ Cita agendada\n📅 %s",
+		clientName,
+		phoneNumber,
+		appointmentTime.Format("02/01/2006"),
+	)
+
+	// Rango de la celda (ej: "Calendario!C5")
+	cellRange := fmt.Sprintf("Calendario!%s%d", columnLetter, row)
+
+	log.Printf("   📍 Escribiendo en: %s\n", cellRange)
 
 	valueRange := &sheets.ValueRange{
-		Values: values,
+		Values: [][]interface{}{{cellContent}},
 	}
 
-	// Agregar a la hoja
-	_, err := sheetsService.Spreadsheets.Values.Append(
+	_, err := sheetsService.Spreadsheets.Values.Update(
 		spreadsheetID,
-		"Citas!A:F", // Rango de la hoja
+		cellRange,
 		valueRange,
-	).ValueInputOption("USER_ENTERED").Do()
+	).ValueInputOption("RAW").Do()
 
 	if err != nil {
-		return fmt.Errorf("error guardando cita en Sheets: %w", err)
+		log.Printf("❌ Error guardando en Sheets: %v\n", err)
+		return err
 	}
 
-	log.Printf("✅ Cita guardada en Google Sheets")
-	log.Printf("   👤 Cliente: %s", clientName)
-	log.Printf("   📅 Fecha: %s %s", dateStr, timeStr)
+	log.Println("✅ CITA GUARDADA EN SHEETS EXITOSAMENTE")
+	log.Println("")
 
 	return nil
 }
@@ -106,29 +185,32 @@ func InitializeWeeklyCalendar() error {
 		return fmt.Errorf("Google Sheets no está inicializado")
 	}
 
-	// Obtener lunes de esta semana
-	now := time.Now()
-	weekday := int(now.Weekday())
-	if weekday == 0 {
-		weekday = 7 // Domingo es 0, lo convertimos a 7
-	}
-	monday := now.AddDate(0, 0, -(weekday - 1))
+	log.Println("📅 Inicializando calendario semanal...")
 
-	// Crear encabezados (Lunes a Viernes)
-	headers := []interface{}{"Hora"}
-	for i := 0; i < 5; i++ {
-		day := monday.AddDate(0, 0, i)
-		headers = append(headers, day.Format("Mon 02/01"))
-	}
+	// Crear estructura del calendario
+	// Fila 1: Headers (Hora, Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo)
+	headers := []interface{}{"Hora", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"}
 
-	// Crear filas de horarios (9:00 a 18:00)
 	var rows [][]interface{}
 	rows = append(rows, headers)
 
-	for hour := 9; hour <= 18; hour++ {
-		row := []interface{}{fmt.Sprintf("%02d:00", hour)}
-		for i := 0; i < 5; i++ {
-			row = append(row, "") // Celdas vacías para las citas
+	// Filas 2-12: Horarios de 9 AM a 7 PM
+	for hour := 9; hour <= 19; hour++ {
+		var ampm string
+		displayHour := hour
+		if hour < 12 {
+			ampm = "AM"
+		} else {
+			ampm = "PM"
+			if hour > 12 {
+				displayHour = hour - 12
+			}
+		}
+
+		row := []interface{}{fmt.Sprintf("%d:00 %s", displayHour, ampm)}
+		// 7 columnas vacías para los días
+		for i := 0; i < 7; i++ {
+			row = append(row, "")
 		}
 		rows = append(rows, row)
 	}
@@ -140,7 +222,7 @@ func InitializeWeeklyCalendar() error {
 	// Actualizar la hoja de calendario
 	_, err := sheetsService.Spreadsheets.Values.Update(
 		spreadsheetID,
-		"Calendario!A1:F20",
+		"Calendario!A1:H12",
 		valueRange,
 	).ValueInputOption("USER_ENTERED").Do()
 
@@ -148,79 +230,14 @@ func InitializeWeeklyCalendar() error {
 		return fmt.Errorf("error inicializando calendario: %w", err)
 	}
 
-	log.Println("✅ Calendario semanal inicializado en Google Sheets")
-
-	return nil
-}
-
-// ensureSheetExists verifica si existe la hoja "Citas" y la crea si no existe
-func ensureSheetExists() error {
-	// Obtener información del spreadsheet
-	spreadsheet, err := sheetsService.Spreadsheets.Get(spreadsheetID).Do()
-	if err != nil {
-		return fmt.Errorf("error obteniendo spreadsheet: %w", err)
-	}
-
-	// Verificar si existe la hoja "Citas"
-	citasExists := false
-	for _, sheet := range spreadsheet.Sheets {
-		if sheet.Properties.Title == "Citas" {
-			citasExists = true
-			break
-		}
-	}
-
-	// Si no existe, crearla
-	if !citasExists {
-		log.Println("📝 Creando hoja 'Citas'...")
-
-		requests := []*sheets.Request{
-			{
-				AddSheet: &sheets.AddSheetRequest{
-					Properties: &sheets.SheetProperties{
-						Title: "Citas",
-					},
-				},
-			},
-		}
-
-		batchUpdateRequest := &sheets.BatchUpdateSpreadsheetRequest{
-			Requests: requests,
-		}
-
-		_, err := sheetsService.Spreadsheets.BatchUpdate(spreadsheetID, batchUpdateRequest).Do()
-		if err != nil {
-			return fmt.Errorf("error creando hoja: %w", err)
-		}
-
-		// Agregar encabezados
-		headers := [][]interface{}{
-			{"Timestamp", "Cliente", "Teléfono", "Fecha", "Hora", "Estado"},
-		}
-
-		valueRange := &sheets.ValueRange{
-			Values: headers,
-		}
-
-		_, err = sheetsService.Spreadsheets.Values.Update(
-			spreadsheetID,
-			"Citas!A1:F1",
-			valueRange,
-		).ValueInputOption("USER_ENTERED").Do()
-
-		if err != nil {
-			return fmt.Errorf("error agregando encabezados: %w", err)
-		}
-
-		log.Println("✅ Hoja 'Citas' creada con encabezados")
-	}
+	log.Println("✅ Calendario semanal inicializado")
 
 	return nil
 }
 
 // IsSheetsEnabled verifica si Google Sheets está habilitado
 func IsSheetsEnabled() bool {
-	return sheetsService != nil && spreadsheetID != ""
+	return sheetsEnabled && sheetsService != nil && spreadsheetID != ""
 }
 
 // GetAppointments obtiene las citas guardadas
@@ -229,7 +246,8 @@ func GetAppointments() ([][]interface{}, error) {
 		return nil, fmt.Errorf("Google Sheets no está inicializado")
 	}
 
-	resp, err := sheetsService.Spreadsheets.Values.Get(spreadsheetID, "Citas!A2:F").Do()
+	// Leer todo el calendario
+	resp, err := sheetsService.Spreadsheets.Values.Get(spreadsheetID, "Calendario!B2:H12").Do()
 	if err != nil {
 		return nil, fmt.Errorf("error obteniendo citas: %w", err)
 	}
