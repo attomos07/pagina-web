@@ -15,12 +15,11 @@ import (
 // UserState estado del usuario
 type UserState struct {
 	IsScheduling        bool
-	IsCancelling        bool // NUEVO: indica si está en proceso de cancelación
+	IsCancelling        bool
 	Step                int
 	Data                map[string]string
 	ConversationHistory []string
 	LastMessageTime     int64
-	AppointmentSaved    bool
 }
 
 var (
@@ -44,7 +43,6 @@ func GetUserState(userID string) *UserState {
 		Data:                make(map[string]string),
 		ConversationHistory: []string{},
 		LastMessageTime:     time.Now().Unix(),
-		AppointmentSaved:    false,
 	}
 
 	userStates[userID] = state
@@ -123,22 +121,8 @@ func ProcessMessage(message, userID, userName string) string {
 	log.Printf("📊 Estado del usuario %s:", userName)
 	log.Printf("   🔄 isScheduling: %v", state.IsScheduling)
 	log.Printf("   🚫 isCancelling: %v", state.IsCancelling)
-	log.Printf("   💾 appointmentSaved: %v", state.AppointmentSaved)
 	log.Printf("   📋 Datos recopilados: %v", state.Data)
 	log.Printf("   📝 Pasos completados: %d", state.Step)
-
-	if state.AppointmentSaved {
-		timeSinceLastMessage := time.Now().Unix() - state.LastMessageTime
-		log.Printf("⏱️  Tiempo desde último mensaje: %d segundos", timeSinceLastMessage)
-
-		if timeSinceLastMessage < 2 {
-			log.Println("⏭️  MENSAJE IGNORADO - Cita recién guardada (esperando 2 segundos)")
-			return ""
-		}
-		log.Println("🔄 REINICIANDO ESTADO - Ya pasaron 2 segundos desde guardar cita")
-		ClearUserState(userID)
-		state = GetUserState(userID)
-	}
 
 	// Agregar al historial
 	state.ConversationHistory = append(state.ConversationHistory, "Usuario: "+message)
@@ -466,8 +450,6 @@ func saveAppointment(state *UserState, userID string) string {
 	log.Println("║                                                        ║")
 	log.Println("╚════════════════════════════════════════════════════════╝")
 
-	state.AppointmentSaved = true
-
 	// Limpiar el número de teléfono
 	telefono := cleanPhoneNumber(userID)
 	log.Printf("📞 Teléfono procesado: %s → %s", userID, telefono)
@@ -566,6 +548,10 @@ func saveAppointment(state *UserState, userID string) string {
 	log.Println("✅ Mensaje de confirmación generado")
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Println("")
+
+	// Limpiar el estado DESPUÉS de generar la confirmación
+	state.IsScheduling = false
+	state.Data = make(map[string]string)
 
 	return confirmation
 }

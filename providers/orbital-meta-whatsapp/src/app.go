@@ -17,7 +17,6 @@ type UserState struct {
 	Data                map[string]string
 	ConversationHistory []string
 	LastMessageTime     int64
-	AppointmentSaved    bool
 }
 
 var (
@@ -41,7 +40,6 @@ func GetUserState(userID string) *UserState {
 		Data:                make(map[string]string),
 		ConversationHistory: []string{},
 		LastMessageTime:     time.Now().Unix(),
-		AppointmentSaved:    false,
 	}
 
 	userStates[userID] = state
@@ -66,22 +64,8 @@ func ProcessMessage(messageText, phoneNumber, senderName string) string {
 	log.Printf("📊 Estado del usuario %s:", senderName)
 	log.Printf("   🔄 isScheduling: %v", state.IsScheduling)
 	log.Printf("   🚫 isCancelling: %v", state.IsCancelling)
-	log.Printf("   💾 appointmentSaved: %v", state.AppointmentSaved)
 	log.Printf("   📋 Datos recopilados: %v", state.Data)
 	log.Printf("   📝 Pasos completados: %d", state.Step)
-
-	if state.AppointmentSaved {
-		timeSinceLastMessage := time.Now().Unix() - state.LastMessageTime
-		log.Printf("⏱️  Tiempo desde último mensaje: %d segundos", timeSinceLastMessage)
-
-		if timeSinceLastMessage < 2 {
-			log.Println("⏭️  MENSAJE IGNORADO - Cita recién guardada (esperando 2 segundos)")
-			return ""
-		}
-		log.Println("🔄 REINICIANDO ESTADO - Ya pasaron 2 segundos desde guardar cita")
-		ClearUserState(phoneNumber)
-		state = GetUserState(phoneNumber)
-	}
 
 	// Agregar al historial
 	state.ConversationHistory = append(state.ConversationHistory, "Usuario: "+messageText)
@@ -279,9 +263,6 @@ Por favor verifica los datos y vuelve a intentar.`,
 	}
 
 	// TODO: Cancelar en Google Calendar si está habilitado
-	// if IsCalendarEnabled() {
-	//     // Implementar cancelación en Calendar
-	// }
 
 	// Limpiar estado
 	state.IsCancelling = false
