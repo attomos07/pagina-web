@@ -1,4 +1,4 @@
-// Appointments functionality - ACTUALIZADO para Google Sheets
+// Appointments functionality - ACTUALIZADO con vista de TABLA
 let appointments = [];
 let agents = [];
 let currentView = 'list';
@@ -8,11 +8,19 @@ let currentFilters = {
     date: 'all',
     search: ''
 };
+let openDropdown = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Inicializando página de citas...');
     initializeAppointments();
     setupEventListeners();
+    
+    // Cerrar dropdowns al hacer clic fuera
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.actions-dropdown')) {
+            closeAllDropdowns();
+        }
+    });
 });
 
 async function initializeAppointments() {
@@ -69,12 +77,6 @@ function setupEventListeners() {
     
     if (nextMonth) {
         nextMonth.addEventListener('click', () => changeMonth(1));
-    }
-
-    // Modal overlay close
-    const modalOverlay = document.querySelector('.modal-overlay');
-    if (modalOverlay) {
-        modalOverlay.addEventListener('click', closeAppointmentModal);
     }
 }
 
@@ -246,11 +248,13 @@ function renderAppointments() {
     
     if (filtered.length === 0) {
         appointmentsList.innerHTML = `
-            <div style="text-align: center; padding: 3rem; color: #6b7280;">
-                <i class="lni lni-search-alt" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                <p style="font-size: 1.125rem; font-weight: 600;">No se encontraron citas</p>
-                <p style="font-size: 0.875rem; margin-top: 0.5rem;">Intenta ajustar los filtros</p>
-            </div>
+            <tr>
+                <td colspan="9" style="text-align: center; padding: 3rem; color: #6b7280;">
+                    <i class="lni lni-search-alt" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; display: block;"></i>
+                    <p style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">No se encontraron citas</p>
+                    <p style="font-size: 0.875rem;">Intenta ajustar los filtros</p>
+                </td>
+            </tr>
         `;
         return;
     }
@@ -262,81 +266,124 @@ function renderAppointments() {
         return dateB - dateA;
     });
     
-    appointmentsList.innerHTML = filtered.map(appointment => createAppointmentCard(appointment)).join('');
+    appointmentsList.innerHTML = filtered.map(appointment => createTableRow(appointment)).join('');
 }
 
-function createAppointmentCard(appointment) {
+function createTableRow(appointment) {
     const agent = agents.find(a => a.id === appointment.agentId);
     const agentName = agent ? agent.name : appointment.agentName || 'Agente desconocido';
     
     const date = new Date(appointment.date);
     const formattedDate = date.toLocaleDateString('es-MX', { 
-        weekday: 'short', 
         year: 'numeric', 
         month: 'short', 
         day: 'numeric' 
     });
     
     return `
-        <div class="appointment-card" onclick='showAppointmentDetails(${JSON.stringify(appointment)})'>
-            <div class="appointment-header">
-                <div class="appointment-client">
+        <tr>
+            <td>
+                <div class="table-client">
                     <i class="lni lni-user"></i>
                     <span>${escapeHtml(appointment.client)}</span>
                 </div>
-                <span class="appointment-status status-${appointment.status}">
-                    ${getStatusText(appointment.status)}
-                </span>
-            </div>
-            
-            <div class="appointment-body">
-                <div class="appointment-info">
-                    <div class="info-item">
-                        <i class="lni lni-cut"></i>
-                        <span>${escapeHtml(appointment.service)}</span>
-                    </div>
-                    
-                    ${appointment.worker ? `
-                    <div class="info-item">
-                        <i class="lni lni-user"></i>
-                        <span>Con: ${escapeHtml(appointment.worker)}</span>
-                    </div>
-                    ` : ''}
-                    
-                    <div class="info-item">
-                        <i class="lni lni-calendar"></i>
-                        <span>${formattedDate}</span>
-                    </div>
-                    
-                    <div class="info-item">
-                        <i class="lni lni-clock"></i>
-                        <span>${formatTime(appointment.time)}</span>
-                    </div>
-                    
-                    ${appointment.phone ? `
-                    <div class="info-item">
-                        <i class="lni lni-phone"></i>
-                        <span>${escapeHtml(appointment.phone)}</span>
-                    </div>
-                    ` : ''}
+            </td>
+            <td>
+                <div class="table-phone">
+                    ${appointment.phone ? `<a href="tel:${appointment.phone}">${escapeHtml(appointment.phone)}</a>` : '-'}
                 </div>
-                
-                <div class="appointment-agent">
+            </td>
+            <td>
+                <div class="table-service">${escapeHtml(appointment.service)}</div>
+            </td>
+            <td>
+                ${appointment.worker ? `
+                <div class="table-worker">
+                    <i class="lni lni-user"></i>
+                    <span>${escapeHtml(appointment.worker)}</span>
+                </div>
+                ` : '<span style="color: #9ca3af;">-</span>'}
+            </td>
+            <td>
+                <div class="table-date">${formattedDate}</div>
+            </td>
+            <td>
+                <div class="table-time">${formatTime(appointment.time)}</div>
+            </td>
+            <td>
+                <div class="table-agent">
                     <i class="lni lni-database"></i>
                     <span>${escapeHtml(agentName)}</span>
                 </div>
-            </div>
-            
-            ${appointment.sheetUrl ? `
-            <div class="appointment-footer">
-                <a href="${appointment.sheetUrl}" target="_blank" class="sheet-link" onclick="event.stopPropagation()">
-                    <i class="lni lni-text-format"></i>
-                    <span>Ver en Google Sheets</span>
-                </a>
-            </div>
-            ` : ''}
-        </div>
+            </td>
+            <td>
+                <span class="appointment-status status-${appointment.status}">
+                    ${getStatusText(appointment.status)}
+                </span>
+            </td>
+            <td>
+                <div class="actions-dropdown">
+                    <button class="actions-btn" onclick="toggleDropdown(event, '${appointment.id}')">
+                        <i class="lni lni-more-alt"></i>
+                    </button>
+                    <div class="actions-menu" id="dropdown-${appointment.id}">
+                        ${appointment.sheetUrl ? `
+                        <div class="action-item sheet" onclick="openGoogleSheet('${appointment.sheetUrl}')">
+                            <i class="lni lni-text-format"></i>
+                            <span>Ver en Google Sheet</span>
+                        </div>
+                        ` : ''}
+                        ${appointment.phone ? `
+                        <div class="action-item whatsapp" onclick="sendWhatsApp('${appointment.phone}', '${escapeHtml(appointment.client)}')">
+                            <i class="lni lni-whatsapp"></i>
+                            <span>Enviar WhatsApp</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </td>
+        </tr>
     `;
+}
+
+function toggleDropdown(event, appointmentId) {
+    event.stopPropagation();
+    
+    const dropdown = document.getElementById(`dropdown-${appointmentId}`);
+    
+    // Cerrar otros dropdowns
+    if (openDropdown && openDropdown !== dropdown) {
+        openDropdown.classList.remove('active');
+    }
+    
+    // Toggle el dropdown actual
+    dropdown.classList.toggle('active');
+    openDropdown = dropdown.classList.contains('active') ? dropdown : null;
+}
+
+function closeAllDropdowns() {
+    document.querySelectorAll('.actions-menu').forEach(menu => {
+        menu.classList.remove('active');
+    });
+    openDropdown = null;
+}
+
+function openGoogleSheet(url) {
+    window.open(url, '_blank');
+    closeAllDropdowns();
+}
+
+function sendWhatsApp(phone, clientName) {
+    // Limpiar el número de teléfono
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Mensaje predeterminado
+    const message = encodeURIComponent(`Hola ${clientName}, te contacto desde Attomos respecto a tu cita.`);
+    
+    // Abrir WhatsApp
+    window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+    
+    closeAllDropdowns();
 }
 
 function formatTime(time) {
@@ -359,101 +406,6 @@ function getStatusText(status) {
         'completed': 'Completada'
     };
     return statusMap[status] || 'Desconocido';
-}
-
-function showAppointmentDetails(appointment) {
-    const modal = document.getElementById('appointmentModal');
-    const modalBody = document.getElementById('modalBody');
-    const modalTitle = document.getElementById('modalTitle');
-    
-    const agent = agents.find(a => a.id === appointment.agentId);
-    const agentName = agent ? agent.name : appointment.agentName || 'Agente desconocido';
-    
-    const date = new Date(appointment.date);
-    const formattedDate = date.toLocaleDateString('es-MX', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    });
-    
-    modalTitle.textContent = 'Detalles de la Cita';
-    
-    modalBody.innerHTML = `
-        <div class="appointment-details">
-            <div class="detail-section">
-                <h4><i class="lni lni-user"></i> Cliente</h4>
-                <p>${escapeHtml(appointment.client)}</p>
-            </div>
-            
-            ${appointment.phone ? `
-            <div class="detail-section">
-                <h4><i class="lni lni-phone"></i> Teléfono</h4>
-                <p><a href="tel:${appointment.phone}">${escapeHtml(appointment.phone)}</a></p>
-            </div>
-            ` : ''}
-            
-            <div class="detail-section">
-                <h4><i class="lni lni-cut"></i> Servicio</h4>
-                <p>${escapeHtml(appointment.service)}</p>
-            </div>
-            
-            ${appointment.worker ? `
-            <div class="detail-section">
-                <h4><i class="lni lni-user"></i> Trabajador</h4>
-                <p>${escapeHtml(appointment.worker)}</p>
-            </div>
-            ` : ''}
-            
-            <div class="detail-section">
-                <h4><i class="lni lni-calendar"></i> Fecha</h4>
-                <p>${formattedDate}</p>
-            </div>
-            
-            <div class="detail-section">
-                <h4><i class="lni lni-clock"></i> Hora</h4>
-                <p>${formatTime(appointment.time)} (${appointment.duration || 60} minutos)</p>
-            </div>
-            
-            <div class="detail-section">
-                <h4><i class="lni lni-database"></i> Agente</h4>
-                <p>${escapeHtml(agentName)}</p>
-            </div>
-            
-            <div class="detail-section">
-                <h4><i class="lni lni-checkmark-circle"></i> Estado</h4>
-                <p><span class="appointment-status status-${appointment.status}">${getStatusText(appointment.status)}</span></p>
-            </div>
-            
-            ${appointment.sheetUrl ? `
-            <div class="detail-section">
-                <h4><i class="lni lni-text-format"></i> Google Sheet</h4>
-                <p>
-                    <a href="${appointment.sheetUrl}" target="_blank" class="sheet-link">
-                        Abrir en Google Sheets
-                        <i class="lni lni-arrow-right"></i>
-                    </a>
-                </p>
-                <p style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">
-                    Celda: ${appointment.sheetCell}
-                </p>
-            </div>
-            ` : ''}
-        </div>
-        
-        <div class="modal-actions" style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
-            <button class="btn-secondary" onclick="closeAppointmentModal()">
-                Cerrar
-            </button>
-        </div>
-    `;
-    
-    modal.classList.add('active');
-}
-
-function closeAppointmentModal() {
-    const modal = document.getElementById('appointmentModal');
-    modal.classList.remove('active');
 }
 
 function toggleView() {
@@ -558,7 +510,7 @@ function showDayAppointments(dateStr, dayAppointments) {
         
         appointmentsHtml += `
             <div style="padding: 1.5rem; background: #f9fafb; border-radius: 12px; border: 2px solid #e5e7eb; cursor: pointer; transition: all 0.3s ease;" 
-                 onclick="closeAppointmentModal(); setTimeout(() => showAppointmentDetails(${JSON.stringify(appointment).replace(/"/g, '&quot;')}), 100);"
+                 onclick="closeAppointmentModal();"
                  onmouseover="this.style.borderColor='#06b6d4'; this.style.background='#ffffff';"
                  onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='#f9fafb';">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
@@ -619,6 +571,11 @@ function changeMonth(delta) {
     renderCalendar();
 }
 
+function closeAppointmentModal() {
+    const modal = document.getElementById('appointmentModal');
+    modal.classList.remove('active');
+}
+
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.style.cssText = `
@@ -674,173 +631,6 @@ style.textContent = `
     @keyframes slideOut {
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(400px); opacity: 0; }
-    }
-    
-    .appointment-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        border: 2px solid #e5e7eb;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        margin-bottom: 1rem;
-    }
-    
-    .appointment-card:hover {
-        border-color: #06b6d4;
-        box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15);
-        transform: translateY(-2px);
-    }
-    
-    .appointment-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #e5e7eb;
-    }
-    
-    .appointment-client {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-size: 1.125rem;
-        font-weight: 700;
-        color: #1a1a1a;
-    }
-    
-    .appointment-client i {
-        color: #06b6d4;
-        font-size: 1.25rem;
-    }
-    
-    .appointment-status {
-        padding: 0.375rem 0.875rem;
-        border-radius: 9999px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-    
-    .status-confirmed {
-        background: #d1fae5;
-        color: #065f46;
-    }
-    
-    .status-pending {
-        background: #fef3c7;
-        color: #92400e;
-    }
-    
-    .status-cancelled {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-    
-    .status-completed {
-        background: #e0e7ff;
-        color: #3730a3;
-    }
-    
-    .appointment-body {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .appointment-info {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 0.75rem;
-    }
-    
-    .info-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.875rem;
-        color: #374151;
-    }
-    
-    .info-item i {
-        color: #06b6d4;
-        font-size: 1rem;
-    }
-    
-    .appointment-agent {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.75rem;
-        color: #9ca3af;
-        padding-top: 0.75rem;
-        border-top: 1px solid #e5e7eb;
-    }
-    
-    .appointment-footer {
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #e5e7eb;
-    }
-    
-    .sheet-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.875rem;
-        color: #06b6d4;
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.2s ease;
-    }
-    
-    .sheet-link:hover {
-        color: #0891b2;
-        text-decoration: underline;
-    }
-    
-    .sheet-link i {
-        font-size: 1rem;
-    }
-    
-    .appointment-details {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-    
-    .detail-section h4 {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.875rem;
-        font-weight: 700;
-        color: #6b7280;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 0.5rem;
-    }
-    
-    .detail-section h4 i {
-        color: #06b6d4;
-    }
-    
-    .detail-section p {
-        font-size: 1rem;
-        color: #1a1a1a;
-        margin: 0;
-    }
-    
-    .detail-section a {
-        color: #06b6d4;
-        text-decoration: none;
-        font-weight: 600;
-    }
-    
-    .detail-section a:hover {
-        text-decoration: underline;
     }
 `;
 document.head.appendChild(style);

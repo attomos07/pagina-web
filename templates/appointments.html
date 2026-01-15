@@ -128,10 +128,27 @@
                         </div>
                     </div>
 
-                    <!-- Appointments List View -->
+                    <!-- Appointments Table View -->
                     <div class="appointments-container" id="appointmentsListView">
-                        <div class="appointments-list" id="appointmentsList">
-                            <!-- Las citas se cargarán dinámicamente aquí -->
+                        <div class="table-wrapper">
+                            <table class="appointments-table">
+                                <thead>
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Teléfono</th>
+                                        <th>Servicio</th>
+                                        <th>Trabajador</th>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Agente</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="appointmentsList">
+                                    <!-- Las citas se cargarán dinámicamente aquí -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
@@ -170,7 +187,7 @@
 
     <!-- Appointment Details Modal -->
     <div class="modal" id="appointmentModal">
-        <div class="modal-overlay"></div>
+        <div class="modal-overlay" onclick="closeAppointmentModal()"></div>
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modalTitle">Detalles de la Cita</h3>
