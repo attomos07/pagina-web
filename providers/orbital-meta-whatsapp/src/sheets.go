@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -179,6 +180,140 @@ func SaveAppointment(clientName, phoneNumber string, appointmentTime time.Time) 
 	return nil
 }
 
+// CancelAppointmentInSheets cancela una cita en Google Sheets
+func CancelAppointmentInSheets(clientName string, appointmentTime time.Time) error {
+	if !sheetsEnabled || sheetsService == nil {
+		return fmt.Errorf("Google Sheets no está habilitado")
+	}
+
+	log.Println("")
+	log.Println("🚫 CANCELANDO CITA EN GOOGLE SHEETS")
+	log.Printf("   Cliente: %s\n", clientName)
+	log.Printf("   Fecha/Hora: %s\n", appointmentTime.Format("02/01/2006 15:04"))
+
+	// Determinar columna según día de la semana
+	weekday := int(appointmentTime.Weekday())
+	var columnLetter string
+
+	switch weekday {
+	case 0: // Domingo
+		columnLetter = "H"
+	case 1: // Lunes
+		columnLetter = "B"
+	case 2: // Martes
+		columnLetter = "C"
+	case 3: // Miércoles
+		columnLetter = "D"
+	case 4: // Jueves
+		columnLetter = "E"
+	case 5: // Viernes
+		columnLetter = "F"
+	case 6: // Sábado
+		columnLetter = "G"
+	}
+
+	// Determinar fila según hora
+	hour := appointmentTime.Hour()
+	row := hour - 9 + 2
+
+	if row < 2 || row > 12 {
+		return fmt.Errorf("hora fuera del rango del calendario (9:00 AM - 7:00 PM)")
+	}
+
+	// Leer contenido actual de la celda
+	cellRange := fmt.Sprintf("Calendario!%s%d", columnLetter, row)
+
+	resp, err := sheetsService.Spreadsheets.Values.Get(spreadsheetID, cellRange).Do()
+	if err != nil {
+		return fmt.Errorf("error leyendo celda: %w", err)
+	}
+
+	if len(resp.Values) == 0 || len(resp.Values[0]) == 0 {
+		return fmt.Errorf("no hay cita agendada en ese horario")
+	}
+
+	currentContent := fmt.Sprintf("%v", resp.Values[0][0])
+
+	// Verificar que la cita pertenezca al cliente
+	if !strings.Contains(currentContent, clientName) {
+		return fmt.Errorf("la cita en ese horario no corresponde a %s", clientName)
+	}
+
+	log.Printf("   📋 Contenido actual: %s\n", currentContent)
+
+	// Limpiar la celda (borrar la cita)
+	valueRange := &sheets.ValueRange{
+		Values: [][]interface{}{{""}},
+	}
+
+	_, err = sheetsService.Spreadsheets.Values.Update(
+		spreadsheetID,
+		cellRange,
+		valueRange,
+	).ValueInputOption("RAW").Do()
+
+	if err != nil {
+		log.Printf("❌ Error cancelando en Sheets: %v\n", err)
+		return err
+	}
+
+	log.Println("✅ CITA CANCELADA EN SHEETS EXITOSAMENTE")
+	log.Println("")
+
+	return nil
+}
+
+// FindAppointmentByClient busca una cita específica de un cliente
+func FindAppointmentByClient(clientName string, appointmentTime time.Time) (bool, error) {
+	if !sheetsEnabled || sheetsService == nil {
+		return false, fmt.Errorf("Google Sheets no está habilitado")
+	}
+
+	// Determinar columna y fila
+	weekday := int(appointmentTime.Weekday())
+	var columnLetter string
+
+	switch weekday {
+	case 0:
+		columnLetter = "H"
+	case 1:
+		columnLetter = "B"
+	case 2:
+		columnLetter = "C"
+	case 3:
+		columnLetter = "D"
+	case 4:
+		columnLetter = "E"
+	case 5:
+		columnLetter = "F"
+	case 6:
+		columnLetter = "G"
+	}
+
+	hour := appointmentTime.Hour()
+	row := hour - 9 + 2
+
+	// Leer celda
+	cellRange := fmt.Sprintf("Calendario!%s%d", columnLetter, row)
+	resp, err := sheetsService.Spreadsheets.Values.Get(spreadsheetID, cellRange).Do()
+	if err != nil {
+		return false, fmt.Errorf("error leyendo celda: %w", err)
+	}
+
+	if len(resp.Values) == 0 || len(resp.Values[0]) == 0 {
+		return false, nil
+	}
+
+	cellContent := fmt.Sprintf("%v", resp.Values[0][0])
+
+	// Verificar si contiene el nombre del cliente
+	if strings.Contains(cellContent, clientName) {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 // InitializeWeeklyCalendar crea el calendario semanal en Sheets
 func InitializeWeeklyCalendar() error {
 	if sheetsService == nil {
@@ -253,4 +388,60 @@ func GetAppointments() ([][]interface{}, error) {
 	}
 
 	return resp.Values, nil
+}
+
+// ClearCancelledAppointment borra completamente una cita cancelada (alias para compatibilidad)
+func ClearCancelledAppointment(appointmentTime time.Time) error {
+	return ClearAppointmentCell(appointmentTime)
+}
+
+// ClearAppointmentCell limpia una celda específica del calendario
+func ClearAppointmentCell(appointmentTime time.Time) error {
+	if !sheetsEnabled || sheetsService == nil {
+		return fmt.Errorf("Google Sheets no está habilitado")
+	}
+
+	// Determinar columna y fila
+	weekday := int(appointmentTime.Weekday())
+	var columnLetter string
+
+	switch weekday {
+	case 0:
+		columnLetter = "H"
+	case 1:
+		columnLetter = "B"
+	case 2:
+		columnLetter = "C"
+	case 3:
+		columnLetter = "D"
+	case 4:
+		columnLetter = "E"
+	case 5:
+		columnLetter = "F"
+	case 6:
+		columnLetter = "G"
+	}
+
+	hour := appointmentTime.Hour()
+	row := hour - 9 + 2
+
+	// Limpiar celda
+	cellRange := fmt.Sprintf("Calendario!%s%d", columnLetter, row)
+
+	valueRange := &sheets.ValueRange{
+		Values: [][]interface{}{{""}},
+	}
+
+	_, err := sheetsService.Spreadsheets.Values.Update(
+		spreadsheetID,
+		cellRange,
+		valueRange,
+	).ValueInputOption("RAW").Do()
+
+	if err != nil {
+		return fmt.Errorf("error limpiando celda: %w", err)
+	}
+
+	log.Println("✅ Celda de cita limpiada del calendario")
+	return nil
 }

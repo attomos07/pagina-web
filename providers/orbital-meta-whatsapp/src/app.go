@@ -5,17 +5,124 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 )
 
+// UserState estado del usuario
+type UserState struct {
+	IsScheduling        bool
+	IsCancelling        bool
+	Step                int
+	Data                map[string]string
+	ConversationHistory []string
+	LastMessageTime     int64
+	AppointmentSaved    bool
+}
+
+var (
+	userStates = make(map[string]*UserState)
+	stateMutex sync.RWMutex
+)
+
+// GetUserState obtiene o crea el estado de un usuario
+func GetUserState(userID string) *UserState {
+	stateMutex.Lock()
+	defer stateMutex.Unlock()
+
+	if state, exists := userStates[userID]; exists {
+		return state
+	}
+
+	state := &UserState{
+		IsScheduling:        false,
+		IsCancelling:        false,
+		Step:                0,
+		Data:                make(map[string]string),
+		ConversationHistory: []string{},
+		LastMessageTime:     time.Now().Unix(),
+		AppointmentSaved:    false,
+	}
+
+	userStates[userID] = state
+	return state
+}
+
+// ClearUserState limpia el estado de un usuario
+func ClearUserState(userID string) {
+	stateMutex.Lock()
+	defer stateMutex.Unlock()
+	delete(userStates, userID)
+}
+
 // ProcessMessage procesa un mensaje entrante y retorna la respuesta
 func ProcessMessage(messageText, phoneNumber, senderName string) string {
+	state := GetUserState(phoneNumber)
+	state.LastMessageTime = time.Now().Unix()
+
+	log.Println("╔════════════════════════════════════════╗")
+	log.Println("║     PROCESANDO MENSAJE                 ║")
+	log.Println("╚════════════════════════════════════════╝")
+	log.Printf("📊 Estado del usuario %s:", senderName)
+	log.Printf("   🔄 isScheduling: %v", state.IsScheduling)
+	log.Printf("   🚫 isCancelling: %v", state.IsCancelling)
+	log.Printf("   💾 appointmentSaved: %v", state.AppointmentSaved)
+	log.Printf("   📋 Datos recopilados: %v", state.Data)
+	log.Printf("   📝 Pasos completados: %d", state.Step)
+
+	if state.AppointmentSaved {
+		timeSinceLastMessage := time.Now().Unix() - state.LastMessageTime
+		log.Printf("⏱️  Tiempo desde último mensaje: %d segundos", timeSinceLastMessage)
+
+		if timeSinceLastMessage < 2 {
+			log.Println("⏭️  MENSAJE IGNORADO - Cita recién guardada (esperando 2 segundos)")
+			return ""
+		}
+		log.Println("🔄 REINICIANDO ESTADO - Ya pasaron 2 segundos desde guardar cita")
+		ClearUserState(phoneNumber)
+		state = GetUserState(phoneNumber)
+	}
+
+	// Agregar al historial
+	state.ConversationHistory = append(state.ConversationHistory, "Usuario: "+messageText)
+
 	// Normalizar mensaje
 	normalizedMessage := strings.TrimSpace(strings.ToLower(messageText))
 
-	log.Printf("🔍 Procesando mensaje de %s (%s): %s", senderName, phoneNumber, messageText)
+	// Detectar intención de cancelar cita
+	messageLower := strings.ToLower(messageText)
+	cancelKeywords := []string{
+		"cancelar cita",
+		"cancel appointment",
+		"eliminar cita",
+		"borrar cita",
+		"anular cita",
+		"quiero cancelar",
+		"necesito cancelar",
+	}
 
-	// Detectar intención
+	wantsToCancelAppointment := false
+	for _, keyword := range cancelKeywords {
+		if strings.Contains(messageLower, keyword) {
+			wantsToCancelAppointment = true
+			log.Printf("🚫 KEYWORD DE CANCELACIÓN DETECTADO: %s\n", keyword)
+			break
+		}
+	}
+
+	// Si quiere cancelar y no está cancelando
+	if wantsToCancelAppointment && !state.IsCancelling {
+		log.Println("🚫 INICIANDO PROCESO DE CANCELACIÓN")
+		return startCancellationFlow(state, messageText, senderName)
+	}
+
+	// Si está cancelando, continuar
+	if state.IsCancelling {
+		log.Println("🚫 CONTINUANDO PROCESO DE CANCELACIÓN")
+		return continueCancellationFlow(state, messageText, phoneNumber, senderName)
+	}
+
+	// Detectar otras intenciones
 	intention := detectIntention(normalizedMessage)
 	log.Printf("🎯 Intención detectada: %s", intention)
 
@@ -40,9 +147,6 @@ func ProcessMessage(messageText, phoneNumber, senderName string) string {
 	case "price":
 		response = handlePricing()
 
-	case "cancel":
-		response = handleCancellation()
-
 	case "help":
 		response = handleHelp()
 
@@ -56,6 +160,145 @@ func ProcessMessage(messageText, phoneNumber, senderName string) string {
 	}
 
 	return response
+}
+
+// startCancellationFlow inicia el flujo de cancelación de citas
+func startCancellationFlow(state *UserState, message, userName string) string {
+	log.Println("╔════════════════════════════════════════╗")
+	log.Println("║  INICIANDO FLUJO DE CANCELACIÓN        ║")
+	log.Println("╚════════════════════════════════════════╝")
+
+	state.IsCancelling = true
+	state.Step = 1
+
+	// Intentar extraer fecha y hora del mensaje inicial
+	dateRegex := regexp.MustCompile(`(\d{1,2})/(\d{1,2})/(\d{4})`)
+	timeRegex := regexp.MustCompile(`(\d{1,2}):(\d{2})`)
+
+	dateMatch := dateRegex.FindStringSubmatch(message)
+	timeMatch := timeRegex.FindStringSubmatch(message)
+
+	if len(dateMatch) >= 4 && len(timeMatch) >= 3 {
+		// Ya tiene fecha y hora, procesar directamente
+		state.Data["fecha_cancelar"] = fmt.Sprintf("%s/%s/%s", dateMatch[1], dateMatch[2], dateMatch[3])
+		state.Data["hora_cancelar"] = fmt.Sprintf("%s:%s", timeMatch[1], timeMatch[2])
+		log.Printf("✅ Fecha y hora extraídas: %s %s\n", state.Data["fecha_cancelar"], state.Data["hora_cancelar"])
+		return processCancellation(state, userName)
+	}
+
+	// Si no tiene los datos, pedirlos
+	response := fmt.Sprintf(`Para cancelar tu cita, %s, necesito los siguientes datos:
+
+📅 *Fecha de tu cita:* DD/MM/YYYY
+🕐 *Hora de tu cita:* HH:MM
+
+Ejemplo: "Cancelar cita 15/01/2026 10:30"
+
+Por favor envíame los datos de la cita que deseas cancelar.`, userName)
+
+	state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
+	return response
+}
+
+// continueCancellationFlow continúa el flujo de cancelación
+func continueCancellationFlow(state *UserState, message, userID, userName string) string {
+	log.Println("╔════════════════════════════════════════╗")
+	log.Println("║  CONTINUANDO FLUJO DE CANCELACIÓN      ║")
+	log.Println("╚════════════════════════════════════════╝")
+
+	// Extraer fecha y hora del mensaje
+	dateRegex := regexp.MustCompile(`(\d{1,2})/(\d{1,2})/(\d{4})`)
+	timeRegex := regexp.MustCompile(`(\d{1,2}):(\d{2})`)
+
+	dateMatch := dateRegex.FindStringSubmatch(message)
+	timeMatch := timeRegex.FindStringSubmatch(message)
+
+	if len(dateMatch) >= 4 {
+		state.Data["fecha_cancelar"] = fmt.Sprintf("%s/%s/%s", dateMatch[1], dateMatch[2], dateMatch[3])
+		log.Printf("✅ Fecha extraída: %s\n", state.Data["fecha_cancelar"])
+	}
+
+	if len(timeMatch) >= 3 {
+		state.Data["hora_cancelar"] = fmt.Sprintf("%s:%s", timeMatch[1], timeMatch[2])
+		log.Printf("✅ Hora extraída: %s\n", state.Data["hora_cancelar"])
+	}
+
+	// Verificar si ya tenemos fecha y hora
+	if state.Data["fecha_cancelar"] != "" && state.Data["hora_cancelar"] != "" {
+		return processCancellation(state, userName)
+	}
+
+	// Si falta algo, pedirlo
+	if state.Data["fecha_cancelar"] == "" {
+		return "Por favor, indícame la *fecha* de tu cita (DD/MM/YYYY):"
+	}
+
+	if state.Data["hora_cancelar"] == "" {
+		return "Por favor, indícame la *hora* de tu cita (HH:MM):"
+	}
+
+	return "Por favor, envíame la fecha y hora de tu cita en el formato: DD/MM/YYYY HH:MM"
+}
+
+// processCancellation procesa la cancelación de la cita
+func processCancellation(state *UserState, userName string) string {
+	log.Println("🚫 PROCESANDO CANCELACIÓN DE CITA")
+
+	fecha := state.Data["fecha_cancelar"]
+	hora := state.Data["hora_cancelar"]
+
+	log.Printf("   Fecha: %s\n", fecha)
+	log.Printf("   Hora: %s\n", hora)
+
+	// Parsear fecha y hora
+	fechaHoraStr := fmt.Sprintf("%s %s", fecha, hora)
+	appointmentDateTime, err := time.Parse("02/01/2006 15:04", fechaHoraStr)
+	if err != nil {
+		log.Printf("❌ Error parseando fecha/hora: %v\n", err)
+		state.IsCancelling = false
+		return "❌ Formato de fecha/hora inválido. Por favor usa el formato: DD/MM/YYYY HH:MM"
+	}
+
+	// Cancelar en Google Sheets
+	if IsSheetsEnabled() {
+		err := CancelAppointmentInSheets(userName, appointmentDateTime)
+		if err != nil {
+			log.Printf("❌ Error cancelando en Sheets: %v", err)
+			state.IsCancelling = false
+			return fmt.Sprintf(`❌ No encontré una cita agendada para:
+
+📅 *Fecha:* %s
+🕐 *Hora:* %s
+
+Por favor verifica los datos y vuelve a intentar.`,
+				appointmentDateTime.Format("02/01/2006"),
+				appointmentDateTime.Format("15:04"))
+		} else {
+			log.Printf("✅ Cita cancelada en Google Sheets")
+		}
+	}
+
+	// TODO: Cancelar en Google Calendar si está habilitado
+	// if IsCalendarEnabled() {
+	//     // Implementar cancelación en Calendar
+	// }
+
+	// Limpiar estado
+	state.IsCancelling = false
+	state.Data = make(map[string]string)
+
+	return fmt.Sprintf(`✅ *Cita cancelada exitosamente*
+
+👤 *Cliente:* %s
+📅 *Fecha:* %s
+🕐 *Hora:* %s
+
+Tu cita ha sido cancelada. Si deseas reagendar, házmelo saber.
+
+¿Puedo ayudarte en algo más?`,
+		userName,
+		appointmentDateTime.Format("02/01/2006"),
+		appointmentDateTime.Format("15:04"))
 }
 
 // detectIntention detecta la intención del mensaje
@@ -108,14 +351,6 @@ func detectIntention(message string) string {
 		}
 	}
 
-	// Cancelar
-	cancels := []string{"cancelar", "cancel"}
-	for _, word := range cancels {
-		if strings.Contains(message, word) {
-			return "cancel"
-		}
-	}
-
 	// Ayuda
 	helps := []string{"ayuda", "help", "menú", "menu", "opciones", "options"}
 	for _, word := range helps {
@@ -144,6 +379,7 @@ Puedes escribir:
 • "Agendar cita" para reservar
 • "Servicios" para ver lo que ofrecemos
 • "Horarios" para conocer nuestro horario
+• "Cancelar cita" para cancelar una reserva
 • "Ayuda" para más opciones`, senderName, config.AgentName)
 }
 
@@ -200,10 +436,15 @@ Por favor envíame tu cita con este formato.`
 	// Crear evento en Google Calendar
 	if IsCalendarEnabled() {
 		config := GetBusinessConfig()
+		duration := 60 // Duración por defecto
+		if config != nil && config.DefaultAppointmentDuration > 0 {
+			duration = config.DefaultAppointmentDuration
+		}
+
 		eventTitle := fmt.Sprintf("Cita - %s", senderName)
 		eventDescription := fmt.Sprintf("Cliente: %s\nTeléfono: %s", senderName, phoneNumber)
 
-		eventLink, err := CreateCalendarEvent(eventTitle, eventDescription, appointmentDateTime, config.DefaultAppointmentDuration)
+		eventLink, err := CreateCalendarEvent(eventTitle, eventDescription, appointmentDateTime, duration)
 		if err != nil {
 			log.Printf("❌ Error creando evento en Calendar: %v", err)
 		} else {
@@ -310,32 +551,12 @@ func handlePricing() string {
 	return priceList.String()
 }
 
-// handleCancellation maneja cancelaciones
-func handleCancellation() string {
-	config := GetBusinessConfig()
-	phone := ""
-	if config != nil {
-		phone = config.PhoneNumber // CORREGIDO: config.Phone → config.PhoneNumber
-	}
-
-	response := `Para cancelar tu cita, necesito los siguientes datos:
-
-📅 *Fecha de tu cita*
-👤 *Tu nombre*`
-
-	if phone != "" {
-		response += fmt.Sprintf("\n\nO puedes llamarnos directamente al: %s", phone)
-	}
-
-	return response
-}
-
 // handleHelp maneja solicitudes de ayuda
 func handleHelp() string {
 	config := GetBusinessConfig()
 	businessName := "nosotros"
 	if config != nil {
-		businessName = config.AgentName // CORREGIDO: config.Name → config.AgentName
+		businessName = config.AgentName
 	}
 
 	return fmt.Sprintf(`🤖 *Menú de ayuda*
@@ -347,7 +568,7 @@ Puedes escribir:
 🕐 *"Horarios"* - Conocer horario de atención
 📍 *"Ubicación"* - Ver dónde estamos
 💰 *"Precios"* - Consultar precios
-❌ *"Cancelar"* - Cancelar una cita
+🚫 *"Cancelar cita"* - Cancelar una reserva
 
 ¿En qué puedo ayudarte?
 
@@ -375,11 +596,11 @@ Información del negocio:
 - Teléfono: %s
 
 Responde de manera amigable, profesional y útil. Si te preguntan por citas, servicios, horarios o ubicación, proporciona la información correspondiente.`,
-			config.AgentName, // CORREGIDO: config.Name → config.AgentName
+			config.AgentName,
 			getServicesText(config.Services),
 			config.BusinessHours,
 			config.Address,
-			config.PhoneNumber) // CORREGIDO: config.Phone → config.PhoneNumber
+			config.PhoneNumber)
 	}
 
 	prompt := fmt.Sprintf(`%s
