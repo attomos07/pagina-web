@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -263,8 +264,6 @@ func initGoogleSheets() error {
 	log.Println("📋 PASO 8/8: Probando permisos de ESCRITURA...")
 	log.Println("   🧪 Intentando escribir una celda de prueba...")
 
-	// ✅ CORREGIDO: Usar "Calendario" en lugar de "Sheet1"
-	// El Spreadsheet creado por la integración de Google tiene una hoja llamada "Calendario"
 	testCellRange := "Calendario!A1"
 	testValue := [][]interface{}{{"Hora"}}
 	testValueRange := &sheets.ValueRange{Values: testValue}
@@ -396,7 +395,7 @@ func guardarCitaEnSheets(cita *CitaData) error {
 
 	cellContent += fmt.Sprintf("\n📅 %s", cita.Fecha)
 
-	// Actualizar la celda - ✅ CORREGIDO: usar "Calendario" en lugar de "Sheet1"
+	// Actualizar la celda
 	cellRange := fmt.Sprintf("Calendario!%s%d", columnLetter, row)
 
 	log.Printf("   📍 Escribiendo en: %s\n", cellRange)
@@ -420,4 +419,206 @@ func guardarCitaEnSheets(cita *CitaData) error {
 	log.Println("")
 
 	return nil
+}
+
+// ============================================
+// FUNCIONES PARA CANCELAR CITAS
+// ============================================
+
+// CancelAppointment marca una cita como cancelada en Google Sheets
+func CancelAppointment(appointmentDate time.Time, reason string) error {
+	if !sheetsEnabled || sheetsService == nil {
+		return fmt.Errorf("Google Sheets no está habilitado")
+	}
+
+	log.Println("")
+	log.Println("🚫 CANCELANDO CITA EN GOOGLE SHEETS")
+	log.Printf("   Fecha/Hora: %s\n", appointmentDate.Format("02/01/2006 15:04"))
+	log.Printf("   Razón: %s\n", reason)
+
+	// Determinar columna según día de la semana
+	weekday := int(appointmentDate.Weekday())
+	var columnLetter string
+
+	switch weekday {
+	case 0: // Domingo
+		columnLetter = "H"
+	case 1: // Lunes
+		columnLetter = "B"
+	case 2: // Martes
+		columnLetter = "C"
+	case 3: // Miércoles
+		columnLetter = "D"
+	case 4: // Jueves
+		columnLetter = "E"
+	case 5: // Viernes
+		columnLetter = "F"
+	case 6: // Sábado
+		columnLetter = "G"
+	}
+
+	// Determinar fila según hora
+	hour := appointmentDate.Hour()
+	row := hour - 9 + 2
+
+	if row < 2 || row > 12 {
+		return fmt.Errorf("hora fuera del rango del calendario (9:00 AM - 7:00 PM)")
+	}
+
+	// Leer contenido actual de la celda
+	cellRange := fmt.Sprintf("Calendario!%s%d", columnLetter, row)
+
+	resp, err := sheetsService.Spreadsheets.Values.Get(sheetID, cellRange).Do()
+	if err != nil {
+		return fmt.Errorf("error leyendo celda: %w", err)
+	}
+
+	if len(resp.Values) == 0 || len(resp.Values[0]) == 0 {
+		return fmt.Errorf("no hay cita agendada en ese horario")
+	}
+
+	currentContent := fmt.Sprintf("%v", resp.Values[0][0])
+
+	// Construir nuevo contenido con marca de cancelación
+	cancelledContent := fmt.Sprintf("❌ CANCELADA\n\n%s\n\n🚫 %s",
+		currentContent,
+		reason,
+	)
+
+	// Actualizar celda
+	valueRange := &sheets.ValueRange{
+		Values: [][]interface{}{{cancelledContent}},
+	}
+
+	_, err = sheetsService.Spreadsheets.Values.Update(
+		sheetID,
+		cellRange,
+		valueRange,
+	).ValueInputOption("RAW").Do()
+
+	if err != nil {
+		log.Printf("❌ Error cancelando en Sheets: %v\n", err)
+		return err
+	}
+
+	log.Println("✅ CITA CANCELADA EN SHEETS")
+	log.Println("")
+
+	return nil
+}
+
+// CancelAppointmentByClient marca una cita como cancelada (simplificado)
+func CancelAppointmentByClient(clientName, phoneNumber string, appointmentDate time.Time) error {
+	reason := fmt.Sprintf("Cancelado por %s (%s)", clientName, phoneNumber)
+	return CancelAppointment(appointmentDate, reason)
+}
+
+// ClearCancelledAppointment borra completamente una cita cancelada
+func ClearCancelledAppointment(appointmentDate time.Time) error {
+	if !sheetsEnabled || sheetsService == nil {
+		return fmt.Errorf("Google Sheets no está habilitado")
+	}
+
+	// Determinar columna y fila
+	weekday := int(appointmentDate.Weekday())
+	var columnLetter string
+
+	switch weekday {
+	case 0:
+		columnLetter = "H"
+	case 1:
+		columnLetter = "B"
+	case 2:
+		columnLetter = "C"
+	case 3:
+		columnLetter = "D"
+	case 4:
+		columnLetter = "E"
+	case 5:
+		columnLetter = "F"
+	case 6:
+		columnLetter = "G"
+	}
+
+	hour := appointmentDate.Hour()
+	row := hour - 9 + 2
+
+	// Limpiar celda
+	cellRange := fmt.Sprintf("Calendario!%s%d", columnLetter, row)
+
+	valueRange := &sheets.ValueRange{
+		Values: [][]interface{}{{""}},
+	}
+
+	_, err := sheetsService.Spreadsheets.Values.Update(
+		sheetID,
+		cellRange,
+		valueRange,
+	).ValueInputOption("RAW").Do()
+
+	if err != nil {
+		return fmt.Errorf("error limpiando celda: %w", err)
+	}
+
+	log.Println("✅ Cita cancelada eliminada del calendario")
+	return nil
+}
+
+// maskSensitiveData enmascara datos sensibles para logs
+func maskSensitiveData(data string) string {
+	if len(data) <= 8 {
+		return "***"
+	}
+	return data[:4] + "..." + data[len(data)-4:]
+}
+
+// FindAppointmentByClient busca una cita específica de un cliente
+func FindAppointmentByClient(clientName, phoneNumber string, appointmentDate time.Time) (bool, error) {
+	if !sheetsEnabled || sheetsService == nil {
+		return false, fmt.Errorf("Google Sheets no está habilitado")
+	}
+
+	// Determinar columna y fila
+	weekday := int(appointmentDate.Weekday())
+	var columnLetter string
+
+	switch weekday {
+	case 0:
+		columnLetter = "H"
+	case 1:
+		columnLetter = "B"
+	case 2:
+		columnLetter = "C"
+	case 3:
+		columnLetter = "D"
+	case 4:
+		columnLetter = "E"
+	case 5:
+		columnLetter = "F"
+	case 6:
+		columnLetter = "G"
+	}
+
+	hour := appointmentDate.Hour()
+	row := hour - 9 + 2
+
+	// Leer celda
+	cellRange := fmt.Sprintf("Calendario!%s%d", columnLetter, row)
+	resp, err := sheetsService.Spreadsheets.Values.Get(sheetID, cellRange).Do()
+	if err != nil {
+		return false, fmt.Errorf("error leyendo celda: %w", err)
+	}
+
+	if len(resp.Values) == 0 || len(resp.Values[0]) == 0 {
+		return false, nil
+	}
+
+	cellContent := fmt.Sprintf("%v", resp.Values[0][0])
+
+	// Verificar si contiene el nombre o teléfono del cliente
+	if strings.Contains(cellContent, clientName) || strings.Contains(cellContent, phoneNumber) {
+		return true, nil
+	}
+
+	return false, nil
 }

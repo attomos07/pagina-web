@@ -3,6 +3,7 @@ package src
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -14,6 +15,7 @@ import (
 // UserState estado del usuario
 type UserState struct {
 	IsScheduling        bool
+	IsCancelling        bool // NUEVO: indica si está en proceso de cancelación
 	Step                int
 	Data                map[string]string
 	ConversationHistory []string
@@ -37,6 +39,7 @@ func GetUserState(userID string) *UserState {
 
 	state := &UserState{
 		IsScheduling:        false,
+		IsCancelling:        false,
 		Step:                0,
 		Data:                make(map[string]string),
 		ConversationHistory: []string{},
@@ -67,9 +70,6 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 		return
 	}
 
-	// Usar Chat.User en lugar de Sender.User para obtener el número real
-	// Chat.User = número de teléfono del usuario (ej: 5216624045267)
-	// Sender.User = puede ser device ID (ej: 122432455233651)
 	phoneNumber := msg.Info.Chat.User
 	senderName := msg.Info.PushName
 	if senderName == "" {
@@ -122,22 +122,19 @@ func ProcessMessage(message, userID, userName string) string {
 	log.Println("╚════════════════════════════════════════╝")
 	log.Printf("📊 Estado del usuario %s:", userName)
 	log.Printf("   🔄 isScheduling: %v", state.IsScheduling)
+	log.Printf("   🚫 isCancelling: %v", state.IsCancelling)
 	log.Printf("   💾 appointmentSaved: %v", state.AppointmentSaved)
 	log.Printf("   📋 Datos recopilados: %v", state.Data)
 	log.Printf("   📝 Pasos completados: %d", state.Step)
 
-	// 🔥 CAMBIO IMPORTANTE: Reducir tiempo de bloqueo después de guardar cita
-	// Cambiar de 5 segundos a 2 segundos
 	if state.AppointmentSaved {
 		timeSinceLastMessage := time.Now().Unix() - state.LastMessageTime
 		log.Printf("⏱️  Tiempo desde último mensaje: %d segundos", timeSinceLastMessage)
 
-		// Solo bloquear durante 2 segundos después de guardar
 		if timeSinceLastMessage < 2 {
 			log.Println("⏭️  MENSAJE IGNORADO - Cita recién guardada (esperando 2 segundos)")
 			return ""
 		}
-		// Después de 2 segundos, reiniciar estado automáticamente
 		log.Println("🔄 REINICIANDO ESTADO - Ya pasaron 2 segundos desde guardar cita")
 		ClearUserState(userID)
 		state = GetUserState(userID)
@@ -145,6 +142,39 @@ func ProcessMessage(message, userID, userName string) string {
 
 	// Agregar al historial
 	state.ConversationHistory = append(state.ConversationHistory, "Usuario: "+message)
+
+	// NUEVA LÓGICA: Detectar intención de cancelar cita
+	messageLower := strings.ToLower(message)
+	cancelKeywords := []string{
+		"cancelar cita",
+		"cancel appointment",
+		"eliminar cita",
+		"borrar cita",
+		"anular cita",
+		"quiero cancelar",
+		"necesito cancelar",
+	}
+
+	wantsToCancelAppointment := false
+	for _, keyword := range cancelKeywords {
+		if strings.Contains(messageLower, keyword) {
+			wantsToCancelAppointment = true
+			log.Printf("🚫 KEYWORD DE CANCELACIÓN DETECTADO: %s\n", keyword)
+			break
+		}
+	}
+
+	// Si quiere cancelar y no está cancelando
+	if wantsToCancelAppointment && !state.IsCancelling {
+		log.Println("🚫 INICIANDO PROCESO DE CANCELACIÓN")
+		return startCancellationFlow(state, message, userName)
+	}
+
+	// Si está cancelando, continuar
+	if state.IsCancelling {
+		log.Println("🚫 CONTINUANDO PROCESO DE CANCELACIÓN")
+		return continueCancellationFlow(state, message, userID, userName)
+	}
 
 	// Analizar intención usando Gemini
 	log.Println("🔍 Analizando intención del mensaje...")
@@ -179,6 +209,164 @@ func ProcessMessage(message, userID, userName string) string {
 	// Conversación normal con Gemini
 	log.Println("💬 CONVERSACIÓN NORMAL")
 	return handleNormalConversation(message, state)
+}
+
+// startCancellationFlow inicia el flujo de cancelación de citas
+func startCancellationFlow(state *UserState, message, userName string) string {
+	log.Println("╔════════════════════════════════════════╗")
+	log.Println("║  INICIANDO FLUJO DE CANCELACIÓN        ║")
+	log.Println("╚════════════════════════════════════════╝")
+
+	state.IsCancelling = true
+	state.Step = 1
+
+	// Intentar extraer fecha y hora del mensaje inicial
+	dateRegex := regexp.MustCompile(`(\d{1,2})/(\d{1,2})/(\d{4})`)
+	timeRegex := regexp.MustCompile(`(\d{1,2}):(\d{2})`)
+
+	dateMatch := dateRegex.FindStringSubmatch(message)
+	timeMatch := timeRegex.FindStringSubmatch(message)
+
+	if len(dateMatch) >= 4 && len(timeMatch) >= 3 {
+		// Ya tiene fecha y hora, procesar directamente
+		state.Data["fecha_cancelar"] = fmt.Sprintf("%s/%s/%s", dateMatch[1], dateMatch[2], dateMatch[3])
+		state.Data["hora_cancelar"] = fmt.Sprintf("%s:%s", timeMatch[1], timeMatch[2])
+		log.Printf("✅ Fecha y hora extraídas: %s %s\n", state.Data["fecha_cancelar"], state.Data["hora_cancelar"])
+		return processCancellation(state, userName)
+	}
+
+	// Si no tiene los datos, pedirlos
+	response := fmt.Sprintf(`Para cancelar tu cita, %s, necesito los siguientes datos:
+
+📅 *Fecha de tu cita:* DD/MM/YYYY
+🕐 *Hora de tu cita:* HH:MM
+
+Ejemplo: "Cancelar cita 15/01/2026 10:30"
+
+Por favor envíame los datos de la cita que deseas cancelar.`, userName)
+
+	state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
+	return response
+}
+
+// continueCancellationFlow continúa el flujo de cancelación
+func continueCancellationFlow(state *UserState, message, userID, userName string) string {
+	log.Println("╔════════════════════════════════════════╗")
+	log.Println("║  CONTINUANDO FLUJO DE CANCELACIÓN      ║")
+	log.Println("╚════════════════════════════════════════╝")
+
+	// Extraer fecha y hora del mensaje
+	dateRegex := regexp.MustCompile(`(\d{1,2})/(\d{1,2})/(\d{4})`)
+	timeRegex := regexp.MustCompile(`(\d{1,2}):(\d{2})`)
+
+	dateMatch := dateRegex.FindStringSubmatch(message)
+	timeMatch := timeRegex.FindStringSubmatch(message)
+
+	if len(dateMatch) >= 4 {
+		state.Data["fecha_cancelar"] = fmt.Sprintf("%s/%s/%s", dateMatch[1], dateMatch[2], dateMatch[3])
+		log.Printf("✅ Fecha extraída: %s\n", state.Data["fecha_cancelar"])
+	}
+
+	if len(timeMatch) >= 3 {
+		state.Data["hora_cancelar"] = fmt.Sprintf("%s:%s", timeMatch[1], timeMatch[2])
+		log.Printf("✅ Hora extraída: %s\n", state.Data["hora_cancelar"])
+	}
+
+	// Verificar si ya tenemos fecha y hora
+	if state.Data["fecha_cancelar"] != "" && state.Data["hora_cancelar"] != "" {
+		return processCancellation(state, userName)
+	}
+
+	// Si falta algo, pedirlo
+	if state.Data["fecha_cancelar"] == "" {
+		return "Por favor, indícame la *fecha* de tu cita (DD/MM/YYYY):"
+	}
+
+	if state.Data["hora_cancelar"] == "" {
+		return "Por favor, indícame la *hora* de tu cita (HH:MM):"
+	}
+
+	return "Por favor, envíame la fecha y hora de tu cita en el formato: DD/MM/YYYY HH:MM"
+}
+
+// processCancellation procesa la cancelación de la cita
+func processCancellation(state *UserState, userName string) string {
+	log.Println("🚫 PROCESANDO CANCELACIÓN DE CITA")
+
+	fecha := state.Data["fecha_cancelar"]
+	hora := state.Data["hora_cancelar"]
+
+	log.Printf("   Fecha: %s\n", fecha)
+	log.Printf("   Hora: %s\n", hora)
+
+	// Parsear fecha y hora
+	fechaHoraStr := fmt.Sprintf("%s %s", fecha, hora)
+	appointmentDateTime, err := time.Parse("02/01/2006 15:04", fechaHoraStr)
+	if err != nil {
+		log.Printf("❌ Error parseando fecha/hora: %v\n", err)
+		state.IsCancelling = false
+		return "❌ Formato de fecha/hora inválido. Por favor usa el formato: DD/MM/YYYY HH:MM"
+	}
+
+	// Obtener teléfono desde userName o usar placeholder
+	telefono := ""
+	if state.Data["telefono"] != "" {
+		telefono = state.Data["telefono"]
+	}
+
+	// Cancelar en Google Sheets
+	if IsSheetsEnabled() {
+		err := CancelAppointmentByClient(userName, telefono, appointmentDateTime)
+		if err != nil {
+			log.Printf("❌ Error cancelando en Sheets: %v", err)
+			state.IsCancelling = false
+			return fmt.Sprintf(`❌ No encontré una cita agendada para:
+
+📅 *Fecha:* %s
+🕐 *Hora:* %s
+
+Por favor verifica los datos y vuelve a intentar.`,
+				appointmentDateTime.Format("02/01/2006"),
+				appointmentDateTime.Format("15:04"))
+		} else {
+			log.Printf("✅ Cita cancelada en Google Sheets")
+		}
+	}
+
+	// Cancelar en Google Calendar (si está habilitado)
+	if IsCalendarEnabled() {
+		events, err := SearchEventsByPatient(userName)
+		if err == nil && len(events) > 0 {
+			for _, event := range events {
+				// Verificar que sea la cita correcta por fecha
+				if event.Start != nil && event.Start.DateTime != "" {
+					eventTime, _ := time.Parse(time.RFC3339, event.Start.DateTime)
+					if eventTime.Format("02/01/2006 15:04") == appointmentDateTime.Format("02/01/2006 15:04") {
+						// Evento encontrado en calendar
+						log.Printf("✅ Evento encontrado en Calendar para cancelación")
+						break
+					}
+				}
+			}
+		}
+	}
+
+	// Limpiar estado
+	state.IsCancelling = false
+	state.Data = make(map[string]string)
+
+	return fmt.Sprintf(`✅ *Cita cancelada exitosamente*
+
+👤 *Cliente:* %s
+📅 *Fecha:* %s
+🕐 *Hora:* %s
+
+Tu cita ha sido cancelada. Si deseas reagendar, házmelo saber.
+
+¿Puedo ayudarte en algo más?`,
+		userName,
+		appointmentDateTime.Format("02/01/2006"),
+		appointmentDateTime.Format("15:04"))
 }
 
 func startAppointmentFlow(state *UserState, analysis *AppointmentAnalysis, message string) string {
@@ -496,15 +684,7 @@ func joinHistory(history []string) string {
 }
 
 // cleanPhoneNumber limpia el número de teléfono de WhatsApp
-// Maneja formatos:
-// - "5216624045267" → "5216624045267" (ya limpio)
-// - "122432455233651" → número sin prefijo 1224... (linked device)
 func cleanPhoneNumber(userID string) string {
-	// Si el número empieza con "122" probablemente es un linked device ID
-	// En ese caso, intentamos extraer el número real
-	// Por ahora, devolvemos el userID como está
-	// TODO: Implementar lógica más sofisticada si es necesario
-
 	// Remover caracteres no numéricos
 	cleaned := ""
 	for _, char := range userID {
