@@ -450,7 +450,7 @@ func saveAppointment(state *UserState, userID string) string {
 	log.Println("║                                                        ║")
 	log.Println("╚════════════════════════════════════════════════════════╝")
 
-	// Limpiar el número de teléfono
+	// 🔧 CORRECCIÓN: Limpiar el número de teléfono correctamente
 	telefono := cleanPhoneNumber(userID)
 	log.Printf("📞 Teléfono procesado: %s → %s", userID, telefono)
 
@@ -669,15 +669,48 @@ func joinHistory(history []string) string {
 	return result
 }
 
-// cleanPhoneNumber limpia el número de teléfono de WhatsApp
+// 🔧 CORRECCIÓN: cleanPhoneNumber limpia el número de teléfono de WhatsApp
 func cleanPhoneNumber(userID string) string {
-	// Remover caracteres no numéricos
+	// El userID de WhatsApp Web viene como: 5216621234567@s.whatsapp.net
+	// Necesitamos extraer solo la parte numérica antes del @
+
+	log.Printf("🔍 Limpiando número: %s", userID)
+
+	// Primero, remover el @s.whatsapp.net si existe
+	parts := strings.Split(userID, "@")
+	phoneNumber := parts[0]
+
+	log.Printf("   Después de split: %s", phoneNumber)
+
+	// Ahora extraer solo los dígitos
 	cleaned := ""
-	for _, char := range userID {
+	for _, char := range phoneNumber {
 		if char >= '0' && char <= '9' {
 			cleaned += string(char)
 		}
 	}
 
+	log.Printf("   Solo dígitos: %s", cleaned)
+
+	// Validación: El número debe tener al menos 10 dígitos
+	if len(cleaned) < 10 {
+		log.Printf("⚠️  Número de teléfono inválido (muy corto): %s", cleaned)
+		return cleaned
+	}
+
+	// Si el número tiene código de país (empieza con 52 para México), retornarlo tal cual
+	// Números mexicanos: 52 + código de área (2-3 dígitos) + número local (6-7 dígitos) = 12-13 dígitos
+	if len(cleaned) >= 12 && strings.HasPrefix(cleaned, "52") {
+		log.Printf("✅ Número con código de país detectado: %s", cleaned)
+		return cleaned
+	}
+
+	// Si el número tiene 10 dígitos (formato local mexicano), agregamos el código de país 52
+	if len(cleaned) == 10 {
+		cleaned = "52" + cleaned
+		log.Printf("✅ Código de país agregado: %s", cleaned)
+	}
+
+	log.Printf("📞 Número limpio final: %s", cleaned)
 	return cleaned
 }

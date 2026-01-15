@@ -404,9 +404,12 @@ Por favor envíame tu cita con este formato.`
 		return "❌ La fecha no puede ser en el pasado. Por favor elige una fecha futura."
 	}
 
+	// 🔧 CORRECCIÓN: Limpiar y formatear el número de teléfono
+	cleanedPhone := cleanPhoneNumber(phoneNumber)
+
 	// Guardar en Google Sheets
 	if IsSheetsEnabled() {
-		err := SaveAppointment(senderName, phoneNumber, appointmentDateTime)
+		err := SaveAppointment(senderName, cleanedPhone, appointmentDateTime)
 		if err != nil {
 			log.Printf("❌ Error guardando en Sheets: %v", err)
 		} else {
@@ -423,7 +426,7 @@ Por favor envíame tu cita con este formato.`
 		}
 
 		eventTitle := fmt.Sprintf("Cita - %s", senderName)
-		eventDescription := fmt.Sprintf("Cliente: %s\nTeléfono: %s", senderName, phoneNumber)
+		eventDescription := fmt.Sprintf("Cliente: %s\nTeléfono: %s", senderName, cleanedPhone)
 
 		eventLink, err := CreateCalendarEvent(eventTitle, eventDescription, appointmentDateTime, duration)
 		if err != nil {
@@ -607,4 +610,44 @@ func getServicesText(services []Service) string {
 		serviceNames = append(serviceNames, service.Name)
 	}
 	return strings.Join(serviceNames, ", ")
+}
+
+// 🔧 CORRECCIÓN: cleanPhoneNumber limpia y formatea el número de teléfono de Meta WhatsApp
+func cleanPhoneNumber(phoneNumber string) string {
+	// Los números de Meta WhatsApp vienen directamente como número
+	// Ejemplo: 5216621234567
+
+	log.Printf("🔍 Limpiando número: %s", phoneNumber)
+
+	// Extraer solo los dígitos
+	cleaned := ""
+	for _, char := range phoneNumber {
+		if char >= '0' && char <= '9' {
+			cleaned += string(char)
+		}
+	}
+
+	log.Printf("   Solo dígitos: %s", cleaned)
+
+	// Validación: El número debe tener al menos 10 dígitos
+	if len(cleaned) < 10 {
+		log.Printf("⚠️  Número de teléfono inválido (muy corto): %s", cleaned)
+		return cleaned
+	}
+
+	// Si el número tiene código de país (empieza con 52 para México), retornarlo tal cual
+	// Números mexicanos: 52 + código de área (2-3 dígitos) + número local (6-7 dígitos) = 12-13 dígitos
+	if len(cleaned) >= 12 && strings.HasPrefix(cleaned, "52") {
+		log.Printf("✅ Número con código de país detectado: %s", cleaned)
+		return cleaned
+	}
+
+	// Si el número tiene 10 dígitos (formato local mexicano), agregamos el código de país 52
+	if len(cleaned) == 10 {
+		cleaned = "52" + cleaned
+		log.Printf("✅ Código de país agregado: %s", cleaned)
+	}
+
+	log.Printf("📞 Número limpio final: %s", cleaned)
+	return cleaned
 }
