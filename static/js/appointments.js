@@ -169,11 +169,11 @@ function updateStats() {
     // Citas de hoy
     const todayAppointments = appointments.filter(a => a.date === today).length;
     
-    // Citas confirmadas
-    const confirmed = appointments.filter(a => a.status === 'confirmed').length;
-    
-    // Citas canceladas
+    // ✅ Citas canceladas - detectar por status
     const cancelled = appointments.filter(a => a.status === 'cancelled').length;
+    
+    // ✅ Citas confirmadas (excluyendo las canceladas)
+    const confirmed = appointments.filter(a => a.status === 'confirmed').length;
     
     // Total de citas
     const total = appointments.length;

@@ -167,6 +167,14 @@ func parseAppointmentFromCell(content string, weekday time.Weekday, hour int, co
 		Status:   "confirmed",
 	}
 
+	// ✅ NUEVO: Detectar si la cita está cancelada
+	contentLower := strings.ToLower(content)
+	if strings.Contains(content, "❌") ||
+		strings.Contains(contentLower, "cancelada") ||
+		strings.Contains(contentLower, "cancelado") {
+		appointment.Status = "cancelled"
+	}
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 
