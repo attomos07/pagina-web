@@ -173,6 +173,16 @@ function navigateToSection(sectionId) {
     const container = document.getElementById(currentSectionData.containerId);
     if (container) {
       container.classList.add('active');
+      
+      // Mostrar u ocultar botón "Anterior" según la sección
+      const prevBtn = container.querySelector('.btn-prev-section');
+      if (prevBtn) {
+        if (sectionId === 1) {
+          prevBtn.style.display = 'none';
+        } else {
+          prevBtn.style.display = 'flex';
+        }
+      }
     }
   }
 
@@ -1583,8 +1593,12 @@ function initializeSocialMediaInputs() {
 // ============================================
 function initializeNavigationButtons() {
   document.getElementById('btnStep1').addEventListener('click', () => nextStep());
-  document.getElementById('btnBackStep2').addEventListener('click', () => previousStep());
-  document.getElementById('btnStep2').addEventListener('click', () => nextStep());
+  
+  const btnStep2Unified = document.getElementById('btnStep2Unified');
+  if (btnStep2Unified) {
+    btnStep2Unified.addEventListener('click', () => nextStep());
+  }
+  
   document.getElementById('btnBackStep3').addEventListener('click', () => previousStep());
   document.getElementById('btnCreateAgent').addEventListener('click', () => createAgent());
   
