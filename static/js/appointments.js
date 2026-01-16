@@ -62,9 +62,9 @@ function setupEventListeners() {
         renderAppointments();
     });
 
-    // Create appointment button
+    // Create appointment button - Abrir modal
     document.getElementById('createAppointmentBtn').addEventListener('click', function() {
-        showNotification('Las citas se crean automáticamente desde WhatsApp', 'info');
+        openCreateAppointmentModal();
     });
 
     // Calendar navigation
@@ -78,6 +78,64 @@ function setupEventListeners() {
     if (nextMonth) {
         nextMonth.addEventListener('click', () => changeMonth(1));
     }
+}
+
+// Función para abrir modal de crear cita
+function openCreateAppointmentModal() {
+    const modal = document.getElementById('appointmentModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    
+    modalTitle.innerHTML = '<i class="lni lni-calendar"></i> Información sobre Citas';
+    
+    modalBody.innerHTML = `
+        <div style="text-align: center; padding: 2rem 1rem;">
+            <div style="width: 120px; height: 120px; margin: 0 auto 2rem; background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(8, 145, 178, 0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="lni lni-whatsapp" style="font-size: 4rem; color: #25d366;"></i>
+            </div>
+            
+            <h3 style="font-size: 1.5rem; color: #1a1a1a; font-weight: 700; margin-bottom: 1rem;">
+                Las citas se crean automáticamente
+            </h3>
+            
+            <p style="color: #6b7280; font-size: 1rem; margin-bottom: 2rem; line-height: 1.6;">
+                Tus agentes de WhatsApp crean citas automáticamente cuando los clientes agendan a través del chat. 
+                Las citas aparecerán aquí una vez que tus agentes las procesen.
+            </p>
+            
+            <div style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                <p style="color: #0369a1; font-weight: 600; margin-bottom: 0.5rem;">
+                    <i class="lni lni-checkmark-circle"></i> ¿Cómo funciona?
+                </p>
+                <ul style="text-align: left; color: #075985; font-size: 0.9rem; line-height: 1.8; list-style: none; padding: 0;">
+                    <li style="margin-bottom: 0.5rem;">
+                        <i class="lni lni-arrow-right" style="color: #06b6d4;"></i> Los clientes escriben a tu WhatsApp Business
+                    </li>
+                    <li style="margin-bottom: 0.5rem;">
+                        <i class="lni lni-arrow-right" style="color: #06b6d4;"></i> El agente procesa la solicitud de cita
+                    </li>
+                    <li style="margin-bottom: 0.5rem;">
+                        <i class="lni lni-arrow-right" style="color: #06b6d4;"></i> La cita se guarda en Google Sheets
+                    </li>
+                    <li>
+                        <i class="lni lni-arrow-right" style="color: #06b6d4;"></i> Aparece automáticamente en este panel
+                    </li>
+                </ul>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+                <button onclick="window.location.href='/my-agents'" class="btn-primary" style="border: 2px solid #06b6d4; background: white; color: #06b6d4; padding: 0.875rem 1.5rem; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.3s ease;">
+                    <i class="lni lni-cog"></i>
+                    <span>Configurar Agentes</span>
+                </button>
+                <button onclick="closeAppointmentModal()" class="btn-secondary" style="background: #f3f4f6; color: #6b7280; border: 2px solid #e5e7eb; padding: 0.875rem 1.5rem; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.3s ease;">
+                    <span>Entendido</span>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.add('active');
 }
 
 async function loadAgents() {

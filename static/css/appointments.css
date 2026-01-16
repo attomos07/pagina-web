@@ -142,7 +142,7 @@ body {
     gap: 1rem;
 }
 
-/* Buttons */
+/* Buttons - ACTUALIZADO: Fondo blanco con borde cyan */
 .btn-primary, .btn-secondary {
     padding: 1rem 1.5rem;
     border-radius: 12px;
@@ -153,19 +153,21 @@ body {
     align-items: center;
     gap: 0.5rem;
     transition: all 0.3s ease;
-    border: none;
     text-decoration: none;
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
-    color: white;
-    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+    background: white;
+    color: #06b6d4;
+    border: 2px solid #06b6d4;
+    box-shadow: 0 2px 8px rgba(6, 182, 212, 0.15);
 }
 
 .btn-primary:hover {
+    background: #06b6d4;
+    color: white;
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.3);
 }
 
 .btn-secondary {
@@ -363,6 +365,7 @@ body {
     color: #9ca3af;
 }
 
+/* View Controls - ACTUALIZADO: Fondo blanco con borde cyan */
 .view-controls {
     display: flex;
     gap: 0.5rem;
@@ -375,7 +378,7 @@ body {
 .view-btn {
     width: 40px;
     height: 40px;
-    border: none;
+    border: 2px solid transparent;
     background: transparent;
     border-radius: 8px;
     cursor: pointer;
@@ -392,8 +395,9 @@ body {
 }
 
 .view-btn.active {
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
-    color: white;
+    background: white;
+    border-color: #06b6d4;
+    color: #06b6d4;
 }
 
 .view-btn i {
@@ -408,7 +412,7 @@ body {
 .table-wrapper {
     background: white;
     border-radius: 16px;
-    overflow: hidden;
+    overflow: visible; /* CAMBIADO: Permite que el dropdown se sobreponga */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     border: 1px solid #f0f0f0;
 }
@@ -418,19 +422,20 @@ body {
     border-collapse: collapse;
 }
 
+/* Header de tabla - ACTUALIZADO: Como my-agents */
 .appointments-table thead {
-    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    background: linear-gradient(to bottom, #fafafa, #ffffff);
+    border-bottom: 2px solid #f0f0f0;
 }
 
 .appointments-table th {
-    padding: 1rem 1.25rem;
+    padding: 1.5rem 1.25rem;
     text-align: left;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 700;
     color: #6b7280;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 2px solid #e5e7eb;
     white-space: nowrap;
 }
 
@@ -440,7 +445,7 @@ body {
 }
 
 .appointments-table tbody tr:hover {
-    background: rgba(6, 182, 212, 0.03);
+    background: linear-gradient(90deg, rgba(6, 182, 212, 0.04), rgba(6, 182, 212, 0.01));
 }
 
 .appointments-table tbody tr:last-child {
@@ -551,69 +556,99 @@ body {
     color: #7c3aed;
 }
 
-/* Actions Dropdown */
+/* Actions Dropdown - EFECTO SMOOTH como my-agents */
 .actions-dropdown {
     position: relative;
 }
 
 .actions-btn {
-    width: 36px;
-    height: 36px;
-    border: 2px solid #e5e7eb;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
     background: white;
-    border-radius: 8px;
+    color: #6b7280;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
-    color: #6b7280;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 1.25rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.actions-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(6, 182, 212, 0.1);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s ease, height 0.4s ease;
+}
+
+.actions-btn:hover::before {
+    width: 100%;
+    height: 100%;
 }
 
 .actions-btn:hover {
+    background: #f9fafb;
     border-color: #06b6d4;
     color: #06b6d4;
-    transform: scale(1.05);
+    transform: translateY(-2px) rotate(90deg);
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15);
 }
 
 .actions-btn i {
+    position: relative;
+    z-index: 1;
+    transition: transform 0.3s ease;
     font-size: 1.125rem;
 }
 
+/* Dropdown con animación smooth y backdrop blur */
 .actions-menu {
     position: absolute;
-    top: 100%;
     right: 0;
-    margin-top: 0.5rem;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    border: 1px solid #e5e7eb;
+    top: calc(100% + 8px);
     min-width: 200px;
-    z-index: 100;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(240, 240, 240, 0.8);
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-10px);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.actions-menu.active {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
+    transform: translateY(-15px) scale(0.95);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 999;
+    overflow: hidden;
 }
 
 .actions-menu::before {
     content: '';
     position: absolute;
-    top: -6px;
-    right: 10px;
-    width: 12px;
-    height: 12px;
+    top: -8px;
+    right: 12px;
+    width: 16px;
+    height: 16px;
     background: white;
-    border-left: 1px solid #e5e7eb;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid rgba(240, 240, 240, 0.8);
+    border-left: 1px solid rgba(240, 240, 240, 0.8);
     transform: rotate(45deg);
+    z-index: -1;
+}
+
+.actions-menu.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
 }
 
 .action-item {
@@ -621,40 +656,69 @@ body {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 0.875rem;
-    font-weight: 600;
     color: #374151;
-    border-bottom: 1px solid #f0f0f0;
+    text-decoration: none;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
 }
 
-.action-item:first-child {
-    border-radius: 12px 12px 0 0;
+.action-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: currentColor;
+    transform: scaleY(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.action-item:last-child {
-    border-bottom: none;
-    border-radius: 0 0 12px 12px;
-}
-
-.action-item:hover {
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(8, 145, 178, 0.03) 100%);
-    color: #06b6d4;
+.action-item:hover::before {
+    transform: scaleY(1);
 }
 
 .action-item i {
     font-size: 1.125rem;
-    color: currentColor;
+    width: 20px;
+    flex-shrink: 0;
+    transition: transform 0.3s ease, color 0.3s ease;
+    color: #1a1a1a;
+}
+
+.action-item:hover i {
+    transform: scale(1.1);
+}
+
+.action-item:hover {
+    background: linear-gradient(90deg, rgba(6, 182, 212, 0.1), rgba(6, 182, 212, 0.02));
+    color: #06b6d4;
+    padding-left: 1.5rem;
 }
 
 .action-item.whatsapp:hover {
-    background: linear-gradient(135deg, rgba(37, 211, 102, 0.05) 0%, rgba(37, 211, 102, 0.03) 100%);
+    background: linear-gradient(90deg, rgba(37, 211, 102, 0.1), rgba(37, 211, 102, 0.02));
+    color: #25d366;
+}
+
+.action-item.whatsapp:hover i {
     color: #25d366;
 }
 
 .action-item.sheet:hover {
-    background: linear-gradient(135deg, rgba(52, 168, 83, 0.05) 0%, rgba(52, 168, 83, 0.03) 100%);
+    background: linear-gradient(90deg, rgba(52, 168, 83, 0.1), rgba(52, 168, 83, 0.02));
+    color: #34a853;
+}
+
+.action-item.sheet:hover i {
     color: #34a853;
 }
 
@@ -798,7 +862,7 @@ body {
     margin-bottom: 2rem;
 }
 
-/* Modal */
+/* Modal - MEJORADO: Efecto smooth y animación en X */
 .modal {
     display: none;
     position: fixed;
@@ -823,6 +887,7 @@ body {
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease;
 }
 
 .modal-content {
@@ -834,17 +899,26 @@ body {
     max-height: 80vh;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: modalSlideIn 0.3s ease;
+    animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes modalSlideIn {
     from {
         opacity: 0;
-        transform: translateY(-20px);
+        transform: translateY(-30px) scale(0.95);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
@@ -872,12 +946,22 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
 }
 
 .modal-close:hover {
-    background: #e5e7eb;
-    color: #06b6d4;
+    background: #fee2e2;
+    color: #ef4444;
+    transform: rotate(90deg) scale(1.1);
+}
+
+.modal-close i {
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover i {
+    transform: scale(1.2);
 }
 
 .modal-body {
