@@ -202,48 +202,70 @@ function viewAgentDetails(agentId) {
     window.location.href = `/agents/${agentId}`;
 }
 
-// Toggle status del agente
+// Toggle status del agente - CON MODAL
 async function toggleAgentStatus(agentId, currentStatus) {
-    try {
-        const action = currentStatus ? 'pausar' : 'activar';
-        
-        if (!confirm(`¿Estás seguro de que deseas ${action} este agente?`)) {
-            return;
+    const agent = agents.find(a => a.id === agentId);
+    if (!agent) return;
+    
+    const action = currentStatus ? 'pausar' : 'activar';
+    const actionTitle = currentStatus ? 'Pausar' : 'Activar';
+    
+    showConfirmModal({
+        type: 'warning',
+        icon: currentStatus ? 'lni-pause' : 'lni-play',
+        title: `¿${actionTitle} Agente?`,
+        message: `Estás a punto de ${action} el agente "<strong>${escapeHtml(agent.name)}</strong>"`,
+        list: currentStatus ? [
+            'El agente dejará de responder mensajes',
+            'Los clientes no recibirán atención automática',
+            'Puedes reactivarlo cuando quieras'
+        ] : [
+            'El agente volverá a responder mensajes',
+            'Se reanudará la atención automática',
+            'Los clientes podrán interactuar nuevamente'
+        ],
+        confirmText: `${actionTitle} Agente`,
+        confirmClass: 'warning',
+        onConfirm: async () => {
+            try {
+                const response = await fetch(`/api/agents/${agentId}/toggle`, {
+                    method: 'PATCH',
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error al cambiar estado del agente');
+                }
+                
+                await loadAgents();
+                showNotification(`✅ Agente ${action === 'pausar' ? 'pausado' : 'activado'} exitosamente`, 'success');
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showNotification('❌ Error al cambiar el estado del agente', 'error');
+            }
         }
-        
-        const response = await fetch(`/api/agents/${agentId}/toggle`, {
-            method: 'PATCH',
-            credentials: 'include'
-        });
-        
-        if (!response.ok) {
-            throw new Error('Error al cambiar estado del agente');
-        }
-        
-        await loadAgents();
-        alert(`Agente ${action === 'pausar' ? 'pausado' : 'activado'} exitosamente`);
-    } catch (error) {
-        console.error('❌ Error:', error);
-        alert('Error al cambiar el estado del agente. Por favor intenta de nuevo.');
-    }
+    });
 }
 
-// Confirmar eliminación de agente
+// Confirmar eliminación de agente - CON MODAL
 function confirmDeleteAgent(agentId) {
     const agent = agents.find(a => a.id === agentId);
     if (!agent) return;
     
-    const confirmed = confirm(
-        `¿Estás seguro de que deseas eliminar el agente "${agent.name}"?\n\n` +
-        `Esta acción no se puede deshacer y eliminará:\n` +
-        `• El bot de WhatsApp\n` +
-        `• Todas las configuraciones\n` +
-        `• El historial de conversaciones`
-    );
-    
-    if (confirmed) {
-        deleteAgent(agentId);
-    }
+    showConfirmModal({
+        type: 'danger',
+        icon: 'lni-trash-can',
+        title: '¿Eliminar Agente?',
+        message: `Estás a punto de eliminar el agente "<strong>${escapeHtml(agent.name)}</strong>"`,
+        list: [
+            'El bot de WhatsApp',
+            'Todas las configuraciones',
+            'El historial de conversaciones'
+        ],
+        confirmText: 'Eliminar Agente',
+        confirmClass: 'danger',
+        onConfirm: () => deleteAgent(agentId)
+    });
 }
 
 // Eliminar agente
@@ -259,11 +281,137 @@ async function deleteAgent(agentId) {
         }
         
         await loadAgents();
-        alert('Agente eliminado exitosamente');
+        showNotification('✅ Agente eliminado exitosamente', 'success');
     } catch (error) {
         console.error('❌ Error:', error);
-        alert('Error al eliminar el agente. Por favor intenta de nuevo.');
+        showNotification('❌ Error al eliminar el agente', 'error');
     }
+}
+
+// Mostrar modal de confirmación
+function showConfirmModal(options) {
+    const {
+        type = 'warning',
+        icon = 'lni-warning',
+        title = '¿Estás seguro?',
+        message = '',
+        list = [],
+        confirmText = 'Confirmar',
+        confirmClass = 'danger',
+        onConfirm = () => {}
+    } = options;
+    
+    // Crear modal si no existe
+    let modal = document.getElementById('confirmModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'confirmModal';
+        modal.className = 'confirm-modal';
+        document.body.appendChild(modal);
+    }
+    
+    // Renderizar contenido
+    modal.innerHTML = `
+        <div class="confirm-overlay" onclick="closeConfirmModal()"></div>
+        <div class="confirm-content">
+            <div class="confirm-header">
+                <div class="confirm-icon ${type}">
+                    <i class="lni ${icon}"></i>
+                </div>
+                <h3 class="confirm-title">${title}</h3>
+                <p class="confirm-message">${message}</p>
+            </div>
+            <div class="confirm-body">
+                ${list.length > 0 ? `
+                    <div class="confirm-list">
+                        ${list.map(item => `
+                            <div class="confirm-list-item">
+                                <i class="lni lni-close"></i>
+                                <span>${item}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+                <div class="confirm-actions">
+                    <button class="btn-confirm-cancel" onclick="closeConfirmModal()">
+                        <i class="lni lni-close"></i>
+                        <span>Cancelar</span>
+                    </button>
+                    <button class="btn-confirm-action ${confirmClass}" id="confirmActionBtn">
+                        <i class="lni lni-checkmark"></i>
+                        <span>${confirmText}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Mostrar modal
+    modal.classList.add('active');
+    
+    // Event listener para confirmar
+    document.getElementById('confirmActionBtn').addEventListener('click', async function() {
+        // Mostrar loading
+        this.innerHTML = `
+            <div class="loading-spinner-small"></div>
+            <span>Procesando...</span>
+        `;
+        this.disabled = true;
+        
+        try {
+            await onConfirm();
+            closeConfirmModal();
+        } catch (error) {
+            console.error('Error en confirmación:', error);
+            this.disabled = false;
+            this.innerHTML = `
+                <i class="lni lni-checkmark"></i>
+                <span>${confirmText}</span>
+            `;
+        }
+    });
+}
+
+// Cerrar modal de confirmación
+function closeConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+// Mostrar notificación
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#06b6d4'};
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 600;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    notification.innerHTML = `
+        <i class="lni lni-${type === 'success' ? 'checkmark-circle' : type === 'error' ? 'warning' : 'information'}"></i>
+        <span>${message}</span>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 
 // Mostrar estado vacío
@@ -297,3 +445,27 @@ setInterval(async () => {
         await loadAgents();
     }
 }, 30000);
+
+// CSS para animaciones y spinner
+const style = document.createElement('style');
+style.textContent = `
+    .loading-spinner-small {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes slideIn {
+        from { transform: translateX(400px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(400px); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);

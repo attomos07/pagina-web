@@ -86,56 +86,382 @@ function openCreateAppointmentModal() {
     const modalTitle = document.getElementById('modalTitle');
     const modalBody = document.getElementById('modalBody');
     
-    modalTitle.innerHTML = '<i class="lni lni-calendar"></i> Información sobre Citas';
+    modalTitle.innerHTML = '<i class="lni lni-calendar-plus" style="color: #06b6d4;"></i> Nueva Cita';
     
     modalBody.innerHTML = `
-        <div style="text-align: center; padding: 2rem 1rem;">
-            <div style="width: 120px; height: 120px; margin: 0 auto 2rem; background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(8, 145, 178, 0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                <i class="lni lni-whatsapp" style="font-size: 4rem; color: #25d366;"></i>
+        <form id="createAppointmentForm" class="appointment-form">
+            <div class="form-grid">
+                <!-- Cliente -->
+                <div class="form-group full-width">
+                    <label class="form-label">
+                        <i class="lni lni-user"></i>
+                        Nombre del Cliente
+                    </label>
+                    <input type="text" 
+                           class="form-input" 
+                           id="clientName" 
+                           required>
+                </div>
+
+                <!-- Teléfono -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="lni lni-phone"></i>
+                        Teléfono
+                    </label>
+                    <input type="tel" 
+                           class="form-input" 
+                           id="clientPhone">
+                </div>
+
+                <!-- Servicio -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="lni lni-briefcase"></i>
+                        Servicio
+                    </label>
+                    <input type="text" 
+                           class="form-input" 
+                           id="serviceName" 
+                           required>
+                </div>
+
+                <!-- Trabajador/Especialista -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="lni lni-user"></i>
+                        Trabajador/Especialista
+                    </label>
+                    <input type="text" 
+                           class="form-input" 
+                           id="workerName">
+                </div>
+
+                <!-- Agente - Dropdown personalizado -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="lni lni-database"></i>
+                        Agente
+                    </label>
+                    <div class="custom-dropdown-wrapper" id="agentDropdownWrapper">
+                        <input type="text" 
+                               class="form-input form-dropdown" 
+                               id="agentSelectDisplay" 
+                               readonly
+                               required>
+                        <i class="lni lni-chevron-down dropdown-arrow"></i>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-options" id="agentOptions"></div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="agentSelect" required>
+                </div>
+
+                <!-- Fecha -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="lni lni-calendar"></i>
+                        Fecha
+                    </label>
+                    <input type="date" 
+                           class="form-input" 
+                           id="appointmentDate" 
+                           required>
+                </div>
+
+                <!-- Hora - Dropdown personalizado -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="lni lni-clock"></i>
+                        Hora
+                    </label>
+                    <div class="custom-dropdown-wrapper" id="timeDropdownWrapper">
+                        <input type="text" 
+                               class="form-input form-dropdown" 
+                               id="timeSelectDisplay" 
+                               readonly
+                               required>
+                        <i class="lni lni-chevron-down dropdown-arrow"></i>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-options" id="timeOptions"></div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="appointmentTime" required>
+                </div>
+
+                <!-- Estado - Dropdown personalizado -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="lni lni-checkmark-circle"></i>
+                        Estado
+                    </label>
+                    <div class="custom-dropdown-wrapper" id="statusDropdownWrapper">
+                        <input type="text" 
+                               class="form-input form-dropdown" 
+                               id="statusSelectDisplay" 
+                               readonly
+                               required>
+                        <i class="lni lni-chevron-down dropdown-arrow"></i>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-options" id="statusOptions">
+                                <div class="dropdown-option" data-value="pending">
+                                    <i class="lni lni-timer"></i>
+                                    <span>Pendiente</span>
+                                </div>
+                                <div class="dropdown-option" data-value="confirmed">
+                                    <i class="lni lni-checkmark-circle"></i>
+                                    <span>Confirmada</span>
+                                </div>
+                                <div class="dropdown-option" data-value="completed">
+                                    <i class="lni lni-check"></i>
+                                    <span>Completada</span>
+                                </div>
+                                <div class="dropdown-option" data-value="cancelled">
+                                    <i class="lni lni-close"></i>
+                                    <span>Cancelada</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="appointmentStatus" value="confirmed" required>
+                </div>
             </div>
-            
-            <h3 style="font-size: 1.5rem; color: #1a1a1a; font-weight: 700; margin-bottom: 1rem;">
-                Las citas se crean automáticamente
-            </h3>
-            
-            <p style="color: #6b7280; font-size: 1rem; margin-bottom: 2rem; line-height: 1.6;">
-                Tus agentes de WhatsApp crean citas automáticamente cuando los clientes agendan a través del chat. 
-                Las citas aparecerán aquí una vez que tus agentes las procesen.
-            </p>
-            
-            <div style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
-                <p style="color: #0369a1; font-weight: 600; margin-bottom: 0.5rem;">
-                    <i class="lni lni-checkmark-circle"></i> ¿Cómo funciona?
-                </p>
-                <ul style="text-align: left; color: #075985; font-size: 0.9rem; line-height: 1.8; list-style: none; padding: 0;">
-                    <li style="margin-bottom: 0.5rem;">
-                        <i class="lni lni-arrow-right" style="color: #06b6d4;"></i> Los clientes escriben a tu WhatsApp Business
-                    </li>
-                    <li style="margin-bottom: 0.5rem;">
-                        <i class="lni lni-arrow-right" style="color: #06b6d4;"></i> El agente procesa la solicitud de cita
-                    </li>
-                    <li style="margin-bottom: 0.5rem;">
-                        <i class="lni lni-arrow-right" style="color: #06b6d4;"></i> La cita se guarda en Google Sheets
-                    </li>
-                    <li>
-                        <i class="lni lni-arrow-right" style="color: #06b6d4;"></i> Aparece automáticamente en este panel
-                    </li>
-                </ul>
-            </div>
-            
-            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
-                <button onclick="window.location.href='/my-agents'" class="btn-primary" style="border: 2px solid #06b6d4; background: white; color: #06b6d4; padding: 0.875rem 1.5rem; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.3s ease;">
-                    <i class="lni lni-cog"></i>
-                    <span>Configurar Agentes</span>
+
+            <!-- Botones -->
+            <div class="form-actions">
+                <button type="button" 
+                        class="btn-cancel" 
+                        onclick="closeAppointmentModal()">
+                    <i class="lni lni-close"></i>
+                    <span>Cancelar</span>
                 </button>
-                <button onclick="closeAppointmentModal()" class="btn-secondary" style="background: #f3f4f6; color: #6b7280; border: 2px solid #e5e7eb; padding: 0.875rem 1.5rem; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.3s ease;">
-                    <span>Entendido</span>
+                <button type="submit" 
+                        class="btn-submit">
+                    <i class="lni lni-checkmark"></i>
+                    <span>Crear Cita</span>
                 </button>
             </div>
-        </div>
+        </form>
     `;
     
+    // Inicializar dropdowns personalizados
+    initAgentDropdown();
+    initTimeDropdown();
+    initStatusDropdown();
+    
+    // Establecer fecha mínima (hoy)
+    const dateInput = document.getElementById('appointmentDate');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.min = today;
+    dateInput.value = today;
+    
+    // Event listener para el submit del formulario
+    document.getElementById('createAppointmentForm').addEventListener('submit', handleCreateAppointment);
+    
     modal.classList.add('active');
+}
+
+// Inicializar dropdown de agentes
+function initAgentDropdown() {
+    const wrapper = document.getElementById('agentDropdownWrapper');
+    const display = document.getElementById('agentSelectDisplay');
+    const hidden = document.getElementById('agentSelect');
+    const optionsContainer = document.getElementById('agentOptions');
+    
+    if (!wrapper || !display || !optionsContainer) return;
+    
+    // Poblar opciones
+    optionsContainer.innerHTML = '';
+    agents.forEach(agent => {
+        const option = document.createElement('div');
+        option.className = 'dropdown-option';
+        option.setAttribute('data-value', agent.id);
+        option.innerHTML = `
+            <i class="lni lni-database"></i>
+            <span>${agent.name}</span>
+        `;
+        optionsContainer.appendChild(option);
+    });
+    
+    setupCustomDropdown(wrapper, display, hidden, 'Selecciona un agente');
+}
+
+// Inicializar dropdown de horas
+function initTimeDropdown() {
+    const wrapper = document.getElementById('timeDropdownWrapper');
+    const display = document.getElementById('timeSelectDisplay');
+    const hidden = document.getElementById('appointmentTime');
+    const optionsContainer = document.getElementById('timeOptions');
+    
+    if (!wrapper || !display || !optionsContainer) return;
+    
+    // Generar horas cada 15 minutos
+    optionsContainer.innerHTML = '';
+    for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 15) {
+            const hour24 = String(h).padStart(2, '0');
+            const minute = String(m).padStart(2, '0');
+            const time24 = `${hour24}:${minute}`;
+            
+            // Convertir a formato 12h
+            const hour12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
+            const period = h >= 12 ? 'PM' : 'AM';
+            const time12 = `${String(hour12).padStart(2, '0')}:${minute} ${period}`;
+            
+            const option = document.createElement('div');
+            option.className = 'dropdown-option';
+            option.setAttribute('data-value', time24);
+            option.innerHTML = `
+                <i class="lni lni-clock"></i>
+                <span>${time12}</span>
+            `;
+            optionsContainer.appendChild(option);
+        }
+    }
+    
+    // Establecer hora actual redondeada
+    const now = new Date();
+    const currentHour = String(now.getHours()).padStart(2, '0');
+    const currentMinute = String(Math.ceil(now.getMinutes() / 15) * 15).padStart(2, '0');
+    const defaultTime = `${currentHour}:${currentMinute === '60' ? '00' : currentMinute}`;
+    
+    setupCustomDropdown(wrapper, display, hidden, 'Selecciona una hora', defaultTime);
+}
+
+// Inicializar dropdown de estado
+function initStatusDropdown() {
+    const wrapper = document.getElementById('statusDropdownWrapper');
+    const display = document.getElementById('statusSelectDisplay');
+    const hidden = document.getElementById('appointmentStatus');
+    
+    if (!wrapper || !display) return;
+    
+    setupCustomDropdown(wrapper, display, hidden, 'Selecciona un estado', 'confirmed');
+}
+
+// Configurar dropdown personalizado
+function setupCustomDropdown(wrapper, display, hidden, placeholder, defaultValue = '') {
+    const dropdown = wrapper.querySelector('.dropdown-menu');
+    const options = wrapper.querySelectorAll('.dropdown-option');
+    
+    // Click en el display para abrir/cerrar
+    display.addEventListener('click', function(e) {
+        e.stopPropagation();
+        
+        // Cerrar otros dropdowns
+        document.querySelectorAll('.custom-dropdown-wrapper.active').forEach(w => {
+            if (w !== wrapper) {
+                w.classList.remove('active');
+            }
+        });
+        
+        wrapper.classList.toggle('active');
+    });
+    
+    // Click en opciones
+    options.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            const value = this.getAttribute('data-value');
+            const text = this.querySelector('span').textContent;
+            
+            display.value = text;
+            hidden.value = value;
+            
+            // Marcar como seleccionada
+            options.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            wrapper.classList.remove('active');
+        });
+    });
+    
+    // Cerrar al hacer click fuera
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) {
+            wrapper.classList.remove('active');
+        }
+    });
+    
+    // Establecer valor por defecto
+    if (defaultValue) {
+        const defaultOption = wrapper.querySelector(`[data-value="${defaultValue}"]`);
+        if (defaultOption) {
+            const text = defaultOption.querySelector('span').textContent;
+            display.value = text;
+            hidden.value = defaultValue;
+            defaultOption.classList.add('selected');
+        }
+    } else {
+        display.placeholder = placeholder;
+    }
+}
+
+// Manejar creación de cita
+async function handleCreateAppointment(e) {
+    e.preventDefault();
+    
+    const formData = {
+        client: document.getElementById('clientName').value,
+        phone: document.getElementById('clientPhone').value,
+        service: document.getElementById('serviceName').value,
+        worker: document.getElementById('workerName').value,
+        agentId: parseInt(document.getElementById('agentSelect').value),
+        date: document.getElementById('appointmentDate').value,
+        time: document.getElementById('appointmentTime').value,
+        status: document.getElementById('appointmentStatus').value
+    };
+    
+    // Validar que se haya seleccionado un agente
+    if (!formData.agentId) {
+        showNotification('Por favor selecciona un agente', 'error');
+        return;
+    }
+    
+    // Mostrar loading en el botón
+    const submitBtn = e.target.querySelector('.btn-submit');
+    const originalHTML = submitBtn.innerHTML;
+    submitBtn.innerHTML = `
+        <div class="loading-spinner-small"></div>
+        <span>Creando...</span>
+    `;
+    submitBtn.disabled = true;
+    
+    try {
+        // Simular creación (aquí iría la llamada real al API)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Agregar la cita a la lista local
+        const newAppointment = {
+            id: `temp-${Date.now()}`,
+            ...formData,
+            agentName: agents.find(a => a.id === formData.agentId)?.name || 'Agente desconocido'
+        };
+        
+        appointments.unshift(newAppointment);
+        
+        // Actualizar la UI
+        updateStats();
+        renderAppointments();
+        hideEmptyState();
+        
+        // Cerrar modal
+        closeAppointmentModal();
+        
+        // Mostrar notificación de éxito
+        showNotification('✅ Cita creada exitosamente', 'success');
+        
+        console.log('✅ Nueva cita creada:', newAppointment);
+        
+    } catch (error) {
+        console.error('❌ Error al crear cita:', error);
+        showNotification('❌ Error al crear la cita', 'error');
+        
+        // Restaurar botón
+        submitBtn.innerHTML = originalHTML;
+        submitBtn.disabled = false;
+    }
 }
 
 async function loadAgents() {
