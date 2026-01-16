@@ -14,728 +14,727 @@
         <div class="main-content">
             <div class="content-wrapper">
                 <div class="main-container">
-                    <!-- Progress Bar -->
-                    <div class="progress-wrapper">
-                        <!-- Porcentaje arriba -->
-                        <div class="progress-percentage" id="progressPercentage">0%</div>
-                        
-                        <!-- Barra de progreso moderna -->
-                        <div class="progress-bar-track">
-                            <div class="progress-bar-fill" id="progressBarFill"></div>
-                        </div>
-                        
-                        <!-- Steps -->
-                        <div class="progress-steps">
-                            <div class="progress-step active">
-                                <div class="step-label">Red Social</div>
-                            </div>
-                            
-                            <div class="progress-step">
-                                <div class="step-label">Configuración</div>
-                            </div>
-                            
-                            <div class="progress-step">
-                                <div class="step-label">Resumen</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Content Card -->
+                    <!-- Content Card with Progress Bar Inside -->
                     <div class="content-card">
-                        <!-- PASO 1: Selección de Red Social -->
-                        <div id="step1" class="step active">
-                            <div class="step-header">
-                                <h2 class="step-title">
-                                    <i class="lni lni-network"></i>
-                                    Selecciona tu Red Social
-                                </h2>
-                                <p class="step-description">Elige la plataforma donde operará tu agente de IA</p>
+                        <!-- Progress Bar -->
+                        <div class="progress-wrapper">
+                            <div class="progress-header">
+                                <div class="progress-percentage" id="progressPercentage">0%</div>
                             </div>
-
-                            <div class="social-grid">
-                                <label class="social-card">
-                                    <input type="radio" name="social" value="whatsapp">
-                                    <div class="social-content">
-                                        <div class="social-icon-wrapper" style="background-color: #25D36615; border-color: #25D36640;">
-                                            <i class="lni lni-whatsapp" style="color: #25D366;"></i>
-                                        </div>
-                                        <div class="social-name">WhatsApp</div>
-                                    </div>
-                                </label>
-
-                                <label class="social-card">
-                                    <input type="radio" name="social" value="facebook">
-                                    <div class="social-content">
-                                        <div class="social-icon-wrapper" style="background-color: #0084FF15; border-color: #0084FF40;">
-                                            <i class="lni lni-facebook-messenger" style="color: #0084FF;"></i>
-                                        </div>
-                                        <div class="social-name">Messenger</div>
-                                    </div>
-                                </label>
-
-                                <label class="social-card">
-                                    <input type="radio" name="social" value="instagram">
-                                    <div class="social-content">
-                                        <div class="social-icon-wrapper" style="background-color: #E4405F15; border-color: #E4405F40;">
-                                            <i class="lni lni-instagram" style="color: #E4405F;"></i>
-                                        </div>
-                                        <div class="social-name">Instagram</div>
-                                    </div>
-                                </label>
-
-                                <label class="social-card">
-                                    <input type="radio" name="social" value="telegram">
-                                    <div class="social-content">
-                                        <div class="social-icon-wrapper" style="background-color: #0088cc15; border-color: #0088cc40;">
-                                            <i class="lni lni-telegram" style="color: #0088cc;"></i>
-                                        </div>
-                                        <div class="social-name">Telegram</div>
-                                    </div>
-                                </label>
-
-                                <label class="social-card">
-                                    <input type="radio" name="social" value="wechat">
-                                    <div class="social-content">
-                                        <div class="social-icon-wrapper" style="background-color: #09B83E15; border-color: #09B83E40;">
-                                            <i class="lni lni-wechat" style="color: #09B83E;"></i>
-                                        </div>
-                                        <div class="social-name">WeChat</div>
-                                        <div class="social-status status-coming-soon">Próximamente</div>
-                                    </div>
-                                </label>
-
-                                <label class="social-card">
-                                    <input type="radio" name="social" value="kakaotalk">
-                                    <div class="social-content">
-                                        <div class="social-icon-wrapper" style="background-color: #FEE50015; border-color: #FEE50040;">
-                                            <div class="kakao-icon-onboard">
-                                                <svg viewBox="0 0 24 24" class="kakao-bubble-onboard">
-                                                    <path d="M12 3C6.48 3 2 6.58 2 11c0 2.91 1.88 5.45 4.68 6.94l-1.19 4.37c-.09.34.23.63.55.49l5.11-2.29c.27.02.55.03.85.03 5.52 0 10-3.58 10-8C22 6.58 17.52 3 12 3z"/>
-                                                </svg>
-                                                <span class="kakao-text-onboard">TALK</span>
-                                            </div>
-                                        </div>
-                                        <div class="social-name">KakaoTalk</div>
-                                        <div class="social-status status-coming-soon">Próximamente</div>
-                                    </div>
-                                </label>
-
-                                <label class="social-card">
-                                    <input type="radio" name="social" value="line">
-                                    <div class="social-content">
-                                        <div class="social-icon-wrapper" style="background-color: #00B90015; border-color: #00B90040;">
-                                            <i class="lni lni-line" style="color: #00B900;"></i>
-                                        </div>
-                                        <div class="social-name">Line</div>
-                                        <div class="social-status status-coming-soon">Próximamente</div>
-                                    </div>
-                                </label>
-                            </div>
-
-                            <div class="action-buttons">
-                                <button type="button" id="btnStep1" class="btn btn-next" disabled>
-                                    <span>Continuar</span>
-                                    <i class="lni lni-arrow-right"></i>
-                                </button>
+                            
+                            <div class="progress-steps-container">
+                                <div class="progress-steps">
+                                    <div class="progress-step"></div>
+                                    <div class="progress-step"></div>
+                                    <div class="progress-step"></div>
+                                    <div class="progress-step"></div>
+                                    <div class="progress-step"></div>
+                                    <div class="progress-step"></div>
+                                    <div class="progress-step"></div>
+                                    <div class="progress-step"></div>
+                                    <div class="progress-step"></div>
+                                    <div class="progress-step"></div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- PASO 2: Configuración por Secciones -->
-                        <div id="step2" class="step">
-                            <div class="step-header">
-                                <h2 class="step-title">
-                                    <i class="lni lni-cog"></i>
-                                    Configuración del Agente
-                                </h2>
-                                <p class="step-description">Personaliza el comportamiento y características de tu agente</p>
+                        <!-- Card Content -->
+                        <div class="card-content">
+                            <!-- PASO 1: Selección de Red Social -->
+                            <div id="step1" class="step active">
+                                <div class="step-header">
+                                    <h2 class="step-title">
+                                        <i class="lni lni-network"></i>
+                                        Selecciona tu Red Social
+                                    </h2>
+                                    <p class="step-description">Elige la plataforma donde operará tu agente de IA</p>
+                                </div>
+
+                                <div class="social-grid">
+                                    <label class="social-card">
+                                        <input type="radio" name="social" value="whatsapp">
+                                        <div class="social-content">
+                                            <div class="social-icon-wrapper" style="background-color: #25D36615; border-color: #25D36640;">
+                                                <i class="lni lni-whatsapp" style="color: #25D366;"></i>
+                                            </div>
+                                            <div class="social-name">WhatsApp</div>
+                                        </div>
+                                    </label>
+
+                                    <label class="social-card">
+                                        <input type="radio" name="social" value="facebook">
+                                        <div class="social-content">
+                                            <div class="social-icon-wrapper" style="background-color: #0084FF15; border-color: #0084FF40;">
+                                                <i class="lni lni-facebook-messenger" style="color: #0084FF;"></i>
+                                            </div>
+                                            <div class="social-name">Messenger</div>
+                                        </div>
+                                    </label>
+
+                                    <label class="social-card">
+                                        <input type="radio" name="social" value="instagram">
+                                        <div class="social-content">
+                                            <div class="social-icon-wrapper" style="background-color: #E4405F15; border-color: #E4405F40;">
+                                                <i class="lni lni-instagram" style="color: #E4405F;"></i>
+                                            </div>
+                                            <div class="social-name">Instagram</div>
+                                        </div>
+                                    </label>
+
+                                    <label class="social-card">
+                                        <input type="radio" name="social" value="telegram">
+                                        <div class="social-content">
+                                            <div class="social-icon-wrapper" style="background-color: #0088cc15; border-color: #0088cc40;">
+                                                <i class="lni lni-telegram" style="color: #0088cc;"></i>
+                                            </div>
+                                            <div class="social-name">Telegram</div>
+                                        </div>
+                                    </label>
+
+                                    <label class="social-card">
+                                        <input type="radio" name="social" value="wechat">
+                                        <div class="social-content">
+                                            <div class="social-icon-wrapper" style="background-color: #09B83E15; border-color: #09B83E40;">
+                                                <i class="lni lni-wechat" style="color: #09B83E;"></i>
+                                            </div>
+                                            <div class="social-name">WeChat</div>
+                                            <div class="social-status status-coming-soon">Próximamente</div>
+                                        </div>
+                                    </label>
+
+                                    <label class="social-card">
+                                        <input type="radio" name="social" value="kakaotalk">
+                                        <div class="social-content">
+                                            <div class="social-icon-wrapper" style="background-color: #FEE50015; border-color: #FEE50040;">
+                                                <div class="kakao-icon-onboard">
+                                                    <svg viewBox="0 0 24 24" class="kakao-bubble-onboard">
+                                                        <path d="M12 3C6.48 3 2 6.58 2 11c0 2.91 1.88 5.45 4.68 6.94l-1.19 4.37c-.09.34.23.63.55.49l5.11-2.29c.27.02.55.03.85.03 5.52 0 10-3.58 10-8C22 6.58 17.52 3 12 3z"/>
+                                                    </svg>
+                                                    <span class="kakao-text-onboard">TALK</span>
+                                                </div>
+                                            </div>
+                                            <div class="social-name">KakaoTalk</div>
+                                            <div class="social-status status-coming-soon">Próximamente</div>
+                                        </div>
+                                    </label>
+
+                                    <label class="social-card">
+                                        <input type="radio" name="social" value="line">
+                                        <div class="social-content">
+                                            <div class="social-icon-wrapper" style="background-color: #00B90015; border-color: #00B90040;">
+                                                <i class="lni lni-line" style="color: #00B900;"></i>
+                                            </div>
+                                            <div class="social-name">Line</div>
+                                            <div class="social-status status-coming-soon">Próximamente</div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div class="action-buttons">
+                                    <button type="button" id="btnStep1" class="btn btn-next" disabled>
+                                        <span>Continuar</span>
+                                        <i class="lni lni-arrow-right"></i>
+                                    </button>
+                                </div>
                             </div>
 
-                            <!-- Navegación de Secciones -->
-                            <div class="section-navigation" id="sectionNavigation">
-                                <!-- Se genera dinámicamente con JS -->
-                            </div>
+                            <!-- PASO 2: Configuración por Secciones -->
+                            <div id="step2" class="step">
+                                <div class="step-header">
+                                    <h2 class="step-title">
+                                        <i class="lni lni-cog"></i>
+                                        Configuración del Agente
+                                    </h2>
+                                    <p class="step-description">Personaliza el comportamiento y características de tu agente</p>
+                                </div>
 
-                            <!-- SECCIÓN 1: Información Básica -->
-                            <div class="section-container active" id="section-basic">
-                                <div class="form-section">
-                                    <h3 class="section-title">
-                                        <i class="lni lni-information"></i>
-                                        Información Básica
-                                    </h3>
-                                    
-                                    <div class="form-grid">
-                                        <div class="form-group">
-                                            <label class="form-label">
-                                                Nombre del Agente
-                                                <span class="form-label-required">*</span>
-                                            </label>
-                                            <input type="text" id="agentName" class="form-input" placeholder="Ej: Asistente Virtual" required>
-                                            <span class="form-help">Este nombre identificará a tu agente en el dashboard</span>
-                                        </div>
+                                <!-- Navegación de Secciones -->
+                                <div class="section-navigation" id="sectionNavigation">
+                                    <!-- Se genera dinámicamente con JS -->
+                                </div>
 
-                                        <div class="toggle-container">
-                                            <div class="toggle-info">
-                                                <div class="toggle-title">¿Usar un número de teléfono diferente?</div>
-                                                <div class="toggle-description">El agente puede usar tu número registrado o uno diferente</div>
+                                <!-- SECCIÓN 1: Información Básica -->
+                                <div class="section-container active" id="section-basic">
+                                    <div class="form-section">
+                                        <h3 class="section-title">
+                                            <i class="lni lni-information"></i>
+                                            Información Básica
+                                        </h3>
+                                        
+                                        <div class="form-grid">
+                                            <div class="form-group">
+                                                <label class="form-label">
+                                                    Nombre del Agente
+                                                    <span class="form-label-required">*</span>
+                                                </label>
+                                                <input type="text" id="agentName" class="form-input" placeholder="Ej: Asistente Virtual" required>
+                                                <span class="form-help">Este nombre identificará a tu agente en el dashboard</span>
                                             </div>
-                                            <label class="toggle-switch">
-                                                <input type="checkbox" id="phoneToggle">
-                                                <span class="toggle-slider"></span>
-                                            </label>
-                                        </div>
 
-                                        <div id="differentPhoneSection" style="display: none;">
-                                            <div class="form-group phone-input-group">
-                                                <div class="phone-prefix">
-                                                    <label class="form-label">Código País</label>
-                                                    <select id="countryCode" class="form-select">
-                                                        <option value="+52">+52 (México)</option>
-                                                        <option value="+1">+1 (USA/Canadá)</option>
-                                                        <option value="+34">+34 (España)</option>
-                                                        <option value="+54">+54 (Argentina)</option>
-                                                    </select>
+                                            <div class="toggle-container">
+                                                <div class="toggle-info">
+                                                    <div class="toggle-title">¿Usar un número de teléfono diferente?</div>
+                                                    <div class="toggle-description">El agente puede usar tu número registrado o uno diferente</div>
                                                 </div>
-                                                <div class="phone-number">
-                                                    <label class="form-label">Número de Teléfono *</label>
-                                                    <input type="tel" id="phoneNumber" class="form-input" placeholder="6621234567" required>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" id="phoneToggle">
+                                                    <span class="toggle-slider"></span>
+                                                </label>
+                                            </div>
+
+                                            <div id="differentPhoneSection" style="display: none;">
+                                                <div class="form-group phone-input-group">
+                                                    <div class="phone-prefix">
+                                                        <label class="form-label">Código País</label>
+                                                        <select id="countryCode" class="form-select">
+                                                            <option value="+52">+52 (México)</option>
+                                                            <option value="+1">+1 (USA/Canadá)</option>
+                                                            <option value="+34">+34 (España)</option>
+                                                            <option value="+54">+54 (Argentina)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="phone-number">
+                                                        <label class="form-label">Número de Teléfono *</label>
+                                                        <input type="tel" id="phoneNumber" class="form-input" placeholder="6621234567" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label">
+                                                    Idiomas adicionales para responder
+                                                </label>
+                                                <span class="form-help">El agente responde en español por defecto. Selecciona idiomas adicionales</span>
+                                                <div class="language-checkboxes">
+                                                    <label class="language-checkbox-item">
+                                                        <input type="checkbox" name="additionalLanguage" value="en" class="checkbox-input">
+                                                        <span class="language-checkbox-label">🇺🇸 Inglés</span>
+                                                    </label>
+                                                    
+                                                    <label class="language-checkbox-item">
+                                                        <input type="checkbox" name="additionalLanguage" value="fr" class="checkbox-input">
+                                                        <span class="language-checkbox-label">🇫🇷 Francés</span>
+                                                    </label>
+                                                    
+                                                    <label class="language-checkbox-item">
+                                                        <input type="checkbox" name="additionalLanguage" value="pt" class="checkbox-input">
+                                                        <span class="language-checkbox-label">🇧🇷 Portugués</span>
+                                                    </label>
+                                                    
+                                                    <label class="language-checkbox-item">
+                                                        <input type="checkbox" name="additionalLanguage" value="de" class="checkbox-input">
+                                                        <span class="language-checkbox-label">🇩🇪 Alemán</span>
+                                                    </label>
+                                                    
+                                                    <label class="language-checkbox-item">
+                                                        <input type="checkbox" name="additionalLanguage" value="it" class="checkbox-input">
+                                                        <span class="language-checkbox-label">🇮🇹 Italiano</span>
+                                                    </label>
+                                                    
+                                                    <label class="language-checkbox-item">
+                                                        <input type="checkbox" name="additionalLanguage" value="zh" class="checkbox-input">
+                                                        <span class="language-checkbox-label">🇨🇳 Chino</span>
+                                                    </label>
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
 
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn btn-next btn-next-section">
+                                            <span>Siguiente</span>
+                                            <i class="lni lni-arrow-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- SECCIÓN 2: Ubicación -->
+                                <div class="section-container" id="section-location">
+                                    <div class="form-section">
+                                        <h3 class="section-title">
+                                            <i class="lni lni-map-marker"></i>
+                                            Ubicación del Negocio
+                                        </h3>
+                                        
+                                        <div class="form-grid form-grid-2col">
+                                            <div class="form-group">
+                                                <label class="form-label">
+                                                    <i class="lni lni-map-marker"></i>
+                                                    Dirección Completa
+                                                </label>
+                                                <input type="text" id="addressInput" class="form-input" placeholder="Ej: Calle Principal #123">
+                                                <span class="form-help">Dirección completa de tu negocio</span>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label">Código Postal</label>
+                                                <input type="text" id="postalCodeInput" class="form-input" placeholder="Ej: 83000">
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label">Entre Calles</label>
+                                                <input type="text" id="betweenStreetsInput" class="form-input" placeholder="Ej: Entre Av. Uno y Calle Dos">
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label">Número Exterior / Interior</label>
+                                                <input type="text" id="numberInput" class="form-input" placeholder="Ej: 123 Int. A">
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label">Colonia</label>
+                                                <input type="text" id="neighborhoodInput" class="form-input" placeholder="Ej: Centro">
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label">Ciudad</label>
+                                                <input type="text" id="cityInput" class="form-input" style="display: none;">
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label">Estado/Provincia</label>
+                                                <input type="text" id="stateInput" class="form-input" style="display: none;">
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label">País</label>
+                                                <input type="text" id="countryInput" class="form-input" style="display: none;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn btn-back btn-prev-section">
+                                            <i class="lni lni-arrow-left"></i>
+                                            <span>Anterior</span>
+                                        </button>
+                                        <button type="button" class="btn btn-next btn-next-section">
+                                            <span>Siguiente</span>
+                                            <i class="lni lni-arrow-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- SECCIÓN 3: Redes Sociales -->
+                                <div class="section-container" id="section-social">
+                                    <div class="form-section">
+                                        <h3 class="section-title">
+                                            <i class="lni lni-share-alt"></i>
+                                            Redes Sociales
+                                        </h3>
+                                        
+                                        <div class="form-grid">
+                                            <div class="form-group">
+                                                <label class="form-label">
+                                                    <i class="lni lni-facebook-filled"></i>
+                                                    Facebook
+                                                </label>
+                                                <input type="url" id="facebookInput" class="form-input" placeholder="https://facebook.com/tunegocio">
+                                                <span class="form-help">URL de tu página de Facebook</span>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label">
+                                                    <i class="lni lni-instagram-filled"></i>
+                                                    Instagram
+                                                </label>
+                                                <input type="url" id="instagramInput" class="form-input" placeholder="https://instagram.com/tunegocio">
+                                                <span class="form-help">URL de tu perfil de Instagram</span>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label">
+                                                    <i class="lni lni-twitter-filled"></i>
+                                                    Twitter / X
+                                                </label>
+                                                <input type="url" id="twitterInput" class="form-input" placeholder="https://twitter.com/tunegocio">
+                                                <span class="form-help">URL de tu perfil de Twitter/X</span>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label">
+                                                    <i class="lni lni-linkedin-original"></i>
+                                                    LinkedIn
+                                                </label>
+                                                <input type="url" id="linkedinInput" class="form-input" placeholder="https://linkedin.com/company/tunegocio">
+                                                <span class="form-help">URL de tu página de LinkedIn</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn btn-back btn-prev-section">
+                                            <i class="lni lni-arrow-left"></i>
+                                            <span>Anterior</span>
+                                        </button>
+                                        <button type="button" class="btn btn-next btn-next-section">
+                                            <span>Siguiente</span>
+                                            <i class="lni lni-arrow-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- SECCIÓN 4: Personalidad -->
+                                <div class="section-container" id="section-personality">
+                                    <div class="form-section">
+                                        <h3 class="section-title">
+                                            <i class="lni lni-comments"></i>
+                                            Personalidad del Agente
+                                        </h3>
+                                        
                                         <div class="form-group">
-                                            <label class="form-label">
-                                                Idiomas adicionales para responder
-                                            </label>
-                                            <span class="form-help">El agente responde en español por defecto. Selecciona idiomas adicionales</span>
-                                            <div class="language-checkboxes">
-                                                <label class="language-checkbox-item">
-                                                    <input type="checkbox" name="additionalLanguage" value="en" class="checkbox-input">
-                                                    <span class="language-checkbox-label">🇺🇸 Inglés</span>
+                                            <label class="form-label">Tono de Conversación</label>
+                                            <div class="tone-radio-group">
+                                                <label class="tone-radio-option selected">
+                                                    <input type="radio" name="tone" value="formal" checked>
+                                                    <div class="tone-icon-wrapper">
+                                                        <i class="lni lni-graduation"></i>
+                                                    </div>
+                                                    <div class="tone-radio-label">
+                                                        <strong>Formal</strong>
+                                                        <span>Profesional y cortés</span>
+                                                    </div>
                                                 </label>
                                                 
-                                                <label class="language-checkbox-item">
-                                                    <input type="checkbox" name="additionalLanguage" value="fr" class="checkbox-input">
-                                                    <span class="language-checkbox-label">🇫🇷 Francés</span>
+                                                <label class="tone-radio-option">
+                                                    <input type="radio" name="tone" value="friendly">
+                                                    <div class="tone-icon-wrapper">
+                                                        <i class="lni lni-heart"></i>
+                                                    </div>
+                                                    <div class="tone-radio-label">
+                                                        <strong>Amigable</strong>
+                                                        <span>Cercano y cálido</span>
+                                                    </div>
                                                 </label>
                                                 
-                                                <label class="language-checkbox-item">
-                                                    <input type="checkbox" name="additionalLanguage" value="pt" class="checkbox-input">
-                                                    <span class="language-checkbox-label">🇧🇷 Portugués</span>
+                                                <label class="tone-radio-option">
+                                                    <input type="radio" name="tone" value="casual">
+                                                    <div class="tone-icon-wrapper">
+                                                        <i class="lni lni-hand"></i>
+                                                    </div>
+                                                    <div class="tone-radio-label">
+                                                        <strong>Casual</strong>
+                                                        <span>Relajado e informal</span>
+                                                    </div>
                                                 </label>
+
+                                                <label class="tone-radio-option">
+                                                    <input type="radio" name="tone" value="custom">
+                                                    <div class="tone-icon-wrapper">
+                                                        <i class="lni lni-pencil"></i>
+                                                    </div>
+                                                    <div class="tone-radio-label">
+                                                        <strong>Personalizado</strong>
+                                                        <span>Define tu propio estilo</span>
+                                                    </div>
+                                                </label>
+                                            </div>
+
+                                            <div class="custom-tone-editor" id="customToneEditor">
+                                                <label class="form-label">Describe la personalidad personalizada</label>
+                                                <span class="form-help">Define cómo debe comportarse y comunicarse tu agente</span>
                                                 
-                                                <label class="language-checkbox-item">
-                                                    <input type="checkbox" name="additionalLanguage" value="de" class="checkbox-input">
-                                                    <span class="language-checkbox-label">🇩🇪 Alemán</span>
-                                                </label>
-                                                
-                                                <label class="language-checkbox-item">
-                                                    <input type="checkbox" name="additionalLanguage" value="it" class="checkbox-input">
-                                                    <span class="language-checkbox-label">🇮🇹 Italiano</span>
-                                                </label>
-                                                
-                                                <label class="language-checkbox-item">
-                                                    <input type="checkbox" name="additionalLanguage" value="zh" class="checkbox-input">
-                                                    <span class="language-checkbox-label">🇨🇳 Chino</span>
-                                                </label>
+                                                <div class="rich-editor">
+                                                    <div class="editor-toolbar">
+                                                        <button type="button" class="editor-btn" id="boldBtn" title="Negrita">
+                                                            <i class="lni lni-text-format"></i>
+                                                        </button>
+                                                        <button type="button" class="editor-btn" id="italicBtn" title="Cursiva">
+                                                            <i class="lni lni-italic"></i>
+                                                        </button>
+                                                        <button type="button" class="editor-btn" id="underlineBtn" title="Subrayado">
+                                                            <i class="lni lni-underline"></i>
+                                                        </button>
+                                                        <button type="button" class="editor-btn" id="listBtn" title="Lista">
+                                                            <i class="lni lni-list"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div class="editor-content" 
+                                                         id="editorContent" 
+                                                         contenteditable="true" 
+                                                         data-placeholder="Ej: El agente debe ser entusiasta y motivador, usar emojis ocasionalmente, y siempre mencionar las promociones vigentes...">
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn btn-back btn-prev-section">
+                                            <i class="lni lni-arrow-left"></i>
+                                            <span>Anterior</span>
+                                        </button>
+                                        <button type="button" class="btn btn-next btn-next-section">
+                                            <span>Siguiente</span>
+                                            <i class="lni lni-arrow-right"></i>
+                                        </button>
+                                    </div>
                                 </div>
 
-                                <div class="action-buttons">
-                                    <button type="button" class="btn btn-next btn-next-section">
-                                        <span>Siguiente</span>
+                                <!-- SECCIÓN 5: Horarios -->
+                                <div class="section-container" id="section-schedule">
+                                    <div class="form-section">
+                                        <h3 class="section-title">
+                                            <i class="lni lni-calendar"></i>
+                                            Horarios de Atención
+                                        </h3>
+                                        
+                                        <div class="schedule-list">
+                                            <div class="schedule-day" data-day="monday">
+                                                <div class="day-name">Lunes</div>
+                                                <div class="day-toggle">
+                                                    <label class="toggle-switch">
+                                                        <input type="checkbox" id="mondayToggle" checked>
+                                                        <span class="toggle-slider"></span>
+                                                    </label>
+                                                    <span class="toggle-label">Abierto</span>
+                                                </div>
+                                                <div class="day-times">
+                                                    <input type="time" id="mondayStart" class="time-input" value="09:00">
+                                                    <span class="time-separator">a</span>
+                                                    <input type="time" id="mondayEnd" class="time-input" value="18:00">
+                                                </div>
+                                            </div>
+
+                                            <div class="schedule-day" data-day="tuesday">
+                                                <div class="day-name">Martes</div>
+                                                <div class="day-toggle">
+                                                    <label class="toggle-switch">
+                                                        <input type="checkbox" id="tuesdayToggle" checked>
+                                                        <span class="toggle-slider"></span>
+                                                    </label>
+                                                    <span class="toggle-label">Abierto</span>
+                                                </div>
+                                                <div class="day-times">
+                                                    <input type="time" id="tuesdayStart" class="time-input" value="09:00">
+                                                    <span class="time-separator">a</span>
+                                                    <input type="time" id="tuesdayEnd" class="time-input" value="18:00">
+                                                </div>
+                                            </div>
+
+                                            <div class="schedule-day" data-day="wednesday">
+                                                <div class="day-name">Miércoles</div>
+                                                <div class="day-toggle">
+                                                    <label class="toggle-switch">
+                                                        <input type="checkbox" id="wednesdayToggle" checked>
+                                                        <span class="toggle-slider"></span>
+                                                    </label>
+                                                    <span class="toggle-label">Abierto</span>
+                                                </div>
+                                                <div class="day-times">
+                                                    <input type="time" id="wednesdayStart" class="time-input" value="09:00">
+                                                    <span class="time-separator">a</span>
+                                                    <input type="time" id="wednesdayEnd" class="time-input" value="18:00">
+                                                </div>
+                                            </div>
+
+                                            <div class="schedule-day" data-day="thursday">
+                                                <div class="day-name">Jueves</div>
+                                                <div class="day-toggle">
+                                                    <label class="toggle-switch">
+                                                        <input type="checkbox" id="thursdayToggle" checked>
+                                                        <span class="toggle-slider"></span>
+                                                    </label>
+                                                    <span class="toggle-label">Abierto</span>
+                                                </div>
+                                                <div class="day-times">
+                                                    <input type="time" id="thursdayStart" class="time-input" value="09:00">
+                                                    <span class="time-separator">a</span>
+                                                    <input type="time" id="thursdayEnd" class="time-input" value="18:00">
+                                                </div>
+                                            </div>
+
+                                            <div class="schedule-day" data-day="friday">
+                                                <div class="day-name">Viernes</div>
+                                                <div class="day-toggle">
+                                                    <label class="toggle-switch">
+                                                        <input type="checkbox" id="fridayToggle" checked>
+                                                        <span class="toggle-slider"></span>
+                                                    </label>
+                                                    <span class="toggle-label">Abierto</span>
+                                                </div>
+                                                <div class="day-times">
+                                                    <input type="time" id="fridayStart" class="time-input" value="09:00">
+                                                    <span class="time-separator">a</span>
+                                                    <input type="time" id="fridayEnd" class="time-input" value="18:00">
+                                                </div>
+                                            </div>
+
+                                            <div class="schedule-day closed" data-day="saturday">
+                                                <div class="day-name">Sábado</div>
+                                                <div class="day-toggle">
+                                                    <label class="toggle-switch">
+                                                        <input type="checkbox" id="saturdayToggle">
+                                                        <span class="toggle-slider"></span>
+                                                    </label>
+                                                    <span class="toggle-label">Cerrado</span>
+                                                </div>
+                                                <div class="day-times">
+                                                    <input type="time" id="saturdayStart" class="time-input" value="09:00" disabled>
+                                                    <span class="time-separator">a</span>
+                                                    <input type="time" id="saturdayEnd" class="time-input" value="14:00" disabled>
+                                                </div>
+                                            </div>
+
+                                            <div class="schedule-day closed" data-day="sunday">
+                                                <div class="day-name">Domingo</div>
+                                                <div class="day-toggle">
+                                                    <label class="toggle-switch">
+                                                        <input type="checkbox" id="sundayToggle">
+                                                        <span class="toggle-slider"></span>
+                                                    </label>
+                                                    <span class="toggle-label">Cerrado</span>
+                                                </div>
+                                                <div class="day-times">
+                                                    <input type="time" id="sundayStart" class="time-input" value="09:00" disabled>
+                                                    <span class="time-separator">a</span>
+                                                    <input type="time" id="sundayEnd" class="time-input" value="14:00" disabled>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn btn-back btn-prev-section">
+                                            <i class="lni lni-arrow-left"></i>
+                                            <span>Anterior</span>
+                                        </button>
+                                        <button type="button" class="btn btn-next btn-next-section">
+                                            <span>Siguiente</span>
+                                            <i class="lni lni-arrow-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- SECCIÓN 6: Días Festivos -->
+                                <div class="section-container" id="section-holidays">
+                                    <div class="form-section">
+                                        <h3 class="section-title">
+                                            <i class="lni lni-gift"></i>
+                                            Días Festivos
+                                        </h3>
+                                        
+                                        <span class="form-help">Agrega los días en que tu negocio estará cerrado por festividades</span>
+                                        
+                                        <div class="holidays-list" id="holidaysList">
+                                            <!-- Los días festivos se agregarán dinámicamente aquí -->
+                                        </div>
+                                        
+                                        <button type="button" id="addHolidayBtn" class="btn-add-holiday">
+                                            <i class="lni lni-plus"></i>
+                                            Agregar Día Festivo
+                                        </button>
+                                    </div>
+
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn btn-back btn-prev-section">
+                                            <i class="lni lni-arrow-left"></i>
+                                            <span>Anterior</span>
+                                        </button>
+                                        <button type="button" class="btn btn-next btn-next-section">
+                                            <span>Siguiente</span>
+                                            <i class="lni lni-arrow-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- SECCIÓN 7: Servicios -->
+                                <div class="section-container" id="section-services">
+                                    <div class="form-section">
+                                        <h3 class="section-title">
+                                            <i class="lni lni-package"></i>
+                                            Servicios / Productos
+                                        </h3>
+                                        
+                                        <span class="form-help">Define los servicios o productos que ofreces</span>
+                                        
+                                        <div class="services-list" id="servicesList">
+                                            <!-- Los servicios se agregarán dinámicamente aquí -->
+                                        </div>
+                                        
+                                        <button type="button" id="addServiceBtn" class="btn-add-service">
+                                            <i class="lni lni-plus"></i>
+                                            Agregar Servicio
+                                        </button>
+                                    </div>
+
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn btn-back btn-prev-section">
+                                            <i class="lni lni-arrow-left"></i>
+                                            <span>Anterior</span>
+                                        </button>
+                                        <button type="button" class="btn btn-next btn-next-section">
+                                            <span>Siguiente</span>
+                                            <i class="lni lni-arrow-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- SECCIÓN 8: Trabajadores -->
+                                <div class="section-container" id="section-workers">
+                                    <div class="form-section">
+                                        <h3 class="section-title">
+                                            <i class="lni lni-users"></i>
+                                            Trabajadores / Personal
+                                        </h3>
+                                        
+                                        <span class="form-help">Agrega información sobre tu personal y su disponibilidad</span>
+                                        
+                                        <div class="workers-list" id="workersList">
+                                            <!-- Los trabajadores se agregarán dinámicamente aquí -->
+                                        </div>
+                                        
+                                        <button type="button" id="addWorkerBtn" class="btn-add-worker">
+                                            <i class="lni lni-plus"></i>
+                                            Agregar Trabajador
+                                        </button>
+                                    </div>
+
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn btn-back btn-prev-section">
+                                            <i class="lni lni-arrow-left"></i>
+                                            <span>Anterior</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Botones principales del Paso 2 -->
+                                <div class="action-buttons" style="margin-top: 3rem;">
+                                    <button type="button" id="btnBackStep2" class="btn btn-back">
+                                        <i class="lni lni-arrow-left"></i>
+                                        <span>Atrás</span>
+                                    </button>
+                                    <button type="button" id="btnStep2" class="btn btn-next">
+                                        <span>Ver Resumen</span>
                                         <i class="lni lni-arrow-right"></i>
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- SECCIÓN 2: Ubicación -->
-                            <div class="section-container" id="section-location">
-                                <div class="form-section">
-                                    <h3 class="section-title">
-                                        <i class="lni lni-map-marker"></i>
-                                        Ubicación del Negocio
-                                    </h3>
-                                    
-                                    <div class="form-grid form-grid-2col">
-                                        <div class="form-group">
-                                            <label class="form-label">
-                                                <i class="lni lni-map-marker"></i>
-                                                Dirección Completa
-                                            </label>
-                                            <input type="text" id="addressInput" class="form-input" placeholder="Ej: Calle Principal #123">
-                                            <span class="form-help">Dirección completa de tu negocio</span>
-                                        </div>
+                            <!-- PASO 3: Resumen -->
+                            <div id="step3" class="step">
+                                <div class="step-header">
+                                    <h2 class="step-title">
+                                        <i class="lni lni-checkmark-circle"></i>
+                                        Resumen de Configuración
+                                    </h2>
+                                    <p class="step-description">Revisa la información antes de crear tu agente</p>
+                                </div>
 
-                                        <div class="form-group">
-                                            <label class="form-label">Código Postal</label>
-                                            <input type="text" id="postalCodeInput" class="form-input" placeholder="Ej: 83000">
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label class="form-label">Entre Calles</label>
-                                            <input type="text" id="betweenStreetsInput" class="form-input" placeholder="Ej: Entre Av. Uno y Calle Dos">
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label class="form-label">Número Exterior / Interior</label>
-                                            <input type="text" id="numberInput" class="form-input" placeholder="Ej: 123 Int. A">
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label class="form-label">Colonia</label>
-                                            <input type="text" id="neighborhoodInput" class="form-input" placeholder="Ej: Centro">
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label class="form-label">Ciudad</label>
-                                            <input type="text" id="cityInput" class="form-input" style="display: none;">
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label class="form-label">Estado/Provincia</label>
-                                            <input type="text" id="stateInput" class="form-input" style="display: none;">
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label class="form-label">País</label>
-                                            <input type="text" id="countryInput" class="form-input" style="display: none;">
-                                        </div>
-                                    </div>
+                                <div class="summary-card">
+                                    <div id="summaryContainer"></div>
                                 </div>
 
                                 <div class="action-buttons">
-                                    <button type="button" class="btn btn-back btn-prev-section">
+                                    <button type="button" id="btnBackStep3" class="btn btn-back">
                                         <i class="lni lni-arrow-left"></i>
-                                        <span>Anterior</span>
+                                        <span>Atrás</span>
                                     </button>
-                                    <button type="button" class="btn btn-next btn-next-section">
-                                        <span>Siguiente</span>
-                                        <i class="lni lni-arrow-right"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- SECCIÓN 3: Redes Sociales -->
-                            <div class="section-container" id="section-social">
-                                <div class="form-section">
-                                    <h3 class="section-title">
-                                        <i class="lni lni-share-alt"></i>
-                                        Redes Sociales
-                                    </h3>
-                                    
-                                    <div class="form-grid">
-                                        <div class="form-group">
-                                            <label class="form-label">
-                                                <i class="lni lni-facebook-filled"></i>
-                                                Facebook
-                                            </label>
-                                            <input type="url" id="facebookInput" class="form-input" placeholder="https://facebook.com/tunegocio">
-                                            <span class="form-help">URL de tu página de Facebook</span>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label class="form-label">
-                                                <i class="lni lni-instagram-filled"></i>
-                                                Instagram
-                                            </label>
-                                            <input type="url" id="instagramInput" class="form-input" placeholder="https://instagram.com/tunegocio">
-                                            <span class="form-help">URL de tu perfil de Instagram</span>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label class="form-label">
-                                                <i class="lni lni-twitter-filled"></i>
-                                                Twitter / X
-                                            </label>
-                                            <input type="url" id="twitterInput" class="form-input" placeholder="https://twitter.com/tunegocio">
-                                            <span class="form-help">URL de tu perfil de Twitter/X</span>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label class="form-label">
-                                                <i class="lni lni-linkedin-original"></i>
-                                                LinkedIn
-                                            </label>
-                                            <input type="url" id="linkedinInput" class="form-input" placeholder="https://linkedin.com/company/tunegocio">
-                                            <span class="form-help">URL de tu página de LinkedIn</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="action-buttons">
-                                    <button type="button" class="btn btn-back btn-prev-section">
-                                        <i class="lni lni-arrow-left"></i>
-                                        <span>Anterior</span>
-                                    </button>
-                                    <button type="button" class="btn btn-next btn-next-section">
-                                        <span>Siguiente</span>
-                                        <i class="lni lni-arrow-right"></i>
+                                    <button type="button" id="btnCreateAgent" class="btn btn-next">
+                                        <i class="lni lni-rocket"></i>
+                                        <span>Crear Agente</span>
                                     </button>
                                 </div>
-                            </div>
-
-                            <!-- SECCIÓN 4: Personalidad -->
-                            <div class="section-container" id="section-personality">
-                                <div class="form-section">
-                                    <h3 class="section-title">
-                                        <i class="lni lni-comments"></i>
-                                        Personalidad del Agente
-                                    </h3>
-                                    
-                                    <div class="form-group">
-                                        <label class="form-label">Tono de Conversación</label>
-                                        <div class="tone-radio-group">
-                                            <label class="tone-radio-option selected">
-                                                <input type="radio" name="tone" value="formal" checked>
-                                                <div class="tone-icon-wrapper">
-                                                    <i class="lni lni-graduation"></i>
-                                                </div>
-                                                <div class="tone-radio-label">
-                                                    <strong>Formal</strong>
-                                                    <span>Profesional y cortés</span>
-                                                </div>
-                                            </label>
-                                            
-                                            <label class="tone-radio-option">
-                                                <input type="radio" name="tone" value="friendly">
-                                                <div class="tone-icon-wrapper">
-                                                    <i class="lni lni-heart"></i>
-                                                </div>
-                                                <div class="tone-radio-label">
-                                                    <strong>Amigable</strong>
-                                                    <span>Cercano y cálido</span>
-                                                </div>
-                                            </label>
-                                            
-                                            <label class="tone-radio-option">
-                                                <input type="radio" name="tone" value="casual">
-                                                <div class="tone-icon-wrapper">
-                                                    <i class="lni lni-hand"></i>
-                                                </div>
-                                                <div class="tone-radio-label">
-                                                    <strong>Casual</strong>
-                                                    <span>Relajado e informal</span>
-                                                </div>
-                                            </label>
-
-                                            <label class="tone-radio-option">
-                                                <input type="radio" name="tone" value="custom">
-                                                <div class="tone-icon-wrapper">
-                                                    <i class="lni lni-pencil"></i>
-                                                </div>
-                                                <div class="tone-radio-label">
-                                                    <strong>Personalizado</strong>
-                                                    <span>Define tu propio estilo</span>
-                                                </div>
-                                            </label>
-                                        </div>
-
-                                        <div class="custom-tone-editor" id="customToneEditor">
-                                            <label class="form-label">Describe la personalidad personalizada</label>
-                                            <span class="form-help">Define cómo debe comportarse y comunicarse tu agente</span>
-                                            
-                                            <div class="rich-editor">
-                                                <div class="editor-toolbar">
-                                                    <button type="button" class="editor-btn" id="boldBtn" title="Negrita">
-                                                        <i class="lni lni-text-format"></i>
-                                                    </button>
-                                                    <button type="button" class="editor-btn" id="italicBtn" title="Cursiva">
-                                                        <i class="lni lni-italic"></i>
-                                                    </button>
-                                                    <button type="button" class="editor-btn" id="underlineBtn" title="Subrayado">
-                                                        <i class="lni lni-underline"></i>
-                                                    </button>
-                                                    <button type="button" class="editor-btn" id="listBtn" title="Lista">
-                                                        <i class="lni lni-list"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="editor-content" 
-                                                     id="editorContent" 
-                                                     contenteditable="true" 
-                                                     data-placeholder="Ej: El agente debe ser entusiasta y motivador, usar emojis ocasionalmente, y siempre mencionar las promociones vigentes...">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="action-buttons">
-                                    <button type="button" class="btn btn-back btn-prev-section">
-                                        <i class="lni lni-arrow-left"></i>
-                                        <span>Anterior</span>
-                                    </button>
-                                    <button type="button" class="btn btn-next btn-next-section">
-                                        <span>Siguiente</span>
-                                        <i class="lni lni-arrow-right"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- SECCIÓN 5: Horarios -->
-                            <div class="section-container" id="section-schedule">
-                                <div class="form-section">
-                                    <h3 class="section-title">
-                                        <i class="lni lni-calendar"></i>
-                                        Horarios de Atención
-                                    </h3>
-                                    
-                                    <div class="schedule-list">
-                                        <div class="schedule-day" data-day="monday">
-                                            <div class="day-name">Lunes</div>
-                                            <div class="day-toggle">
-                                                <label class="toggle-switch">
-                                                    <input type="checkbox" id="mondayToggle" checked>
-                                                    <span class="toggle-slider"></span>
-                                                </label>
-                                                <span class="toggle-label">Abierto</span>
-                                            </div>
-                                            <div class="day-times">
-                                                <input type="time" id="mondayStart" class="time-input" value="09:00">
-                                                <span class="time-separator">a</span>
-                                                <input type="time" id="mondayEnd" class="time-input" value="18:00">
-                                            </div>
-                                        </div>
-
-                                        <div class="schedule-day" data-day="tuesday">
-                                            <div class="day-name">Martes</div>
-                                            <div class="day-toggle">
-                                                <label class="toggle-switch">
-                                                    <input type="checkbox" id="tuesdayToggle" checked>
-                                                    <span class="toggle-slider"></span>
-                                                </label>
-                                                <span class="toggle-label">Abierto</span>
-                                            </div>
-                                            <div class="day-times">
-                                                <input type="time" id="tuesdayStart" class="time-input" value="09:00">
-                                                <span class="time-separator">a</span>
-                                                <input type="time" id="tuesdayEnd" class="time-input" value="18:00">
-                                            </div>
-                                        </div>
-
-                                        <div class="schedule-day" data-day="wednesday">
-                                            <div class="day-name">Miércoles</div>
-                                            <div class="day-toggle">
-                                                <label class="toggle-switch">
-                                                    <input type="checkbox" id="wednesdayToggle" checked>
-                                                    <span class="toggle-slider"></span>
-                                                </label>
-                                                <span class="toggle-label">Abierto</span>
-                                            </div>
-                                            <div class="day-times">
-                                                <input type="time" id="wednesdayStart" class="time-input" value="09:00">
-                                                <span class="time-separator">a</span>
-                                                <input type="time" id="wednesdayEnd" class="time-input" value="18:00">
-                                            </div>
-                                        </div>
-
-                                        <div class="schedule-day" data-day="thursday">
-                                            <div class="day-name">Jueves</div>
-                                            <div class="day-toggle">
-                                                <label class="toggle-switch">
-                                                    <input type="checkbox" id="thursdayToggle" checked>
-                                                    <span class="toggle-slider"></span>
-                                                </label>
-                                                <span class="toggle-label">Abierto</span>
-                                            </div>
-                                            <div class="day-times">
-                                                <input type="time" id="thursdayStart" class="time-input" value="09:00">
-                                                <span class="time-separator">a</span>
-                                                <input type="time" id="thursdayEnd" class="time-input" value="18:00">
-                                            </div>
-                                        </div>
-
-                                        <div class="schedule-day" data-day="friday">
-                                            <div class="day-name">Viernes</div>
-                                            <div class="day-toggle">
-                                                <label class="toggle-switch">
-                                                    <input type="checkbox" id="fridayToggle" checked>
-                                                    <span class="toggle-slider"></span>
-                                                </label>
-                                                <span class="toggle-label">Abierto</span>
-                                            </div>
-                                            <div class="day-times">
-                                                <input type="time" id="fridayStart" class="time-input" value="09:00">
-                                                <span class="time-separator">a</span>
-                                                <input type="time" id="fridayEnd" class="time-input" value="18:00">
-                                            </div>
-                                        </div>
-
-                                        <div class="schedule-day closed" data-day="saturday">
-                                            <div class="day-name">Sábado</div>
-                                            <div class="day-toggle">
-                                                <label class="toggle-switch">
-                                                    <input type="checkbox" id="saturdayToggle">
-                                                    <span class="toggle-slider"></span>
-                                                </label>
-                                                <span class="toggle-label">Cerrado</span>
-                                            </div>
-                                            <div class="day-times">
-                                                <input type="time" id="saturdayStart" class="time-input" value="09:00" disabled>
-                                                <span class="time-separator">a</span>
-                                                <input type="time" id="saturdayEnd" class="time-input" value="14:00" disabled>
-                                            </div>
-                                        </div>
-
-                                        <div class="schedule-day closed" data-day="sunday">
-                                            <div class="day-name">Domingo</div>
-                                            <div class="day-toggle">
-                                                <label class="toggle-switch">
-                                                    <input type="checkbox" id="sundayToggle">
-                                                    <span class="toggle-slider"></span>
-                                                </label>
-                                                <span class="toggle-label">Cerrado</span>
-                                            </div>
-                                            <div class="day-times">
-                                                <input type="time" id="sundayStart" class="time-input" value="09:00" disabled>
-                                                <span class="time-separator">a</span>
-                                                <input type="time" id="sundayEnd" class="time-input" value="14:00" disabled>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="action-buttons">
-                                    <button type="button" class="btn btn-back btn-prev-section">
-                                        <i class="lni lni-arrow-left"></i>
-                                        <span>Anterior</span>
-                                    </button>
-                                    <button type="button" class="btn btn-next btn-next-section">
-                                        <span>Siguiente</span>
-                                        <i class="lni lni-arrow-right"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- SECCIÓN 6: Días Festivos -->
-                            <div class="section-container" id="section-holidays">
-                                <div class="form-section">
-                                    <h3 class="section-title">
-                                        <i class="lni lni-gift"></i>
-                                        Días Festivos
-                                    </h3>
-                                    
-                                    <span class="form-help">Agrega los días en que tu negocio estará cerrado por festividades</span>
-                                    
-                                    <div class="holidays-list" id="holidaysList">
-                                        <!-- Los días festivos se agregarán dinámicamente aquí -->
-                                    </div>
-                                    
-                                    <button type="button" id="addHolidayBtn" class="btn-add-holiday">
-                                        <i class="lni lni-plus"></i>
-                                        Agregar Día Festivo
-                                    </button>
-                                </div>
-
-                                <div class="action-buttons">
-                                    <button type="button" class="btn btn-back btn-prev-section">
-                                        <i class="lni lni-arrow-left"></i>
-                                        <span>Anterior</span>
-                                    </button>
-                                    <button type="button" class="btn btn-next btn-next-section">
-                                        <span>Siguiente</span>
-                                        <i class="lni lni-arrow-right"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- SECCIÓN 7: Servicios -->
-                            <div class="section-container" id="section-services">
-                                <div class="form-section">
-                                    <h3 class="section-title">
-                                        <i class="lni lni-package"></i>
-                                        Servicios / Productos
-                                    </h3>
-                                    
-                                    <span class="form-help">Define los servicios o productos que ofreces</span>
-                                    
-                                    <div class="services-list" id="servicesList">
-                                        <!-- Los servicios se agregarán dinámicamente aquí -->
-                                    </div>
-                                    
-                                    <button type="button" id="addServiceBtn" class="btn-add-service">
-                                        <i class="lni lni-plus"></i>
-                                        Agregar Servicio
-                                    </button>
-                                </div>
-
-                                <div class="action-buttons">
-                                    <button type="button" class="btn btn-back btn-prev-section">
-                                        <i class="lni lni-arrow-left"></i>
-                                        <span>Anterior</span>
-                                    </button>
-                                    <button type="button" class="btn btn-next btn-next-section">
-                                        <span>Siguiente</span>
-                                        <i class="lni lni-arrow-right"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- SECCIÓN 8: Trabajadores -->
-                            <div class="section-container" id="section-workers">
-                                <div class="form-section">
-                                    <h3 class="section-title">
-                                        <i class="lni lni-users"></i>
-                                        Trabajadores / Personal
-                                    </h3>
-                                    
-                                    <span class="form-help">Agrega información sobre tu personal y su disponibilidad</span>
-                                    
-                                    <div class="workers-list" id="workersList">
-                                        <!-- Los trabajadores se agregarán dinámicamente aquí -->
-                                    </div>
-                                    
-                                    <button type="button" id="addWorkerBtn" class="btn-add-worker">
-                                        <i class="lni lni-plus"></i>
-                                        Agregar Trabajador
-                                    </button>
-                                </div>
-
-                                <div class="action-buttons">
-                                    <button type="button" class="btn btn-back btn-prev-section">
-                                        <i class="lni lni-arrow-left"></i>
-                                        <span>Anterior</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Botones principales del Paso 2 -->
-                            <div class="action-buttons" style="margin-top: 3rem;">
-                                <button type="button" id="btnBackStep2" class="btn btn-back">
-                                    <i class="lni lni-arrow-left"></i>
-                                    <span>Atrás</span>
-                                </button>
-                                <button type="button" id="btnStep2" class="btn btn-next">
-                                    <span>Ver Resumen</span>
-                                    <i class="lni lni-arrow-right"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- PASO 3: Resumen -->
-                        <div id="step3" class="step">
-                            <div class="step-header">
-                                <h2 class="step-title">
-                                    <i class="lni lni-checkmark-circle"></i>
-                                    Resumen de Configuración
-                                </h2>
-                                <p class="step-description">Revisa la información antes de crear tu agente</p>
-                            </div>
-
-                            <div class="summary-card">
-                                <div id="summaryContainer"></div>
-                            </div>
-
-                            <div class="action-buttons">
-                                <button type="button" id="btnBackStep3" class="btn btn-back">
-                                    <i class="lni lni-arrow-left"></i>
-                                    <span>Atrás</span>
-                                </button>
-                                <button type="button" id="btnCreateAgent" class="btn btn-next">
-                                    <i class="lni lni-rocket"></i>
-                                    <span>Crear Agente</span>
-                                </button>
                             </div>
                         </div>
                     </div>

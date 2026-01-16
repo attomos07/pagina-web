@@ -2,6 +2,7 @@
 // STATE MANAGEMENT
 // ============================================
 let currentStep = 1;
+let currentSection = 1;
 let selectedSocial = '';
 let userBusinessType = '';
 let agentData = {
@@ -49,6 +50,18 @@ let agentData = {
   }
 };
 
+// Section definitions
+const SECTIONS = [
+  { id: 1, name: 'Información Básica', icon: 'lni-information', containerId: 'section-basic' },
+  { id: 2, name: 'Ubicación', icon: 'lni-map-marker', containerId: 'section-location' },
+  { id: 3, name: 'Redes Sociales', icon: 'lni-share-alt', containerId: 'section-social' },
+  { id: 4, name: 'Personalidad', icon: 'lni-comments', containerId: 'section-personality' },
+  { id: 5, name: 'Horarios', icon: 'lni-calendar', containerId: 'section-schedule' },
+  { id: 6, name: 'Días Festivos', icon: 'lni-gift', containerId: 'section-holidays' },
+  { id: 7, name: 'Servicios', icon: 'lni-package', containerId: 'section-services' },
+  { id: 8, name: 'Trabajadores', icon: 'lni-users', containerId: 'section-workers' }
+];
+
 // Location data
 const COUNTRIES = [
   { value: 'mexico', name: 'México', icon: 'lni-flag-mx' },
@@ -80,6 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
   fetchUserData();
   initializeSocialSelection();
   initializeNavigationButtons();
+  initializeSectionNavigation();
   initializeToneSelection();
   initializeLanguageSelection();
   initializeRichEditor();
@@ -98,6 +112,85 @@ document.addEventListener('DOMContentLoaded', function() {
     initWorkerTimePickers();
   }, 100);
 });
+
+// ============================================
+// SECTION NAVIGATION
+// ============================================
+function initializeSectionNavigation() {
+  const navigationContainer = document.getElementById('sectionNavigation');
+  if (!navigationContainer) return;
+
+  // Crear botones de navegación de secciones
+  navigationContainer.innerHTML = '';
+  SECTIONS.forEach(section => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `section-nav-btn ${section.id === 1 ? 'active' : ''}`;
+    btn.dataset.sectionId = section.id;
+    btn.innerHTML = `
+      <i class="lni ${section.icon}"></i>
+      <span>${section.name}</span>
+    `;
+    btn.addEventListener('click', () => navigateToSection(section.id));
+    navigationContainer.appendChild(btn);
+  });
+
+  // Eventos para botones "Siguiente" de cada sección
+  document.querySelectorAll('.btn-next-section').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (currentSection < SECTIONS.length) {
+        navigateToSection(currentSection + 1);
+      }
+    });
+  });
+
+  // Eventos para botones "Anterior" de cada sección
+  document.querySelectorAll('.btn-prev-section').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (currentSection > 1) {
+        navigateToSection(currentSection - 1);
+      }
+    });
+  });
+}
+
+function navigateToSection(sectionId) {
+  if (sectionId < 1 || sectionId > SECTIONS.length) return;
+
+  currentSection = sectionId;
+
+  // Ocultar todas las secciones
+  SECTIONS.forEach(section => {
+    const container = document.getElementById(section.containerId);
+    if (container) {
+      container.classList.remove('active');
+    }
+  });
+
+  // Mostrar sección actual
+  const currentSectionData = SECTIONS.find(s => s.id === sectionId);
+  if (currentSectionData) {
+    const container = document.getElementById(currentSectionData.containerId);
+    if (container) {
+      container.classList.add('active');
+    }
+  }
+
+  // Actualizar botones de navegación
+  document.querySelectorAll('.section-nav-btn').forEach(btn => {
+    const btnSectionId = parseInt(btn.dataset.sectionId);
+    btn.classList.remove('active', 'completed');
+    
+    if (btnSectionId === sectionId) {
+      btn.classList.add('active');
+    } else if (btnSectionId < sectionId) {
+      btn.classList.add('completed');
+    }
+  });
+
+  // Scroll al inicio del contenedor
+  window.scrollTo(0, 0);
+}
 
 // ============================================
 // CUSTOM TIME PICKER - BUSINESS HOURS
@@ -1569,28 +1662,53 @@ function updateStepDisplay() {
 
 function updateProgressBar() {
   const progressSteps = document.querySelectorAll('.progress-step');
-  const progressFill = document.getElementById('progressFill');
-  const progressBarFill = document.getElementById('progressBarFill');
   const progressPercentage = document.getElementById('progressPercentage');
-
+  const totalSteps = 3; // Paso 1, 2, 3
+  const totalCircles = progressSteps.length; // 10 círculos
+  
+  // Calcular cuántos círculos deben estar iluminados según el paso actual
+  const circlesPerStep = totalCircles / totalSteps;
+  const targetCircles = Math.ceil((currentStep - 1) * circlesPerStep) + 1;
+  
+  // Primero, remover todas las clases
   progressSteps.forEach((step, index) => {
-    step.classList.remove('active', 'completed');
-    if (index + 1 < currentStep) {
+    step.classList.remove('active', 'completed', 'cascading');
+  });
+  
+  // Aplicar clases según el progreso
+  progressSteps.forEach((step, index) => {
+    if (index < targetCircles - 1) {
+      // Círculos completados
       step.classList.add('completed');
-    } else if (index + 1 === currentStep) {
+    } else if (index === targetCircles - 1) {
+      // Círculo activo con brillo
       step.classList.add('active');
     }
   });
+  
+  // Efecto cascada: animar desde el primer círculo nuevo hasta el target
+  const previousCircles = Math.ceil(((currentStep - 2) * circlesPerStep)) + 1;
+  const startCascade = Math.max(0, previousCircles);
+  
+  for (let i = startCascade; i < targetCircles; i++) {
+    setTimeout(() => {
+      if (progressSteps[i]) {
+        progressSteps[i].classList.add('cascading');
+        // Después de la animación, marcar como completado
+        setTimeout(() => {
+          progressSteps[i].classList.remove('cascading');
+          if (i < targetCircles - 1) {
+            progressSteps[i].classList.add('completed');
+          } else {
+            progressSteps[i].classList.add('active');
+          }
+        }, 600);
+      }
+    }, i * 80); // Delay incremental para efecto dominó
+  }
 
+  // Update percentage
   const targetProgress = ((currentStep - 1) / 2) * 100;
-  
-  if (progressFill) {
-    progressFill.style.width = targetProgress + '%';
-  }
-  
-  if (progressBarFill) {
-    progressBarFill.style.width = targetProgress + '%';
-  }
   
   if (progressPercentage) {
     const currentProgress = parseInt(progressPercentage.textContent) || 0;
@@ -1641,9 +1759,6 @@ function collectFormData() {
       }
     }
   }
-  
-  // Location data is already being collected in real-time via initializeSocialMediaInputs
-  // Social media data is already being collected in real-time via initializeSocialMediaInputs
 }
 
 function generateSummary() {
