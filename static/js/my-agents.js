@@ -7,7 +7,116 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 My Agents JS cargado');
     loadAgents();
     initializeDropdowns();
+    initializeCreateAgentButton();
 });
+
+// Inicializar botón de crear agente
+function initializeCreateAgentButton() {
+    const createBtn = document.querySelector('.btn-primary[href="/onboarding"]');
+    if (createBtn) {
+        createBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openOnboardingModal();
+        });
+    }
+}
+
+// Abrir modal de onboarding
+function openOnboardingModal() {
+    // Crear modal si no existe
+    let modal = document.getElementById('onboardingModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'onboardingModal';
+        modal.className = 'onboarding-modal';
+        modal.innerHTML = `
+            <div class="onboarding-overlay" onclick="closeOnboardingModal()"></div>
+            <div class="onboarding-modal-content">
+                <div class="onboarding-modal-header">
+                    <h2 class="onboarding-modal-title">
+                        <i class="lni lni-rocket"></i>
+                        Crear Nuevo Agente
+                    </h2>
+                    <button class="btn-close-onboarding" onclick="closeOnboardingModal()">
+                        <i class="lni lni-close"></i>
+                    </button>
+                </div>
+                <div class="onboarding-modal-body" id="onboardingModalBody">
+                    <div style="display: flex; justify-content: center; align-items: center; padding: 3rem;">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text" style="margin-left: 1rem;">Cargando formulario...</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    // Mostrar modal
+    modal.classList.add('active');
+
+    // Cargar contenido del onboarding
+    loadOnboardingContent();
+}
+
+// Cerrar modal de onboarding
+function closeOnboardingModal() {
+    const modal = document.getElementById('onboardingModal');
+    if (modal) {
+        modal.classList.remove('active');
+        // Recargar agentes al cerrar
+        setTimeout(() => {
+            loadAgents();
+        }, 300);
+    }
+}
+
+// Cargar contenido del onboarding
+async function loadOnboardingContent() {
+    const modalBody = document.getElementById('onboardingModalBody');
+    if (!modalBody) return;
+
+    try {
+        const response = await fetch('/onboarding');
+        if (!response.ok) throw new Error('Error al cargar onboarding');
+
+        const html = await response.text();
+        
+        // Extraer solo el contenido principal del onboarding
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const mainContainer = doc.querySelector('.main-container');
+        
+        if (mainContainer) {
+            modalBody.innerHTML = mainContainer.innerHTML;
+            
+            // Cargar el script de onboarding
+            const script = document.createElement('script');
+            script.src = '/static/js/onboarding.js';
+            script.onload = function() {
+                console.log('✅ Script de onboarding cargado');
+                // Reinicializar el onboarding
+                if (typeof initializeOnboardingInModal === 'function') {
+                    initializeOnboardingInModal();
+                }
+            };
+            document.body.appendChild(script);
+        }
+    } catch (error) {
+        console.error('❌ Error cargando onboarding:', error);
+        modalBody.innerHTML = `
+            <div style="text-align: center; padding: 3rem;">
+                <i class="lni lni-warning" style="font-size: 3rem; color: #ef4444;"></i>
+                <h3 style="margin: 1rem 0; color: #1a1a1a;">Error al cargar el formulario</h3>
+                <p style="color: #6b7280; margin-bottom: 1.5rem;">Por favor, intenta de nuevo</p>
+                <button class="btn-primary" onclick="loadOnboardingContent()">
+                    <i class="lni lni-reload"></i>
+                    <span>Reintentar</span>
+                </button>
+            </div>
+        `;
+    }
+}
 
 // Cargar agentes desde el backend
 async function loadAgents() {
@@ -423,6 +532,15 @@ function showEmptyState() {
     if (tableContainer) tableContainer.style.display = 'none';
     
     updateStats([]);
+    
+    // También interceptar el botón del empty state
+    const emptyStateBtn = emptyState.querySelector('.btn-primary');
+    if (emptyStateBtn) {
+        emptyStateBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openOnboardingModal();
+        });
+    }
 }
 
 // Escape HTML para prevenir XSS
@@ -441,7 +559,8 @@ function escapeHtml(text) {
 // Recargar agentes cada 30 segundos
 setInterval(async () => {
     const currentlyOpen = document.querySelector('.actions-dropdown.show');
-    if (!currentlyOpen) {
+    const onboardingOpen = document.querySelector('.onboarding-modal.active');
+    if (!currentlyOpen && !onboardingOpen) {
         await loadAgents();
     }
 }, 30000);
