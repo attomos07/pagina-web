@@ -1,4 +1,4 @@
-<!-- Sidebar con lógica condicional para plan gratuito -->
+<!-- Floating Sidebar con lógica condicional para plan gratuito -->
 <link rel="stylesheet" href="/static/css/sidebar.css">
 
 <button class="mobile-menu-btn" id="mobileMenuBtn">
@@ -11,121 +11,107 @@
 
 <div class="mobile-overlay" id="mobileOverlay"></div>
 
-<div class="sidebar sidebar-border collapsed" id="sidebar">
-    <div class="sidebar-header">
-        <a href="/" class="logo-wrapper">
-            <img src="/static/images/attomos-logo.png" alt="Attomos Logo" class="logo-icon">
-            <span class="brand-text">Attomos</span>
-        </a>
-        <button class="pin-btn" id="pinBtn" title="Fijar sidebar">
-            <svg class="lucide" viewBox="0 0 24 24">
-                <line x1="12" x2="12" y1="17" y2="22"/>
-                <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0-4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>
-            </svg>
-        </button>
-    </div>
+<nav class="sidebar-container" id="sidebar">
+    <a href="/dashboard" class="icon-button active" data-page="dashboard">
+        <svg viewBox="0 0 24 24">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        <span class="tooltip">Dashboard</span>
+    </a>
 
-    <nav class="sidebar-nav">
-        <ul class="menu-list">
-            <li class="menu-item">
-                <a href="/dashboard" class="menu-button">
-                    <div class="icon-wrapper">
-                        <svg class="lucide" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                    </div>
-                    <span class="text-label">Dashboard</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="/profile" class="menu-button">
-                    <div class="icon-wrapper">
-                        <svg class="lucide" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    </div>
-                    <span class="text-label">Mi Perfil</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="/my-agents" class="menu-button">
-                    <div class="icon-wrapper">
-                        <svg class="lucide" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
-                    </div>
-                    <span class="text-label">Mis Agentes</span>
-                </a>
-            </li>
-            <!-- Business Portfolio - Solo para planes de pago -->
-            <li class="menu-item" id="portfolioMenuItem" style="display: none;">
-                <a href="/business-portfolio" class="menu-button">
-                    <div class="icon-wrapper">
-                        <svg class="lucide" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
-                    </div>
-                    <span class="text-label">Business Portfolio</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="/appointments" class="menu-button">
-                    <div class="icon-wrapper">
-                        <svg class="lucide" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                    </div>
-                    <span class="text-label">Mis Citas</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="/integrations" class="menu-button">
-                    <div class="icon-wrapper">
-                        <svg class="lucide" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                    </div>
-                    <span class="text-label">Integraciones</span>
-                </a>
-            </li>
-            <!-- Mensajes - Solo para planes de pago -->
-            <li class="menu-item" id="messagesMenuItem" style="display: none;">
-                <a href="#" id="messagesLink" class="menu-button" data-loading="true">
-                    <div class="icon-wrapper">
-                        <svg class="lucide" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                    </div>
-                    <span class="text-label">
-                        <span class="messages-text">Mensajes</span>
-                        <span class="messages-loading" style="display: none;">
-                            <span class="loading-dots">...</span>
-                        </span>
-                    </span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="/plans" class="menu-button">
-                    <div class="icon-wrapper">
-                        <svg class="lucide" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    </div>
-                    <span class="text-label">Planes</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="/billing" class="menu-button">
-                    <div class="icon-wrapper">
-                        <svg class="lucide" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-                    </div>
-                    <span class="text-label">Facturación</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="/settings" class="menu-button">
-                    <div class="icon-wrapper">
-                        <svg class="lucide" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-                    </div>
-                    <span class="text-label">Configuración</span>
-                </a>
-            </li>
-        </ul>
-    </nav>
+    <a href="/profile" class="icon-button" data-page="profile">
+        <svg viewBox="0 0 24 24">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        <span class="tooltip">Mi Perfil</span>
+    </a>
 
-    <div class="sidebar-footer">
-        <button class="menu-button logout-button" id="logoutBtn">
-            <div class="icon-wrapper">
-                <svg class="lucide" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-            </div>
-            <span class="text-label">Cerrar Sesión</span>
-        </button>
-    </div>
-</div>
+    <a href="/my-agents" class="icon-button" data-page="my-agents">
+        <svg viewBox="0 0 24 24">
+            <rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect>
+            <path d="M12 18h.01"></path>
+        </svg>
+        <span class="tooltip">Mis Agentes</span>
+    </a>
+
+    <!-- Business Portfolio - Solo para planes de pago -->
+    <a href="/business-portfolio" class="icon-button" id="portfolioMenuItem" style="display: none;" data-page="business-portfolio">
+        <svg viewBox="0 0 24 24">
+            <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+            <path d="M12 11h4"></path>
+            <path d="M12 16h4"></path>
+            <path d="M8 11h.01"></path>
+            <path d="M8 16h.01"></path>
+        </svg>
+        <span class="tooltip">Business Portfolio</span>
+    </a>
+
+    <a href="/appointments" class="icon-button" data-page="appointments">
+        <svg viewBox="0 0 24 24">
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <span class="tooltip">Mis Citas</span>
+    </a>
+
+    <a href="/integrations" class="icon-button" data-page="integrations">
+        <svg viewBox="0 0 24 24">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+        </svg>
+        <span class="tooltip">Integraciones</span>
+    </a>
+
+    <!-- Mensajes - Solo para planes de pago -->
+    <a href="#" id="messagesLink" class="icon-button" data-page="messages" style="display: none;" data-loading="true">
+        <svg viewBox="0 0 24 24">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span class="tooltip">
+            <span class="messages-text">Mensajes</span>
+            <span class="messages-loading">Cargando...</span>
+        </span>
+    </a>
+
+    <a href="/plans" class="icon-button" data-page="plans">
+        <svg viewBox="0 0 24 24">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+        <span class="tooltip">Planes</span>
+    </a>
+
+    <a href="/billing" class="icon-button" data-page="billing">
+        <svg viewBox="0 0 24 24">
+            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+            <line x1="2" x2="22" y1="10" y2="10"></line>
+        </svg>
+        <span class="tooltip">Facturación</span>
+    </a>
+
+    <a href="/settings" class="icon-button" data-page="settings">
+        <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
+        </svg>
+        <span class="tooltip">Configuración</span>
+    </a>
+
+    <div class="divider"></div>
+
+    <button class="icon-button logout-button" id="logoutBtn">
+        <svg viewBox="0 0 24 24">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" x2="9" y1="12" y2="12"></line>
+        </svg>
+        <span class="tooltip">Cerrar Sesión</span>
+    </button>
+</nav>
 
 <script>
     // Obtener plan del usuario y mostrar/ocultar opciones
@@ -141,7 +127,7 @@
                 
                 // Mostrar u ocultar opciones según el plan
                 const portfolioItem = document.getElementById('portfolioMenuItem');
-                const messagesItem = document.getElementById('messagesMenuItem');
+                const messagesItem = document.getElementById('messagesLink');
                 
                 if (plan === 'gratuito') {
                     // Ocultar Portfolio y Mensajes para plan gratuito
@@ -164,25 +150,18 @@
     // Llamar al cargar la página
     checkUserPlan();
 
-    // Resto del código del sidebar...
+    // Variables globales
     const sidebar = document.getElementById('sidebar');
-    const pinBtn = document.getElementById('pinBtn');
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileOverlay = document.getElementById('mobileOverlay');
     const messagesLink = document.getElementById('messagesLink');
     const messagesText = messagesLink?.querySelector('.messages-text');
     const messagesLoading = messagesLink?.querySelector('.messages-loading');
+    const buttons = document.querySelectorAll('.icon-button');
     
-    let isPinned = false;
     let isMobile = window.innerWidth <= 768;
 
-    if (localStorage.getItem('sidebarPinned') === 'true' && !isMobile) {
-        isPinned = true;
-        sidebar.classList.add('pinned', 'expanded');
-        sidebar.classList.remove('collapsed');
-        pinBtn.classList.add('active');
-    }
-
+    // Cargar información de Chatwoot
     async function loadChatwootInfo() {
         if (!messagesLink) return;
         
@@ -227,6 +206,7 @@
         }
     }
 
+    // Mostrar mensaje cuando Chatwoot no está disponible
     function showChatwootNotAvailableMessage() {
         const toast = document.createElement('div');
         toast.style.cssText = `
@@ -234,7 +214,7 @@
             background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             color: white; padding: 16px 24px; border-radius: 12px;
             box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
-            z-index: 10000; animation: slideIn 0.3s ease-out; max-width: 400px;
+            z-index: 10000; max-width: 400px;
         `;
         toast.innerHTML = `
             <div style="display: flex; align-items: center; gap: 12px;">
@@ -249,41 +229,41 @@
         `;
         document.body.appendChild(toast);
         setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease-in';
-            setTimeout(() => document.body.removeChild(toast), 300);
+            document.body.removeChild(toast);
         }, 4000);
     }
 
-    pinBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (isMobile) return;
-        isPinned = !isPinned;
-        if (isPinned) {
-            sidebar.classList.add('pinned', 'expanded');
-            sidebar.classList.remove('collapsed');
-            pinBtn.classList.add('active');
-            localStorage.setItem('sidebarPinned', 'true');
-        } else {
-            sidebar.classList.remove('pinned');
-            pinBtn.classList.remove('active');
-            localStorage.setItem('sidebarPinned', 'false');
-        }
+    // Detectar página activa
+    function setActivePage() {
+        const currentPath = window.location.pathname;
+        buttons.forEach(button => {
+            button.classList.remove('active');
+            const buttonPath = button.getAttribute('href');
+            if (buttonPath && currentPath.includes(buttonPath) && buttonPath !== '#') {
+                button.classList.add('active');
+            }
+        });
+    }
+
+    // Inicializar página activa
+    setActivePage();
+
+    // Click en botones
+    buttons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            // Si es el botón de logout, no hacer nada aquí
+            if (button.id === 'logoutBtn') return;
+            
+            // Si es un enlace válido, dejar que navegue normalmente
+            const href = button.getAttribute('href');
+            if (href && href !== '#') {
+                // El navegador manejará la navegación
+                return;
+            }
+        });
     });
 
-    sidebar.addEventListener('mouseenter', () => {
-        if (!isPinned && !isMobile) {
-            sidebar.classList.remove('collapsed');
-            sidebar.classList.add('expanded');
-        }
-    });
-
-    sidebar.addEventListener('mouseleave', () => {
-        if (!isPinned && !isMobile) {
-            sidebar.classList.remove('expanded');
-            sidebar.classList.add('collapsed');
-        }
-    });
-
+    // Mobile menu
     mobileMenuBtn.addEventListener('click', () => {
         sidebar.classList.contains('mobile-active') ? closeMobileSidebar() : openMobileSidebar();
     });
@@ -304,30 +284,23 @@
         document.body.style.overflow = '';
     }
 
+    // Responsive
     window.addEventListener('resize', () => {
         const wasMobile = isMobile;
         isMobile = window.innerWidth <= 768;
         if (wasMobile && !isMobile) {
             closeMobileSidebar();
-            if (localStorage.getItem('sidebarPinned') === 'true') {
-                isPinned = true;
-                sidebar.classList.add('pinned', 'expanded');
-                pinBtn.classList.add('active');
-            }
-        }
-        if (!wasMobile && isMobile) {
-            sidebar.classList.remove('pinned', 'expanded');
-            sidebar.classList.add('collapsed');
-            pinBtn.classList.remove('active');
-            isPinned = false;
         }
     });
 
+    // Logout
     document.getElementById('logoutBtn').addEventListener('click', async () => {
         try {
-            const response = await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+            const response = await fetch('/api/logout', { 
+                method: 'POST', 
+                credentials: 'include' 
+            });
             if (response.ok) {
-                localStorage.removeItem('sidebarPinned');
                 window.location.href = '/login';
             }
         } catch (error) {

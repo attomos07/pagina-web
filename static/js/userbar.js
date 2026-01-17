@@ -1,14 +1,14 @@
 // ============================================
-// USERBAR JAVASCRIPT - MANEJO DE DATOS DE USUARIO
+// USERBAR JAVASCRIPT - FLOATING DESIGN
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('👤 Userbar JS cargado correctamente');
+    console.log('👤 Userbar flotante cargado correctamente');
     
-    // Inicializar userbar con datos del usuario
+    // Inicializar todas las funcionalidades
     initUserbar();
     initNotifications();
-    initUserbarMobile();
+    initUserDropdown();
     
     console.log('✅ Userbar funcionalidades inicializadas');
 });
@@ -42,26 +42,40 @@ async function initUserbar() {
 }
 
 function updateUserbarUI(user) {
-    // Actualizar nombre de la empresa
-    const companyNameElement = document.querySelector('.company-name');
-    if (companyNameElement) {
-        // Usar firstName (que contiene BusinessName) o company como fallback
+    // Actualizar nombre de usuario en dropdown
+    const userNameElement = document.getElementById('userName');
+    if (userNameElement) {
         const businessName = user.firstName || user.company || 'Mi Empresa';
-        companyNameElement.textContent = businessName;
+        userNameElement.textContent = businessName;
     }
 
-    // Actualizar tipo de negocio (categoría)
-    const businessTypeElement = document.querySelector('.business-type');
-    if (businessTypeElement) {
+    // Actualizar rol/tipo de negocio
+    const userRoleElement = document.getElementById('userRole');
+    if (userRoleElement) {
         const businessType = getBusinessTypeLabel(user.businessType) || 'Negocio';
-        businessTypeElement.textContent = businessType;
+        userRoleElement.textContent = businessType;
     }
 
-    // Actualizar imagen de perfil (si existe)
-    const profileImage = document.querySelector('.profile-image img');
-    if (profileImage && user.profileImage) {
-        profileImage.src = user.profileImage;
-        profileImage.alt = user.firstName || 'Perfil';
+    // Actualizar iniciales del avatar
+    const userInitialsElement = document.getElementById('userInitials');
+    const userAvatarImg = document.getElementById('userAvatarImg');
+    
+    if (user.profileImage && userAvatarImg) {
+        // Si tiene imagen de perfil, mostrar imagen
+        userAvatarImg.src = user.profileImage;
+        userAvatarImg.style.display = 'block';
+        if (userInitialsElement) {
+            userInitialsElement.style.display = 'none';
+        }
+    } else if (userInitialsElement) {
+        // Si no tiene imagen, mostrar iniciales
+        const name = user.firstName || user.company || 'Usuario';
+        const initials = name.split(' ')
+            .map(word => word[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+        userInitialsElement.textContent = initials;
     }
 
     // Guardar datos en localStorage para acceso rápido
@@ -110,6 +124,14 @@ function initNotifications() {
     if (isMobile) {
         notificationBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            
+            // Cerrar user dropdown si está abierto
+            const userDropdown = document.getElementById('userDropdown');
+            if (userDropdown) {
+                userDropdown.classList.remove('mobile-active');
+            }
+            
+            // Toggle notification panel
             notificationPanel.classList.toggle('mobile-active');
         });
 
@@ -158,53 +180,100 @@ function initNotifications() {
 }
 
 // ============================================
-// USERBAR MOBILE
+// USER DROPDOWN
 // ============================================
 
-function initUserbarMobile() {
-    const userbar = document.getElementById('userbar');
-    const profileSection = document.getElementById('profileSection');
+function initUserDropdown() {
+    const userAvatar = document.getElementById('userAvatar');
     const userDropdown = document.getElementById('userDropdown');
+    const logoContainer = document.getElementById('logoContainer');
 
-    if (!userbar || !profileSection || !userDropdown) return;
+    if (!userAvatar || !userDropdown) return;
 
-    let isMobile = window.innerWidth <= 768;
+    const isMobile = window.innerWidth <= 768;
 
-    // Mobile: Tap to toggle userbar menu
+    // Mobile: Tap to toggle user dropdown
     if (isMobile) {
-        profileSection.addEventListener('click', (e) => {
+        userAvatar.addEventListener('click', (e) => {
             e.stopPropagation();
-            userbar.classList.toggle('mobile-menu-active');
+            
+            // Cerrar notification panel si está abierto
+            const notificationPanel = document.getElementById('notificationPanel');
+            if (notificationPanel) {
+                notificationPanel.classList.remove('mobile-active');
+            }
+            
+            // Toggle user dropdown
+            userDropdown.classList.toggle('mobile-active');
         });
 
-        // Close userbar menu when clicking outside
+        // Close user dropdown when clicking outside
         document.addEventListener('click', (e) => {
-            if (!userbar.contains(e.target)) {
-                userbar.classList.remove('mobile-menu-active');
+            if (!userDropdown.contains(e.target) && !userAvatar.contains(e.target)) {
+                userDropdown.classList.remove('mobile-active');
             }
         });
 
-        // Close menu when clicking on a link
-        const userMenuLinks = userDropdown.querySelectorAll('.menu-button');
-        userMenuLinks.forEach(link => {
+        // Close dropdown when clicking on a link
+        const dropdownLinks = userDropdown.querySelectorAll('.dropdown-menu-button');
+        dropdownLinks.forEach(link => {
             link.addEventListener('click', () => {
-                userbar.classList.remove('mobile-menu-active');
+                userDropdown.classList.remove('mobile-active');
             });
+        });
+    } else {
+        // Desktop: Hover to show dropdown
+        let isHoveringAvatar = false;
+        let isHoveringDropdown = false;
+
+        userAvatar.addEventListener('mouseenter', () => {
+            isHoveringAvatar = true;
+        });
+
+        userAvatar.addEventListener('mouseleave', () => {
+            isHoveringAvatar = false;
+            setTimeout(() => {
+                if (!isHoveringAvatar && !isHoveringDropdown) {
+                    userDropdown.style.maxHeight = '0';
+                    userDropdown.style.opacity = '0';
+                }
+            }, 100);
+        });
+
+        userDropdown.addEventListener('mouseenter', () => {
+            isHoveringDropdown = true;
+        });
+
+        userDropdown.addEventListener('mouseleave', () => {
+            isHoveringDropdown = false;
+            setTimeout(() => {
+                if (!isHoveringAvatar && !isHoveringDropdown) {
+                    userDropdown.style.maxHeight = '0';
+                    userDropdown.style.opacity = '0';
+                }
+            }, 100);
+        });
+    }
+
+    // Logo click - ir al dashboard
+    if (logoContainer) {
+        logoContainer.addEventListener('click', () => {
+            window.location.href = '/dashboard';
         });
     }
 
     // Handle window resize
     window.addEventListener('resize', () => {
         const wasMobile = isMobile;
-        isMobile = window.innerWidth <= 768;
+        const nowMobile = window.innerWidth <= 768;
 
         // Reset states when switching between mobile/desktop
-        if (wasMobile !== isMobile) {
+        if (wasMobile !== nowMobile) {
             const notificationPanel = document.getElementById('notificationPanel');
             if (notificationPanel) {
                 notificationPanel.classList.remove('mobile-active');
             }
-            userbar.classList.remove('mobile-menu-active');
+            userDropdown.classList.remove('mobile-active');
         }
     });
 }
@@ -217,7 +286,9 @@ function setupLogout() {
     const userbarLogoutBtn = document.getElementById('userbarLogoutBtn');
     
     if (userbarLogoutBtn) {
-        userbarLogoutBtn.addEventListener('click', async () => {
+        userbarLogoutBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
             try {
                 const response = await fetch('/api/logout', {
                     method: 'POST',
@@ -233,11 +304,11 @@ function setupLogout() {
                     window.location.href = '/login';
                 } else {
                     console.error('Error al cerrar sesión');
-                    alert('Error al cerrar sesión. Por favor intenta de nuevo.');
+                    showToast('Error al cerrar sesión. Por favor intenta de nuevo.', 'error');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error al cerrar sesión. Por favor intenta de nuevo.');
+                showToast('Error al cerrar sesión. Por favor intenta de nuevo.', 'error');
             }
         });
     }
@@ -249,6 +320,40 @@ document.addEventListener('DOMContentLoaded', setupLogout);
 // ============================================
 // FUNCIONES DE UTILIDAD
 // ============================================
+
+// Mostrar toast/notificación
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    const colors = {
+        info: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+        error: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+        success: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+    };
+    
+    toast.style.cssText = `
+        position: fixed; 
+        top: 24px; 
+        right: 24px;
+        background: ${colors[type] || colors.info};
+        color: white; 
+        padding: 16px 24px; 
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        z-index: 10000; 
+        max-width: 400px;
+        font-size: 14px;
+        font-weight: 500;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(20px)';
+        setTimeout(() => document.body.removeChild(toast), 300);
+    }, 4000);
+}
 
 // Obtener datos del usuario desde localStorage (para acceso rápido)
 function getUserData() {
@@ -271,5 +376,6 @@ window.userbarUtils = {
     getUserData,
     updateUserData,
     updateUserbarUI,
-    getBusinessTypeLabel
+    getBusinessTypeLabel,
+    showToast
 };
