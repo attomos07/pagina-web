@@ -6,6 +6,12 @@
     <title>Selecciona tu Plan - Attomos</title>
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/select-plan.css">
+    <style>
+        .loading-price {
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+    </style>
 </head>
 <body>
     <!-- Main Content -->
@@ -40,12 +46,16 @@
                     <p class="plan-subtitle">Perfecto para probar sin compromisos</p>
                 </div>
                 <ul class="plan-features">
-                    <li><span class="icon">✓</span> 1 chatbot de WhatsApp</li>
-                    <li><span class="icon">✓</span> 100 mensajes al mes</li>
-                    <li><span class="icon">✓</span> Solo WhatsApp</li>
-                    <li><span class="icon">✓</span> Soporte por email</li>
-                    <li><span class="icon">✓</span> Plantillas básicas</li>
-                    <li><span class="icon disabled">✗</span> Sin analíticas</li>
+                    <li><span class="icon">✓</span> 1 agente de WhatsApp</li>
+                    <li><span class="icon">✓</span> WhatsApp Web (escaneo QR)</li>
+                    <li><span class="icon">✓</span> Mensajes ilimitados</li>
+                    <li><span class="icon">✓</span> IA con Gemini</li>
+                    <li><span class="icon">✓</span> Google Sheets</li>
+                    <li><span class="icon">✓</span> Google Calendar</li>
+                    <li><span class="icon">✓</span> Horarios personalizados de atención</li>
+                    <li><span class="icon">✓</span> Catálogo de servicios</li>
+                    <li><span class="icon">✓</span> Promociones de servicios</li>
+                    <li><span class="icon">✓</span> 📜 Ofertas de trabajo</li>
                 </ul>
                 <button class="plan-button primary" onclick="selectPlan('gratuito', 'monthly')">
                     Comenzar Gratis
@@ -57,18 +67,24 @@
                 <div class="plan-header">
                     <h2>Protón</h2>
                     <div class="plan-price">
-                        <span class="price" data-monthly="149" data-annual="119">$149</span>
+                        <span class="price" data-monthly="0" data-annual="0">
+                            <span class="loading-price">Cargando...</span>
+                        </span>
                         <span class="period">/ mes</span>
                     </div>
-                    <p class="plan-subtitle">Ideal para comenzar tu negocio</p>
+                    <p class="plan-subtitle">Ideal para empresas de servicios</p>
                 </div>
                 <ul class="plan-features">
-                    <li><span class="icon">✓</span> 1 chatbot de WhatsApp</li>
-                    <li><span class="icon">✓</span> 1,000 mensajes al mes</li>
-                    <li><span class="icon">✓</span> Solo WhatsApp</li>
-                    <li><span class="icon">✓</span> Analíticas básicas</li>
-                    <li><span class="icon">✓</span> Plantillas personalizadas</li>
-                    <li><span class="icon">✓</span> Soporte prioritario</li>
+                    <li><span class="icon">✓</span> Agentes ilimitados</li>
+                    <li><span class="icon">✓</span> Meta WhatsApp Business API</li>
+                    <li><span class="icon">✓</span> Mensajes ilimitados</li>
+                    <li><span class="icon">✓</span> IA con Gemini avanzada</li>
+                    <li><span class="icon">✓</span> Chatwoot CRM integrado</li>
+                    <li><span class="icon">✓</span> Google Calendar</li>
+                    <li><span class="icon">✓</span> Horarios personalizados de atención</li>
+                    <li><span class="icon">✓</span> Catálogo de servicios</li>
+                    <li><span class="icon">✓</span> Promociones de servicios</li>
+                    <li><span class="icon">✓</span> 📜 Ofertas de trabajo</li>
                 </ul>
                 <button class="plan-button primary" onclick="selectPlan('proton', getCurrentBillingCycle())">
                     Seleccionar Protón
@@ -81,18 +97,26 @@
                 <div class="plan-header">
                     <h2>Neutrón</h2>
                     <div class="plan-price">
-                        <span class="price" data-monthly="349" data-annual="279">$349</span>
+                        <span class="price" data-monthly="0" data-annual="0">
+                            <span class="loading-price">Cargando...</span>
+                        </span>
                         <span class="period">/ mes</span>
                     </div>
-                    <p class="plan-subtitle">Para negocios en crecimiento</p>
+                    <p class="plan-subtitle">Ideal para e-commerce</p>
                 </div>
                 <ul class="plan-features">
-                    <li><span class="icon">✓</span> 3 chatbots de WhatsApp</li>
-                    <li><span class="icon">✓</span> 10,000 mensajes al mes</li>
-                    <li><span class="icon">✓</span> Todas las plataformas</li>
-                    <li><span class="icon">✓</span> Analíticas avanzadas</li>
-                    <li><span class="icon">✓</span> Integraciones CRM</li>
-                    <li><span class="icon">✓</span> Soporte prioritario 24/7</li>
+                    <li><span class="icon">✓</span> Agentes ilimitados</li>
+                    <li><span class="icon">✓</span> Meta WhatsApp Business API</li>
+                    <li><span class="icon">✓</span> Mensajes ilimitados</li>
+                    <li><span class="icon">✓</span> Chatwoot CRM integrado</li>
+                    <li><span class="icon">✓</span> IA con Gemini avanzada</li>
+                    <li><span class="icon">✓</span> Google Sheets para ventas</li>
+                    <li><span class="icon">✓</span> Catálogo de productos</li>
+                    <li><span class="icon">✓</span> Promociones y packs</li>
+                    <li><span class="icon">✓</span> Página web + App móvil</li>
+                    <li><span class="icon">✓</span> Sistema de inventario</li>
+                    <li><span class="icon">✓</span> Punto de venta (POS)</li>
+                    <li><span class="icon">✓</span> Ofertas de trabajo</li>
                 </ul>
                 <button class="plan-button primary" onclick="selectPlan('neutron', getCurrentBillingCycle())">
                     Seleccionar Neutrón
@@ -105,18 +129,25 @@
                 <div class="plan-header">
                     <h2>Electrón</h2>
                     <div class="plan-price">
-                        <span class="price" data-monthly="749" data-annual="599">$749</span>
+                        <span class="price" data-monthly="0" data-annual="0">
+                            <span class="loading-price">Cargando...</span>
+                        </span>
                         <span class="period">/ mes</span>
                     </div>
-                    <p class="plan-subtitle">Para empresas grandes</p>
+                    <p class="plan-subtitle">Agente telefónico con voz IA</p>
                 </div>
                 <ul class="plan-features">
-                    <li><span class="icon">✓</span> Chatbots ilimitados</li>
-                    <li><span class="icon">✓</span> Mensajes ilimitados</li>
-                    <li><span class="icon">✓</span> Todas las plataformas</li>
-                    <li><span class="icon">✓</span> Analíticas personalizadas</li>
-                    <li><span class="icon">✓</span> API personalizada</li>
-                    <li><span class="icon">✓</span> Soporte dedicado 24/7</li>
+                    <li><span class="icon">✓</span> Todo del plan Neutrón</li>
+                    <li><span class="icon">✓</span> Llamadas entrantes con IA</li>
+                    <li><span class="icon">✓</span> Llamadas salientes automatizadas</li>
+                    <li><span class="icon">✓</span> Voz natural con IA</li>
+                    <li><span class="icon">✓</span> Integración telefónica</li>
+                    <li><span class="icon">✓</span> Múltiples voces disponibles</li>
+                    <li><span class="icon">✓</span> Transcripción en tiempo real</li>
+                    <li><span class="icon">✓</span> Análisis de sentimiento</li>
+                    <li><span class="icon">✓</span> IVR inteligente con IA</li>
+                    <li><span class="icon">✓</span> Grabación de llamadas</li>
+                    <li><span class="icon">✓</span> Analytics de llamadas</li>
                 </ul>
                 <button class="plan-button primary" onclick="selectPlan('electron', getCurrentBillingCycle())">
                     Seleccionar Electrón
