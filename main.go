@@ -207,13 +207,20 @@ func main() {
 		protected.GET("/gemini/status/:agent_id", handlers.GetGeminiStatus)
 
 		// ============================================
-		// META WHATSAPP BUSINESS INTEGRATION
+		// META WHATSAPP BUSINESS API - CREDENTIALS
+		// ============================================
+		protected.GET("/meta/credentials/status/:agent_id", handlers.GetMetaCredentialsStatus)
+		protected.POST("/meta/credentials/save/:agent_id", handlers.SaveMetaCredentials)
+		protected.DELETE("/meta/credentials/remove/:agent_id", handlers.RemoveMetaCredentials)
+
+		// ============================================
+		// META WHATSAPP BUSINESS INTEGRATION (OAuth)
 		// ============================================
 		if metaWhatsAppHandler != nil {
 			protected.GET("/meta/connect", metaWhatsAppHandler.InitiateConnection)
 			router.GET("/api/meta/callback", metaWhatsAppHandler.HandleCallback)
-			protected.GET("/meta/status", metaWhatsAppHandler.GetConnectionStatus)
-			protected.POST("/meta/disconnect", metaWhatsAppHandler.DisconnectWhatsApp)
+			protected.GET("/meta/status/:agent_id", metaWhatsAppHandler.GetConnectionStatus)
+			protected.POST("/meta/disconnect/:agent_id", metaWhatsAppHandler.DisconnectWhatsApp)
 		}
 	}
 

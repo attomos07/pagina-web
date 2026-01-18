@@ -1,5 +1,5 @@
 // ============================================
-// INTEGRATIONS JAVASCRIPT
+// INTEGRATIONS JAVASCRIPT - ACTUALIZADO
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initAgentSelector();
     initGoogleIntegration();
     initGeminiIntegration();
+    initMetaIntegration();
     
     console.log('✅ Integrations funcionalidades inicializadas');
 });
@@ -17,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================
 
 let selectedAgentId = null;
+let selectedAgent = null;
 let agents = [];
 
 // ============================================
@@ -69,6 +71,7 @@ function populateAgentSelector(agents) {
         const option = document.createElement('div');
         option.className = 'select-option';
         option.setAttribute('data-agent-id', agent.id);
+        option.setAttribute('data-bot-type', agent.botType);
         option.textContent = agent.name;
         optionsContainer.appendChild(option);
     });
@@ -124,9 +127,11 @@ function closeAgentDropdown() {
 
 async function selectAgent(option) {
     const agentId = option.getAttribute('data-agent-id');
+    const botType = option.getAttribute('data-bot-type');
     const agentName = option.textContent;
     
     selectedAgentId = parseInt(agentId);
+    selectedAgent = agents.find(a => a.id === selectedAgentId);
     
     const selectDisplay = document.getElementById('agentSelectDisplay');
     selectDisplay.textContent = agentName;
@@ -137,13 +142,38 @@ async function selectAgent(option) {
     
     closeAgentDropdown();
     
-    console.log(`✅ Agente seleccionado: ${agentName} (ID: ${agentId})`);
+    console.log(`✅ Agente seleccionado: ${agentName} (ID: ${agentId}, Tipo: ${botType})`);
     
     showIntegrationsGrid();
     
+    // Mostrar/ocultar tarjetas según el tipo de bot
+    showIntegrationsByBotType(botType);
+    
     // Load integration statuses
     await loadGoogleIntegrationStatus(selectedAgentId);
-    await loadGeminiStatus(selectedAgentId);
+    
+    if (botType === 'atomic') {
+        await loadGeminiStatus(selectedAgentId);
+    } else if (botType === 'orbital') {
+        await loadMetaCredentialsStatus(selectedAgentId);
+    }
+}
+
+function showIntegrationsByBotType(botType) {
+    const geminiCard = document.getElementById('geminiCard');
+    const metaCard = document.getElementById('metaCard');
+    
+    if (botType === 'atomic') {
+        // Plan gratuito - AtomicBot
+        if (geminiCard) geminiCard.style.display = 'block';
+        if (metaCard) metaCard.style.display = 'none';
+        console.log('📱 Mostrando integraciones para AtomicBot (plan gratuito)');
+    } else if (botType === 'orbital') {
+        // Plan de pago - OrbitalBot
+        if (geminiCard) geminiCard.style.display = 'none';
+        if (metaCard) metaCard.style.display = 'block';
+        console.log('🚀 Mostrando integraciones para OrbitalBot (plan de pago)');
+    }
 }
 
 function showIntegrationsGrid() {
@@ -167,7 +197,324 @@ function showNoAgentsState() {
 }
 
 // ============================================
-// GEMINI INTEGRATION
+// META WHATSAPP INTEGRATION
+// ============================================
+
+function initMetaIntegration() {
+    const toggleToken = document.getElementById('toggleMetaToken');
+    const toggleVerify = document.getElementById('toggleMetaVerify');
+    const saveButton = document.getElementById('btnSaveMetaCredentials');
+    const updateButton = document.getElementById('btnUpdateMetaCredentials');
+    const removeButton = document.getElementById('btnRemoveMetaCredentials');
+    
+    if (toggleToken) {
+        toggleToken.addEventListener('click', () => toggleMetaVisibility('metaAccessToken', 'toggleMetaToken'));
+    }
+    
+    if (toggleVerify) {
+        toggleVerify.addEventListener('click', () => toggleMetaVisibility('metaVerifyToken', 'toggleMetaVerify'));
+    }
+    
+    // Enable save button when all fields have content
+    const inputs = ['metaPhoneNumberId', 'metaAccessToken', 'metaWabaId', 'metaVerifyToken'];
+    inputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('input', function() {
+                if (saveButton) {
+                    const allFilled = inputs.every(id => {
+                        const el = document.getElementById(id);
+                        return el && el.value.trim();
+                    });
+                    saveButton.disabled = !allFilled;
+                }
+            });
+        }
+    });
+    
+    if (saveButton) {
+        saveButton.addEventListener('click', saveMetaCredentials);
+    }
+    
+    if (updateButton) {
+        updateButton.addEventListener('click', enableMetaEdit);
+    }
+    
+    if (removeButton) {
+        removeButton.addEventListener('click', removeMetaCredentials);
+    }
+}
+
+function toggleMetaVisibility(inputId, buttonId) {
+    const input = document.getElementById(inputId);
+    const button = document.getElementById(buttonId);
+    const icon = button.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'lni lni-eye-off';
+    } else {
+        input.type = 'password';
+        icon.className = 'lni lni-eye';
+    }
+}
+
+async function loadMetaCredentialsStatus(agentId) {
+    console.log(`📊 Cargando estado de Meta para agente ${agentId}...`);
+    
+    try {
+        const response = await fetch(`/api/meta/credentials/status/${agentId}`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al cargar estado de Meta');
+        }
+
+        const data = await response.json();
+        console.log('✅ Estado de Meta:', data);
+        
+        updateMetaCredentialsUI(data);
+        
+    } catch (error) {
+        console.error('Error cargando estado de Meta:', error);
+        // Mostrar como no configurado en caso de error
+        updateMetaCredentialsUI({ has_credentials: false, connected: false });
+    }
+}
+
+function updateMetaCredentialsUI(data) {
+    const statusBadge = document.getElementById('metaStatus');
+    const connectionInfo = document.getElementById('metaConnectionInfo');
+    const credentialsForm = document.getElementById('metaCredentialsForm');
+    const saveActions = document.getElementById('metaActions');
+    const manageActions = document.getElementById('metaManageActions');
+    
+    const inputs = {
+        phoneNumberId: document.getElementById('metaPhoneNumberId'),
+        accessToken: document.getElementById('metaAccessToken'),
+        wabaId: document.getElementById('metaWabaId'),
+        verifyToken: document.getElementById('metaVerifyToken')
+    };
+    
+    const toggleButtons = {
+        token: document.getElementById('toggleMetaToken'),
+        verify: document.getElementById('toggleMetaVerify')
+    };
+    
+    if (data.has_credentials && data.connected) {
+        // Credenciales configuradas
+        if (statusBadge) {
+            statusBadge.className = 'status-badge connected';
+            statusBadge.innerHTML = `
+                <span class="status-indicator"></span>
+                Configurado
+            `;
+        }
+        
+        // Disable inputs y mostrar valores enmascarados
+        Object.values(inputs).forEach(input => {
+            if (input) {
+                input.value = '••••••••••••••••';
+                input.disabled = true;
+            }
+        });
+        
+        Object.values(toggleButtons).forEach(btn => {
+            if (btn) btn.disabled = true;
+        });
+        
+        // Mostrar información de conexión
+        if (connectionInfo) {
+            connectionInfo.style.display = 'block';
+            
+            const displayNumber = document.getElementById('metaDisplayNumber');
+            const verifiedName = document.getElementById('metaVerifiedName');
+            const connectedAt = document.getElementById('metaConnectedAt');
+            
+            if (displayNumber && data.display_number) {
+                displayNumber.textContent = data.display_number;
+            }
+            
+            if (verifiedName && data.verified_name) {
+                verifiedName.textContent = data.verified_name;
+            }
+            
+            if (connectedAt && data.connected_at) {
+                const date = new Date(data.connected_at);
+                connectedAt.textContent = formatDate(date);
+            }
+        }
+        
+        if (saveActions) saveActions.style.display = 'none';
+        if (manageActions) manageActions.style.display = 'flex';
+        
+    } else {
+        // Sin credenciales configuradas
+        if (statusBadge) {
+            statusBadge.className = 'status-badge disconnected';
+            statusBadge.innerHTML = `
+                <span class="status-indicator"></span>
+                No configurado
+            `;
+        }
+        
+        // Enable inputs
+        Object.values(inputs).forEach(input => {
+            if (input) {
+                input.value = '';
+                input.disabled = false;
+            }
+        });
+        
+        Object.values(toggleButtons).forEach(btn => {
+            if (btn) btn.disabled = false;
+        });
+        
+        if (connectionInfo) connectionInfo.style.display = 'none';
+        if (saveActions) saveActions.style.display = 'flex';
+        if (manageActions) manageActions.style.display = 'none';
+    }
+}
+
+async function saveMetaCredentials() {
+    if (!selectedAgentId) {
+        showNotification('Por favor selecciona un agente primero', 'error');
+        return;
+    }
+    
+    const phoneNumberId = document.getElementById('metaPhoneNumberId').value.trim();
+    const accessToken = document.getElementById('metaAccessToken').value.trim();
+    const wabaId = document.getElementById('metaWabaId').value.trim();
+    const verifyToken = document.getElementById('metaVerifyToken').value.trim();
+    
+    if (!phoneNumberId || !accessToken || !wabaId || !verifyToken) {
+        showNotification('Por favor completa todos los campos', 'error');
+        return;
+    }
+    
+    console.log(`💾 Guardando credenciales de Meta para agente ${selectedAgentId}...`);
+    
+    const saveButton = document.getElementById('btnSaveMetaCredentials');
+    const originalText = saveButton.innerHTML;
+    
+    saveButton.innerHTML = `
+        <div class="loading-spinner"></div>
+        <span>Guardando...</span>
+    `;
+    saveButton.disabled = true;
+    
+    try {
+        const response = await fetch(`/api/meta/credentials/save/${selectedAgentId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                phone_number_id: phoneNumberId,
+                access_token: accessToken,
+                waba_id: wabaId,
+                verify_token: verifyToken
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al guardar credenciales');
+        }
+
+        console.log('✅ Credenciales de Meta guardadas');
+        showNotification('Credenciales guardadas exitosamente', 'success');
+        
+        await loadMetaCredentialsStatus(selectedAgentId);
+        
+    } catch (error) {
+        console.error('Error guardando credenciales:', error);
+        showNotification(error.message || 'Error al guardar credenciales', 'error');
+        
+        saveButton.innerHTML = originalText;
+        saveButton.disabled = false;
+    }
+}
+
+function enableMetaEdit() {
+    const inputs = {
+        phoneNumberId: document.getElementById('metaPhoneNumberId'),
+        accessToken: document.getElementById('metaAccessToken'),
+        wabaId: document.getElementById('metaWabaId'),
+        verifyToken: document.getElementById('metaVerifyToken')
+    };
+    
+    const toggleButtons = {
+        token: document.getElementById('toggleMetaToken'),
+        verify: document.getElementById('toggleMetaVerify')
+    };
+    
+    const saveActions = document.getElementById('metaActions');
+    const manageActions = document.getElementById('metaManageActions');
+    const connectionInfo = document.getElementById('metaConnectionInfo');
+    
+    Object.values(inputs).forEach(input => {
+        if (input) {
+            input.value = '';
+            input.disabled = false;
+        }
+    });
+    
+    Object.values(toggleButtons).forEach(btn => {
+        if (btn) btn.disabled = false;
+    });
+    
+    if (connectionInfo) connectionInfo.style.display = 'none';
+    if (saveActions) saveActions.style.display = 'flex';
+    if (manageActions) manageActions.style.display = 'none';
+    
+    if (inputs.phoneNumberId) inputs.phoneNumberId.focus();
+}
+
+async function removeMetaCredentials() {
+    if (!selectedAgentId) {
+        showNotification('Por favor selecciona un agente primero', 'error');
+        return;
+    }
+    
+    if (!confirm('¿Estás seguro de que quieres eliminar las credenciales de Meta? El agente dejará de funcionar con WhatsApp Business API.')) {
+        return;
+    }
+    
+    console.log(`🗑️  Eliminando credenciales de Meta para agente ${selectedAgentId}...`);
+    
+    try {
+        const response = await fetch(`/api/meta/credentials/remove/${selectedAgentId}`, {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al eliminar credenciales');
+        }
+
+        console.log('✅ Credenciales de Meta eliminadas');
+        showNotification('Credenciales eliminadas exitosamente', 'success');
+        
+        await loadMetaCredentialsStatus(selectedAgentId);
+        
+    } catch (error) {
+        console.error('Error eliminando credenciales:', error);
+        showNotification('Error al eliminar credenciales', 'error');
+    }
+}
+
+// ============================================
+// GEMINI INTEGRATION (Plan gratuito)
 // ============================================
 
 function initGeminiIntegration() {
@@ -336,7 +683,6 @@ async function saveGeminiApiKey() {
     saveButton.disabled = true;
     
     try {
-        // TODO: Implementar endpoint para guardar API key
         const response = await fetch(`/api/gemini/save-key/${selectedAgentId}`, {
             method: 'POST',
             credentials: 'include',
@@ -394,7 +740,6 @@ async function removeGeminiApiKey() {
     console.log(`🗑️  Eliminando Gemini API Key para agente ${selectedAgentId}...`);
     
     try {
-        // TODO: Implementar endpoint para eliminar API key
         const response = await fetch(`/api/gemini/remove-key/${selectedAgentId}`, {
             method: 'DELETE',
             credentials: 'include',

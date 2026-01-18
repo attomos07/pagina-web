@@ -82,13 +82,14 @@ body {
     display: none;
 }
 
+
 #svg {
     position: absolute;
     right: -0.35em;
     bottom: 0.4em;
     height: 4.4em;
     width: 3.5em;
-    transform: scale(0.93);
+    transform: scale(0.93) translateX(-200px) translateY(-20px);
 }
 
 path#ring,

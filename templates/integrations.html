@@ -49,8 +49,8 @@
 
                     <!-- Integrations Grid -->
                     <div class="integrations-grid" id="integrationsGrid">
-                        <!-- Gemini API Key Card -->
-                        <div class="integration-card" id="geminiCard">
+                        <!-- Gemini API Key Card (Solo plan gratuito - AtomicBot) -->
+                        <div class="integration-card" id="geminiCard" style="display: none;">
                             <div class="card-header">
                                 <div class="card-title">
                                     <i class="lni lni-gemini integration-icon" style="font-size: 2rem; color: #8E44AD;"></i>
@@ -130,6 +130,165 @@
                                     Actualizar
                                 </button>
                                 <button class="btn btn-disconnect" id="btnRemoveGeminiKey">
+                                    <i class="lni lni-trash"></i>
+                                    Eliminar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Meta WhatsApp Business API Card (Solo planes de pago - OrbitalBot) -->
+                        <div class="integration-card" id="metaCard" style="display: none;">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-whatsapp integration-icon" style="font-size: 2rem; color: #25D366;"></i>
+                                    <h2>Meta WhatsApp Business API</h2>
+                                </div>
+                                <div class="status-badge disconnected" id="metaStatus">
+                                    <span class="status-indicator"></span>
+                                    No configurado
+                                </div>
+                            </div>
+
+                            <p class="card-description">
+                                Configura las credenciales de Meta WhatsApp Business API para conectar tu agente con WhatsApp de manera oficial.
+                            </p>
+
+                            <div class="card-features">
+                                <ul class="feature-list">
+                                    <li class="feature-item">
+                                        <i class="lni lni-shield-check"></i>
+                                        API oficial de Meta
+                                    </li>
+                                    <li class="feature-item">
+                                        <i class="lni lni-rocket"></i>
+                                        Mayor estabilidad y velocidad
+                                    </li>
+                                    <li class="feature-item">
+                                        <i class="lni lni-checkmark-circle"></i>
+                                        Marca verificada de negocio
+                                    </li>
+                                    <li class="feature-item">
+                                        <i class="lni lni-chart-up"></i>
+                                        Sin límites de mensajes
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="card-note">
+                                <i class="lni lni-information"></i>
+                                <span>Obtén tus credenciales en <a href="https://developers.facebook.com/apps" target="_blank" style="color: #3b82f6; font-weight: 600; text-decoration: underline;">Meta for Developers</a></span>
+                            </div>
+
+                            <!-- Meta Credentials Form -->
+                            <div class="api-key-form" id="metaCredentialsForm">
+                                <div class="input-group" style="margin-bottom: 1rem;">
+                                    <label class="input-label" for="metaPhoneNumberId">
+                                        <i class="lni lni-phone"></i>
+                                        Phone Number ID
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <input 
+                                            type="text" 
+                                            id="metaPhoneNumberId" 
+                                            class="api-key-input" 
+                                            placeholder="123456789012345" 
+                                            disabled
+                                        />
+                                    </div>
+                                    <small class="input-hint">ID del número de WhatsApp Business</small>
+                                </div>
+
+                                <div class="input-group" style="margin-bottom: 1rem;">
+                                    <label class="input-label" for="metaAccessToken">
+                                        <i class="lni lni-key"></i>
+                                        Access Token (JWT)
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <input 
+                                            type="password" 
+                                            id="metaAccessToken" 
+                                            class="api-key-input" 
+                                            placeholder="EAAxxxxxxxxxxxxx..." 
+                                            disabled
+                                        />
+                                        <button type="button" class="toggle-visibility" id="toggleMetaToken" disabled>
+                                            <i class="lni lni-eye"></i>
+                                        </button>
+                                    </div>
+                                    <small class="input-hint">Token de acceso de larga duración</small>
+                                </div>
+
+                                <div class="input-group" style="margin-bottom: 1rem;">
+                                    <label class="input-label" for="metaWabaId">
+                                        <i class="lni lni-briefcase"></i>
+                                        WABA ID
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <input 
+                                            type="text" 
+                                            id="metaWabaId" 
+                                            class="api-key-input" 
+                                            placeholder="123456789012345" 
+                                            disabled
+                                        />
+                                    </div>
+                                    <small class="input-hint">WhatsApp Business Account ID</small>
+                                </div>
+
+                                <div class="input-group">
+                                    <label class="input-label" for="metaVerifyToken">
+                                        <i class="lni lni-lock"></i>
+                                        Verify Token
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <input 
+                                            type="password" 
+                                            id="metaVerifyToken" 
+                                            class="api-key-input" 
+                                            placeholder="mi_token_secreto_123" 
+                                            disabled
+                                        />
+                                        <button type="button" class="toggle-visibility" id="toggleMetaVerify" disabled>
+                                            <i class="lni lni-eye"></i>
+                                        </button>
+                                    </div>
+                                    <small class="input-hint">Token para verificar webhook (puedes elegir cualquier texto)</small>
+                                </div>
+                            </div>
+
+                            <!-- Connection Info (hidden by default) -->
+                            <div class="connection-info" id="metaConnectionInfo" style="display: none;">
+                                <div class="connection-details">
+                                    <div class="connection-detail">
+                                        <span class="connection-label">Número:</span>
+                                        <span class="connection-value" id="metaDisplayNumber">-</span>
+                                    </div>
+                                    <div class="connection-detail">
+                                        <span class="connection-label">Nombre verificado:</span>
+                                        <span class="connection-value" id="metaVerifiedName">-</span>
+                                    </div>
+                                    <div class="connection-detail">
+                                        <span class="connection-label">Conectado:</span>
+                                        <span class="connection-value" id="metaConnectedAt">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="card-actions" id="metaActions">
+                                <button class="btn btn-connect" id="btnSaveMetaCredentials" disabled>
+                                    <i class="lni lni-save"></i>
+                                    Guardar Credenciales
+                                </button>
+                            </div>
+
+                            <!-- Manage Actions (hidden by default) -->
+                            <div class="card-actions" id="metaManageActions" style="display: none;">
+                                <button class="btn btn-secondary" id="btnUpdateMetaCredentials">
+                                    <i class="lni lni-pencil"></i>
+                                    Actualizar
+                                </button>
+                                <button class="btn btn-disconnect" id="btnRemoveMetaCredentials">
                                     <i class="lni lni-trash"></i>
                                     Eliminar
                                 </button>
@@ -305,8 +464,8 @@
                                         Stripe Payments
                                     </li>
                                     <li class="feature-item">
-                                        <i class="lni lni-whatsapp"></i>
-                                        Meta WhatsApp Business
+                                        <i class="lni lni-shopify"></i>
+                                        Shopify
                                     </li>
                                     <li class="feature-item">
                                         <i class="lni lni-cloud"></i>
