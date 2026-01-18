@@ -26,13 +26,50 @@ func StartWebhookServer(client *MetaClient) {
 	})
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		// Health check mejorado que indica el estado del cliente
+		status := "waiting_credentials"
+		if client.IsConfigured() {
+			status = "ready"
+		}
+
+		response := map[string]string{
+			"status":      "ok",
+			"meta_status": status,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		json.NewEncoder(w).Encode(response)
+	})
+
+	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
+		// Endpoint de estado detallado
+		response := map[string]interface{}{
+			"bot_running":     true,
+			"meta_configured": client.IsConfigured(),
+			"port":            port,
+		}
+
+		if client.IsConfigured() {
+			response["phone_number_id"] = maskSensitiveData(client.PhoneNumberID)
+			response["waba_id"] = maskSensitiveData(client.WABAID)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
 	})
 
 	log.Printf("🌐 Servidor webhook iniciado en puerto %s", port)
 	log.Printf("📡 Endpoint: http://localhost:%s/webhook", port)
 	log.Printf("💚 Health check: http://localhost:%s/health", port)
+	log.Printf("📊 Status: http://localhost:%s/status", port)
+
+	if !client.IsConfigured() {
+		log.Println("")
+		log.Println("⚠️  El servidor está esperando credenciales de Meta")
+		log.Println("💡 Configúralas en la página de Integraciones de Attomos")
+	}
 
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatalf("❌ Error iniciando servidor: %v", err)
@@ -92,6 +129,24 @@ func handleIncomingMessage(w http.ResponseWriter, r *http.Request, client *MetaC
 		return
 	}
 	defer r.Body.Close()
+
+	// 🔧 CAMBIO: Verificar si el cliente tiene credenciales antes de procesar
+	if !client.IsConfigured() {
+		log.Println("")
+		log.Println("⚠️  ═══════════════════════════════════════════════════")
+		log.Println("⚠️  MENSAJE RECIBIDO - CREDENCIALES NO CONFIGURADAS")
+		log.Println("⚠️  ═══════════════════════════════════════════════════")
+		log.Println("")
+		log.Println("📨 Se recibió un mensaje pero el bot no puede responder")
+		log.Println("💡 Configura las credenciales de Meta en Integraciones")
+		log.Println("")
+		log.Printf("📋 Payload recibido (primeros 200 chars):\n%s\n", truncateString(string(body), 200))
+
+		// Responder OK a Meta para evitar reintentos
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+		return
+	}
 
 	var payload MetaWebhookPayload
 	if err := json.Unmarshal(body, &payload); err != nil {
@@ -259,4 +314,12 @@ func processStatus(status *struct {
 	}
 
 	log.Printf("%s Mensaje %s - Destinatario: %s", statusEmoji, status.ID[:8], status.RecipientID)
+}
+
+// truncateString trunca un string a una longitud máxima
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
 }

@@ -108,12 +108,18 @@ func main() {
 	// Configurar cliente global
 	src.SetClient(client)
 
+	// Verificar estado de Meta
+	metaStatus := "⚠️  Esperando credenciales"
+	if client.IsConfigured() {
+		metaStatus = "✅ Configurado"
+	}
+
 	// Iniciar webhook server
 	log.Println("\n🌐 Iniciando servidor webhook...")
 	go src.StartWebhookServer(client)
 
 	// Mostrar estado final
-	printFinalStatus(geminiStatus, sheetsStatus, calendarStatus)
+	printFinalStatus(geminiStatus, sheetsStatus, calendarStatus, metaStatus)
 
 	// Crear calendario semanal si está habilitado
 	if src.IsSheetsEnabled() {
@@ -215,9 +221,15 @@ func maskValue(value string) string {
 }
 
 // Mostrar estado final
-func printFinalStatus(gemini, sheets, calendar string) {
+func printFinalStatus(gemini, sheets, calendar, meta string) {
 	fmt.Println("\n╔═══════════════════════════════════════════════════════╗")
-	fmt.Println("║              ✅ BOT CONECTADO EXITOSAMENTE            ║")
+
+	if meta == "✅ Configurado" {
+		fmt.Println("║           ✅ BOT CONECTADO EXITOSAMENTE               ║")
+	} else {
+		fmt.Println("║          ⚠️  BOT EN MODO ESPERA                       ║")
+	}
+
 	fmt.Println("╚═══════════════════════════════════════════════════════╝")
 
 	if src.BusinessCfg != nil {
@@ -231,8 +243,26 @@ func printFinalStatus(gemini, sheets, calendar string) {
 	fmt.Printf("🧠 Gemini AI:        %s\n", gemini)
 	fmt.Printf("📊 Google Sheets:    %s\n", sheets)
 	fmt.Printf("📅 Google Calendar:  %s\n", calendar)
-	fmt.Println("🚀 Meta API:         ✅ Conectado")
+	fmt.Printf("🚀 Meta API:         %s\n", meta)
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+	if meta == "⚠️  Esperando credenciales" {
+		fmt.Println("\n╔═══════════════════════════════════════════════════════╗")
+		fmt.Println("║              ⚠️  ACCIÓN REQUERIDA                     ║")
+		fmt.Println("╚═══════════════════════════════════════════════════════╝")
+		fmt.Println("")
+		fmt.Println("🔧 El bot está esperando credenciales de Meta WhatsApp")
+		fmt.Println("")
+		fmt.Println("📋 Para activar el bot:")
+		fmt.Println("   1. Ve a Attomos → Integraciones")
+		fmt.Println("   2. Selecciona este agente")
+		fmt.Println("   3. Configura las credenciales de Meta WhatsApp")
+		fmt.Println("")
+		fmt.Println("🔗 Obtén tus credenciales en:")
+		fmt.Println("   https://developers.facebook.com/apps")
+		fmt.Println("")
+		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	}
 
 	// Advertencias si hay servicios deshabilitados
 	if sheets == "❌ No disponible" || calendar == "❌ No disponible" {
@@ -250,7 +280,12 @@ func printFinalStatus(gemini, sheets, calendar string) {
 		fmt.Println("   4. Revisa los logs arriba para más detalles")
 	}
 
-	fmt.Println("\n📱 Esperando mensajes de WhatsApp vía Meta API...")
+	if meta == "✅ Configurado" {
+		fmt.Println("\n📱 Esperando mensajes de WhatsApp vía Meta API...")
+	} else {
+		fmt.Println("\n⏳ Servidor webhook activo - Esperando credenciales...")
+	}
+
 	fmt.Println("🌐 Webhook activo en el puerto configurado")
 	fmt.Println("💡 Presiona Ctrl+C para detener el bot")
 }
@@ -297,6 +332,17 @@ func configWatchdog() {
 				if !src.IsCalendarEnabled() {
 					if err := src.InitCalendar(); err == nil {
 						log.Println("✅ Google Calendar ahora está disponible")
+					}
+				}
+
+				// Verificar si ahora hay credenciales de Meta
+				client := src.GetClient()
+				if client != nil && !client.IsConfigured() {
+					ctx := context.Background()
+					newClient, err := src.NewMetaClient(ctx)
+					if err == nil && newClient.IsConfigured() {
+						src.SetClient(newClient)
+						log.Println("✅ Credenciales de Meta detectadas - Bot ahora activo")
 					}
 				}
 			}

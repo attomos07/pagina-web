@@ -96,23 +96,41 @@ func NewMetaClient(ctx context.Context) (*MetaClient, error) {
 	phoneNumberID := os.Getenv("META_PHONE_NUMBER_ID")
 	wabaID := os.Getenv("META_WABA_ID")
 
-	if accessToken == "" {
-		return nil, fmt.Errorf("META_ACCESS_TOKEN no está configurado")
-	}
+	// 🔧 CAMBIO: Permitir que el bot arranque sin credenciales
+	if accessToken == "" || phoneNumberID == "" || wabaID == "" {
+		log.Println("")
+		log.Println("╔══════════════════════════════════════════════════════╗")
+		log.Println("║   ⚠️  CREDENCIALES DE META NO CONFIGURADAS          ║")
+		log.Println("╚══════════════════════════════════════════════════════╝")
+		log.Println("")
+		log.Println("📋 El bot arrancará en MODO ESPERA")
+		log.Println("💡 Para activar WhatsApp Business API:")
+		log.Println("   1. Ve a la página de Integraciones en Attomos")
+		log.Println("   2. Selecciona este agente")
+		log.Println("   3. Configura las credenciales de Meta WhatsApp")
+		log.Println("")
+		log.Println("🔗 Obtén tus credenciales en:")
+		log.Println("   https://developers.facebook.com/apps")
+		log.Println("")
 
-	if phoneNumberID == "" {
-		return nil, fmt.Errorf("META_PHONE_NUMBER_ID no está configurado")
-	}
-
-	if wabaID == "" {
-		return nil, fmt.Errorf("META_WABA_ID no está configurado")
+		// Retornar un cliente vacío que permite arrancar el servidor
+		return &MetaClient{
+			AccessToken:   "",
+			PhoneNumberID: "",
+			WABAID:        "",
+			APIVersion:    "v21.0",
+			HTTPClient: &http.Client{
+				Timeout: 30 * time.Second,
+			},
+			ctx: ctx,
+		}, nil
 	}
 
 	client := &MetaClient{
 		AccessToken:   accessToken,
 		PhoneNumberID: phoneNumberID,
 		WABAID:        wabaID,
-		APIVersion:    "v21.0", // Versión actual de la API de Meta
+		APIVersion:    "v21.0",
 		HTTPClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
@@ -138,8 +156,18 @@ func GetClient() *MetaClient {
 	return globalMetaClient
 }
 
+// IsConfigured verifica si el cliente tiene credenciales configuradas
+func (c *MetaClient) IsConfigured() bool {
+	return c.AccessToken != "" && c.PhoneNumberID != "" && c.WABAID != ""
+}
+
 // SendMessage envía un mensaje de texto a un número de WhatsApp
 func (c *MetaClient) SendMessage(to, message string) error {
+	// Verificar si el cliente está configurado
+	if !c.IsConfigured() {
+		return fmt.Errorf("cliente Meta no configurado - configura las credenciales en Integraciones")
+	}
+
 	url := fmt.Sprintf("https://graph.facebook.com/%s/%s/messages", c.APIVersion, c.PhoneNumberID)
 
 	payload := MetaMessage{
@@ -184,6 +212,11 @@ func (c *MetaClient) SendMessage(to, message string) error {
 
 // MarkAsRead marca un mensaje como leído
 func (c *MetaClient) MarkAsRead(messageID string) error {
+	// Verificar si el cliente está configurado
+	if !c.IsConfigured() {
+		return nil // Ignorar silenciosamente si no está configurado
+	}
+
 	url := fmt.Sprintf("https://graph.facebook.com/%s/%s/messages", c.APIVersion, c.PhoneNumberID)
 
 	payload := map[string]interface{}{
@@ -221,6 +254,11 @@ func (c *MetaClient) MarkAsRead(messageID string) error {
 
 // GetPhoneNumberInfo obtiene información del número de teléfono
 func (c *MetaClient) GetPhoneNumberInfo() (map[string]interface{}, error) {
+	// Verificar si el cliente está configurado
+	if !c.IsConfigured() {
+		return nil, fmt.Errorf("cliente Meta no configurado")
+	}
+
 	url := fmt.Sprintf("https://graph.facebook.com/%s/%s", c.APIVersion, c.PhoneNumberID)
 
 	req, err := http.NewRequestWithContext(c.ctx, "GET", url, nil)
@@ -268,5 +306,10 @@ func SendMessageFromBot(to, message string) error {
 	if globalMetaClient == nil {
 		return fmt.Errorf("Meta client no está inicializado")
 	}
+
+	if !globalMetaClient.IsConfigured() {
+		return fmt.Errorf("Meta client no está configurado - configura las credenciales en Integraciones")
+	}
+
 	return globalMetaClient.SendMessage(to, message)
 }
