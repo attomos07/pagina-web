@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/stripe/stripe-go/v78"
@@ -45,7 +46,7 @@ func (s *StripeService) CreateCustomer(email, name, phone string) (*stripe.Custo
 // CreatePaymentIntent crea un PaymentIntent para un pago único
 func (s *StripeService) CreatePaymentIntent(amount int64, currency, customerID, description string) (*stripe.PaymentIntent, error) {
 	params := &stripe.PaymentIntentParams{
-		Amount:      stripe.Int64(amount), // Monto en centavos (255.00 MXN = 25500)
+		Amount:      stripe.Int64(amount), // Monto en centavos
 		Currency:    stripe.String(currency),
 		Customer:    stripe.String(customerID),
 		Description: stripe.String(description),
@@ -133,56 +134,76 @@ func (s *StripeService) ListPrices() []*stripe.Price {
 	return prices
 }
 
-// GetPriceIDForPlan retorna el Price ID de Stripe según el plan
+// GetPriceIDForPlan retorna el Price ID de Stripe según el plan y período
 func (s *StripeService) GetPriceIDForPlan(planName, billingPeriod string) string {
-	// Estos IDs los obtienes después de crear los productos en Stripe
-	// Por ahora son placeholders
-	priceMap := map[string]map[string]string{
+	// Mapeo de variables de entorno según plan y período
+	envKeyMap := map[string]map[string]string{
 		"proton": {
-			"monthly": "price_proton_monthly", // Reemplazar con tu Price ID real
-			"annual":  "price_proton_annual",  // Reemplazar con tu Price ID real
+			"monthly": "STRIPE_PROTON_MONTHLY_PRICE_ID",
+			"annual":  "STRIPE_PROTON_ANNUAL_PRICE_ID",
 		},
 		"neutron": {
-			"monthly": "price_neutron_monthly", // Reemplazar con tu Price ID real
-			"annual":  "price_neutron_annual",  // Reemplazar con tu Price ID real
+			"monthly": "STRIPE_NEUTRON_MONTHLY_PRICE_ID",
+			"annual":  "STRIPE_NEUTRON_ANNUAL_PRICE_ID",
 		},
 		"electron": {
-			"monthly": "price_electron_monthly", // Reemplazar con tu Price ID real
-			"annual":  "price_electron_annual",  // Reemplazar con tu Price ID real
+			"monthly": "STRIPE_ELECTRON_MONTHLY_PRICE_ID",
+			"annual":  "STRIPE_ELECTRON_ANNUAL_PRICE_ID",
 		},
 	}
 
-	if plan, exists := priceMap[planName]; exists {
-		if priceID, exists := plan[billingPeriod]; exists {
-			return priceID
+	if plan, exists := envKeyMap[planName]; exists {
+		if envKey, exists := plan[billingPeriod]; exists {
+			priceID := os.Getenv(envKey)
+			if priceID != "" {
+				return priceID
+			}
+			log.Printf("⚠️  %s no está configurado en variables de entorno", envKey)
 		}
 	}
 
 	return ""
 }
 
-// CalculateAmount calcula el monto en centavos según el plan y período
+// CalculateAmount calcula el monto en centavos obteniendo el precio desde Stripe API
 func (s *StripeService) CalculateAmount(planName, billingPeriod string) int64 {
-	prices := map[string]map[string]int64{
-		"proton": {
-			"monthly": 14900,  // $149.00 MXN
-			"annual":  143200, // $1432.00 MXN (20% descuento)
-		},
-		"neutron": {
-			"monthly": 25500,  // $255.00 MXN
-			"annual":  244800, // $2448.00 MXN (20% descuento)
-		},
-		"electron": {
-			"monthly": 79900,  // $799.00 MXN
-			"annual":  767040, // $7670.40 MXN (20% descuento)
-		},
+	// Obtener el Price ID desde las variables de entorno
+	priceID := s.GetPriceIDForPlan(planName, billingPeriod)
+
+	if priceID == "" {
+		log.Printf("❌ No se encontró Price ID para plan=%s, billing=%s", planName, billingPeriod)
+		return 0
 	}
 
-	if plan, exists := prices[planName]; exists {
-		if amount, exists := plan[billingPeriod]; exists {
-			return amount
-		}
+	// Obtener el precio desde Stripe API
+	p, err := price.Get(priceID, nil)
+	if err != nil {
+		log.Printf("❌ Error obteniendo precio de Stripe para %s: %v", priceID, err)
+		return 0
 	}
 
-	return 0
+	// Validar que el precio tenga un monto válido
+	if p.UnitAmount == 0 {
+		log.Printf("⚠️  Precio %s tiene monto 0", priceID)
+		return 0
+	}
+
+	log.Printf("✅ Precio obtenido de Stripe: Plan=%s, Período=%s, Monto=%d centavos ($%.2f %s)",
+		planName, billingPeriod, p.UnitAmount, float64(p.UnitAmount)/100, p.Currency)
+
+	return p.UnitAmount
+}
+
+// GetPriceFromStripe obtiene el precio completo desde Stripe API
+func (s *StripeService) GetPriceFromStripe(priceID string) (*stripe.Price, error) {
+	if priceID == "" {
+		return nil, fmt.Errorf("priceID vacío")
+	}
+
+	p, err := price.Get(priceID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error obteniendo precio: %w", err)
+	}
+
+	return p, nil
 }

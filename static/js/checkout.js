@@ -1,8 +1,11 @@
 // ============================================
-// CHECKOUT JAVASCRIPT - INTEGRACIÓN STRIPE REAL
+// CHECKOUT JAVASCRIPT - INTEGRACIÓN STRIPE REAL CON PRECIOS DINÁMICOS
 // ============================================
 
 let STRIPE_PUBLISHABLE_KEY = '';
+let plansData = null;
+let selectedPlanData = null;
+let currentBillingPeriod = 'monthly';
 
 // Mapeo de códigos de país a códigos telefónicos
 const COUNTRY_PHONE_CODES = {
@@ -22,14 +25,87 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Cargar clave pública de Stripe desde el backend
     await loadStripePublicKey();
     
+    // Cargar datos de planes desde la API
+    await loadPlansData();
+    
     initLogoAnimation();
     initPaymentMethodToggle();
     initCountryDropdown();
     initStripeElements();
     initFormValidation();
     initPaymentForm();
+    
+    // Cargar detalles del plan seleccionado (ahora con precios reales)
     loadPlanDetails();
 });
+
+// ============================================
+// CARGAR DATOS DE PLANES DESDE LA API
+// ============================================
+
+async function loadPlansData() {
+    try {
+        const response = await fetch('/api/plans-data', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok || !data.success) {
+            throw new Error('Error al cargar los datos de los planes');
+        }
+        
+        plansData = data.plans;
+        console.log('✅ Datos de planes cargados:', plansData);
+        
+    } catch (error) {
+        console.error('❌ Error cargando planes:', error);
+        // Si falla, usar precios de respaldo
+        plansData = getFallbackPlansData();
+    }
+}
+
+// ============================================
+// DATOS DE RESPALDO SI LA API FALLA
+// ============================================
+
+function getFallbackPlansData() {
+    return [
+        {
+            id: 'gratuito',
+            name: 'Gratuito',
+            displayName: 'Plan Gratuito',
+            monthly: { amount: 0, currency: 'MXN' },
+            annual: { amount: 0, currency: 'MXN' },
+            isFree: true
+        },
+        {
+            id: 'proton',
+            name: 'Protón',
+            displayName: 'Plan Protón',
+            monthly: { amount: 149, currency: 'MXN' },
+            annual: { amount: 119, currency: 'MXN' }
+        },
+        {
+            id: 'neutron',
+            name: 'Neutrón',
+            displayName: 'Plan Neutrón',
+            monthly: { amount: 349, currency: 'MXN' },
+            annual: { amount: 279, currency: 'MXN' }
+        },
+        {
+            id: 'electron',
+            name: 'Electrón',
+            displayName: 'Plan Electrón',
+            monthly: { amount: 749, currency: 'MXN' },
+            annual: { amount: 599, currency: 'MXN' }
+        }
+    ];
+}
 
 // ============================================
 // CARGAR CLAVE PÚBLICA DE STRIPE
@@ -498,7 +574,7 @@ async function processPayment() {
         
         const urlParams = new URLSearchParams(window.location.search);
         const plan = urlParams.get('plan') || 'neutron';
-        const billingPeriod = 'monthly'; // Por ahora solo mensual
+        const billingPeriod = urlParams.get('billing') || 'monthly';
         
         // Crear checkout session en el backend
         console.log('📤 Creating checkout session...');
@@ -615,78 +691,91 @@ function showSuccessModal() {
 }
 
 // ============================================
-// LOAD PLAN DETAILS
+// LOAD PLAN DETAILS CON PRECIOS REALES
 // ============================================
 
 function loadPlanDetails() {
     const urlParams = new URLSearchParams(window.location.search);
-    const plan = urlParams.get('plan') || 'neutron';
+    const planId = urlParams.get('plan') || 'neutron';
+    const billingPeriod = urlParams.get('billing') || 'monthly';
     
-    const plans = {
-        proton: {
-            name: 'Plan Protón',
-            price: 149,
-            features: [
-                '1 Chatbot incluido',
-                '1,000 mensajes/mes',
-                'Integración WhatsApp',
-                'Soporte por email'
-            ]
-        },
-        neutron: {
-            name: 'Plan Neutrón',
-            price: 255,
-            features: [
-                '3 Chatbots incluidos',
-                '10,000 mensajes/mes',
-                'Todas las plataformas',
-                'Soporte prioritario'
-            ]
-        },
-        electron: {
-            name: 'Plan Electrón',
-            price: 799,
-            features: [
-                'Chatbots ilimitados',
-                'Mensajes ilimitados',
-                'Todas las funcionalidades',
-                'Soporte dedicado 24/7'
-            ]
-        }
-    };
+    currentBillingPeriod = billingPeriod;
     
-    const selectedPlan = plans[plan] || plans.neutron;
+    // Buscar el plan en los datos cargados
+    if (!plansData) {
+        console.warn('⚠️ Plans data not loaded yet, using fallback');
+        plansData = getFallbackPlansData();
+    }
     
+    selectedPlanData = plansData.find(p => p.id === planId);
+    
+    if (!selectedPlanData) {
+        console.warn(`⚠️ Plan ${planId} not found, using fallback`);
+        selectedPlanData = plansData.find(p => p.id === 'neutron') || plansData[1];
+    }
+    
+    console.log('📋 Selected plan data:', selectedPlanData);
+    
+    // Actualizar nombre del plan
     const planNameElement = document.getElementById('selectedPlanName');
     if (planNameElement) {
-        planNameElement.textContent = selectedPlan.name;
+        planNameElement.textContent = selectedPlanData.displayName || selectedPlanData.name;
     }
     
-    if (selectedPlan.price > 0) {
-        const subtotal = selectedPlan.price;
-        const tax = subtotal * 0.16;
-        const total = subtotal + tax;
-        
-        const subtotalElement = document.getElementById('subtotal');
-        const taxElement = document.getElementById('tax');
-        const totalElement = document.getElementById('total');
-        
-        if (subtotalElement) subtotalElement.textContent = `$${subtotal.toFixed(2)} MXN`;
-        if (taxElement) taxElement.textContent = `$${tax.toFixed(2)} MXN`;
-        if (totalElement) totalElement.textContent = `$${total.toFixed(2)} MXN`;
+    // Actualizar período de facturación
+    const billingPeriodElement = document.getElementById('billingPeriod');
+    if (billingPeriodElement) {
+        billingPeriodElement.textContent = billingPeriod === 'annual' ? 'Anual' : 'Mensual';
     }
     
-    const featuresList = document.getElementById('planFeatures');
-    if (featuresList) {
-        featuresList.innerHTML = selectedPlan.features.map(feature => `
-            <li>
-                <i class="lni lni-checkmark-circle"></i>
-                <span>${feature}</span>
-            </li>
-        `).join('');
+    // Obtener precio según el período
+    const priceData = billingPeriod === 'annual' 
+        ? selectedPlanData.annual 
+        : selectedPlanData.monthly;
+    
+    const subtotal = priceData.amount || 0;
+    const currency = priceData.currency || 'MXN';
+    
+    // Calcular IVA (16%)
+    const tax = subtotal * 0.16;
+    const total = subtotal + tax;
+    
+    // Actualizar elementos de precio
+    const subtotalElement = document.getElementById('subtotal');
+    const taxElement = document.getElementById('tax');
+    const totalElement = document.getElementById('total');
+    
+    if (subtotalElement) {
+        subtotalElement.textContent = `$${subtotal.toFixed(2)} ${currency}`;
+    }
+    if (taxElement) {
+        taxElement.textContent = `$${tax.toFixed(2)} ${currency}`;
+    }
+    if (totalElement) {
+        totalElement.textContent = `$${total.toFixed(2)} ${currency}`;
     }
     
-    console.log('📋 Plan details loaded:', selectedPlan.name);
+    // Actualizar features si existen en los datos
+    if (selectedPlanData.features) {
+        const featuresList = document.getElementById('planFeatures');
+        if (featuresList) {
+            featuresList.innerHTML = selectedPlanData.features.map(feature => {
+                // Remover marcadores de check/cross si existen
+                const cleanFeature = feature.replace(/^[✓✗]\s*/, '');
+                return `
+                    <li>
+                        <i class="lni lni-checkmark-circle"></i>
+                        <span>${cleanFeature}</span>
+                    </li>
+                `;
+            }).join('');
+        }
+    }
+    
+    console.log(`📋 Plan details loaded: ${selectedPlanData.name}`);
+    console.log(`💰 Subtotal: $${subtotal.toFixed(2)} ${currency}`);
+    console.log(`💵 IVA: $${tax.toFixed(2)} ${currency}`);
+    console.log(`💳 Total: $${total.toFixed(2)} ${currency}`);
 }
 
 // ============================================
@@ -715,3 +804,4 @@ document.querySelectorAll('.form-input, .form-select').forEach(input => {
 console.log('✅ Checkout JS initialized');
 console.log('🔒 Security: PCI compliant payment processing');
 console.log('💳 Stripe integration: READY');
+console.log('💰 Dynamic pricing: ENABLED');
