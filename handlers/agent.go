@@ -404,7 +404,7 @@ func CreateAgent(c *gin.Context) {
 
 		} else {
 			// ========================
-			// ORBITAL BOT (Go + Meta API) - SERVIDOR INDIVIDUAL POR AGENTE
+			// ORBITAL BOT (Go + Meta API) - SERVIDOR POR USUARIO
 			// ========================
 			log.Println("\n" + strings.Repeat("═", 80))
 			log.Printf("║ %s ║", centerText("DESPLIEGUE DE ORBITAL BOT (GO + META API)", 76))
@@ -460,60 +460,83 @@ func CreateAgent(c *gin.Context) {
 				}
 			}
 
-			// PASO 2: Crear servidor individual para este OrbitalBot (CRÍTICO)
+			// PASO 2: Obtener o crear servidor del usuario (CRÍTICO)
 			log.Println("\n" + strings.Repeat("═", 80))
-			log.Printf("║ %s ║", centerText("PASO 2/5: CREAR SERVIDOR INDIVIDUAL", 76))
+			log.Printf("║ %s ║", centerText("PASO 2/5: OBTENER O CREAR SERVIDOR DEL USUARIO", 76))
 			log.Println(strings.Repeat("═", 80))
-			log.Printf("🖥️  [Agent %d] Creando servidor individual para OrbitalBot\n", agent.ID)
 
-			agent.ServerStatus = "creating"
-			config.DB.Save(&agent)
+			// Buscar si el usuario ya tiene un agente con servidor
+			var existingAgent models.Agent
+			hasExistingServer := config.DB.Where("user_id = ? AND server_id > 0 AND bot_type = ?", user.ID, "orbital").
+				First(&existingAgent).Error == nil
 
-			hetznerService, err := services.NewHetznerService()
-			if err != nil {
-				log.Printf("❌ [Agent %d] Error inicializando servicio Hetzner: %v", agent.ID, err)
-				agent.ServerStatus = "error"
-				agent.DeployStatus = "error"
+			if hasExistingServer {
+				// REUTILIZAR servidor existente del usuario
+				log.Printf("✅ [Agent %d] Usuario ya tiene servidor (ID: %d)", agent.ID, existingAgent.ServerID)
+				log.Printf("   - IP: %s", existingAgent.ServerIP)
+				log.Printf("   - Reutilizando para nuevo agente...")
+
+				agent.ServerID = existingAgent.ServerID
+				agent.ServerIP = existingAgent.ServerIP
+				agent.ServerPassword = existingAgent.ServerPassword
+				agent.ServerStatus = "ready"
 				config.DB.Save(&agent)
-				return
-			}
 
-			serverName := fmt.Sprintf("attomos-orbital-%d", agent.ID)
-			serverResp, err := hetznerService.CreateServer(serverName, user.ID)
-			if err != nil {
-				log.Printf("❌ [Agent %d] Error creando servidor: %v", agent.ID, err)
-				agent.ServerStatus = "error"
-				agent.DeployStatus = "error"
+				log.Printf("✅ [Agent %d] Servidor reutilizado exitosamente", agent.ID)
+			} else {
+				// CREAR nuevo servidor para el usuario
+				log.Printf("🖥️  [Agent %d] Primer agente OrbitalBot del usuario - Creando servidor\n", agent.ID)
+
+				agent.ServerStatus = "creating"
 				config.DB.Save(&agent)
-				return
-			}
 
-			agent.ServerID = serverResp.Server.ID
-			agent.ServerIP = serverResp.Server.PublicNet.IPv4.IP
-			agent.ServerPassword = serverResp.RootPassword
-			agent.ServerStatus = "provisioning"
-			config.DB.Save(&agent)
+				hetznerService, err := services.NewHetznerService()
+				if err != nil {
+					log.Printf("❌ [Agent %d] Error inicializando servicio Hetzner: %v", agent.ID, err)
+					agent.ServerStatus = "error"
+					agent.DeployStatus = "error"
+					config.DB.Save(&agent)
+					return
+				}
 
-			log.Printf("✅ [Agent %d] Servidor individual creado exitosamente:", agent.ID)
-			log.Printf("   - Hetzner ID: %d", serverResp.Server.ID)
-			log.Printf("   - IP: %s", serverResp.Server.PublicNet.IPv4.IP)
+				// Nombre único por USUARIO, no por agente
+				serverName := fmt.Sprintf("attomos-user-%d", user.ID)
+				serverResp, err := hetznerService.CreateServer(serverName, user.ID)
+				if err != nil {
+					log.Printf("❌ [Agent %d] Error creando servidor: %v", agent.ID, err)
+					agent.ServerStatus = "error"
+					agent.DeployStatus = "error"
+					config.DB.Save(&agent)
+					return
+				}
 
-			// Esperar a que el servidor esté en estado "running"
-			log.Printf("⏳ [Agent %d] Esperando que el servidor esté listo...", agent.ID)
-			if err := hetznerService.WaitForServer(serverResp.Server.ID, 5*time.Minute); err != nil {
-				log.Printf("❌ [Agent %d] Timeout esperando servidor: %v", agent.ID, err)
-				agent.ServerStatus = "error"
-				agent.DeployStatus = "error"
+				agent.ServerID = serverResp.Server.ID
+				agent.ServerIP = serverResp.Server.PublicNet.IPv4.IP
+				agent.ServerPassword = serverResp.RootPassword
+				agent.ServerStatus = "provisioning"
 				config.DB.Save(&agent)
-				return
+
+				log.Printf("✅ [Agent %d] Servidor del usuario creado exitosamente:", agent.ID)
+				log.Printf("   - Hetzner ID: %d", serverResp.Server.ID)
+				log.Printf("   - IP: %s", serverResp.Server.PublicNet.IPv4.IP)
+
+				// Esperar a que el servidor esté en estado "running"
+				log.Printf("⏳ [Agent %d] Esperando que el servidor esté listo...", agent.ID)
+				if err := hetznerService.WaitForServer(serverResp.Server.ID, 5*time.Minute); err != nil {
+					log.Printf("❌ [Agent %d] Timeout esperando servidor: %v", agent.ID, err)
+					agent.ServerStatus = "error"
+					agent.DeployStatus = "error"
+					config.DB.Save(&agent)
+					return
+				}
+
+				log.Printf("✅ [Agent %d] Servidor en estado 'running'", agent.ID)
+
+				agent.ServerStatus = "initializing"
+				config.DB.Save(&agent)
+
+				go hetznerService.MonitorCloudInitLogs(agent.ServerIP, agent.ServerPassword, 10*time.Minute)
 			}
-
-			log.Printf("✅ [Agent %d] Servidor en estado 'running'", agent.ID)
-
-			agent.ServerStatus = "initializing"
-			config.DB.Save(&agent)
-
-			go hetznerService.MonitorCloudInitLogs(agent.ServerIP, agent.ServerPassword, 10*time.Minute)
 
 			// PASO 3: Configurar DNS en Cloudflare (NO BLOQUEANTE)
 			log.Println("\n" + strings.Repeat("═", 80))
@@ -565,13 +588,13 @@ func CreateAgent(c *gin.Context) {
 				log.Printf("   URL: %s", credentials.ChatwootURL)
 			}
 
-			// PASO 5: Desplegar OrbitalBot en el servidor individual (CRÍTICO)
+			// PASO 5: Desplegar OrbitalBot en el servidor del usuario (CRÍTICO)
 			log.Println("\n" + strings.Repeat("═", 80))
 			log.Printf("║ %s ║", centerText("PASO 5/5: DESPLIEGUE DEL ORBITAL BOT", 76))
 			log.Println(strings.Repeat("═", 80))
 			log.Printf("🤖 [Agent %d] Tipo de bot: %s", agent.ID, agent.BotType)
 			log.Printf("   - Puerto: %d", agent.Port)
-			log.Printf("   - Servidor Individual: %s", agent.ServerIP)
+			log.Printf("   - Servidor del Usuario: %s", agent.ServerIP)
 			log.Printf("========================================")
 
 			agent.DeployStatus = "deploying"
@@ -589,7 +612,7 @@ func CreateAgent(c *gin.Context) {
 
 				connectErr = orbitalService.Connect()
 				if connectErr == nil {
-					log.Printf("✅ [Agent %d] Conectado exitosamente al servidor individual", agent.ID)
+					log.Printf("✅ [Agent %d] Conectado exitosamente al servidor del usuario", agent.ID)
 					break
 				}
 
@@ -643,7 +666,7 @@ func CreateAgent(c *gin.Context) {
 
 			log.Printf("========================================")
 			log.Printf("🎉 [Agent %d] ORBITAL BOT DESPLEGADO EXITOSAMENTE", agent.ID)
-			log.Printf("   - Servidor Individual: %s", agent.ServerIP)
+			log.Printf("   - Servidor del Usuario: %s", agent.ServerIP)
 			log.Printf("   - Puerto: %d", agent.Port)
 			log.Printf("   - Tecnología: Go + Meta Business API")
 			log.Printf("   - Webhook: https://%s:%d/webhook", agent.ServerIP, agent.Port)
@@ -911,7 +934,7 @@ func DeleteAgent(c *gin.Context) {
 				serverManager.ReleaseAgentPort(&globalServer)
 			}
 		} else {
-			// OrbitalBot - servidor individual (REEMPLAZA A BUILDERBOT)
+			// OrbitalBot - servidor del usuario (compartido entre sus agentes)
 			if agent.HasOwnServer() {
 				orbitalService := services.NewOrbitalBotDeployService(agent.ServerIP, agent.ServerPassword)
 				if err := orbitalService.Connect(); err != nil {
@@ -923,17 +946,28 @@ func DeleteAgent(c *gin.Context) {
 				if err := orbitalService.StopAndRemoveBot(agent.ID); err != nil {
 					log.Printf("⚠️  [Agent %d] Error eliminando bot: %v", agent.ID, err)
 				} else {
-					log.Printf("✅ [Agent %d] OrbitalBot eliminado del servidor individual", agent.ID)
+					log.Printf("✅ [Agent %d] OrbitalBot eliminado del servidor del usuario", agent.ID)
 				}
 
-				// Eliminar servidor de Hetzner
-				hetznerService, err := services.NewHetznerService()
-				if err == nil {
-					if err := hetznerService.DeleteServer(agent.ServerID); err != nil {
-						log.Printf("⚠️  [Agent %d] Error eliminando servidor Hetzner: %v", agent.ID, err)
-					} else {
-						log.Printf("✅ [Agent %d] Servidor Hetzner eliminado: ID=%d", agent.ID, agent.ServerID)
+				// Verificar si el usuario tiene más agentes en este servidor
+				var otherAgents int64
+				config.DB.Model(&models.Agent{}).
+					Where("user_id = ? AND server_id = ? AND id != ?", user.ID, agent.ServerID, agent.ID).
+					Count(&otherAgents)
+
+				if otherAgents == 0 {
+					// Es el último agente, eliminar servidor
+					log.Printf("🗑️  [Agent %d] Último agente del usuario - eliminando servidor...", agent.ID)
+					hetznerService, err := services.NewHetznerService()
+					if err == nil {
+						if err := hetznerService.DeleteServer(agent.ServerID); err != nil {
+							log.Printf("⚠️  [Agent %d] Error eliminando servidor Hetzner: %v", agent.ID, err)
+						} else {
+							log.Printf("✅ [Agent %d] Servidor Hetzner eliminado: ID=%d", agent.ID, agent.ServerID)
+						}
 					}
+				} else {
+					log.Printf("ℹ️  [Agent %d] Servidor conservado (usuario tiene %d agente(s) más)", agent.ID, otherAgents)
 				}
 			}
 		}
