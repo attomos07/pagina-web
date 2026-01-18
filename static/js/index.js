@@ -211,23 +211,25 @@ function initSectionFadeIn() {
 }
 
 // ============================================
-// NAVBAR FUNCTIONALITY
+// NAVBAR FUNCTIONALITY - iOS Style
 // ============================================
 function initNavbar() {
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const navMenu = document.getElementById('navMenu');
     const navbar = document.getElementById('navbar');
+    const body = document.body;
 
     if (mobileMenuBtn && navMenu) {
         mobileMenuBtn.classList.remove('active');
         navMenu.classList.remove('active');
-        document.body.classList.remove('menu-open');
+        body.classList.remove('menu-open');
         console.log('✅ Navbar inicializado - menú cerrado');
     }
 
+    // Efecto scroll
     window.addEventListener('scroll', function() {
         if (navbar) {
-            if (window.scrollY > 50) {
+            if (window.scrollY > 10) {
                 navbar.classList.add('scrolled');
             } else {
                 navbar.classList.remove('scrolled');
@@ -239,7 +241,8 @@ function initNavbar() {
         if (mobileMenuBtn && navMenu) {
             mobileMenuBtn.classList.add('active');
             navMenu.classList.add('active');
-            document.body.classList.add('menu-open');
+            body.classList.add('menu-open');
+            mobileMenuBtn.setAttribute('aria-expanded', 'true');
             console.log('📱 Menú móvil abierto');
         }
     }
@@ -248,11 +251,13 @@ function initNavbar() {
         if (mobileMenuBtn && navMenu) {
             mobileMenuBtn.classList.remove('active');
             navMenu.classList.remove('active');
-            document.body.classList.remove('menu-open');
+            body.classList.remove('menu-open');
+            mobileMenuBtn.setAttribute('aria-expanded', 'false');
             console.log('❌ Menú móvil cerrado');
         }
     }
 
+    // Toggle del menú
     if (mobileMenuBtn && navMenu) {
         mobileMenuBtn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -268,6 +273,7 @@ function initNavbar() {
         });
     }
 
+    // Cerrar al hacer clic en un link
     const navLinks = document.querySelectorAll('.nav-link');
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
@@ -277,6 +283,7 @@ function initNavbar() {
                 e.preventDefault();
             }
             
+            // Marcar como activo solo los links normales
             if (!this.classList.contains('nav-cta') && !this.classList.contains('nav-login')) {
                 document.querySelectorAll('.nav-link:not(.nav-cta):not(.nav-login)').forEach(l => {
                     l.classList.remove('active');
@@ -286,10 +293,14 @@ function initNavbar() {
                 localStorage.setItem('activeNavLink', href);
             }
             
-            closeMobileMenu();
+            // Cerrar con pequeño delay para iOS
+            setTimeout(() => {
+                closeMobileMenu();
+            }, 150);
         });
     });
     
+    // Restaurar link activo
     const savedActiveLink = localStorage.getItem('activeNavLink');
     if (savedActiveLink && savedActiveLink === window.location.pathname) {
         const linkToActivate = document.querySelector(`.nav-link[href="${savedActiveLink}"]`);
@@ -301,6 +312,7 @@ function initNavbar() {
         }
     }
 
+    // Cerrar con click fuera
     document.addEventListener('click', function(e) {
         if (navMenu && navMenu.classList.contains('active')) {
             const clickedInsideMenu = navMenu.contains(e.target);
@@ -312,6 +324,7 @@ function initNavbar() {
         }
     });
 
+    // Cerrar al redimensionar
     let resizeTimer;
     window.addEventListener('resize', function() {
         clearTimeout(resizeTimer);
@@ -322,13 +335,19 @@ function initNavbar() {
         }, 250);
     });
 
+    // Cerrar con ESC
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            if (navMenu && navMenu.classList.contains('active')) {
-                closeMobileMenu();
-            }
+        if (e.key === 'Escape' && navMenu && navMenu.classList.contains('active')) {
+            closeMobileMenu();
         }
     });
+
+    // Prevenir scroll bounce en iOS
+    document.addEventListener('touchmove', function(e) {
+        if (body.classList.contains('menu-open')) {
+            e.preventDefault();
+        }
+    }, { passive: false });
 
     setActiveNavLink();
 }

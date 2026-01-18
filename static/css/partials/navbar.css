@@ -1,5 +1,5 @@
 /* ============================================
-   NAVBAR CSS - REDISEÑADO CON ESTILO PREMIUM
+   NAVBAR CSS - DESKTOP PREMIUM + iOS MOBILE
    ============================================ */
 
 /* Reset y base */
@@ -13,7 +13,7 @@
     top: 0;
     left: 0;
     right: 0;
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     z-index: 1000;
@@ -227,81 +227,95 @@
 /* Botón hamburguesa - OCULTO por defecto */
 .mobile-menu-btn {
     display: none;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: none;
+    background: rgba(255, 255, 255, 0.08);
     border: none;
     cursor: pointer;
-    padding: 10px;
     z-index: 1001;
-    position: relative;
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-.mobile-menu-btn:hover {
-    background: rgba(6, 182, 212, 0.1);
-    transform: scale(1.1);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    -webkit-tap-highlight-color: transparent;
 }
 
 .mobile-menu-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.9);
+    background: rgba(255, 255, 255, 0.12);
 }
 
-.hamburger-line {
-    width: 28px;
-    height: 3px;
-    background: linear-gradient(90deg, #06b6d4, #22d3ee);
-    border-radius: 3px;
-    margin: 3px 0;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-    transform-origin: center;
-    box-shadow: 0 2px 4px rgba(6, 182, 212, 0.2);
+.menu-icon {
+    width: 20px;
+    height: 14px;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* Animaciones del botón hamburguesa */
-.mobile-menu-btn.active .hamburger-line:nth-child(1) {
-    transform: rotate(45deg) translate(8px, 8px);
-    background: linear-gradient(90deg, #ef4444, #f97316);
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+.menu-icon span {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: #374151;
+    border-radius: 2px;
+    left: 0;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.mobile-menu-btn.active .hamburger-line:nth-child(2) {
+.menu-icon span:nth-child(1) {
+    top: 0;
+}
+
+.menu-icon span:nth-child(2) {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.menu-icon span:nth-child(3) {
+    bottom: 0;
+}
+
+.mobile-menu-btn.active .menu-icon span:nth-child(1) {
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+}
+
+.mobile-menu-btn.active .menu-icon span:nth-child(2) {
     opacity: 0;
-    transform: scale(0) rotate(180deg);
+    transform: translateX(-20px);
 }
 
-.mobile-menu-btn.active .hamburger-line:nth-child(3) {
-    transform: rotate(-45deg) translate(8px, -8px);
-    background: linear-gradient(90deg, #ef4444, #f97316);
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+.mobile-menu-btn.active .menu-icon span:nth-child(3) {
+    bottom: 50%;
+    transform: translateY(50%) rotate(-45deg);
 }
 
 /* ============================================
-   RESPONSIVE - MOBILE
+   RESPONSIVE - iOS MOBILE STYLE
    ============================================ */
 
 @media (max-width: 768px) {
-    /* Container en mobile - reorganizado */
+    /* Container en mobile */
     .nav-container {
-        padding: 1rem 1.25rem;
+        padding: 0.9rem 1rem;
         justify-content: center;
+        height: 60px;
     }
     
-    /* Botón hamburguesa a la IZQUIERDA */
+    /* Botón hamburguesa a la IZQUIERDA - Estilo iOS */
     .mobile-menu-btn {
         display: flex;
         position: absolute;
-        left: 1.25rem;
-        top: 50%;
-        transform: translateY(-50%);
+        left: 1rem;
+        background: rgba(0, 0, 0, 0.08);
     }
     
     .mobile-menu-btn.active {
-        transform: translateY(-50%);
+        background: rgba(0, 0, 0, 0.12);
+    }
+    
+    .menu-icon span {
+        background: #374151;
     }
     
     /* Logo CENTRADO en mobile */
@@ -313,7 +327,7 @@
     }
     
     .nav-logo img {
-        height: 32px;
+        height: 28px;
     }
     
     /* Ocultar nav-auth en mobile */
@@ -321,149 +335,170 @@
         display: none;
     }
     
-    /* MENU MOBILE - OCULTO POR DEFECTO */
+    /* MENU MOBILE - iOS Style */
     .nav-menu {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100vh;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 249, 255, 0.98) 100%);
-        backdrop-filter: blur(30px);
-        -webkit-backdrop-filter: blur(30px);
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        gap: 1.5rem;
-        
-        /* ESTADO INICIAL - COMPLETAMENTE OCULTO */
-        transform: translateX(-100%);
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 1000;
-        
-        padding-top: 80px;
-    }
-    
-    /* Decoración del menú mobile */
-    .nav-menu::before {
-        content: '';
-        position: absolute;
-        top: 0;
+        top: 60px;
         left: 0;
         right: 0;
         bottom: 0;
-        background: radial-gradient(circle at 20% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 50%),
-                    radial-gradient(circle at 80% 80%, rgba(34, 211, 238, 0.05) 0%, transparent 50%);
-        pointer-events: none;
-        z-index: -1;
+        background: #ffffff;
+        backdrop-filter: blur(40px) saturate(180%);
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 0;
+        padding: 60px 20px 40px;
+        
+        /* Estado inicial - OCULTO */
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-20px);
+        transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        z-index: 999;
     }
     
-    /* ESTADO ACTIVO - VISIBLE */
+    /* Estado activo - VISIBLE */
     .nav-menu.active {
-        transform: translateX(0);
         opacity: 1;
         visibility: visible;
-    }
-    
-    /* Items del menú mobile */
-    .nav-item {
-        margin: 0;
-        text-align: center;
-        width: 100%;
-        max-width: 320px;
-        
-        /* Inicialmente invisible para animación */
-        opacity: 0;
-        transform: translateY(30px);
-        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-    }
-    
-    /* Animación de items cuando el menú está activo */
-    .nav-menu.active .nav-item {
-        opacity: 1;
         transform: translateY(0);
     }
     
-    .nav-menu.active .nav-item:nth-child(1) { transition-delay: 0.1s; }
-    .nav-menu.active .nav-item:nth-child(2) { transition-delay: 0.15s; }
-    .nav-menu.active .nav-item:nth-child(3) { transition-delay: 0.2s; }
-    .nav-menu.active .nav-item:nth-child(4) { transition-delay: 0.25s; }
-    .nav-menu.active .nav-item:nth-child(5) { transition-delay: 0.3s; }
-    .nav-menu.active .nav-item:nth-child(6) { transition-delay: 0.35s; }
-    .nav-menu.active .nav-item:nth-child(7) { transition-delay: 0.4s; }
-    
-    /* Links en mobile */
-    .nav-link {
-        display: block;
-        padding: 1rem 2rem;
-        font-size: 1.1rem;
-        font-weight: 700;
+    /* Items del menú mobile - iOS Style */
+    .nav-item {
         width: 100%;
-        text-align: center;
-        border-radius: 16px;
-        margin: 0.25rem 0;
-        color: #1f2937;
-        background: white;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        max-width: 400px;
+        
+        /* Animación inicial */
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+        transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
     
-    .nav-link::after {
+    .nav-menu.active .nav-item {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    
+    .nav-menu.active .nav-item:nth-child(1) { transition-delay: 0.05s; }
+    .nav-menu.active .nav-item:nth-child(2) { transition-delay: 0.10s; }
+    .nav-menu.active .nav-item:nth-child(3) { transition-delay: 0.15s; }
+    .nav-menu.active .nav-item:nth-child(4) { transition-delay: 0.20s; }
+    .nav-menu.active .nav-item:nth-child(5) { transition-delay: 0.25s; }
+    
+    /* Links en mobile - iOS Style */
+    .nav-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        font-size: 1.1rem;
+        font-weight: 400;
+        width: 100%;
+        text-align: left;
+        color: #374151;
+        background: rgba(0, 0, 0, 0.03);
+        border-radius: 14px;
+        margin-bottom: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        position: relative;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    .nav-link::before {
         display: none;
     }
     
-    .nav-link:hover {
-        background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(34, 211, 238, 0.1));
-        color: #06b6d4;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(6, 182, 212, 0.15);
+    .nav-link::after {
+        content: '›';
+        font-size: 1.5rem;
+        color: rgba(0, 0, 0, 0.3);
+        position: static;
+        width: auto;
+        height: auto;
+        background: none;
+        transform: none;
+        transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    
+    .nav-link:active {
+        transform: scale(0.97);
+        background: rgba(0, 0, 0, 0.06);
     }
     
     .nav-link.active {
-        background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(34, 211, 238, 0.15));
-        color: #06b6d4;
-        box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+        background: rgba(6, 182, 212, 0.15);
+        color: #22d3ee;
+        border-color: rgba(6, 182, 212, 0.3);
     }
     
-    /* Botón login en mobile */
+    .nav-link.active::after {
+        color: #22d3ee;
+    }
+    
+    /* Separador visual - iOS Style */
+    .nav-menu::before {
+        content: '';
+        width: 100%;
+        max-width: 400px;
+        height: 1px;
+        background: rgba(0, 0, 0, 0.1);
+        margin: 12px 0;
+        opacity: 0;
+        transform: scaleX(0);
+        transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        order: 5;
+    }
+    
+    .nav-menu.active::before {
+        opacity: 1;
+        transform: scaleX(1);
+        transition-delay: 0.25s;
+    }
+    
+    /* Botón login en mobile - iOS Style */
     .nav-login {
-        color: #06b6d4 !important;
-        background: white !important;
-        border: 2px solid rgba(6, 182, 212, 0.4);
-        margin: 0.25rem 0;
+        color: #22d3ee !important;
+        background: rgba(6, 182, 212, 0.1) !important;
+        border-color: rgba(6, 182, 212, 0.2) !important;
+        font-weight: 500;
+        order: 6;
     }
     
-    .nav-login:hover {
-        background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(34, 211, 238, 0.1)) !important;
-        border-color: rgba(6, 182, 212, 0.7);
-        box-shadow: 0 4px 20px rgba(6, 182, 212, 0.25);
+    .nav-login:active {
+        background: rgba(6, 182, 212, 0.15) !important;
     }
     
-    /* CTA en mobile */
+    .nav-login::after {
+        color: #22d3ee;
+    }
+    
+    /* CTA en mobile - iOS Style */
     .nav-cta {
-        margin-top: 1rem;
-        padding: 1.25rem 2.5rem !important;
-        font-size: 1.15rem;
-        min-width: 220px;
         background: linear-gradient(135deg, #06b6d4, #0891b2) !important;
         color: white !important;
-        border: none;
-        box-shadow: 0 6px 25px rgba(6, 182, 212, 0.35);
+        border: none !important;
+        font-weight: 600;
+        box-shadow: 0 8px 32px rgba(6, 182, 212, 0.4);
+        margin-top: 8px;
+        order: 7;
     }
     
-    .nav-cta:hover {
-        background: linear-gradient(135deg, #0891b2, #0e7490) !important;
-        transform: translateY(-3px);
-        box-shadow: 0 8px 35px rgba(6, 182, 212, 0.45);
+    .nav-cta::after {
+        display: none;
+    }
+    
+    .nav-cta:active {
+        transform: scale(0.97);
+        box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
     }
 }
 
 /* Prevenir scroll cuando menú móvil está abierto */
 body.menu-open {
     overflow: hidden;
-    position: fixed;
-    width: 100%;
 }
 
 /* ============================================
@@ -491,24 +526,26 @@ body.menu-open {
 }
 
 /* ============================================
-   ANIMACIONES ADICIONALES
+   ACCESIBILIDAD
    ============================================ */
 
-/* Efecto de brillo sutil en hover */
-@media (min-width: 769px) {
-    .nav-link:not(.nav-cta):not(.nav-login):hover {
-        animation: shimmer 1s ease-in-out;
-    }
-    
-    @keyframes shimmer {
-        0% { background-position: -200% center; }
-        100% { background-position: 200% center; }
-    }
+.mobile-menu-btn:focus-visible,
+.nav-link:focus-visible {
+    outline: 2px solid rgba(6, 182, 212, 0.6);
+    outline-offset: 4px;
 }
 
-/* Smooth scroll para toda la página */
-html {
-    scroll-behavior: smooth;
+/* ============================================
+   REDUCCIÓN DE MOVIMIENTO
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
 /* Fix para iOS Safari */
@@ -519,30 +556,12 @@ html {
     
     @media (max-width: 768px) {
         .nav-menu {
-            -webkit-backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
         }
     }
 }
 
-/* ============================================
-   ACCESIBILIDAD
-   ============================================ */
-
-/* Focus visible para navegación por teclado */
-.nav-link:focus-visible,
-.mobile-menu-btn:focus-visible {
-    outline: 3px solid rgba(6, 182, 212, 0.5);
-    outline-offset: 4px;
-    border-radius: 12px;
-}
-
-/* Reducir movimiento para usuarios que lo prefieren */
-@media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
+/* Smooth scroll */
+html {
+    scroll-behavior: smooth;
 }
