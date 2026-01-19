@@ -11,7 +11,7 @@
         <!-- Menu de navegación (centrado) -->
         <ul class="nav-menu" id="navMenu">
             <li class="nav-item">
-                <a href="/" class="nav-link active">Inicio</a>
+                <a href="/" class="nav-link">Inicio</a>
             </li>
             <li class="nav-item">
                 <a href="/agents" class="nav-link">Agentes</a>
@@ -26,16 +26,16 @@
                 <a href="/contact" class="nav-link">Contacto</a>
             </li>
             
-            <!-- Login y CTA en mobile (después del separador) -->
-            <li class="nav-item">
+            <!-- Login y CTA solo para MOBILE (hidden en desktop con clase mobile-only) -->
+            <li class="nav-item mobile-only">
                 <a href="/login" class="nav-link nav-login">Iniciar sesión</a>
             </li>
-            <li class="nav-item">
+            <li class="nav-item mobile-only">
                 <a href="/register" class="nav-link nav-cta">Registrarse</a>
             </li>
         </ul>
         
-        <!-- Botones de autenticación (desktop) -->
+        <!-- Botones de autenticación solo para DESKTOP -->
         <div class="nav-auth">
             <a href="/login" class="nav-link nav-login">Iniciar sesión</a>
             <a href="/register" class="nav-link nav-cta">Registrarse</a>
@@ -51,4 +51,6 @@
         </button>
     </div>
 </nav>
+
+<script src="/static/js/partials/navbar.js"></script>
 {{end}}

@@ -102,6 +102,11 @@
     margin: 0;
 }
 
+/* Ocultar los botones de auth que están dentro del nav-menu en DESKTOP */
+.nav-menu .nav-item.mobile-only {
+    display: none;
+}
+
 .nav-link {
     color: #374151;
     text-decoration: none;
@@ -330,9 +335,16 @@
         height: 28px;
     }
     
-    /* Ocultar nav-auth en mobile */
+    /* Ocultar nav-auth (botones desktop) en mobile */
     .nav-auth {
         display: none;
+    }
+    
+    /* Mostrar botones de auth dentro del nav-menu en MOBILE */
+    .nav-menu .nav-item.mobile-only {
+        display: block;
+        width: 100%;
+        max-width: 400px;
     }
     
     /* MENU MOBILE - iOS Style */
@@ -387,6 +399,8 @@
     .nav-menu.active .nav-item:nth-child(3) { transition-delay: 0.15s; }
     .nav-menu.active .nav-item:nth-child(4) { transition-delay: 0.20s; }
     .nav-menu.active .nav-item:nth-child(5) { transition-delay: 0.25s; }
+    .nav-menu.active .nav-item:nth-child(6) { transition-delay: 0.30s; }
+    .nav-menu.active .nav-item:nth-child(7) { transition-delay: 0.35s; }
     
     /* Links en mobile - iOS Style */
     .nav-link {
@@ -464,6 +478,9 @@
         background: rgba(6, 182, 212, 0.1) !important;
         border-color: rgba(6, 182, 212, 0.2) !important;
         font-weight: 500;
+    }
+    
+    .mobile-only:nth-child(6) {
         order: 6;
     }
     
@@ -483,6 +500,9 @@
         font-weight: 600;
         box-shadow: 0 8px 32px rgba(6, 182, 212, 0.4);
         margin-top: 8px;
+    }
+    
+    .mobile-only:nth-child(7) {
         order: 7;
     }
     
