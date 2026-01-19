@@ -1014,33 +1014,27 @@ body {
 }
 
 .onboarding-modal-header {
-    padding: 1.5rem 2rem;
-    border-bottom: 2px solid #f0f0f0;
+    padding: 1rem 1.5rem;
+    border-bottom: none;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
-    background: linear-gradient(to bottom, #fafafa, #ffffff);
+    background: transparent;
     flex-shrink: 0;
 }
 
 .onboarding-modal-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #1a1a1a;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    display: none;
 }
 
 .onboarding-modal-title i {
-    color: #06b6d4;
-    font-size: 1.75rem;
+    display: none;
 }
 
 .btn-close-onboarding {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%; /* CIRCULAR */
     border: none;
     background: #f3f4f6;
     color: #6b7280;
@@ -1048,14 +1042,25 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     font-size: 1.25rem;
+    position: relative;
+    flex-shrink: 0;
 }
 
 .btn-close-onboarding:hover {
     background: #fee2e2;
     color: #ef4444;
-    transform: scale(1.1) rotate(90deg);
+    transform: rotate(90deg) scale(1.1);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.btn-close-onboarding i {
+    transition: all 0.3s ease;
+}
+
+.btn-close-onboarding:hover i {
+    transform: scale(1.2);
 }
 
 .onboarding-modal-body {

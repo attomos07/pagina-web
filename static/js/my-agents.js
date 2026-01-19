@@ -95,10 +95,11 @@ async function loadOnboardingContent() {
             script.src = '/static/js/onboarding.js';
             script.onload = function() {
                 console.log('✅ Script de onboarding cargado');
-                // Reinicializar el onboarding
-                if (typeof initializeOnboardingInModal === 'function') {
-                    initializeOnboardingInModal();
-                }
+                
+                // Reinicializar eventos después de cargar el script
+                setTimeout(() => {
+                    reinitializeOnboardingEvents();
+                }, 100);
             };
             document.body.appendChild(script);
         }
@@ -116,6 +117,125 @@ async function loadOnboardingContent() {
             </div>
         `;
     }
+}
+
+// Reinicializar eventos del onboarding en el modal
+function reinitializeOnboardingEvents() {
+    console.log('🔄 Reinicializando eventos del onboarding en modal');
+    
+    // Reinicializar selección de red social
+    const socialInputs = document.querySelectorAll('input[name="social"]');
+    const btnStep1 = document.getElementById('btnStep1');
+    
+    if (socialInputs.length > 0 && btnStep1) {
+        // Limpiar eventos anteriores
+        const newBtnStep1 = btnStep1.cloneNode(true);
+        btnStep1.parentNode.replaceChild(newBtnStep1, btnStep1);
+        
+        socialInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                console.log('✅ Red social seleccionada:', this.value);
+                newBtnStep1.disabled = false;
+            });
+        });
+        
+        // Evento para el botón de continuar
+        newBtnStep1.addEventListener('click', function() {
+            console.log('🔘 Botón Continuar clickeado');
+            
+            // Obtener red social seleccionada
+            const selectedSocial = document.querySelector('input[name="social"]:checked');
+            if (!selectedSocial) {
+                alert('Por favor selecciona una red social');
+                return;
+            }
+            
+            console.log('📱 Red social confirmada:', selectedSocial.value);
+            
+            // Llamar a la función nextStep del onboarding si existe
+            if (typeof window.onboardingNextStep === 'function') {
+                window.onboardingNextStep();
+            } else {
+                // Si no existe, simular el cambio de paso manualmente
+                document.getElementById('step1').classList.remove('active');
+                document.getElementById('step2').classList.add('active');
+                
+                // Actualizar barra de progreso
+                updateModalProgressBar(2);
+                
+                console.log('✅ Paso cambiado a Step 2');
+            }
+        });
+        
+        console.log('✅ Event listeners de red social añadidos');
+    }
+}
+
+// Función para actualizar la barra de progreso en el modal
+function updateModalProgressBar(currentStep) {
+    const progressSteps = document.querySelectorAll('.progress-step');
+    const progressPercentage = document.getElementById('progressPercentage');
+    const totalSteps = 3;
+    const totalCircles = progressSteps.length;
+    
+    const circlesPerStep = totalCircles / totalSteps;
+    const targetCircles = Math.ceil((currentStep - 1) * circlesPerStep) + 1;
+    
+    progressSteps.forEach((step, index) => {
+        step.classList.remove('active', 'completed', 'cascading');
+        
+        if (index < targetCircles - 1) {
+            step.classList.add('completed');
+        } else if (index === targetCircles - 1) {
+            step.classList.add('active');
+        }
+    });
+    
+    const previousCircles = Math.ceil(((currentStep - 2) * circlesPerStep)) + 1;
+    const startCascade = Math.max(0, previousCircles);
+    
+    for (let i = startCascade; i < targetCircles; i++) {
+        setTimeout(() => {
+            if (progressSteps[i]) {
+                progressSteps[i].classList.add('cascading');
+                setTimeout(() => {
+                    progressSteps[i].classList.remove('cascading');
+                    if (i < targetCircles - 1) {
+                        progressSteps[i].classList.add('completed');
+                    } else {
+                        progressSteps[i].classList.add('active');
+                    }
+                }, 600);
+            }
+        }, i * 80);
+    }
+    
+    if (progressPercentage) {
+        const targetProgress = ((currentStep - 1) / 2) * 100;
+        const currentProgress = parseInt(progressPercentage.textContent) || 0;
+        animatePercentage(currentProgress, targetProgress, progressPercentage);
+    }
+}
+
+function animatePercentage(start, end, element) {
+    const duration = 600;
+    const startTime = performance.now();
+    
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(start + (end - start) * easeOutCubic);
+        
+        element.textContent = current + '%';
+        
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        }
+    }
+    
+    requestAnimationFrame(update);
 }
 
 // Cargar agentes desde el backend
@@ -564,6 +684,9 @@ setInterval(async () => {
         await loadAgents();
     }
 }, 30000);
+
+// Hacer la función global para que sea accesible
+window.reinitializeOnboardingEvents = reinitializeOnboardingEvents;
 
 // CSS para animaciones y spinner
 const style = document.createElement('style');
