@@ -97,7 +97,9 @@ body {
     flex: 1;
     overflow-y: auto;
     padding: 2rem;
-    background: transparent;
+    padding-top: 100px; /* Espacio para el userbar flotante */
+    padding-left: calc(2rem + 96px); /* Espacio para el sidebar flotante */
+    background: transparent; /* o background: #ffffff; según el archivo */
     position: relative;
     z-index: 1;
 }
