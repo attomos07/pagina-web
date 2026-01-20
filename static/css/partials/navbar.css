@@ -355,8 +355,6 @@
         right: 0;
         bottom: 0;
         background: #ffffff;
-        backdrop-filter: blur(40px) saturate(180%);
-        -webkit-backdrop-filter: blur(40px) saturate(180%);
         flex-direction: column;
         justify-content: flex-start;
         align-items: center;
@@ -571,18 +569,7 @@ body.menu-open {
     }
 }
 
-/* Fix para iOS Safari */
-@supports (-webkit-touch-callout: none) {
-    .navbar {
-        -webkit-backdrop-filter: blur(20px);
-    }
-    
-    @media (max-width: 768px) {
-        .nav-menu {
-            -webkit-backdrop-filter: blur(40px) saturate(180%);
-        }
-    }
-}
+
 
 /* Smooth scroll */
 html {
