@@ -235,7 +235,7 @@
                                     <small class="input-hint">WhatsApp Business Account ID</small>
                                 </div>
 
-                                <div class="input-group">
+<div class="input-group">
                                     <label class="input-label" for="metaVerifyToken">
                                         <i class="lni lni-lock"></i>
                                         Verify Token
@@ -253,6 +253,22 @@
                                         </button>
                                     </div>
                                     <small class="input-hint">Token para verificar webhook (puedes elegir cualquier texto)</small>
+                                </div>
+                            </div>
+
+                            <!-- Webhook URL Info -->
+                            <div class="card-note" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%); border-left: 3px solid #10b981;">
+                                <i class="lni lni-link" style="color: #10b981;"></i>
+                                <div style="flex: 1;">
+                                    <span style="color: #065f46; font-weight: 600; display: block; margin-bottom: 0.5rem;">URL de devolución de llamada (Webhook URL)</span>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                        <code id="webhookUrl" style="flex: 1; background: white; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.85rem; color: #1a1a1a; border: 1px solid #d1d5db; font-family: 'Courier New', monospace;">-</code>
+                                        <button type="button" class="btn-copy-webhook" id="btnCopyWebhook" style="background: #10b981; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 600; display: none; align-items: center; gap: 0.375rem; transition: all 0.3s ease;">
+                                            <i class="lni lni-copy"></i>
+                                            Copiar
+                                        </button>
+                                    </div>
+                                    <span style="color: #065f46; font-size: 0.8rem; display: block;">Copia esta URL y agrégala en la configuración de Webhook de Meta. Asegúrate de usar HTTPS.</span>
                                 </div>
                             </div>
 

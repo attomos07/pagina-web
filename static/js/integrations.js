@@ -1,5 +1,5 @@
 // ============================================
-// INTEGRATIONS JAVASCRIPT - ACTUALIZADO
+// INTEGRATIONS JAVASCRIPT - ACTUALIZADO CON WEBHOOK AUTOMÁTICO
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -149,6 +149,11 @@ async function selectAgent(option) {
     // Mostrar/ocultar tarjetas según el tipo de bot
     showIntegrationsByBotType(botType);
     
+    // 🔧 NUEVO: Mostrar webhook URL inmediatamente si es OrbitalBot
+    if (botType === 'orbital') {
+        updateWebhookUrl(selectedAgentId);
+    }
+    
     // Load integration statuses
     await loadGoogleIntegrationStatus(selectedAgentId);
     
@@ -248,11 +253,14 @@ function initMetaIntegration() {
 function toggleMetaVisibility(inputId, buttonId) {
     const input = document.getElementById(inputId);
     const button = document.getElementById(buttonId);
+    
+    if (!input || !button) return;
+    
     const icon = button.querySelector('i');
     
     if (input.type === 'password') {
         input.type = 'text';
-        icon.className = 'lni lni-eye-off';
+        icon.className = 'lni lni-eye-slash';
     } else {
         input.type = 'password';
         icon.className = 'lni lni-eye';
@@ -260,7 +268,12 @@ function toggleMetaVisibility(inputId, buttonId) {
 }
 
 async function loadMetaCredentialsStatus(agentId) {
-    console.log(`📊 Cargando estado de Meta para agente ${agentId}...`);
+    if (!agentId) {
+        console.warn('⚠️ No agent ID provided for Meta credentials status');
+        return;
+    }
+    
+    console.log(`🔍 Cargando estado de credenciales Meta para agente ${agentId}...`);
     
     try {
         const response = await fetch(`/api/meta/credentials/status/${agentId}`, {
@@ -272,28 +285,21 @@ async function loadMetaCredentialsStatus(agentId) {
         });
 
         if (!response.ok) {
-            throw new Error('Error al cargar estado de Meta');
+            throw new Error('Error al cargar estado de credenciales');
         }
 
         const data = await response.json();
-        console.log('✅ Estado de Meta:', data);
+        console.log('✅ Estado de credenciales Meta recibido:', data);
         
         updateMetaCredentialsUI(data);
         
     } catch (error) {
-        console.error('Error cargando estado de Meta:', error);
-        // Mostrar como no configurado en caso de error
-        updateMetaCredentialsUI({ has_credentials: false, connected: false });
+        console.error('Error cargando estado de credenciales Meta:', error);
     }
 }
 
 function updateMetaCredentialsUI(data) {
-    const statusBadge = document.getElementById('metaStatus');
-    const connectionInfo = document.getElementById('metaConnectionInfo');
-    const credentialsForm = document.getElementById('metaCredentialsForm');
-    const saveActions = document.getElementById('metaActions');
-    const manageActions = document.getElementById('metaManageActions');
-    
+    const statusBadge = document.getElementById('metaStatusBadge');
     const inputs = {
         phoneNumberId: document.getElementById('metaPhoneNumberId'),
         accessToken: document.getElementById('metaAccessToken'),
@@ -305,6 +311,10 @@ function updateMetaCredentialsUI(data) {
         token: document.getElementById('toggleMetaToken'),
         verify: document.getElementById('toggleMetaVerify')
     };
+    
+    const saveActions = document.getElementById('metaActions');
+    const manageActions = document.getElementById('metaManageActions');
+    const connectionInfo = document.getElementById('metaConnectionInfo');
     
     if (data.has_credentials && data.connected) {
         // Credenciales configuradas
@@ -328,16 +338,15 @@ function updateMetaCredentialsUI(data) {
             if (btn) btn.disabled = true;
         });
         
-        // Mostrar información de conexión
         if (connectionInfo) {
             connectionInfo.style.display = 'block';
             
-            const displayNumber = document.getElementById('metaDisplayNumber');
+            const phoneNumber = document.getElementById('metaDisplayNumber');
             const verifiedName = document.getElementById('metaVerifiedName');
             const connectedAt = document.getElementById('metaConnectedAt');
             
-            if (displayNumber && data.display_number) {
-                displayNumber.textContent = data.display_number;
+            if (phoneNumber && data.display_number) {
+                phoneNumber.textContent = data.display_number;
             }
             
             if (verifiedName && data.verified_name) {
@@ -353,17 +362,21 @@ function updateMetaCredentialsUI(data) {
         if (saveActions) saveActions.style.display = 'none';
         if (manageActions) manageActions.style.display = 'flex';
         
+        // 🔧 NUEVO: SIEMPRE mostrar Webhook URL para OrbitalBot
+        if (data.bot_type === 'orbital') {
+            updateWebhookUrl(selectedAgentId);
+        }
+        
     } else {
-        // Sin credenciales configuradas
+        // Sin credenciales
         if (statusBadge) {
             statusBadge.className = 'status-badge disconnected';
             statusBadge.innerHTML = `
                 <span class="status-indicator"></span>
-                No configurado
+                Sin configurar
             `;
         }
         
-        // Enable inputs
         Object.values(inputs).forEach(input => {
             if (input) {
                 input.value = '';
@@ -378,6 +391,11 @@ function updateMetaCredentialsUI(data) {
         if (connectionInfo) connectionInfo.style.display = 'none';
         if (saveActions) saveActions.style.display = 'flex';
         if (manageActions) manageActions.style.display = 'none';
+        
+        // 🔧 NUEVO: TAMBIÉN mostrar Webhook URL para OrbitalBot (aunque no tenga credenciales)
+        if (data.bot_type === 'orbital') {
+            updateWebhookUrl(selectedAgentId);
+        }
     }
 }
 
@@ -399,14 +417,14 @@ async function saveMetaCredentials() {
     
     console.log(`💾 Guardando credenciales de Meta para agente ${selectedAgentId}...`);
     
-    const saveButton = document.getElementById('btnSaveMetaCredentials');
-    const originalText = saveButton.innerHTML;
+    const btnSave = document.getElementById('btnSaveMetaCredentials');
+    const originalText = btnSave.innerHTML;
     
-    saveButton.innerHTML = `
+    btnSave.innerHTML = `
         <div class="loading-spinner"></div>
         <span>Guardando...</span>
     `;
-    saveButton.disabled = true;
+    btnSave.disabled = true;
     
     try {
         const response = await fetch(`/api/meta/credentials/save/${selectedAgentId}`, {
@@ -424,21 +442,22 @@ async function saveMetaCredentials() {
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Error al guardar credenciales');
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al guardar credenciales');
         }
 
-        console.log('✅ Credenciales de Meta guardadas');
-        showNotification('Credenciales guardadas exitosamente', 'success');
+        const data = await response.json();
+        console.log('✅ Credenciales guardadas:', data);
         
+        showNotification('Credenciales guardadas exitosamente', 'success');
         await loadMetaCredentialsStatus(selectedAgentId);
         
     } catch (error) {
-        console.error('Error guardando credenciales:', error);
+        console.error('Error guardando credenciales Meta:', error);
         showNotification(error.message || 'Error al guardar credenciales', 'error');
         
-        saveButton.innerHTML = originalText;
-        saveButton.disabled = false;
+        btnSave.innerHTML = originalText;
+        btnSave.disabled = false;
     }
 }
 
@@ -474,6 +493,9 @@ function enableMetaEdit() {
     if (saveActions) saveActions.style.display = 'flex';
     if (manageActions) manageActions.style.display = 'none';
     
+    // 🔧 MODIFICADO: NO ocultar webhook URL - debe permanecer visible siempre
+    // La URL del webhook debe estar visible en todo momento para OrbitalBot
+    
     if (inputs.phoneNumberId) inputs.phoneNumberId.focus();
 }
 
@@ -483,11 +505,20 @@ async function removeMetaCredentials() {
         return;
     }
     
-    if (!confirm('¿Estás seguro de que quieres eliminar las credenciales de Meta? El agente dejará de funcionar con WhatsApp Business API.')) {
+    if (!confirm('¿Estás seguro de que quieres eliminar las credenciales de Meta WhatsApp? Esto desconectará tu bot.')) {
         return;
     }
     
-    console.log(`🗑️  Eliminando credenciales de Meta para agente ${selectedAgentId}...`);
+    console.log(`🗑️ Eliminando credenciales de Meta para agente ${selectedAgentId}...`);
+    
+    const btnRemove = document.getElementById('btnRemoveMetaCredentials');
+    const originalText = btnRemove.innerHTML;
+    
+    btnRemove.innerHTML = `
+        <div class="loading-spinner"></div>
+        <span>Eliminando...</span>
+    `;
+    btnRemove.disabled = true;
     
     try {
         const response = await fetch(`/api/meta/credentials/remove/${selectedAgentId}`, {
@@ -502,30 +533,89 @@ async function removeMetaCredentials() {
             throw new Error('Error al eliminar credenciales');
         }
 
-        console.log('✅ Credenciales de Meta eliminadas');
-        showNotification('Credenciales eliminadas exitosamente', 'success');
+        const data = await response.json();
+        console.log('✅ Credenciales eliminadas:', data);
         
+        showNotification('Credenciales eliminadas exitosamente', 'success');
         await loadMetaCredentialsStatus(selectedAgentId);
         
     } catch (error) {
-        console.error('Error eliminando credenciales:', error);
+        console.error('Error eliminando credenciales Meta:', error);
         showNotification('Error al eliminar credenciales', 'error');
+        
+        btnRemove.innerHTML = originalText;
+        btnRemove.disabled = false;
     }
 }
 
 // ============================================
-// GEMINI INTEGRATION (Plan gratuito)
+// 🔧 NUEVAS FUNCIONES: WEBHOOK URL
+// ============================================
+
+function updateWebhookUrl(agentId) {
+    const webhookUrlCode = document.getElementById('webhookUrl');
+    const copyButton = document.getElementById('btnCopyWebhook');
+    
+    if (!webhookUrlCode || !copyButton) return;
+    
+    // Construir la URL del webhook
+    const baseUrl = window.location.origin;
+    const webhookUrl = `${baseUrl}/webhook/meta/${agentId}`;
+    
+    webhookUrlCode.textContent = webhookUrl;
+    copyButton.style.display = 'inline-flex';
+    
+    // Agregar event listener al botón de copiar si no existe
+    if (!copyButton.dataset.listenerAdded) {
+        copyButton.addEventListener('click', function() {
+            copyWebhookUrl(webhookUrl, this);
+        });
+        copyButton.dataset.listenerAdded = 'true';
+    }
+}
+
+function copyWebhookUrl(url, button) {
+    navigator.clipboard.writeText(url).then(() => {
+        const originalHTML = button.innerHTML;
+        button.classList.add('copied');
+        button.innerHTML = `
+            <i class="lni lni-checkmark"></i>
+            Copiado
+        `;
+        
+        setTimeout(() => {
+            button.classList.remove('copied');
+            button.innerHTML = originalHTML;
+        }, 2000);
+        
+        showNotification('URL del webhook copiada al portapapeles', 'success');
+    }).catch(err => {
+        console.error('Error al copiar:', err);
+        showNotification('Error al copiar URL', 'error');
+    });
+}
+
+// ============================================
+// GEMINI AI INTEGRATION
 // ============================================
 
 function initGeminiIntegration() {
-    const apiKeyInput = document.getElementById('geminiApiKeyInput');
-    const toggleButton = document.getElementById('toggleGeminiKey');
     const saveButton = document.getElementById('btnSaveGeminiKey');
-    const updateButton = document.getElementById('btnUpdateGeminiKey');
     const removeButton = document.getElementById('btnRemoveGeminiKey');
+    const toggleButton = document.getElementById('toggleGeminiKey');
+    const apiKeyInput = document.getElementById('geminiApiKey');
     
     if (toggleButton) {
-        toggleButton.addEventListener('click', toggleGeminiKeyVisibility);
+        toggleButton.addEventListener('click', () => {
+            const icon = toggleButton.querySelector('i');
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+                icon.className = 'lni lni-eye-slash';
+            } else {
+                apiKeyInput.type = 'password';
+                icon.className = 'lni lni-eye';
+            }
+        });
     }
     
     if (apiKeyInput) {
@@ -537,47 +627,23 @@ function initGeminiIntegration() {
     }
     
     if (saveButton) {
-        saveButton.addEventListener('click', saveGeminiApiKey);
-    }
-    
-    if (updateButton) {
-        updateButton.addEventListener('click', enableGeminiEdit);
+        saveButton.addEventListener('click', saveGeminiKey);
     }
     
     if (removeButton) {
-        removeButton.addEventListener('click', removeGeminiApiKey);
-    }
-}
-
-function toggleGeminiKeyVisibility() {
-    const input = document.getElementById('geminiApiKeyInput');
-    const button = document.getElementById('toggleGeminiKey');
-    const icon = button.querySelector('i');
-    
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.className = 'lni lni-eye-off';
-    } else {
-        input.type = 'password';
-        icon.className = 'lni lni-eye';
+        removeButton.addEventListener('click', removeGeminiKey);
     }
 }
 
 async function loadGeminiStatus(agentId) {
-    console.log(`📊 Cargando estado de Gemini para agente ${agentId}...`);
+    if (!agentId) {
+        console.warn('⚠️ No agent ID provided for Gemini status');
+        return;
+    }
+    
+    console.log(`🔍 Cargando estado de Gemini para agente ${agentId}...`);
     
     try {
-        const apiKeyInput = document.getElementById('geminiApiKeyInput');
-        const toggleButton = document.getElementById('toggleGeminiKey');
-        const statusBadge = document.getElementById('geminiStatus');
-        const saveActions = document.getElementById('geminiActions');
-        const manageActions = document.getElementById('geminiManageActions');
-        
-        // Enable inputs cuando se selecciona un agente
-        if (apiKeyInput) apiKeyInput.disabled = false;
-        if (toggleButton) toggleButton.disabled = false;
-        
-        // Llamar al endpoint para verificar si tiene API key
         const response = await fetch(`/api/gemini/status/${agentId}`, {
             method: 'GET',
             credentials: 'include',
@@ -591,96 +657,88 @@ async function loadGeminiStatus(agentId) {
         }
 
         const data = await response.json();
-        const hasApiKey = data.has_api_key || false;
+        console.log('✅ Estado de Gemini recibido:', data);
         
-        console.log('✅ Estado de Gemini:', data);
-        
-        if (hasApiKey) {
-            if (statusBadge) {
-                statusBadge.className = 'status-badge connected';
-                statusBadge.innerHTML = `
-                    <span class="status-indicator"></span>
-                    Configurado
-                `;
-            }
-            
-            if (apiKeyInput) {
-                apiKeyInput.value = '••••••••••••••••';
-                apiKeyInput.disabled = true;
-            }
-            if (toggleButton) toggleButton.disabled = true;
-            
-            if (saveActions) saveActions.style.display = 'none';
-            if (manageActions) manageActions.style.display = 'flex';
-        } else {
-            if (statusBadge) {
-                statusBadge.className = 'status-badge disconnected';
-                statusBadge.innerHTML = `
-                    <span class="status-indicator"></span>
-                    No configurado
-                `;
-            }
-            
-            if (apiKeyInput) {
-                apiKeyInput.value = '';
-                apiKeyInput.disabled = false;
-            }
-            if (toggleButton) toggleButton.disabled = false;
-            
-            if (saveActions) saveActions.style.display = 'flex';
-            if (manageActions) manageActions.style.display = 'none';
-        }
+        updateGeminiUI(data);
         
     } catch (error) {
         console.error('Error cargando estado de Gemini:', error);
+    }
+}
+
+function updateGeminiUI(data) {
+    const statusBadge = document.getElementById('geminiStatusBadge');
+    const apiKeyInput = document.getElementById('geminiApiKey');
+    const toggleButton = document.getElementById('toggleGeminiKey');
+    const saveActions = document.getElementById('geminiActions');
+    const manageActions = document.getElementById('geminiManageActions');
+    const connectionInfo = document.getElementById('geminiConnectionInfo');
+    
+    if (data.has_key && data.configured) {
+        // API Key configurada
+        if (statusBadge) {
+            statusBadge.className = 'status-badge connected';
+            statusBadge.innerHTML = `
+                <span class="status-indicator"></span>
+                Configurado
+            `;
+        }
         
-        // En caso de error, mostrar como no configurado
-        const statusBadge = document.getElementById('geminiStatus');
-        const saveActions = document.getElementById('geminiActions');
-        const manageActions = document.getElementById('geminiManageActions');
+        if (apiKeyInput) {
+            apiKeyInput.value = '••••••••••••••••••••••••••••••••';
+            apiKeyInput.disabled = true;
+        }
         
+        if (toggleButton) toggleButton.disabled = true;
+        if (connectionInfo) connectionInfo.style.display = 'block';
+        if (saveActions) saveActions.style.display = 'none';
+        if (manageActions) manageActions.style.display = 'flex';
+        
+    } else {
+        // Sin API Key
         if (statusBadge) {
             statusBadge.className = 'status-badge disconnected';
             statusBadge.innerHTML = `
                 <span class="status-indicator"></span>
-                No configurado
+                Sin configurar
             `;
         }
         
+        if (apiKeyInput) {
+            apiKeyInput.value = '';
+            apiKeyInput.disabled = false;
+        }
+        
+        if (toggleButton) toggleButton.disabled = false;
+        if (connectionInfo) connectionInfo.style.display = 'none';
         if (saveActions) saveActions.style.display = 'flex';
         if (manageActions) manageActions.style.display = 'none';
     }
 }
 
-async function saveGeminiApiKey() {
+async function saveGeminiKey() {
     if (!selectedAgentId) {
         showNotification('Por favor selecciona un agente primero', 'error');
         return;
     }
     
-    const apiKeyInput = document.getElementById('geminiApiKeyInput');
-    const apiKey = apiKeyInput.value.trim();
+    const apiKey = document.getElementById('geminiApiKey').value.trim();
     
     if (!apiKey) {
         showNotification('Por favor ingresa una API Key válida', 'error');
         return;
     }
     
-    if (!apiKey.startsWith('AIzaSy')) {
-        showNotification('La API Key debe comenzar con "AIzaSy"', 'error');
-        return;
-    }
-    
     console.log(`💾 Guardando Gemini API Key para agente ${selectedAgentId}...`);
     
-    const saveButton = document.getElementById('btnSaveGeminiKey');
-    const originalText = saveButton.innerHTML;
+    const btnSave = document.getElementById('btnSaveGeminiKey');
+    const originalText = btnSave.innerHTML;
     
-    saveButton.innerHTML = `
+    btnSave.innerHTML = `
         <div class="loading-spinner"></div>
         <span>Guardando...</span>
     `;
-    saveButton.disabled = true;
+    btnSave.disabled = true;
     
     try {
         const response = await fetch(`/api/gemini/save-key/${selectedAgentId}`, {
@@ -689,55 +747,51 @@ async function saveGeminiApiKey() {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ apiKey })
+            body: JSON.stringify({
+                api_key: apiKey
+            })
         });
 
         if (!response.ok) {
-            throw new Error('Error al guardar API Key');
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al guardar API Key');
         }
 
-        console.log('✅ Gemini API Key guardada');
-        showNotification('API Key guardada exitosamente', 'success');
+        const data = await response.json();
+        console.log('✅ Gemini API Key guardada:', data);
         
+        showNotification('API Key guardada exitosamente', 'success');
         await loadGeminiStatus(selectedAgentId);
         
     } catch (error) {
-        console.error('Error guardando API Key:', error);
-        showNotification('Error al guardar API Key', 'error');
+        console.error('Error guardando Gemini API Key:', error);
+        showNotification(error.message || 'Error al guardar API Key', 'error');
         
-        saveButton.innerHTML = originalText;
-        saveButton.disabled = false;
+        btnSave.innerHTML = originalText;
+        btnSave.disabled = false;
     }
 }
 
-function enableGeminiEdit() {
-    const apiKeyInput = document.getElementById('geminiApiKeyInput');
-    const toggleButton = document.getElementById('toggleGeminiKey');
-    const saveActions = document.getElementById('geminiActions');
-    const manageActions = document.getElementById('geminiManageActions');
-    
-    if (apiKeyInput) {
-        apiKeyInput.value = '';
-        apiKeyInput.disabled = false;
-        apiKeyInput.focus();
-    }
-    if (toggleButton) toggleButton.disabled = false;
-    
-    if (saveActions) saveActions.style.display = 'flex';
-    if (manageActions) manageActions.style.display = 'none';
-}
-
-async function removeGeminiApiKey() {
+async function removeGeminiKey() {
     if (!selectedAgentId) {
         showNotification('Por favor selecciona un agente primero', 'error');
         return;
     }
     
-    if (!confirm('¿Estás seguro de que quieres eliminar la API Key de Gemini? El agente dejará de usar IA.')) {
+    if (!confirm('¿Estás seguro de que quieres eliminar la Gemini API Key?')) {
         return;
     }
     
-    console.log(`🗑️  Eliminando Gemini API Key para agente ${selectedAgentId}...`);
+    console.log(`🗑️ Eliminando Gemini API Key para agente ${selectedAgentId}...`);
+    
+    const btnRemove = document.getElementById('btnRemoveGeminiKey');
+    const originalText = btnRemove.innerHTML;
+    
+    btnRemove.innerHTML = `
+        <div class="loading-spinner"></div>
+        <span>Eliminando...</span>
+    `;
+    btnRemove.disabled = true;
     
     try {
         const response = await fetch(`/api/gemini/remove-key/${selectedAgentId}`, {
@@ -752,41 +806,45 @@ async function removeGeminiApiKey() {
             throw new Error('Error al eliminar API Key');
         }
 
-        console.log('✅ Gemini API Key eliminada');
-        showNotification('API Key eliminada exitosamente', 'success');
+        const data = await response.json();
+        console.log('✅ Gemini API Key eliminada:', data);
         
+        showNotification('API Key eliminada exitosamente', 'success');
         await loadGeminiStatus(selectedAgentId);
         
     } catch (error) {
-        console.error('Error eliminando API Key:', error);
+        console.error('Error eliminando Gemini API Key:', error);
         showNotification('Error al eliminar API Key', 'error');
+        
+        btnRemove.innerHTML = originalText;
+        btnRemove.disabled = false;
     }
 }
 
 // ============================================
-// GOOGLE INTEGRATION
+// GOOGLE INTEGRATION (CALENDAR & SHEETS)
 // ============================================
 
 function initGoogleIntegration() {
-    const btnConnect = document.getElementById('btnConnectGoogle');
-    const btnDisconnect = document.getElementById('btnDisconnectGoogle');
-    const btnReconnect = document.getElementById('btnReconnectGoogle');
+    const connectButton = document.getElementById('btnConnectGoogle');
+    const disconnectButton = document.getElementById('btnDisconnectGoogle');
     
-    if (btnConnect) {
-        btnConnect.addEventListener('click', connectGoogle);
+    if (connectButton) {
+        connectButton.addEventListener('click', connectGoogle);
     }
     
-    if (btnDisconnect) {
-        btnDisconnect.addEventListener('click', disconnectGoogle);
-    }
-    
-    if (btnReconnect) {
-        btnReconnect.addEventListener('click', connectGoogle);
+    if (disconnectButton) {
+        disconnectButton.addEventListener('click', disconnectGoogle);
     }
 }
 
 async function loadGoogleIntegrationStatus(agentId) {
-    console.log(`📊 Cargando estado de integración para agente ${agentId}...`);
+    if (!agentId) {
+        console.warn('⚠️ No agent ID provided for Google integration status');
+        return;
+    }
+    
+    console.log(`🔍 Cargando estado de Google para agente ${agentId}...`);
     
     try {
         const response = await fetch(`/api/google/status/${agentId}`, {
@@ -798,40 +856,26 @@ async function loadGoogleIntegrationStatus(agentId) {
         });
 
         if (!response.ok) {
-            throw new Error('Error al cargar estado de integración');
+            throw new Error('Error al cargar estado de Google');
         }
 
         const data = await response.json();
-        console.log('✅ Estado de integración:', data);
+        console.log('✅ Estado de Google recibido:', data);
         
         updateGoogleIntegrationUI(data);
         
-        const btnConnect = document.getElementById('btnConnectGoogle');
-        if (btnConnect && !data.connected) {
-            btnConnect.disabled = false;
-        }
-        
     } catch (error) {
-        console.error('Error cargando estado de integración:', error);
-        
-        const btnConnect = document.getElementById('btnConnectGoogle');
-        if (btnConnect) {
-            btnConnect.disabled = false;
-        }
+        console.error('Error cargando estado de Google:', error);
     }
 }
 
 function updateGoogleIntegrationUI(data) {
-    const statusBadge = document.getElementById('googleStatus');
-    const sheetsStatusBadge = document.getElementById('googleSheetsStatus');
+    const statusBadge = document.getElementById('googleStatusBadge');
+    const sheetsStatusBadge = document.getElementById('sheetsStatusBadge');
     const connectionInfo = document.getElementById('googleConnectionInfo');
-    const sheetsConnectionInfo = document.getElementById('googleSheetsConnectionInfo');
-    const connectActions = document.getElementById('googleActions');
+    const sheetsConnectionInfo = document.getElementById('sheetsConnectionInfo');
+    const connectActions = document.getElementById('googleConnectActions');
     const manageActions = document.getElementById('googleManageActions');
-    const calendarEmail = document.getElementById('calendarEmail');
-    const sheetLink = document.getElementById('sheetLink');
-    const connectedAt = document.getElementById('connectedAt');
-    const sheetsConnectedAt = document.getElementById('sheetsConnectedAt');
     
     if (data.connected) {
         // Update status badges
@@ -855,18 +899,25 @@ function updateGoogleIntegrationUI(data) {
         if (connectionInfo) {
             connectionInfo.style.display = 'block';
             
-            if (calendarEmail && data.calendar_id) {
-                calendarEmail.textContent = data.calendar_id;
+            const calendarLink = document.getElementById('calendarLink');
+            const calendarConnectedAt = document.getElementById('calendarConnectedAt');
+            
+            if (calendarLink && data.calendar_id) {
+                const calendarUrl = `https://calendar.google.com/calendar/u/0/r`;
+                calendarLink.href = calendarUrl;
             }
             
-            if (connectedAt && data.connected_at) {
+            if (calendarConnectedAt && data.connected_at) {
                 const date = new Date(data.connected_at);
-                connectedAt.textContent = formatDate(date);
+                calendarConnectedAt.textContent = formatDate(date);
             }
         }
         
         if (sheetsConnectionInfo) {
             sheetsConnectionInfo.style.display = 'block';
+            
+            const sheetLink = document.getElementById('sheetLink');
+            const sheetsConnectedAt = document.getElementById('sheetsConnectedAt');
             
             if (sheetLink && data.sheet_id) {
                 const sheetUrl = `https://docs.google.com/spreadsheets/d/${data.sheet_id}/edit`;

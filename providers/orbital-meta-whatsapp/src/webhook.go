@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 // StartWebhookServer inicia el servidor webhook
@@ -21,6 +22,12 @@ func StartWebhookServer(client *MetaClient) {
 		log.Fatal("❌ WEBHOOK_VERIFY_TOKEN no está configurado")
 	}
 
+	// 🔧 NUEVO: Soporte para rutas por agente /webhook/meta/{agentId}
+	http.HandleFunc("/webhook/meta/", func(w http.ResponseWriter, r *http.Request) {
+		handleWebhookWithAgent(w, r, client, verifyToken)
+	})
+
+	// Mantener ruta original /webhook por compatibilidad
 	http.HandleFunc("/webhook", func(w http.ResponseWriter, r *http.Request) {
 		handleWebhook(w, r, client, verifyToken)
 	})
@@ -61,7 +68,8 @@ func StartWebhookServer(client *MetaClient) {
 	})
 
 	log.Printf("🌐 Servidor webhook iniciado en puerto %s", port)
-	log.Printf("📡 Endpoint: http://localhost:%s/webhook", port)
+	log.Printf("📡 Endpoint por agente: http://localhost:%s/webhook/meta/{agentId}", port)
+	log.Printf("📡 Endpoint general: http://localhost:%s/webhook", port)
 	log.Printf("💚 Health check: http://localhost:%s/health", port)
 	log.Printf("📊 Status: http://localhost:%s/status", port)
 
@@ -76,17 +84,52 @@ func StartWebhookServer(client *MetaClient) {
 	}
 }
 
-// handleWebhook maneja las peticiones del webhook de Meta
-func handleWebhook(w http.ResponseWriter, r *http.Request, client *MetaClient, verifyToken string) {
+// handleWebhookWithAgent maneja las peticiones del webhook con ID de agente
+func handleWebhookWithAgent(w http.ResponseWriter, r *http.Request, client *MetaClient, verifyToken string) {
+	// Extraer agent ID de la URL
+	path := r.URL.Path
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+
+	var agentID string
+	if len(parts) >= 3 {
+		agentID = parts[2] // /webhook/meta/{agentId}
+	}
+
+	// Verificar que el agentID del ambiente coincida (opcional - seguridad extra)
+	envAgentID := os.Getenv("AGENT_ID")
+	if envAgentID != "" && agentID != "" && agentID != envAgentID {
+		log.Printf("⚠️  Agent ID en URL (%s) no coincide con AGENT_ID del ambiente (%s)", agentID, envAgentID)
+		// Nota: Por ahora solo logueamos, pero podrías rechazar la petición aquí
+	}
+
+	log.Printf("📍 Webhook recibido para agente: %s", agentID)
+
 	// GET: Verificación del webhook
 	if r.Method == http.MethodGet {
-		handleWebhookVerification(w, r, verifyToken)
+		handleWebhookVerification(w, r, verifyToken, agentID)
 		return
 	}
 
 	// POST: Mensajes entrantes
 	if r.Method == http.MethodPost {
-		handleIncomingMessage(w, r, client)
+		handleIncomingMessage(w, r, client, agentID)
+		return
+	}
+
+	w.WriteHeader(http.StatusMethodNotAllowed)
+}
+
+// handleWebhook maneja las peticiones del webhook (ruta original sin agentId)
+func handleWebhook(w http.ResponseWriter, r *http.Request, client *MetaClient, verifyToken string) {
+	// GET: Verificación del webhook
+	if r.Method == http.MethodGet {
+		handleWebhookVerification(w, r, verifyToken, "")
+		return
+	}
+
+	// POST: Mensajes entrantes
+	if r.Method == http.MethodPost {
+		handleIncomingMessage(w, r, client, "")
 		return
 	}
 
@@ -94,7 +137,7 @@ func handleWebhook(w http.ResponseWriter, r *http.Request, client *MetaClient, v
 }
 
 // handleWebhookVerification maneja la verificación inicial del webhook
-func handleWebhookVerification(w http.ResponseWriter, r *http.Request, verifyToken string) {
+func handleWebhookVerification(w http.ResponseWriter, r *http.Request, verifyToken string, agentID string) {
 	mode := r.URL.Query().Get("hub.mode")
 	token := r.URL.Query().Get("hub.verify_token")
 	challenge := r.URL.Query().Get("hub.challenge")
@@ -102,12 +145,18 @@ func handleWebhookVerification(w http.ResponseWriter, r *http.Request, verifyTok
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Println("🔐 VERIFICACIÓN DE WEBHOOK")
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	if agentID != "" {
+		log.Printf("   🤖 Agent ID: %s", agentID)
+	}
 	log.Printf("   Mode: %s", mode)
 	log.Printf("   Token: %s", maskSensitiveData(token))
 	log.Printf("   Challenge: %s", challenge)
 
 	if mode == "subscribe" && token == verifyToken {
 		log.Println("✅ Token verificado correctamente")
+		if agentID != "" {
+			log.Printf("✅ Webhook configurado para agente: %s", agentID)
+		}
 		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(challenge))
@@ -115,13 +164,15 @@ func handleWebhookVerification(w http.ResponseWriter, r *http.Request, verifyTok
 	}
 
 	log.Println("❌ Token de verificación inválido")
+	log.Printf("   Esperado: %s", maskSensitiveData(verifyToken))
+	log.Printf("   Recibido: %s", maskSensitiveData(token))
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	w.WriteHeader(http.StatusForbidden)
 	w.Write([]byte("Forbidden"))
 }
 
 // handleIncomingMessage maneja los mensajes entrantes
-func handleIncomingMessage(w http.ResponseWriter, r *http.Request, client *MetaClient) {
+func handleIncomingMessage(w http.ResponseWriter, r *http.Request, client *MetaClient, agentID string) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("❌ Error leyendo body: %v", err)
@@ -137,6 +188,9 @@ func handleIncomingMessage(w http.ResponseWriter, r *http.Request, client *MetaC
 		log.Println("⚠️  MENSAJE RECIBIDO - CREDENCIALES NO CONFIGURADAS")
 		log.Println("⚠️  ═══════════════════════════════════════════════════")
 		log.Println("")
+		if agentID != "" {
+			log.Printf("🤖 Agent ID: %s\n", agentID)
+		}
 		log.Println("📨 Se recibió un mensaje pero el bot no puede responder")
 		log.Println("💡 Configura las credenciales de Meta en Integraciones")
 		log.Println("")
@@ -160,11 +214,11 @@ func handleIncomingMessage(w http.ResponseWriter, r *http.Request, client *MetaC
 	w.Write([]byte("OK"))
 
 	// Procesar mensajes en goroutine
-	go processWebhookPayload(&payload, client)
+	go processWebhookPayload(&payload, client, agentID)
 }
 
 // processWebhookPayload procesa el payload del webhook
-func processWebhookPayload(payload *MetaWebhookPayload, client *MetaClient) {
+func processWebhookPayload(payload *MetaWebhookPayload, client *MetaClient, agentID string) {
 	if payload.Object != "whatsapp_business_account" {
 		return
 	}
@@ -177,7 +231,7 @@ func processWebhookPayload(payload *MetaWebhookPayload, client *MetaClient) {
 
 			// Procesar mensajes
 			for _, message := range change.Value.Messages {
-				processMessage(&message, &change.Value, client)
+				processMessage(&message, &change.Value, client, agentID)
 			}
 
 			// Procesar estados (opcional - para logs)
@@ -235,7 +289,7 @@ func processMessage(message *struct {
 			Category     string `json:"category"`
 		} `json:"pricing"`
 	} `json:"statuses"`
-}, client *MetaClient) {
+}, client *MetaClient, agentID string) {
 
 	// Solo procesar mensajes de texto
 	if message.Type != "text" {
@@ -255,6 +309,9 @@ func processMessage(message *struct {
 
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Printf("📨 MENSAJE RECIBIDO")
+	if agentID != "" {
+		log.Printf("   🤖 Agent ID: %s", agentID)
+	}
 	log.Printf("   👤 De: %s (%s)", senderName, phoneNumber)
 	log.Printf("   💬 Texto: %s", messageText)
 	log.Printf("   🆔 Message ID: %s", messageID)
@@ -275,7 +332,7 @@ func processMessage(message *struct {
 			log.Printf("❌ ERROR enviando mensaje: %v", err)
 		} else {
 			log.Printf("✅ RESPUESTA ENVIADA correctamente")
-			log.Printf("   📝 Contenido: %s", response)
+			log.Printf("   📝 Contenido: %s", truncateString(response, 100))
 		}
 	} else {
 		log.Printf("⚠️  No se generó respuesta para este mensaje")
