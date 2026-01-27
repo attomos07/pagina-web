@@ -146,6 +146,15 @@ func main() {
 	router.GET("/api/auth/google/callback", handlers.GoogleCallback)
 
 	// ============================================
+	// 🔧 WEBHOOK PROXY - Meta WhatsApp (PÚBLICO)
+	// ============================================
+	// IMPORTANTE: Estas rutas DEBEN ser públicas porque Meta las llama directamente
+	// Meta no puede enviar tokens de autenticación, por lo que NO pueden estar en el grupo protected
+	router.GET("/webhook/meta/:agent_id", handlers.WebhookProxy)
+	router.POST("/webhook/meta/:agent_id", handlers.WebhookProxy)
+	log.Println("✅ Webhook Proxy configurado en: /webhook/meta/:agent_id")
+
+	// ============================================
 	// RUTAS PROTEGIDAS (API)
 	// ============================================
 
@@ -351,6 +360,7 @@ func main() {
 	log.Println("║ ✅ Funcionalidades:                                      ║")
 	log.Println("║    • Appointments integrado con Google Sheets           ║")
 	log.Println("║    • Auto-actualización cada 30 segundos                ║")
+	log.Println("║    • Webhook Proxy para Meta WhatsApp (OrbitalBot)      ║")
 	log.Println("╚══════════════════════════════════════════════════════════╝")
 
 	if err := router.Run(":" + port); err != nil {
