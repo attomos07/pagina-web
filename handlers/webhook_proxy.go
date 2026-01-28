@@ -66,12 +66,13 @@ func WebhookProxy(c *gin.Context) {
 	}
 
 	// Construir URL del bot en Hetzner
-	// El bot OrbitalBot escucha en el puerto 8080 por defecto
-	botURL := fmt.Sprintf("http://%s:8080/webhook/meta/%d", agent.ServerIP, agentID)
+	// El bot OrbitalBot escucha en el puerto configurado en la base de datos (dinámico)
+	botURL := fmt.Sprintf("http://%s:%d/webhook/meta/%d", agent.ServerIP, agent.Port, agentID)
 
 	log.Printf("🎯 [Webhook Proxy] Redirigiendo a bot:")
 	log.Printf("   🌐 Bot URL: %s", botURL)
 	log.Printf("   📡 Server IP: %s", agent.ServerIP)
+	log.Printf("   🔌 Port: %d", agent.Port)
 	log.Printf("   🔢 Agent ID: %d", agentID)
 
 	// Crear cliente HTTP con timeout adecuado
