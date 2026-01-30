@@ -2,16 +2,16 @@
 // PROFILE JAVASCRIPT
 // ============================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     console.log('🔧 Profile JS cargado correctamente');
-    
+
     initProfileData();
     initCustomSelect();
     initLocationDropdowns();
     initSchedule();
     initHolidays();
     initSaveButton();
-    
+
     console.log('✅ Profile funcionalidades inicializadas');
 });
 
@@ -134,35 +134,35 @@ function initCustomSelect() {
     const searchInput = document.getElementById('businessTypeSearch');
     const optionsContainer = document.getElementById('businessTypeOptions');
     const options = optionsContainer?.querySelectorAll('.select-option');
-    
+
     if (!selectWrapper || !selectInput || !dropdown) {
         console.warn('⚠️ Custom select elements no encontrados');
         return;
     }
 
-    selectInput.addEventListener('click', function(e) {
+    selectInput.addEventListener('click', function (e) {
         e.stopPropagation();
         toggleDropdown();
     });
 
     if (searchInput) {
-        searchInput.addEventListener('input', function() {
+        searchInput.addEventListener('input', function () {
             filterOptions(this.value);
         });
 
-        searchInput.addEventListener('click', function(e) {
+        searchInput.addEventListener('click', function (e) {
             e.stopPropagation();
         });
     }
 
     options?.forEach(option => {
-        option.addEventListener('click', function(e) {
+        option.addEventListener('click', function (e) {
             e.stopPropagation();
             selectOption(this);
         });
     });
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (!selectWrapper.contains(e.target)) {
             closeDropdown();
         }
@@ -170,7 +170,7 @@ function initCustomSelect() {
 
     function toggleDropdown() {
         const isActive = selectWrapper.classList.contains('active');
-        
+
         if (isActive) {
             closeDropdown();
         } else {
@@ -180,7 +180,7 @@ function initCustomSelect() {
 
     function openDropdown() {
         selectWrapper.classList.add('active');
-        
+
         if (searchInput) {
             setTimeout(() => {
                 searchInput.focus();
@@ -192,7 +192,7 @@ function initCustomSelect() {
 
     function closeDropdown() {
         selectWrapper.classList.remove('active');
-        
+
         if (searchInput) {
             searchInput.value = '';
         }
@@ -203,7 +203,7 @@ function initCustomSelect() {
 
         options?.forEach(option => {
             const text = option.querySelector('span')?.textContent.toLowerCase() || '';
-            
+
             if (text.includes(term)) {
                 option.classList.remove('hidden');
             } else {
@@ -295,27 +295,27 @@ function createLocationDropdown(inputId, options, placeholder) {
     const searchInput = searchContainer.querySelector('.select-search');
     const selectOptions = optionsContainer.querySelectorAll('.select-option');
 
-    displayInput.addEventListener('click', function(e) {
+    displayInput.addEventListener('click', function (e) {
         e.stopPropagation();
         toggleLocationDropdown(wrapper, searchInput);
     });
 
-    searchInput.addEventListener('input', function() {
+    searchInput.addEventListener('input', function () {
         filterLocationOptions(this.value, selectOptions);
     });
 
-    searchInput.addEventListener('click', function(e) {
+    searchInput.addEventListener('click', function (e) {
         e.stopPropagation();
     });
 
     selectOptions.forEach(option => {
-        option.addEventListener('click', function(e) {
+        option.addEventListener('click', function (e) {
             e.stopPropagation();
             selectLocationOption(this, displayInput, input, wrapper, selectOptions);
         });
     });
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (!wrapper.contains(e.target)) {
             closeLocationDropdown(wrapper);
         }
@@ -324,13 +324,13 @@ function createLocationDropdown(inputId, options, placeholder) {
 
 function toggleLocationDropdown(wrapper, searchInput) {
     const isActive = wrapper.classList.contains('active');
-    
+
     document.querySelectorAll('.custom-select-wrapper.active').forEach(w => {
         if (w !== wrapper) {
             w.classList.remove('active');
         }
     });
-    
+
     if (isActive) {
         closeLocationDropdown(wrapper);
     } else {
@@ -391,9 +391,9 @@ function initSchedule() {
 
     const scheduleList = document.getElementById('scheduleList');
     if (!scheduleList) return;
-    
+
     scheduleList.innerHTML = '';
-    
+
     days.forEach(day => {
         const dayDiv = document.createElement('div');
         dayDiv.className = 'schedule-day';
@@ -415,14 +415,14 @@ function initSchedule() {
         scheduleList.appendChild(dayDiv);
 
         const checkbox = dayDiv.querySelector(`#day-${day.key}`);
-        checkbox.addEventListener('change', function() {
+        checkbox.addEventListener('change', function () {
             if (this.checked) {
                 dayDiv.classList.remove('closed');
             } else {
                 dayDiv.classList.add('closed');
             }
         });
-        
+
         const openInput = dayDiv.querySelector(`#time-${day.key}-open`);
         const closeInput = dayDiv.querySelector(`#time-${day.key}-close`);
         createTimePicker(openInput, '09:00');
@@ -433,7 +433,7 @@ function initSchedule() {
 function createTimePicker(input, defaultValue = '09:00') {
     const wrapper = document.createElement('div');
     wrapper.className = 'time-picker-wrapper';
-    
+
     const convert24to12 = (time24) => {
         const [hours24, minutes] = time24.split(':');
         const h = parseInt(hours24);
@@ -441,45 +441,45 @@ function createTimePicker(input, defaultValue = '09:00') {
         const hours12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
         return { hours: String(hours12).padStart(2, '0'), minutes, period };
     };
-    
+
     const convert12to24 = (hours12, minutes, period) => {
         let h = parseInt(hours12);
         if (period === 'AM' && h === 12) h = 0;
         if (period === 'PM' && h !== 12) h += 12;
         return `${String(h).padStart(2, '0')}:${minutes}`;
     };
-    
+
     const initialTime = convert24to12(defaultValue);
-    
+
     const display = document.createElement('div');
     display.className = 'time-input-display';
     display.innerHTML = `
         <span class="time-display-value">${initialTime.hours}:${initialTime.minutes} ${initialTime.period}</span>
         <i class="lni lni-chevron-down" style="font-size: 14px; color: #06b6d4;"></i>
     `;
-    
+
     const dropdown = document.createElement('div');
     dropdown.className = 'time-dropdown';
-    
+
     const content = document.createElement('div');
     content.className = 'time-dropdown-content';
-    
+
     const hourColumn = document.createElement('div');
     hourColumn.className = 'time-column';
     hourColumn.innerHTML = '<div class="time-column-title">Hora</div><div class="time-scroll" id="hours"></div>';
-    
+
     const minuteColumn = document.createElement('div');
     minuteColumn.className = 'time-column';
     minuteColumn.innerHTML = '<div class="time-column-title">Min</div><div class="time-scroll" id="minutes"></div>';
-    
+
     const periodColumn = document.createElement('div');
     periodColumn.className = 'time-column';
     periodColumn.innerHTML = '<div class="time-column-title">Periodo</div><div class="time-scroll" id="period"></div>';
-    
+
     const hourScroll = hourColumn.querySelector('#hours');
     const minuteScroll = minuteColumn.querySelector('#minutes');
     const periodScroll = periodColumn.querySelector('#period');
-    
+
     for (let i = 1; i <= 12; i++) {
         const hour = String(i).padStart(2, '0');
         const option = document.createElement('div');
@@ -488,7 +488,7 @@ function createTimePicker(input, defaultValue = '09:00') {
         option.dataset.value = hour;
         hourScroll.appendChild(option);
     }
-    
+
     [0, 15, 30, 45].forEach(min => {
         const minute = String(min).padStart(2, '0');
         const option = document.createElement('div');
@@ -497,7 +497,7 @@ function createTimePicker(input, defaultValue = '09:00') {
         option.dataset.value = minute;
         minuteScroll.appendChild(option);
     });
-    
+
     ['AM', 'PM'].forEach(p => {
         const option = document.createElement('div');
         option.className = 'time-option';
@@ -505,40 +505,40 @@ function createTimePicker(input, defaultValue = '09:00') {
         option.dataset.value = p;
         periodScroll.appendChild(option);
     });
-    
+
     content.appendChild(hourColumn);
     content.appendChild(minuteColumn);
     content.appendChild(periodColumn);
     dropdown.appendChild(content);
     wrapper.appendChild(display);
     wrapper.appendChild(dropdown);
-    
+
     input.parentNode.insertBefore(wrapper, input);
     input.style.display = 'none';
     input.value = defaultValue;
-    
+
     let selectedHour = initialTime.hours;
     let selectedMinute = initialTime.minutes;
     let selectedPeriod = initialTime.period;
-    
+
     hourScroll.querySelector(`[data-value="${selectedHour}"]`).classList.add('selected');
     minuteScroll.querySelector(`[data-value="${selectedMinute}"]`).classList.add('selected');
     periodScroll.querySelector(`[data-value="${selectedPeriod}"]`).classList.add('selected');
-    
-    display.addEventListener('click', function(e) {
+
+    display.addEventListener('click', function (e) {
         e.stopPropagation();
         const isOpen = dropdown.classList.contains('show');
-        
+
         document.querySelectorAll('.time-dropdown.show').forEach(d => d.classList.remove('show'));
         document.querySelectorAll('.time-input-display.active').forEach(d => d.classList.remove('active'));
-        
+
         if (!isOpen) {
             dropdown.classList.add('show');
             display.classList.add('active');
         }
     });
-    
-    hourScroll.addEventListener('click', function(e) {
+
+    hourScroll.addEventListener('click', function (e) {
         if (e.target.classList.contains('time-option')) {
             hourScroll.querySelectorAll('.time-option').forEach(o => o.classList.remove('selected'));
             e.target.classList.add('selected');
@@ -546,8 +546,8 @@ function createTimePicker(input, defaultValue = '09:00') {
             updateTime();
         }
     });
-    
-    minuteScroll.addEventListener('click', function(e) {
+
+    minuteScroll.addEventListener('click', function (e) {
         if (e.target.classList.contains('time-option')) {
             minuteScroll.querySelectorAll('.time-option').forEach(o => o.classList.remove('selected'));
             e.target.classList.add('selected');
@@ -555,8 +555,8 @@ function createTimePicker(input, defaultValue = '09:00') {
             updateTime();
         }
     });
-    
-    periodScroll.addEventListener('click', function(e) {
+
+    periodScroll.addEventListener('click', function (e) {
         if (e.target.classList.contains('time-option')) {
             periodScroll.querySelectorAll('.time-option').forEach(o => o.classList.remove('selected'));
             e.target.classList.add('selected');
@@ -564,14 +564,14 @@ function createTimePicker(input, defaultValue = '09:00') {
             updateTime();
         }
     });
-    
+
     function updateTime() {
         const displayTime = `${selectedHour}:${selectedMinute} ${selectedPeriod}`;
         display.querySelector('.time-display-value').textContent = displayTime;
         input.value = convert12to24(selectedHour, selectedMinute, selectedPeriod);
     }
-    
-    document.addEventListener('click', function(e) {
+
+    document.addEventListener('click', function (e) {
         if (!wrapper.contains(e.target)) {
             dropdown.classList.remove('show');
             display.classList.remove('active');
@@ -587,7 +587,7 @@ let holidayCounter = 0;
 
 function initHolidays() {
     const btnAddHoliday = document.getElementById('btnAddHoliday');
-    
+
     if (btnAddHoliday) {
         btnAddHoliday.addEventListener('click', addHoliday);
     }
@@ -596,14 +596,14 @@ function initHolidays() {
 function addHoliday() {
     const container = document.getElementById('holidaysList');
     if (!container) return;
-    
+
     holidayCounter++;
     const id = `holiday-${holidayCounter}`;
-    
+
     const div = document.createElement('div');
     div.className = 'holiday-item';
     div.dataset.id = id;
-    
+
     div.innerHTML = `
         <div class="holiday-date-selector">
             <div class="holiday-dropdown-group" id="month-${id}"></div>
@@ -616,21 +616,21 @@ function addHoliday() {
             <i class="lni lni-trash-can"></i>
         </button>
     `;
-    
+
     container.appendChild(div);
-    
+
     createHolidayDropdown(`month-${id}`, MONTHS, 'Mes', id);
-    
+
     const days = [];
     for (let i = 1; i <= 31; i++) {
         days.push({ value: String(i).padStart(2, '0'), name: String(i) });
     }
     createHolidayDropdown(`day-${id}`, days, 'Día', id);
-    
-    div.querySelector('.btn-remove-holiday').addEventListener('click', function() {
+
+    div.querySelector('.btn-remove-holiday').addEventListener('click', function () {
         removeHoliday(id);
     });
-    
+
     console.log(`✅ Día festivo agregado: ${id}`);
 }
 
@@ -677,19 +677,19 @@ function createHolidayDropdown(containerId, options, placeholder, holidayId) {
 
     const selectOptions = optionsContainer.querySelectorAll('.select-option');
 
-    displayInput.addEventListener('click', function(e) {
+    displayInput.addEventListener('click', function (e) {
         e.stopPropagation();
         toggleHolidayDropdown(wrapper);
     });
 
     selectOptions.forEach(option => {
-        option.addEventListener('click', function(e) {
+        option.addEventListener('click', function (e) {
             e.stopPropagation();
             selectHolidayOption(this, displayInput, wrapper, selectOptions);
         });
     });
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (!wrapper.contains(e.target)) {
             closeHolidayDropdown(wrapper);
         }
@@ -698,13 +698,13 @@ function createHolidayDropdown(containerId, options, placeholder, holidayId) {
 
 function toggleHolidayDropdown(wrapper) {
     const isActive = wrapper.classList.contains('active');
-    
+
     document.querySelectorAll('.custom-select-wrapper.active').forEach(w => {
         if (w !== wrapper) {
             w.classList.remove('active');
         }
     });
-    
+
     if (isActive) {
         closeHolidayDropdown(wrapper);
     } else {
@@ -741,16 +741,16 @@ function removeHoliday(id) {
 function collectHolidaysData() {
     const holidayItems = document.querySelectorAll('.holiday-item');
     const holidays = [];
-    
+
     holidayItems.forEach(item => {
         const monthInput = item.querySelector('[data-field="month"]');
         const dayInput = item.querySelector('[data-field="day"]');
         const nameInput = item.querySelector('[data-field="name"]');
-        
+
         const month = monthInput?.getAttribute('data-value');
         const day = dayInput?.getAttribute('data-value');
         const name = nameInput?.value;
-        
+
         if (month && day && name) {
             holidays.push({
                 month: month,
@@ -760,7 +760,7 @@ function collectHolidaysData() {
             });
         }
     });
-    
+
     return holidays;
 }
 
@@ -770,7 +770,7 @@ function collectHolidaysData() {
 
 function initSaveButton() {
     const saveBtn = document.getElementById('saveProfileBtn');
-    
+
     if (saveBtn) {
         saveBtn.addEventListener('click', saveProfile);
     }
@@ -779,17 +779,17 @@ function initSaveButton() {
 async function saveProfile() {
     const saveBtn = document.getElementById('saveProfileBtn');
     const originalText = saveBtn.innerHTML;
-    
+
     saveBtn.innerHTML = `
         <div class="loading-spinner"></div>
         <span>Guardando...</span>
     `;
     saveBtn.disabled = true;
-    
+
     const countryInput = document.getElementById('countryInput');
     const stateInput = document.getElementById('stateInput');
     const cityInput = document.getElementById('cityInput');
-    
+
     const profileData = {
         business: {
             name: document.getElementById('businessNameInput').value,
@@ -817,129 +817,279 @@ async function saveProfile() {
             linkedin: document.getElementById('linkedinInput').value
         }
     };
-    
+
     console.log('💾 Saving profile data:', profileData);
-    
+
     try {
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         saveBtn.innerHTML = originalText;
         saveBtn.disabled = false;
-        
-        showNotification('✅ Cambios guardados exitosamente', 'success');
-        console.log('✅ Profile saved successfully');
-        
+
+        showNotification('¡Cambios guardados exitosamente!', 'success');
+        console.log('Profile saved successfully');
+
     } catch (error) {
         console.error('Error saving profile:', error);
-        
+
         saveBtn.innerHTML = originalText;
         saveBtn.disabled = false;
-        
-        showNotification('❌ Error al guardar los cambios', 'error');
+
+        showNotification('Error al guardar los cambios', 'error');
     }
 }
 
 function collectScheduleData() {
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     const schedule = {};
-    
+
     days.forEach(day => {
         const checkbox = document.getElementById(`day-${day}`);
         const openInput = document.getElementById(`time-${day}-open`);
         const closeInput = document.getElementById(`time-${day}-close`);
-        
+
         schedule[day] = {
             isOpen: checkbox ? checkbox.checked : false,
             open: openInput ? openInput.value : '09:00',
             close: closeInput ? closeInput.value : '20:00'
         };
     });
-    
+
     return schedule;
 }
 
 // ============================================
-// NOTIFICATION SYSTEM
+// NOTIFICATION SYSTEM (ESTILO iOS - PORTADO DEL LOGIN)
 // ============================================
 
 function showNotification(message, type = 'info') {
+    // 1. Asegurar que los estilos estén cargados
+    if (!document.getElementById('notification-ios-styles')) {
+        addNotificationStyles();
+    }
+
+    // 2. Crear contenedor si no existe
+    let container = document.getElementById('notification-ios-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notification-ios-container';
+        document.body.appendChild(container);
+    }
+
+    // 3. Crear la notificación
     const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.style.cssText = `
-        position: fixed;
-        top: 100px;
-        right: 20px;
-        background: ${type === 'success' ? '#10b981' : '#ef4444'};
-        color: white;
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-        font-weight: 600;
-        z-index: 10000;
-        animation: slideInRight 0.4s ease;
-        min-width: 300px;
+    notification.className = `notification-ios notification-ios-${type}`;
+
+    const iconHTML = getNotificationIconHTML(type);
+
+    notification.innerHTML = `
+        <div class="notification-ios-content">
+            <div class="notification-ios-icon">${iconHTML}</div>
+            <span class="notification-ios-message">${message}</span>
+        </div>
     `;
-    
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
+
+    container.appendChild(notification);
+
+    // 4. Forzar reflow para activar animación
+    void notification.offsetWidth;
+
+    // 5. Activar animación de entrada (Slide In + Bounce)
+    requestAnimationFrame(() => {
+        notification.classList.add('notification-ios-show');
+    });
+
+    // 6. Programar la salida
     setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.4s ease';
-        setTimeout(() => notification.remove(), 400);
-    }, 3000);
+        notification.classList.remove('notification-ios-show');
+        notification.classList.add('notification-ios-hide');
+
+        // Remover del DOM después de la animación de salida
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.parentElement.removeChild(notification);
+            }
+        }, 500);
+    }, 3000); // 3 segundos visible
 }
 
-// Add CSS for animations
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideInRight {
-        from {
-            transform: translateX(400px);
+// Helper para los iconos SVG (Idénticos al Login)
+function getNotificationIconHTML(type) {
+    const icons = {
+        success: `
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="white"/>
+                <path d="M9 12l2 2 4-4" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        `,
+        error: `
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="white"/>
+                <path d="M15 9l-6 6M9 9l6 6" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        `,
+        warning: `
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="white"/>
+                <path d="M12 8v4M12 16h.01" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        `,
+        info: `
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="white"/>
+                <path d="M12 16v-4M12 8h.01" stroke="#06B6D4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        `
+    };
+    return icons[type] || icons.info;
+}
+
+// Inyección de estilos CSS dinámicos
+function addNotificationStyles() {
+    const styles = document.createElement('style');
+    styles.id = 'notification-ios-styles';
+    styles.textContent = `
+        /* Contenedor CENTRADO en la parte superior */
+        #notification-ios-container {
+            position: fixed;
+            top: 25px; /* Un poco más abajo del borde superior */
+            left: 0;
+            right: 0;
+            z-index: 10000;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        /* Estilo Base de la Tarjeta - AUMENTADO TAMAÑO */
+        .notification-ios {
+            background: #10B981;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); /* Sombra más pronunciada */
+            border-radius: 50px;
+            /* 🔽 CAMBIO CLAVE: Más padding hace la caja más grande */
+            padding: 16px 30px; 
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            will-change: transform, opacity;
+            pointer-events: auto;
+            min-width: auto;
+            max-width: 90%;
             opacity: 0;
+            transform: translateY(-60px); /* Empieza un poco más arriba */
         }
-        to {
-            transform: translateX(0);
-            opacity: 1;
+        
+        /* Variantes de Color (con un poco más de transparencia para modernidad) */
+        .notification-ios-success { background: rgba(16, 185, 129, 0.92); }
+        .notification-ios-error { background: rgba(239, 68, 68, 0.92); }
+        .notification-ios-warning { background: rgba(245, 158, 11, 0.92); }
+        .notification-ios-info { background: rgba(6, 182, 212, 0.92); }
+        
+        /* Layout Interno */
+        .notification-ios-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* 🔽 CAMBIO CLAVE: Más espacio entre icono y texto */
+            gap: 14px; 
         }
-    }
-    
-    @keyframes slideOutRight {
-        from {
-            transform: translateX(0);
-            opacity: 1;
+        
+        .notification-ios-icon {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* 🔽 CAMBIO CLAVE: Icono más grande */
+            width: 30px; 
+            height: 30px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            padding: 5px; /* Ajuste del padding interno del icono */
         }
-        to {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-    }
-    
-    .loading-spinner {
-        width: 16px;
-        height: 16px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        border-top: 2px solid white;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-    
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-`;
-document.head.appendChild(style);
 
-// ============================================
-// KEYBOARD SHORTCUTS
-// ============================================
-
-document.addEventListener('keydown', function(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        saveProfile();
-    }
-});
-
-console.log('⌨️ Keyboard shortcuts initialized:');
-console.log('  - Ctrl/Cmd + S: Guardar cambios');
+        .notification-ios-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .notification-ios-message {
+            color: white;
+            font-weight: 600;
+            /* 🔽 CAMBIO CLAVE: Texto más grande */
+            font-size: 16px; 
+            line-height: 1.4;
+            white-space: nowrap;
+        }
+        
+        /* Animación de ENTRADA (Cae desde arriba) */
+        @keyframes notificationSlideInDown {
+            0% { 
+                opacity: 0; 
+                transform: translateY(-60px) scale(0.9); 
+            }
+            60% { 
+                opacity: 1; 
+                transform: translateY(5px) scale(1.03); /* Rebote un poco más fuerte */
+            }
+            100% { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
+        }
+        
+        /* Animación de SALIDA (Se desvanece hacia abajo) */
+        @keyframes notificationFadeDownOut {
+            0% { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
+            100% { 
+                opacity: 0; 
+                transform: translateY(30px) scale(0.95); /* Baja más al desaparecer */
+            }
+        }
+        
+        /* Animación del Icono */
+        @keyframes iconPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Clases de estado */
+        .notification-ios-show {
+            animation: notificationSlideInDown 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        
+        .notification-ios-show .notification-ios-icon {
+            animation: iconPop 0.4s 0.1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        
+        .notification-ios-hide {
+            animation: notificationFadeDownOut 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+        }
+        
+        /* Responsive - Ajustes para móvil */
+        @media (max-width: 480px) {
+            #notification-ios-container {
+                top: 15px;
+            }
+            .notification-ios { 
+                padding: 14px 20px; /* Un poco menos de padding en móvil pero aún grande */
+                border-radius: 30px;
+            }
+            .notification-ios-message {
+                white-space: normal;
+                /* 🔽 Texto un poco más grande en móvil también */
+                font-size: 14px; 
+                text-align: center;
+            }
+             .notification-ios-icon {
+                width: 26px;
+                height: 26px;
+            }
+        }
+    `;
+    document.head.appendChild(styles);
+}

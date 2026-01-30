@@ -9,18 +9,13 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
         {{template "sidebar.html" .}}
 
-        <!-- Main Content -->
         <div class="main-content">
-            <!-- Userbar -->
             {{template "userbar.html" .}}
 
-            <!-- Content Wrapper -->
             <div class="content-wrapper">
                 <div class="profile-layout">
-                    <!-- Page Header -->
                     <div class="page-header">
                         <div class="header-content">
                             <h1 class="page-title">
@@ -31,9 +26,7 @@
                         </div>
                     </div>
 
-                    <!-- Profile Content Grid -->
                     <div class="profile-grid">
-                        <!-- Business Information Card -->
                         <div class="profile-card">
                             <div class="card-header">
                                 <div class="card-title">
@@ -144,7 +137,6 @@
                             </div>
                         </div>
 
-                        <!-- Schedule Card -->
                         <div class="profile-card">
                             <div class="card-header">
                                 <div class="card-title">
@@ -170,7 +162,6 @@
                             </div>
                         </div>
 
-                        <!-- Location Information Card -->
                         <div class="profile-card">
                             <div class="card-header">
                                 <div class="card-title">
@@ -229,7 +220,6 @@
                             </div>
                         </div>
 
-                        <!-- Social Media Card -->
                         <div class="profile-card">
                             <div class="card-header">
                                 <div class="card-title">
@@ -240,38 +230,34 @@
                             <div class="card-content">
                                 <div class="info-group full-width">
                                     <label class="info-label">
-                                        <i class="lni lni-facebook-filled"></i>
+                                        <i class="lni lni-facebook-oval"></i>
                                         Facebook
                                     </label>
-                                    <input type="url" class="info-input" id="facebookInput">
-                                    <div class="info-example">Ej: https://facebook.com/minegocio</div>
+                                    <input type="url" class="info-input" id="facebookInput" placeholder="https://facebook.com/tupagina">
                                 </div>
 
                                 <div class="info-group full-width">
                                     <label class="info-label">
-                                        <i class="lni lni-instagram-filled"></i>
+                                        <i class="lni lni-instagram"></i>
                                         Instagram
                                     </label>
-                                    <input type="url" class="info-input" id="instagramInput">
-                                    <div class="info-example">Ej: https://instagram.com/minegocio</div>
+                                    <input type="url" class="info-input" id="instagramInput" placeholder="https://instagram.com/tuusuario">
                                 </div>
 
                                 <div class="info-group full-width">
                                     <label class="info-label">
-                                        <i class="lni lni-twitter-filled"></i>
+                                        <i class="lni lni-twitter"></i>
                                         Twitter / X
                                     </label>
-                                    <input type="url" class="info-input" id="twitterInput">
-                                    <div class="info-example">Ej: https://twitter.com/minegocio</div>
+                                    <input type="url" class="info-input" id="twitterInput" placeholder="https://twitter.com/tuusuario">
                                 </div>
 
                                 <div class="info-group full-width">
                                     <label class="info-label">
-                                        <i class="lni lni-linkedin-original"></i>
+                                        <i class="lni lni-linkedin"></i>
                                         LinkedIn
                                     </label>
-                                    <input type="url" class="info-input" id="linkedinInput">
-                                    <div class="info-example">Ej: https://linkedin.com/company/minegocio</div>
+                                    <input type="url" class="info-input" id="linkedinInput" placeholder="https://linkedin.com/company/tuempresa">
                                 </div>
                             </div>
                         </div>
@@ -281,7 +267,6 @@
         </div>
     </div>
 
-    <!-- Fixed Save Button (Bottom Right) -->
     <button class="btn-save" id="saveProfileBtn">
         <i class="lni lni-checkmark"></i>
         <span>Guardar Cambios</span>
