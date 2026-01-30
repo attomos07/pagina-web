@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="/static/css/appointments.css">
 </head>
 <body>
-    <!-- Decorative Rings -->
     <div class="decorative-rings">
         <div class="ring ring-1"></div>
         <div class="ring ring-2"></div>
@@ -17,18 +16,13 @@
     </div>
 
     <div class="app-container">
-        <!-- Sidebar -->
         {{template "sidebar.html" .}}
 
-        <!-- Main Content -->
         <div class="main-content">
-            <!-- Userbar -->
             {{template "userbar.html" .}}
 
-            <!-- Content Wrapper -->
             <div class="content-wrapper">
                 <div class="appointments-layout">
-                    <!-- Page Header -->
                     <div class="page-header">
                         <div class="header-title">
                             <h1>
@@ -38,14 +32,13 @@
                             <p>Gestiona todas tus citas agendadas</p>
                         </div>
                         <div class="header-actions">
-                            <button class="btn-primary" id="createAppointmentBtn">
+                            <button class="btn-primary" id="createAppointmentBtn" onclick="openAppointmentModal()">
                                 <i class="lni lni-plus"></i>
                                 <span>Nueva Cita</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Stats Cards -->
                     <div class="stats-grid">
                         <div class="stat-card">
                             <div class="stat-icon cyan">
@@ -88,29 +81,75 @@
                         </div>
                     </div>
 
-                    <!-- Filters and View Controls -->
                     <div class="controls-section">
                         <div class="filters">
-                            <select class="filter-select" id="statusFilter">
-                                <option value="all">Todos los Estados</option>
-                                <option value="confirmed">Confirmadas</option>
-                                <option value="pending">Pendientes</option>
-                                <option value="cancelled">Canceladas</option>
-                                <option value="completed">Completadas</option>
-                            </select>
+                            
+                            <div class="custom-dropdown-wrapper filter-wrapper" style="width: 200px; min-width: 180px;">
+                                <div class="form-input form-dropdown filter-trigger">
+                                    <span id="selectedStatus">Todos los Estados</span>
+                                    <i class="lni lni-chevron-down dropdown-arrow"></i>
+                                </div>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-options">
+                                        <div class="dropdown-option selected" onclick="selectFilterOption(this, 'selectedStatus')">
+                                            <span>Todos los Estados</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
+                                            <span class="status-dot confirmed"></span>
+                                            <span>Confirmadas</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
+                                            <span class="status-dot pending"></span>
+                                            <span>Pendientes</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
+                                            <span class="status-dot cancelled"></span>
+                                            <span>Canceladas</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedStatus')">
+                                            <span class="status-dot completed"></span>
+                                            <span>Completadas</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                            <select class="filter-select" id="agentFilter">
-                                <option value="all">Todos los Agentes</option>
-                                <!-- Se llenarán dinámicamente -->
-                            </select>
+                            <div class="custom-dropdown-wrapper filter-wrapper" style="width: 200px; min-width: 180px;">
+                                <div class="form-input form-dropdown filter-trigger">
+                                    <span id="selectedAgent">Todos los Agentes</span>
+                                    <i class="lni lni-chevron-down dropdown-arrow"></i>
+                                </div>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-options">
+                                        <div class="dropdown-option selected" onclick="selectFilterOption(this, 'selectedAgent')">
+                                            <span>Todos los Agentes</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                            <select class="filter-select" id="dateFilter">
-                                <option value="all">Todas las Fechas</option>
-                                <option value="today">Hoy</option>
-                                <option value="tomorrow">Mañana</option>
-                                <option value="week">Esta Semana</option>
-                                <option value="month">Este Mes</option>
-                            </select>
+                            <div class="custom-dropdown-wrapper filter-wrapper" style="width: 180px; min-width: 160px;">
+                                <div class="form-input form-dropdown filter-trigger">
+                                    <span id="selectedDate">Todas las Fechas</span>
+                                    <i class="lni lni-chevron-down dropdown-arrow"></i>
+                                </div>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-options">
+                                        <div class="dropdown-option selected" onclick="selectFilterOption(this, 'selectedDate')">
+                                            <span>Todas las Fechas</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedDate')">
+                                            <span>Hoy</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedDate')">
+                                            <span>Mañana</span>
+                                        </div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this, 'selectedDate')">
+                                            <span>Esta Semana</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
                             <div class="search-box">
                                 <i class="lni lni-search-alt"></i>
@@ -128,7 +167,6 @@
                         </div>
                     </div>
 
-                    <!-- Appointments Table View -->
                     <div class="appointments-container" id="appointmentsListView">
                         <div class="table-wrapper">
                             <table class="appointments-table">
@@ -146,29 +184,14 @@
                                     </tr>
                                 </thead>
                                 <tbody id="appointmentsList">
-                                    <!-- Las citas se cargarán dinámicamente aquí -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
-
-                    <!-- Calendar View (hidden by default) -->
+                    
                     <div class="calendar-container" id="calendarView" style="display: none;">
-                        <div class="calendar-header">
-                            <button class="calendar-nav-btn" id="prevMonth">
-                                <i class="lni lni-chevron-left"></i>
-                            </button>
-                            <h3 id="calendarMonth">Enero 2025</h3>
-                            <button class="calendar-nav-btn" id="nextMonth">
-                                <i class="lni lni-chevron-right"></i>
-                            </button>
-                        </div>
-                        <div class="calendar-grid" id="calendarGrid">
-                            <!-- El calendario se generará dinámicamente -->
-                        </div>
                     </div>
 
-                    <!-- Empty State -->
                     <div class="empty-state" id="emptyState" style="display: none;">
                         <div class="empty-icon">
                             <i class="lni lni-calendar"></i>
@@ -180,27 +203,58 @@
                             <span>Crear Primera Cita</span>
                         </button>
                     </div>
-                </div>
+                    </div>
             </div>
         </div>
     </div>
 
-    <!-- Appointment Details Modal -->
     <div class="modal" id="appointmentModal">
         <div class="modal-overlay" onclick="closeAppointmentModal()"></div>
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modalTitle">Detalles de la Cita</h3>
+                <h3 id="modalTitle"><i class="lni lni-calendar"></i> Detalles de la Cita</h3>
                 <button class="modal-close" onclick="closeAppointmentModal()">
                     <i class="lni lni-close"></i>
                 </button>
             </div>
             <div class="modal-body" id="modalBody">
-                <!-- El contenido se llenará dinámicamente -->
+                <form class="appointment-form">
+                </form>
             </div>
         </div>
     </div>
 
     <script src="/static/js/appointments.js"></script>
+    
+    <script>
+        // Lógica para abrir/cerrar los custom dropdowns
+        document.querySelectorAll('.custom-dropdown-wrapper').forEach(wrapper => {
+            wrapper.addEventListener('click', function(e) {
+                // Cerrar otros abiertos
+                document.querySelectorAll('.custom-dropdown-wrapper.active').forEach(other => {
+                    if (other !== this) other.classList.remove('active');
+                });
+                this.classList.toggle('active');
+                e.stopPropagation();
+            });
+        });
+
+        // Lógica para seleccionar opción
+        function selectFilterOption(element, labelId) {
+            // Actualizar texto visual
+            const text = element.querySelector('span:last-child').innerText;
+            document.getElementById(labelId).innerText = text;
+            
+            // Gestionar clase 'selected'
+            const parent = element.closest('.dropdown-options');
+            parent.querySelectorAll('.dropdown-option').forEach(opt => opt.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        // Cerrar al hacer click fuera
+        document.addEventListener('click', () => {
+             document.querySelectorAll('.custom-dropdown-wrapper.active').forEach(d => d.classList.remove('active'));
+        });
+    </script>
 </body>
 </html>
