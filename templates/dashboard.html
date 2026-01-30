@@ -30,7 +30,7 @@
                 <div class="dashboard-layout">
                     <!-- Create Button -->
                     <div class="page-header">
-                        <a href="/onboarding" class="btn-primary">
+                        <a href="/onboarding" id="createAgentBtnDashboard" class="btn-primary">
                             <i class="lni lni-plus"></i>
                             <span>Crear Agente</span>
                         </a>
@@ -147,30 +147,18 @@
                     <!-- Services Statistics Section -->
                     <div class="services-stats-section">
                         <div class="services-stats-grid">
-                            <!-- Most Requested Services -->
                             <div class="service-chart-card">
                                 <div class="service-chart-header">
-                                    <h3>
-                                        <i class="lni lni-bar-chart"></i>
-                                        Servicios Más Pedidos
-                                    </h3>
+                                    <h3><i class="lni lni-bar-chart"></i>Servicios Más Pedidos</h3>
                                 </div>
-                                <div id="mostRequestedServicesContainer" class="service-bars-container">
-                                    <!-- Los servicios se cargarán dinámicamente aquí -->
-                                </div>
+                                <div id="mostRequestedServicesContainer" class="service-bars-container"></div>
                             </div>
 
-                            <!-- Least Requested Services -->
                             <div class="service-chart-card least-requested">
                                 <div class="service-chart-header">
-                                    <h3>
-                                        <i class="lni lni-stats-down"></i>
-                                        Servicios Menos Pedidos
-                                    </h3>
+                                    <h3><i class="lni lni-stats-down"></i>Servicios Menos Pedidos</h3>
                                 </div>
-                                <div id="leastRequestedServicesContainer" class="service-bars-container">
-                                    <!-- Los servicios se cargarán dinámicamente aquí -->
-                                </div>
+                                <div id="leastRequestedServicesContainer" class="service-bars-container"></div>
                             </div>
                         </div>
                     </div>
@@ -179,10 +167,7 @@
                     <div class="pie-charts-section">
                         <div class="pie-charts-header">
                             <div class="pie-charts-title">
-                                <h2>
-                                    <i class="lni lni-pie-chart"></i>
-                                    Distribución de Servicios
-                                </h2>
+                                <h2><i class="lni lni-pie-chart"></i>Distribución de Servicios</h2>
                             </div>
                             <div class="export-buttons">
                                 <button class="btn-export btn-export-excel" onclick="exportToExcel()">
@@ -197,7 +182,6 @@
                         </div>
 
                         <div class="pie-charts-grid">
-                            <!-- Pie Chart - Most Requested -->
                             <div class="pie-chart-card">
                                 <div class="pie-chart-header">
                                     <div class="pie-chart-title">
@@ -210,13 +194,10 @@
                                     <div class="pie-chart-canvas-wrapper">
                                         <canvas id="mostRequestedPieChart"></canvas>
                                     </div>
-                                    <div class="pie-chart-legend" id="mostRequestedLegend">
-                                        <!-- Leyenda se genera dinámicamente -->
-                                    </div>
+                                    <div class="pie-chart-legend" id="mostRequestedLegend"></div>
                                 </div>
                             </div>
 
-                            <!-- Pie Chart - Least Requested -->
                             <div class="pie-chart-card">
                                 <div class="pie-chart-header">
                                     <div class="pie-chart-title">
@@ -229,13 +210,12 @@
                                     <div class="pie-chart-canvas-wrapper">
                                         <canvas id="leastRequestedPieChart"></canvas>
                                     </div>
-                                    <div class="pie-chart-legend" id="leastRequestedLegend">
-                                        <!-- Leyenda se genera dinámicamente -->
-                                    </div>
+                                    <div class="pie-chart-legend" id="leastRequestedLegend"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>

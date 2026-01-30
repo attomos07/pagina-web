@@ -5,7 +5,9 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
   background: #ffffff;
   min-height: 100vh;
   overflow-x: hidden;
@@ -142,8 +144,9 @@ body {
 /* Círculo activo con brillo suave */
 .progress-step.active {
   background: #06b6d4;
-  box-shadow: 0 0 12px rgba(6, 182, 212, 0.5),
-              0 0 24px rgba(6, 182, 212, 0.3);
+  box-shadow:
+    0 0 12px rgba(6, 182, 212, 0.5),
+    0 0 24px rgba(6, 182, 212, 0.3);
   animation: pulse-glow-smooth 2s ease-in-out infinite;
   opacity: 1;
   transform: scale(1.2);
@@ -151,15 +154,18 @@ body {
 
 /* Animación de brillo pulsante suave */
 @keyframes pulse-glow-smooth {
-  0%, 100% {
-    box-shadow: 0 0 12px rgba(6, 182, 212, 0.5),
-                0 0 24px rgba(6, 182, 212, 0.3);
+  0%,
+  100% {
+    box-shadow:
+      0 0 12px rgba(6, 182, 212, 0.5),
+      0 0 24px rgba(6, 182, 212, 0.3);
     transform: scale(1.2);
     opacity: 1;
   }
   50% {
-    box-shadow: 0 0 18px rgba(6, 182, 212, 0.7),
-                0 0 36px rgba(6, 182, 212, 0.4);
+    box-shadow:
+      0 0 18px rgba(6, 182, 212, 0.7),
+      0 0 36px rgba(6, 182, 212, 0.4);
     transform: scale(1.3);
     opacity: 1;
   }
@@ -179,15 +185,17 @@ body {
   }
   40% {
     background: #06b6d4;
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.7),
-                0 0 40px rgba(6, 182, 212, 0.5);
+    box-shadow:
+      0 0 20px rgba(6, 182, 212, 0.7),
+      0 0 40px rgba(6, 182, 212, 0.5);
     transform: scale(1.6);
     opacity: 1;
   }
   60% {
     background: #06b6d4;
-    box-shadow: 0 0 15px rgba(6, 182, 212, 0.6),
-                0 0 30px rgba(6, 182, 212, 0.4);
+    box-shadow:
+      0 0 15px rgba(6, 182, 212, 0.6),
+      0 0 30px rgba(6, 182, 212, 0.4);
     transform: scale(1.4);
     opacity: 1;
   }
@@ -336,13 +344,18 @@ body {
 }
 
 .social-content::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
   transition: left 0.6s;
 }
 
@@ -358,7 +371,11 @@ body {
 
 .social-card input[type="radio"]:checked + .social-content {
   border-color: #06b6d4;
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.05), rgba(34, 211, 238, 0.05));
+  background: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.05),
+    rgba(34, 211, 238, 0.05)
+  );
   box-shadow: 0 8px 24px rgba(6, 182, 212, 0.25);
   transform: scale(1.05);
 }
@@ -380,7 +397,7 @@ body {
 }
 
 .social-icon-wrapper::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -402,7 +419,10 @@ body {
   height: 80px;
 }
 
-.social-card input[type="radio"]:checked + .social-content .social-icon-wrapper {
+.social-card
+  input[type="radio"]:checked
+  + .social-content
+  .social-icon-wrapper {
   transform: scale(1.1);
   box-shadow: 0 6px 18px rgba(6, 182, 212, 0.3);
 }
@@ -423,7 +443,7 @@ body {
 }
 
 .social-name::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -4px;
   left: 50%;
@@ -472,7 +492,7 @@ body {
 .kakao-bubble-onboard {
   width: 36px;
   height: 36px;
-  fill: #3C1E1E;
+  fill: #3c1e1e;
 }
 
 .kakao-text-onboard {
@@ -482,7 +502,7 @@ body {
   transform: translate(-50%, -50%);
   font-size: 8px;
   font-weight: 700;
-  color: #FFE812;
+  color: #ffe812;
   letter-spacing: 0.3px;
 }
 
@@ -841,7 +861,11 @@ input:checked + .toggle-slider:before {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.1) 0%,
+    rgba(6, 182, 212, 0.05) 100%
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1003,7 +1027,7 @@ input:checked + .toggle-slider:before {
 }
 
 .language-checkbox-item input[type="checkbox"]:checked::after {
-  content: '✓';
+  content: "✓";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -1139,7 +1163,12 @@ input:checked + .toggle-slider:before {
 .time-column-header {
   position: sticky;
   top: 0;
-  background: linear-gradient(180deg, #f9fafb 0%, #f9fafb 85%, transparent 100%);
+  background: linear-gradient(
+    180deg,
+    #f9fafb 0%,
+    #f9fafb 85%,
+    transparent 100%
+  );
   padding: 0.75rem 0.5rem 0.5rem 0.5rem;
   text-align: center;
   font-size: 0.6875rem;
@@ -1910,7 +1939,7 @@ input:checked + .toggle-slider:before {
 }
 
 .availability-day input[type="checkbox"]:checked::after {
-  content: '✓';
+  content: "✓";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -2004,7 +2033,7 @@ input:checked + .toggle-slider:before {
 }
 
 .btn-next::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -2013,7 +2042,9 @@ input:checked + .toggle-slider:before {
   border-radius: 50%;
   background: rgba(6, 182, 212, 0.1);
   transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  transition:
+    width 0.6s,
+    height 0.6s;
 }
 
 .btn-next:hover::before {
@@ -2043,7 +2074,11 @@ input:checked + .toggle-slider:before {
    SUMMARY
 ======================================== */
 .summary-card {
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.05) 0%,
+    rgba(255, 255, 255, 1) 100%
+  );
   border: 2px solid rgba(6, 182, 212, 0.2);
   border-radius: 20px;
   padding: 2.5rem;
@@ -2271,7 +2306,11 @@ input:checked + .toggle-slider:before {
 }
 
 .location-option:hover {
-  background: linear-gradient(90deg, rgba(6, 182, 212, 0.1), rgba(6, 182, 212, 0.05));
+  background: linear-gradient(
+    90deg,
+    rgba(6, 182, 212, 0.1),
+    rgba(6, 182, 212, 0.05)
+  );
 }
 
 .location-option:hover i {
@@ -2280,7 +2319,11 @@ input:checked + .toggle-slider:before {
 }
 
 .location-option.selected {
-  background: linear-gradient(90deg, rgba(6, 182, 212, 0.15), rgba(6, 182, 212, 0.08));
+  background: linear-gradient(
+    90deg,
+    rgba(6, 182, 212, 0.15),
+    rgba(6, 182, 212, 0.08)
+  );
 }
 
 .location-option.selected i {
@@ -2354,7 +2397,8 @@ input:checked + .toggle-slider:before {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {
@@ -2407,7 +2451,11 @@ input:checked + .toggle-slider:before {
 }
 
 .agent-info {
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.1) 0%,
+    rgba(6, 182, 212, 0.05) 100%
+  );
   padding: 1.5rem;
   border-radius: 16px;
   margin-bottom: 2rem;
@@ -2733,4 +2781,37 @@ input:checked + .toggle-slider:before {
     padding: 0.625rem 1rem;
     font-size: 0.8125rem;
   }
+}
+.form-label i {
+  font-size: 1.35rem; /* Tamaño ligeramente más grande para que se distingan */
+  vertical-align: -3px; /* Alineación fina con el texto */
+  margin-right: 8px; /* Espacio entre icono y texto */
+  transition: transform 0.2s ease;
+}
+
+/* Efecto hover sutil */
+.form-group:hover .form-label i {
+  transform: scale(1.1);
+}
+
+/* --- COLORES DE MARCA PARA LOS LABELS --- */
+
+/* Facebook (Azul) */
+.form-label i.lni-facebook-original {
+  color: #1877f2;
+}
+
+/* Instagram (Rosa/Rojo) */
+.form-label i.lni-instagram-original {
+  color: #e4405f;
+}
+
+/* Twitter / X (Negro/Azul) */
+.form-label i.lni-twitter-original {
+  color: #1da1f2; /* Azul clásico de Twitter para mejor visibilidad */
+}
+
+/* LinkedIn (Azul Oscuro) */
+.form-label i.lni-linkedin-original {
+  color: #0a66c2;
 }
