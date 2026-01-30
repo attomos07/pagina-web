@@ -1,319 +1,504 @@
 /* ==========================================
-   FLOATING SIDEBAR STYLES
+   1. RESET & ESTILOS BASE
    ========================================== */
-
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
+/* ==========================================
+   2. SIDEBAR FLOTANTE (VERSIÓN ESCRITORIO)
+   ========================================== */
 .sidebar-container {
-    position: fixed;
-    left: 24px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: #ffffff;
-    border-radius: 50px;
-    padding: 16px 12px;
-    box-shadow: 
-        0 10px 40px rgba(0, 0, 0, 0.08),
-        0 2px 8px rgba(0, 0, 0, 0.04);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    transition: all 0.3s ease;
-    z-index: 1000;
+  position: fixed;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ffffff;
+  border-radius: 50px;
+  padding: 16px 12px;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  overflow: visible; /* Importante para los tooltips */
 }
 
 .sidebar-container:hover {
-    box-shadow: 
-        0 15px 50px rgba(0, 0, 0, 0.12),
-        0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 15px 50px rgba(0, 0, 0, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
+/* ==========================================
+   3. BOTONES E ICONOS (BASE)
+   ========================================== */
 .icon-button {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: none;
-    background: transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    text-decoration: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  text-decoration: none;
 }
 
+/* Hover en escritorio: el botón crece un poco */
 .icon-button:hover {
-    background: #f5f7fa;
-    transform: scale(1.05);
+  background: #f5f7fa;
+  transform: scale(1.05);
+  z-index: 2000; /* Se eleva sobre los demás */
 }
 
 .icon-button.active {
-    background: #06b6d4;
+  background: #06b6d4;
 }
 
-.icon-button.active svg {
-    stroke: #ffffff;
-}
-
+/* Estilos del SVG */
 .icon-button svg {
-    width: 22px;
-    height: 22px;
-    stroke: #2d3748;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    fill: none;
-    transition: stroke 0.3s ease;
+  width: 22px;
+  height: 22px;
+  stroke: #2d3748;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: stroke 0.3s ease;
 }
 
 .icon-button.active svg {
-    stroke: #ffffff;
+  stroke: #ffffff;
 }
 
+/* ==========================================
+   4. TOOLTIPS (VERSIÓN ESCRITORIO)
+   ========================================== */
 .tooltip {
-    position: absolute;
-    left: 70px;
-    background: #1a1a1a;
-    color: #ffffff;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateX(-10px);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
+  position: absolute;
+  left: 70px;
+  background: #1a1a1a;
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
 }
 
+/* Triangulito del tooltip */
 .tooltip::before {
-    content: '';
-    position: absolute;
-    left: -4px;
-    top: 50%;
-    transform: translateY(-50%) rotate(45deg);
-    width: 8px;
-    height: 8px;
-    background: #1a1a1a;
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background: #1a1a1a;
 }
 
 .icon-button:hover .tooltip {
-    opacity: 1;
-    transform: translateX(0);
+  opacity: 1;
+  transform: translateX(0);
 }
 
+/* ==========================================
+   5. ELEMENTOS AUXILIARES
+   ========================================== */
 .divider {
-    width: 32px;
-    height: 1px;
-    background: #e2e8f0;
-    margin: 4px auto;
+  width: 32px;
+  height: 1px;
+  background: #e2e8f0;
+  margin: 4px auto;
 }
 
-/* Logout button special styling */
+/* Botón de Logout */
 .logout-button:hover {
-    background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .logout-button:hover svg {
-    stroke: #ef4444;
+  stroke: #ef4444;
 }
 
-/* Messages loading state */
+/* Animación de carga */
 .messages-loading {
-    display: none;
+  display: none;
 }
 
 .icon-button[data-loading="true"] svg {
-    animation: pulse 1.5s ease-in-out infinite;
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
 @keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* ==========================================
-   MOBILE MENU BUTTON
+   6. BOTÓN DE MENÚ MÓVIL (HAMBURGUESA)
    ========================================== */
-
 .mobile-menu-btn {
-    display: none;
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    width: 56px;
-    height: 56px;
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
-    border: none;
-    border-radius: 50%;
-    box-shadow: 0 8px 24px rgba(6, 182, 212, 0.4);
-    cursor: pointer;
-    z-index: 1001;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    align-items: center;
-    justify-content: center;
+  display: none; /* Oculto en escritorio */
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.4);
+  cursor: pointer;
+  /* FIX CRÍTICO: Z-index mayor que la sidebar para poder cerrarlo */
+  z-index: 2005;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  align-items: center;
+  justify-content: center;
 }
 
 .mobile-menu-btn:active {
-    transform: scale(0.95);
+  transform: scale(0.95);
 }
 
 .mobile-menu-btn .hamburger {
-    width: 24px;
-    height: 20px;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+  width: 24px;
+  height: 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .mobile-menu-btn .hamburger span {
-    display: block;
-    width: 100%;
-    height: 3px;
-    background: white;
-    border-radius: 3px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    transform-origin: center;
+  display: block;
+  width: 100%;
+  height: 3px;
+  background: white;
+  border-radius: 3px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
 }
 
+/* Animación a X */
 .mobile-menu-btn.active .hamburger span:nth-child(1) {
-    transform: translateY(8.5px) rotate(45deg);
+  transform: translateY(8.5px) rotate(45deg);
 }
 
 .mobile-menu-btn.active .hamburger span:nth-child(2) {
-    opacity: 0;
-    transform: scaleX(0);
+  opacity: 0;
+  transform: scaleX(0);
 }
 
 .mobile-menu-btn.active .hamburger span:nth-child(3) {
-    transform: translateY(-8.5px) rotate(-45deg);
-}
-
-/* Mobile Overlay */
-.mobile-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    z-index: 999;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.mobile-overlay.active {
-    opacity: 1;
+  transform: translateY(-8.5px) rotate(-45deg);
 }
 
 /* ==========================================
-   MOBILE RESPONSIVE
+   7. OVERLAY (FONDO OSCURO)
    ========================================== */
+.mobile-overlay {
+  /* FIX: Usamos visibility en lugar de display para permitir transición */
+  visibility: hidden;
+  opacity: 0;
 
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1999; /* Justo debajo de la sidebar */
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
+}
+
+.mobile-overlay.active {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* ==========================================
+   8. MEDIA QUERIES (VERSIÓN MÓVIL)
+   ========================================== */
 @media (max-width: 768px) {
-    /* Show mobile menu button */
-    .mobile-menu-btn {
-        display: flex;
-    }
+  /* TRANSFORMACIÓN DEL CONTENEDOR */
+  .sidebar-container {
+    position: fixed;
+    left: 0;
+    top: 0;
 
-    /* Hide floating sidebar on mobile */
-    .sidebar-container {
-        position: fixed;
-        left: 0;
-        top: 0;
-        transform: translateX(-100%) translateY(0);
-        border-radius: 0 24px 24px 0;
-        height: 100vh;
-        padding: 80px 20px 20px;
-        width: 280px;
-        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow-y: auto;
-        gap: 4px;
-    }
+    /* Oculto a la izquierda por defecto */
+    transform: translateX(-100%);
 
-    .sidebar-container.mobile-active {
-        transform: translateX(0) translateY(0);
-    }
+    /* Dimensiones de cajón lateral */
+    width: 280px;
+    height: 100vh;
 
-    /* Show overlay */
-    .mobile-overlay {
-        display: block;
-    }
+    /* Estilos visuales */
+    border-radius: 0 20px 20px 0;
+    background: #ffffff;
+    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.1);
 
-    /* Expand buttons on mobile */
-    .icon-button {
-        width: 100%;
-        height: 56px;
-        border-radius: 12px;
-        justify-content: flex-start;
-        padding: 0 16px;
-        gap: 16px;
-    }
+    /* Layout interno */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch; /* Estira los botones */
 
-    .icon-button svg {
-        width: 24px;
-        height: 24px;
-    }
+    /* FIX: Padding inteligente para el Notch de iPhone */
+    padding-top: max(80px, env(safe-area-inset-top) + 20px);
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-bottom: 20px;
 
-    /* Show text labels on mobile */
-    .tooltip {
-        position: static;
-        opacity: 1;
-        transform: none;
-        background: transparent;
-        color: #374151;
-        padding: 0;
-        box-shadow: none;
-        font-weight: 600;
-        pointer-events: auto;
-    }
+    gap: 4px;
+    overflow-y: auto;
+    z-index: 2000;
+  }
 
-    .tooltip::before {
-        display: none;
-    }
+  /* Clase para mostrar el menú */
+  .sidebar-container.mobile-active {
+    transform: translateX(0);
+  }
 
-    .icon-button:hover .tooltip {
-        transform: none;
-    }
+  /* TRANSFORMACIÓN DE LOS BOTONES */
+  .icon-button {
+    width: 100%;
+    height: 48px;
+    border-radius: 12px; /* Rectángulo redondeado */
+    display: flex;
+    justify-content: flex-start; /* Alinear a la izquierda */
+    align-items: center;
+    padding: 0 12px;
+    background: transparent;
+    margin-bottom: 4px;
+  }
 
-    /* Divider adjustments */
-    .divider {
-        width: 100%;
-        margin: 8px 0;
-    }
+  /* Ajuste de iconos */
+  .icon-button svg {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    margin-right: 16px; /* Separación con el texto */
+    stroke: #64748b; /* Gris neutro */
+  }
 
-    /* Remove hover effects on mobile, use active states */
-    .icon-button:hover {
-        background: transparent;
-        transform: none;
-    }
+  /* TRANSFORMACIÓN DEL TOOLTIP A TEXTO VISIBLE */
+  .tooltip {
+    position: static; /* Ya no flota */
+    transform: none;
+    opacity: 1; /* Siempre visible */
 
-    .icon-button:active {
-        background: rgba(6, 182, 212, 0.1);
-    }
+    background: transparent;
+    color: #1e293b; /* Texto oscuro */
+    font-size: 15px;
+    font-weight: 500;
+    padding: 0;
+    box-shadow: none;
+    pointer-events: auto;
+    white-space: nowrap;
+  }
 
-    .icon-button.active:active {
-        background: #06b6d4;
-    }
+  /* Ocultar el triangulito */
+  .tooltip::before {
+    display: none;
+  }
+
+  /* --- ESTADOS EN MÓVIL --- */
+
+  /* Resetear hover de escritorio para evitar efectos raros al tocar */
+  .icon-button:hover {
+    background: transparent;
+    transform: none;
+  }
+
+  .icon-button:hover .tooltip {
+    transform: none;
+  }
+
+  /* Estado Activo (Página actual) */
+  .icon-button.active {
+    background: #e0f2fe; /* Azul muy suave */
+  }
+
+  .icon-button.active svg {
+    stroke: #0284c7; /* Azul fuerte */
+  }
+
+  .icon-button.active .tooltip {
+    color: #0284c7; /* Texto azul fuerte */
+    font-weight: 600;
+  }
+
+  /* Feedback táctil al presionar */
+  .icon-button:active {
+    background: #f1f5f9;
+    transform: scale(0.98);
+  }
+
+  /* Ajuste del divisor */
+  .divider {
+    width: 100%;
+    background: #e2e8f0;
+    margin: 8px 0;
+  }
+
+  /* Mostrar botón hamburguesa */
+  .mobile-menu-btn {
+    display: flex;
+  }
 }
 
 /* Tablet adjustments */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .sidebar-container {
-        left: 16px;
-    }
+/* ==========================================
+   MOBILE RESPONSIVE (CORRECCIÓN FINAL)
+   ========================================== */
+
+@media (max-width: 768px) {
+  /* 1. EL CAJÓN (SIDEBAR)
+     Forzamos que sea un panel ancho (280px) y no una tirita delgada */
+  .sidebar-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    /* Dimensiones fijas */
+    width: 280px !important;
+    height: 100vh;
+
+    /* Padding para bajar el contenido y que no choque con la X */
+    padding-top: 90px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+
+    /* Alineación */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch !important; /* IMPORTANTE: Estira los botones a lo ancho */
+    gap: 4px; /* Menos separación entre botones */
+
+    /* Estilos visuales */
+    background: #ffffff;
+    border-radius: 0 20px 20px 0 !important;
+    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.15);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 2000;
+  }
+
+  /* Estado abierto */
+  .sidebar-container.mobile-active {
+    transform: translateX(0);
+  }
+
+  /* 2. LOS BOTONES (RECTÁNGULOS)
+     Dejan de ser círculos y se vuelven barras horizontales */
+  .icon-button {
+    width: 100% !important;
+    height: 46px !important; /* Un poco más compactos */
+    border-radius: 8px !important; /* Bordes menos redondeados */
+    margin-bottom: 2px;
+    padding: 0 12px !important;
+
+    /* Alineación del contenido */
+    display: flex !important;
+    justify-content: flex-start !important; /* Todo a la izquierda */
+    align-items: center !important;
+
+    background: transparent;
+  }
+
+  /* 3. EL ICONO
+     Le damos un color gris oscuro para que resalte sobre el blanco */
+  .icon-button svg {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    margin-right: 12px !important; /* Espacio entre icono y texto */
+    stroke: #475569 !important; /* Gris profesional */
+  }
+
+  /* 4. EL TEXTO (CRÍTICO)
+     Aquí está el truco: reseteamos totalmente el comportamiento de "tooltip"
+     para que sea simplemente un texto normal. */
+  .tooltip {
+    /* Reseteo de posicionamiento */
+    position: static !important;
+    transform: none !important;
+    opacity: 1 !important;
+
+    /* Estilos de texto */
+    background: transparent !important;
+    color: #334155 !important; /* Texto gris oscuro */
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    white-space: nowrap;
+
+    /* Asegurar visibilidad */
+    display: inline-block !important;
+    width: auto !important;
+    pointer-events: auto !important;
+  }
+
+  /* Ocultar el triangulito decorativo del tooltip de escritorio */
+  .tooltip::before {
+    display: none !important;
+  }
+
+  /* --- ESTADOS ACTIVOS Y HOVER --- */
+
+  /* Botón activo (página actual) */
+  .icon-button.active {
+    background: #e0f2fe !important; /* Fondo azul muy claro */
+  }
+
+  .icon-button.active svg {
+    stroke: #0284c7 !important; /* Icono azul */
+  }
+
+  .icon-button.active .tooltip {
+    color: #0284c7 !important; /* Texto azul */
+    font-weight: 600 !important;
+  }
+
+  /* Quitar el efecto hover de escritorio (que eleva el botón) */
+  .icon-button:hover {
+    transform: none !important;
+    background: #f1f5f9 !important; /* Gris muy suave al tocar */
+  }
+
+  /* Botón hamburguesa visible */
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+
+  /* Overlay visible */
+  .mobile-overlay {
+    display: block; /* Fallback */
+  }
 }

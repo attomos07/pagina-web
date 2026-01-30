@@ -1,310 +1,316 @@
-<!-- Floating Sidebar con lógica condicional para plan gratuito -->
-<link rel="stylesheet" href="/static/css/sidebar.css">
-
-<button class="mobile-menu-btn" id="mobileMenuBtn">
-    <div class="hamburger">
-        <span></span>
-        <span></span>
-        <span></span>
-    </div>
-</button>
-
-<div class="mobile-overlay" id="mobileOverlay"></div>
-
-<nav class="sidebar-container" id="sidebar">
-    <a href="/dashboard" class="icon-button active" data-page="dashboard">
-        <svg viewBox="0 0 24 24">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-        </svg>
-        <span class="tooltip">Dashboard</span>
-    </a>
-
-    <a href="/profile" class="icon-button" data-page="profile">
-        <svg viewBox="0 0 24 24">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-        </svg>
-        <span class="tooltip">Mi Perfil</span>
-    </a>
-
-    <a href="/my-agents" class="icon-button" data-page="my-agents">
-        <svg viewBox="0 0 24 24">
-            <rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect>
-            <path d="M12 18h.01"></path>
-        </svg>
-        <span class="tooltip">Mis Agentes</span>
-    </a>
-
-    <!-- Business Portfolio - Solo para planes de pago -->
-    <a href="/business-portfolio" class="icon-button" id="portfolioMenuItem" style="display: none;" data-page="business-portfolio">
-        <svg viewBox="0 0 24 24">
-            <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
-            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-            <path d="M12 11h4"></path>
-            <path d="M12 16h4"></path>
-            <path d="M8 11h.01"></path>
-            <path d="M8 16h.01"></path>
-        </svg>
-        <span class="tooltip">Business Portfolio</span>
-    </a>
-
-    <a href="/appointments" class="icon-button" data-page="appointments">
-        <svg viewBox="0 0 24 24">
-            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-        </svg>
-        <span class="tooltip">Mis Citas</span>
-    </a>
-
-    <a href="/integrations" class="icon-button" data-page="integrations">
-        <svg viewBox="0 0 24 24">
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-        </svg>
-        <span class="tooltip">Integraciones</span>
-    </a>
-
-    <!-- Mensajes - Solo para planes de pago -->
-    <a href="#" id="messagesLink" class="icon-button" data-page="messages" style="display: none;" data-loading="true">
-        <svg viewBox="0 0 24 24">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-        </svg>
-        <span class="tooltip">
-            <span class="messages-text">Mensajes</span>
-            <span class="messages-loading">Cargando...</span>
-        </span>
-    </a>
-
-    <a href="/plans" class="icon-button" data-page="plans">
-        <svg viewBox="0 0 24 24">
-            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-        </svg>
-        <span class="tooltip">Planes</span>
-    </a>
-
-    <a href="/billing" class="icon-button" data-page="billing">
-        <svg viewBox="0 0 24 24">
-            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-            <line x1="2" x2="22" y1="10" y2="10"></line>
-        </svg>
-        <span class="tooltip">Facturación</span>
-    </a>
-
-    <a href="/settings" class="icon-button" data-page="settings">
-        <svg viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
-        </svg>
-        <span class="tooltip">Configuración</span>
-    </a>
-
-    <div class="divider"></div>
-
-    <button class="icon-button logout-button" id="logoutBtn">
-        <svg viewBox="0 0 24 24">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-            <polyline points="16 17 21 12 16 7"></polyline>
-            <line x1="21" x2="9" y1="12" y2="12"></line>
-        </svg>
-        <span class="tooltip">Cerrar Sesión</span>
-    </button>
-</nav>
-
-<script>
-    // Obtener plan del usuario y mostrar/ocultar opciones
-    async function checkUserPlan() {
-        try {
-            const response = await fetch('/api/me', {
-                credentials: 'include'
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                const plan = data.subscription?.plan || 'gratuito';
-                
-                // Mostrar u ocultar opciones según el plan
-                const portfolioItem = document.getElementById('portfolioMenuItem');
-                const messagesItem = document.getElementById('messagesLink');
-                
-                if (plan === 'gratuito') {
-                    // Ocultar Portfolio y Mensajes para plan gratuito
-                    if (portfolioItem) portfolioItem.style.display = 'none';
-                    if (messagesItem) messagesItem.style.display = 'none';
-                } else {
-                    // Mostrar Portfolio y Mensajes para planes de pago
-                    if (portfolioItem) portfolioItem.style.display = '';
-                    if (messagesItem) messagesItem.style.display = '';
-                    
-                    // Cargar info de Chatwoot solo si no es gratuito
-                    loadChatwootInfo();
-                }
-            }
-        } catch (error) {
-            console.error('Error obteniendo plan del usuario:', error);
-        }
-    }
-
-    // Llamar al cargar la página
-    checkUserPlan();
-
-    // Variables globales
-    const sidebar = document.getElementById('sidebar');
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mobileOverlay = document.getElementById('mobileOverlay');
-    const messagesLink = document.getElementById('messagesLink');
-    const messagesText = messagesLink?.querySelector('.messages-text');
-    const messagesLoading = messagesLink?.querySelector('.messages-loading');
-    const buttons = document.querySelectorAll('.icon-button');
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    let isMobile = window.innerWidth <= 768;
+    <title>Dashboard</title>
 
-    // Cargar información de Chatwoot
-    async function loadChatwootInfo() {
-        if (!messagesLink) return;
-        
-        try {
-            messagesLink.setAttribute('data-loading', 'true');
-            if (messagesText) messagesText.style.display = 'none';
-            if (messagesLoading) messagesLoading.style.display = 'inline';
+    <link rel="stylesheet" href="/static/css/sidebar.css">
+</head>
+<body>
 
-            const response = await fetch('/api/chatwoot/info', {
-                method: 'GET',
-                credentials: 'include'
-            });
+    <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </button>
 
-            if (!response.ok) throw new Error('Error al cargar Chatwoot');
+    <div class="mobile-overlay" id="mobileOverlay"></div>
 
-            const data = await response.json();
+    <nav class="sidebar-container" id="sidebar">
+        <a href="/dashboard" class="icon-button active" data-page="dashboard">
+            <svg viewBox="0 0 24 24">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span class="tooltip">Dashboard</span>
+        </a>
 
-            if (messagesText) messagesText.style.display = 'inline';
-            if (messagesLoading) messagesLoading.style.display = 'none';
-            messagesLink.removeAttribute('data-loading');
+        <a href="/profile" class="icon-button" data-page="profile">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span class="tooltip">Mi Perfil</span>
+        </a>
 
-            if (data.hasChatwoot && data.chatwootUrl) {
-                messagesLink.href = data.chatwootUrl;
-                messagesLink.target = '_blank';
-                messagesLink.rel = 'noopener noreferrer';
-                messagesLink.removeAttribute('data-disabled');
-            } else {
-                messagesLink.href = '#';
-                messagesLink.setAttribute('data-disabled', 'true');
-                messagesLink.addEventListener('click', (e) => {
-                    if (messagesLink.getAttribute('data-disabled') === 'true') {
-                        e.preventDefault();
-                        showChatwootNotAvailableMessage();
-                    }
+        <a href="/my-agents" class="icon-button" data-page="my-agents">
+            <svg viewBox="0 0 24 24">
+                <rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect>
+                <path d="M12 18h.01"></path>
+            </svg>
+            <span class="tooltip">Mis Agentes</span>
+        </a>
+
+        <a href="/business-portfolio" class="icon-button" id="portfolioMenuItem" style="display: none;" data-page="business-portfolio">
+            <svg viewBox="0 0 24 24">
+                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <path d="M12 11h4"></path>
+                <path d="M12 16h4"></path>
+                <path d="M8 11h.01"></path>
+                <path d="M8 16h.01"></path>
+            </svg>
+            <span class="tooltip">Business Portfolio</span>
+        </a>
+
+        <a href="/appointments" class="icon-button" data-page="appointments">
+            <svg viewBox="0 0 24 24">
+                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span class="tooltip">Mis Citas</span>
+        </a>
+
+        <a href="/integrations" class="icon-button" data-page="integrations">
+            <svg viewBox="0 0 24 24">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <span class="tooltip">Integraciones</span>
+        </a>
+
+        <a href="#" id="messagesLink" class="icon-button" data-page="messages" style="display: none;" data-loading="true">
+            <svg viewBox="0 0 24 24">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span class="tooltip">
+                <span class="messages-text">Mensajes</span>
+                <span class="messages-loading">Cargando...</span>
+            </span>
+        </a>
+
+        <a href="/plans" class="icon-button" data-page="plans">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            <span class="tooltip">Planes</span>
+        </a>
+
+        <a href="/billing" class="icon-button" data-page="billing">
+            <svg viewBox="0 0 24 24">
+                <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+                <line x1="2" x2="22" y1="10" y2="10"></line>
+            </svg>
+            <span class="tooltip">Facturación</span>
+        </a>
+
+        <a href="/settings" class="icon-button" data-page="settings">
+            <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
+            </svg>
+            <span class="tooltip">Configuración</span>
+        </a>
+
+        <div class="divider"></div>
+
+        <button class="icon-button logout-button" id="logoutBtn">
+            <svg viewBox="0 0 24 24">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" x2="9" y1="12" y2="12"></line>
+            </svg>
+            <span class="tooltip">Cerrar Sesión</span>
+        </button>
+    </nav>
+
+    <script>
+        // Obtener plan del usuario y mostrar/ocultar opciones
+        async function checkUserPlan() {
+            try {
+                const response = await fetch('/api/me', {
+                    credentials: 'include'
                 });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const plan = data.subscription?.plan || 'gratuito';
+                    
+                    // Mostrar u ocultar opciones según el plan
+                    const portfolioItem = document.getElementById('portfolioMenuItem');
+                    const messagesItem = document.getElementById('messagesLink');
+                    
+                    if (plan === 'gratuito') {
+                        // Ocultar Portfolio y Mensajes para plan gratuito
+                        if (portfolioItem) portfolioItem.style.display = 'none';
+                        if (messagesItem) messagesItem.style.display = 'none';
+                    } else {
+                        // Mostrar Portfolio y Mensajes para planes de pago
+                        if (portfolioItem) portfolioItem.style.display = '';
+                        if (messagesItem) messagesItem.style.display = '';
+                        
+                        // Cargar info de Chatwoot solo si no es gratuito
+                        loadChatwootInfo();
+                    }
+                }
+            } catch (error) {
+                console.error('Error obteniendo plan del usuario:', error);
             }
-        } catch (error) {
-            console.error('Error cargando Chatwoot:', error);
-            if (messagesText) messagesText.style.display = 'inline';
-            if (messagesLoading) messagesLoading.style.display = 'none';
-            messagesLink.removeAttribute('data-loading');
         }
-    }
 
-    // Mostrar mensaje cuando Chatwoot no está disponible
-    function showChatwootNotAvailableMessage() {
-        const toast = document.createElement('div');
-        toast.style.cssText = `
-            position: fixed; top: 24px; right: 24px;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white; padding: 16px 24px; border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
-            z-index: 10000; max-width: 400px;
-        `;
-        toast.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-                </svg>
-                <div>
-                    <div style="font-weight: 600; margin-bottom: 4px;">Chatwoot no disponible</div>
-                    <div style="font-size: 14px; opacity: 0.9;">Crea tu primer agente para activar mensajes</div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(toast);
-        setTimeout(() => {
-            document.body.removeChild(toast);
-        }, 4000);
-    }
+        // Llamar al cargar la página
+        checkUserPlan();
 
-    // Detectar página activa
-    function setActivePage() {
-        const currentPath = window.location.pathname;
-        buttons.forEach(button => {
-            button.classList.remove('active');
-            const buttonPath = button.getAttribute('href');
-            if (buttonPath && currentPath.includes(buttonPath) && buttonPath !== '#') {
-                button.classList.add('active');
-            }
-        });
-    }
+        // Variables globales
+        const sidebar = document.getElementById('sidebar');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileOverlay = document.getElementById('mobileOverlay');
+        const messagesLink = document.getElementById('messagesLink');
+        const messagesText = messagesLink?.querySelector('.messages-text');
+        const messagesLoading = messagesLink?.querySelector('.messages-loading');
+        const buttons = document.querySelectorAll('.icon-button');
+        
+        let isMobile = window.innerWidth <= 768;
 
-    // Inicializar página activa
-    setActivePage();
-
-    // Click en botones
-    buttons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            // Si es el botón de logout, no hacer nada aquí
-            if (button.id === 'logoutBtn') return;
+        // Cargar información de Chatwoot
+        async function loadChatwootInfo() {
+            if (!messagesLink) return;
             
-            // Si es un enlace válido, dejar que navegue normalmente
-            const href = button.getAttribute('href');
-            if (href && href !== '#') {
-                // El navegador manejará la navegación
-                return;
+            try {
+                messagesLink.setAttribute('data-loading', 'true');
+                if (messagesText) messagesText.style.display = 'none';
+                if (messagesLoading) messagesLoading.style.display = 'inline';
+
+                const response = await fetch('/api/chatwoot/info', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (!response.ok) throw new Error('Error al cargar Chatwoot');
+
+                const data = await response.json();
+
+                if (messagesText) messagesText.style.display = 'inline';
+                if (messagesLoading) messagesLoading.style.display = 'none';
+                messagesLink.removeAttribute('data-loading');
+
+                if (data.hasChatwoot && data.chatwootUrl) {
+                    messagesLink.href = data.chatwootUrl;
+                    messagesLink.target = '_blank';
+                    messagesLink.rel = 'noopener noreferrer';
+                    messagesLink.removeAttribute('data-disabled');
+                } else {
+                    messagesLink.href = '#';
+                    messagesLink.setAttribute('data-disabled', 'true');
+                    messagesLink.addEventListener('click', (e) => {
+                        if (messagesLink.getAttribute('data-disabled') === 'true') {
+                            e.preventDefault();
+                            showChatwootNotAvailableMessage();
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error cargando Chatwoot:', error);
+                if (messagesText) messagesText.style.display = 'inline';
+                if (messagesLoading) messagesLoading.style.display = 'none';
+                messagesLink.removeAttribute('data-loading');
+            }
+        }
+
+        // Mostrar mensaje cuando Chatwoot no está disponible
+        function showChatwootNotAvailableMessage() {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; top: 24px; right: 24px;
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                color: white; padding: 16px 24px; border-radius: 12px;
+                box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+                z-index: 10000; max-width: 400px;
+            `;
+            toast.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 4px;">Chatwoot no disponible</div>
+                        <div style="font-size: 14px; opacity: 0.9;">Crea tu primer agente para activar mensajes</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 4000);
+        }
+
+        // Detectar página activa
+        function setActivePage() {
+            const currentPath = window.location.pathname;
+            buttons.forEach(button => {
+                button.classList.remove('active');
+                const buttonPath = button.getAttribute('href');
+                if (buttonPath && currentPath.includes(buttonPath) && buttonPath !== '#') {
+                    button.classList.add('active');
+                }
+            });
+        }
+
+        // Inicializar página activa
+        setActivePage();
+
+        // Click en botones
+        buttons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                if (button.id === 'logoutBtn') return;
+                
+                const href = button.getAttribute('href');
+                if (href && href !== '#') {
+                    return;
+                }
+            });
+        });
+
+        // Mobile menu
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.contains('mobile-active') ? closeMobileSidebar() : openMobileSidebar();
+        });
+
+        mobileOverlay.addEventListener('click', closeMobileSidebar);
+
+        function openMobileSidebar() {
+            sidebar.classList.add('mobile-active');
+            mobileOverlay.classList.add('active');
+            mobileMenuBtn.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMobileSidebar() {
+            sidebar.classList.remove('mobile-active');
+            mobileOverlay.classList.remove('active');
+            mobileMenuBtn.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Responsive
+        window.addEventListener('resize', () => {
+            const wasMobile = isMobile;
+            isMobile = window.innerWidth <= 768;
+            if (wasMobile && !isMobile) {
+                closeMobileSidebar();
             }
         });
-    });
 
-    // Mobile menu
-    mobileMenuBtn.addEventListener('click', () => {
-        sidebar.classList.contains('mobile-active') ? closeMobileSidebar() : openMobileSidebar();
-    });
-
-    mobileOverlay.addEventListener('click', closeMobileSidebar);
-
-    function openMobileSidebar() {
-        sidebar.classList.add('mobile-active');
-        mobileOverlay.classList.add('active');
-        mobileMenuBtn.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeMobileSidebar() {
-        sidebar.classList.remove('mobile-active');
-        mobileOverlay.classList.remove('active');
-        mobileMenuBtn.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    // Responsive
-    window.addEventListener('resize', () => {
-        const wasMobile = isMobile;
-        isMobile = window.innerWidth <= 768;
-        if (wasMobile && !isMobile) {
-            closeMobileSidebar();
-        }
-    });
-
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-        try {
-            const response = await fetch('/api/logout', { 
-                method: 'POST', 
-                credentials: 'include' 
-            });
-            if (response.ok) {
-                window.location.href = '/login';
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/logout', { 
+                    method: 'POST', 
+                    credentials: 'include' 
+                });
+                if (response.ok) {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Error:', error);
             }
-        } catch (error) {
-            console.error('Error:', error);
-        }
-    });
-</script>
+        });
+    </script>
+</body>
+</html>
