@@ -1,178 +1,124 @@
 // ============================================
-// NAVBAR MOBILE MENU - iOS Style
+// NAVBAR MOBILE MENU - iOS Style & Active Logic
 // ============================================
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔧 Navbar script cargado');
-    
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('🔧 Navbar: Inicializando...');
+
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const navMenu = document.getElementById('navMenu');
     const navbar = document.getElementById('navbar');
     const body = document.body;
 
-    // Verificar que existen los elementos
     if (!mobileMenuBtn || !navMenu) {
-        console.error('❌ Elementos del menú no encontrados');
+        console.error('❌ Error: No se encontraron los elementos del DOM');
         return;
     }
 
-    console.log('✅ Elementos del menú encontrados');
+    // --- 1. GESTIÓN DEL MENÚ MÓVIL (iOS Style) ---
 
-    // Asegurar estado inicial cerrado
-    mobileMenuBtn.classList.remove('active');
-    navMenu.classList.remove('active');
-    body.classList.remove('menu-open');
-
-    // Función para abrir menú
     function openMobileMenu() {
-        console.log('📱 Abriendo menú móvil...');
         mobileMenuBtn.classList.add('active');
         navMenu.classList.add('active');
         body.classList.add('menu-open');
         mobileMenuBtn.setAttribute('aria-expanded', 'true');
     }
 
-    // Función para cerrar menú
     function closeMobileMenu() {
-        console.log('❌ Cerrando menú móvil...');
         mobileMenuBtn.classList.remove('active');
         navMenu.classList.remove('active');
         body.classList.remove('menu-open');
         mobileMenuBtn.setAttribute('aria-expanded', 'false');
     }
 
-    // Toggle del menú al hacer click en el botón
-    mobileMenuBtn.addEventListener('click', function(e) {
-        e.preventDefault();
+    // Toggle con click
+    mobileMenuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        
         const isActive = navMenu.classList.contains('active');
-        console.log('🔄 Toggle menú - Estado actual:', isActive);
-        
-        if (isActive) {
-            closeMobileMenu();
-        } else {
-            openMobileMenu();
-        }
+        isActive ? closeMobileMenu() : openMobileMenu();
     });
 
-    // Cerrar menú al hacer click en los links
-    const navLinks = navMenu.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            console.log('🔗 Link clickeado:', this.textContent);
-            
-            const href = this.getAttribute('href');
-            
-            // Prevenir default solo si es un link vacío
-            if (!href || href === '#' || href === '') {
-                e.preventDefault();
-            }
-            
-            // Marcar como activo (excepto login y CTA)
-            if (!this.classList.contains('nav-cta') && !this.classList.contains('nav-login')) {
-                navLinks.forEach(l => {
-                    if (!l.classList.contains('nav-cta') && !l.classList.contains('nav-login')) {
-                        l.classList.remove('active');
-                    }
-                });
-                this.classList.add('active');
-            }
-            
-            // Cerrar menú con delay para iOS
-            setTimeout(() => {
-                closeMobileMenu();
-            }, 150);
+    // Cerrar al hacer click en un link
+    const allLinks = document.querySelectorAll('.nav-link');
+    allLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            // Cerramos con un pequeño delay para dejar que la animación de iOS se aprecie
+            setTimeout(closeMobileMenu, 150);
         });
-    });
-
-    // Cerrar con click fuera del menú
-    document.addEventListener('click', function(e) {
-        if (navMenu.classList.contains('active')) {
-            const clickedInsideMenu = navMenu.contains(e.target);
-            const clickedOnButton = mobileMenuBtn.contains(e.target);
-            
-            if (!clickedInsideMenu && !clickedOnButton) {
-                console.log('👆 Click fuera del menú - cerrando...');
-                closeMobileMenu();
-            }
-        }
-    });
-
-    // Cerrar al redimensionar ventana
-    let resizeTimer;
-    window.addEventListener('resize', function() {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function() {
-            if (window.innerWidth > 768 && navMenu.classList.contains('active')) {
-                console.log('📐 Redimensionado - cerrando menú...');
-                closeMobileMenu();
-            }
-        }, 250);
     });
 
     // Cerrar con tecla ESC
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && navMenu.classList.contains('active')) {
-            console.log('⌨️ ESC presionado - cerrando menú...');
-            closeMobileMenu();
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeMobileMenu();
+    });
+
+    // Cerrar al redimensionar (si pasa a desktop)
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) closeMobileMenu();
+    });
+
+    // --- 2. EFECTO SCROLL ---
+    window.addEventListener('scroll', () => {
+        if (navbar) {
+            window.scrollY > 10
+                ? navbar.classList.add('scrolled')
+                : navbar.classList.remove('scrolled');
         }
     });
 
-    // Efecto scroll en navbar
-    if (navbar) {
-        window.addEventListener('scroll', function() {
-            if (window.scrollY > 10) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
-        });
-    }
-
-    // Establecer link activo según la página actual
+    // --- 3. LÓGICA DE ESTADO ACTIVO (FIX: Agentes vs Blog) ---
     setActiveNavLink();
-    
-    console.log('✅ Navbar inicializado correctamente');
+
+    console.log('✅ Navbar: Inicializado correctamente');
 });
 
-// Función para establecer el link activo
 function setActiveNavLink() {
-    const currentPath = window.location.pathname;
-    const navLinks = document.querySelectorAll('.nav-link:not(.nav-cta):not(.nav-login)');
-    
-    // Remover active de todos
-    navLinks.forEach(link => link.classList.remove('active'));
-    
-    let linkActivated = false;
-    
-    // Buscar coincidencia exacta
+    // Obtenemos el pathname y lo normalizamos
+    // - minúsculas
+    // - sin "/" final
+    const currentPath = window.location.pathname
+        .toLowerCase()
+        .replace(/\/$/, "");
+
+    // Seleccionamos solo los links reales del menú
+    const navLinks = document.querySelectorAll(
+        '.nav-menu .nav-link:not(.nav-cta):not(.nav-login)'
+    );
+
+    let matchFound = false;
+
     navLinks.forEach(link => {
-        const linkHref = link.getAttribute('href');
-        if (linkHref === currentPath) {
+        // Limpiamos cualquier estado previo
+        link.classList.remove('active');
+
+        // Normalizamos el href del link
+        const linkHref = link.getAttribute('href')
+            .toLowerCase()
+            .replace(/\/$/, "");
+
+        // Match exacto: /blog === /blog
+        const isExactMatch = currentPath === linkHref;
+
+        // Match por subruta: /blog/post-1 → /blog
+        // Excluimos "/" para que no coincida con todo
+        const isSubPageMatch =
+            linkHref !== "" &&
+            linkHref !== "/" &&
+            currentPath.startsWith(linkHref + "/");
+
+        if (isExactMatch || isSubPageMatch) {
             link.classList.add('active');
-            linkActivated = true;
+            matchFound = true;
+            return; // ⛔ evita que otro link se active
         }
     });
-    
-    // Si no hay coincidencia exacta, buscar coincidencia parcial
-    if (!linkActivated) {
-        navLinks.forEach(link => {
-            const linkHref = link.getAttribute('href');
-            if (linkHref !== '/' && currentPath.startsWith(linkHref)) {
-                link.classList.add('active');
-                linkActivated = true;
-            }
-        });
-    }
-    
-    // Si estamos en home, activar el link de inicio
-    if (!linkActivated && (currentPath === '/' || currentPath === '' || currentPath === '/index')) {
+
+    // Fallback solo para el home real "/"
+    if (!matchFound && (currentPath === "" || currentPath === "/")) {
         const homeLink = document.querySelector('.nav-link[href="/"]');
         if (homeLink) {
             homeLink.classList.add('active');
         }
     }
-    
-    console.log(`🎯 Link activo establecido para: ${currentPath}`);
 }
+

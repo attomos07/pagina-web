@@ -2,19 +2,19 @@
 // REGISTER JAVASCRIPT - CON TAMAÑO DE NEGOCIO
 // ============================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     console.log('🚀 Register JS cargado correctamente');
-    
+
     initRegisterValidation();
     initPasswordStrength();
     initRegisterForm();
     initSocialRegister();
     initAutoFormat();
     initCustomSelect();
-    initBusinessSizeSelect(); // NUEVO
+    initBusinessSizeSelect();
     initPhoneNumberFormat();
     checkURLParams();
-    
+
     console.log('✅ Register funcionalidades inicializadas');
 });
 
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function checkURLParams() {
     const urlParams = new URLSearchParams(window.location.search);
     const error = urlParams.get('error');
-    
+
     const errorMessages = {
         'invalid_state': 'Error de seguridad en la autenticación. Intenta de nuevo.',
         'no_code': 'No se recibió código de autorización de Google.',
@@ -34,7 +34,7 @@ function checkURLParams() {
         'user_creation_failed': 'Error al crear tu cuenta.',
         'token_generation_failed': 'Error al generar sesión.'
     };
-    
+
     if (error && errorMessages[error]) {
         showNotificationIOS(errorMessages[error], 'error');
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -48,17 +48,17 @@ function checkURLParams() {
 function initRegisterValidation() {
     const registerForm = document.getElementById('registerForm');
     if (!registerForm) return;
-    
+
     const inputs = registerForm.querySelectorAll('.form-input');
-    
+
     inputs.forEach(input => {
-        input.addEventListener('blur', function() {
+        input.addEventListener('blur', function () {
             validateRegisterField(this);
         });
-        
-        input.addEventListener('input', function() {
+
+        input.addEventListener('input', function () {
             clearFieldError(this);
-            
+
             if (this.id === 'password') {
                 updatePasswordStrength(this.value);
             }
@@ -88,7 +88,7 @@ function validateRegisterField(field) {
         case 'phoneNumber':
             const phoneCodeField = document.getElementById('phoneCode');
             const phoneCodeValue = phoneCodeField ? phoneCodeField.value.trim() : '';
-            
+
             if (!phoneCodeValue) {
                 errorMessage = 'El código de país es requerido';
                 isValid = false;
@@ -149,52 +149,50 @@ function validateRegisterField(field) {
 function initPhoneNumberFormat() {
     const phoneCodeInput = document.getElementById('phoneCode');
     const phoneNumberInput = document.getElementById('phoneNumber');
-    
+
     if (!phoneCodeInput || !phoneNumberInput) return;
 
     // ===== CÓDIGO DE PAÍS (LADA) =====
-    
-    phoneCodeInput.addEventListener('focus', function() {
+    phoneCodeInput.addEventListener('focus', function () {
         if (!this.value.startsWith('+')) {
             this.value = '+' + this.value.replace(/\+/g, '');
         }
     });
 
-    phoneCodeInput.addEventListener('input', function(e) {
+    phoneCodeInput.addEventListener('input', function (e) {
         let value = this.value;
         value = value.replace(/[^\d+]/g, '');
-        
+
         if (value.startsWith('+')) {
             value = '+' + value.substring(1).replace(/\+/g, '');
         } else {
             value = '+' + value.replace(/\+/g, '');
         }
-        
+
         if (value.length > 4) {
             value = value.substring(0, 4);
         }
-        
+
         this.value = value;
     });
 
-    phoneCodeInput.addEventListener('blur', function() {
+    phoneCodeInput.addEventListener('blur', function () {
         if (this.value === '' || this.value === '+') {
             this.value = '+52';
         }
     });
 
     // ===== NÚMERO DE TELÉFONO =====
-    
-    phoneNumberInput.addEventListener('input', function(e) {
+    phoneNumberInput.addEventListener('input', function (e) {
         let value = this.value.replace(/[^\d\s]/g, '');
         value = value.replace(/\s/g, '');
-        
+
         if (value.length > 6) {
             value = value.substring(0, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6, 10);
         } else if (value.length > 3) {
             value = value.substring(0, 3) + ' ' + value.substring(3);
         }
-        
+
         this.value = value;
     });
 
@@ -208,14 +206,14 @@ function initPhoneNumberFormat() {
 function isValidPhoneNumber(phoneCode, phoneNumber) {
     const cleanCode = phoneCode.replace(/\s/g, '');
     const codeRegex = /^\+\d{1,3}$/;
-    
+
     if (!codeRegex.test(cleanCode)) {
         return false;
     }
-    
+
     const cleanNumber = phoneNumber.replace(/\s/g, '');
     const numberRegex = /^\d{7,15}$/;
-    
+
     return numberRegex.test(cleanNumber);
 }
 
@@ -226,9 +224,9 @@ function isValidPhoneNumber(phoneCode, phoneNumber) {
 function initPasswordStrength() {
     const passwordInput = document.getElementById('password');
     const strengthContainer = document.getElementById('passwordStrength');
-    
+
     if (passwordInput) {
-        passwordInput.addEventListener('input', function() {
+        passwordInput.addEventListener('input', function () {
             if (this.value) {
                 strengthContainer.classList.add('show');
                 updatePasswordStrength(this.value);
@@ -236,8 +234,8 @@ function initPasswordStrength() {
                 strengthContainer.classList.remove('show');
             }
         });
-        
-        passwordInput.addEventListener('focus', function() {
+
+        passwordInput.addEventListener('focus', function () {
             if (this.value) {
                 strengthContainer.classList.add('show');
             }
@@ -248,13 +246,13 @@ function initPasswordStrength() {
 function updatePasswordStrength(password) {
     const strengthMeterFill = document.getElementById('strengthMeterFill');
     const strengthText = document.getElementById('strengthText');
-    
+
     if (!password || !strengthMeterFill || !strengthText) {
         return;
     }
 
     let strength = 0;
-    
+
     if (password.length >= 8) strength++;
     if (password.length >= 12) strength++;
     if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
@@ -279,22 +277,20 @@ function updatePasswordStrength(password) {
     }
 }
 
-// ============================================
-// TOGGLE DE CONTRASEÑA
-// ============================================
-
 function togglePassword(fieldId) {
     const field = document.getElementById(fieldId);
-    const icon = document.getElementById(fieldId + 'ToggleIcon');
-    
-    if (field && icon) {
-        if (field.type === 'password') {
-            field.type = 'text';
-            icon.className = 'lni lni-eye-off';
-        } else {
-            field.type = 'password';
-            icon.className = 'lni lni-eye';
-        }
+    const iconFn = document.getElementById(fieldId + 'ToggleIcon'); // El SVG
+
+    if (!field || !iconFn) return;
+
+    if (field.type === 'password') {
+        field.type = 'text';
+        // SVG de Ojo Tachado
+        iconFn.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+    } else {
+        field.type = 'password';
+        // SVG de Ojo Normal
+        iconFn.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
     }
 }
 
@@ -305,33 +301,26 @@ function togglePassword(fieldId) {
 function initRegisterForm() {
     const registerForm = document.getElementById('registerForm');
     if (!registerForm) return;
-    
+
     registerForm.addEventListener('submit', handleRegisterSubmit);
-    
-    const businessNameField = document.getElementById('businessName');
-    if (businessNameField) {
-        setTimeout(() => {
-            businessNameField.focus();
-        }, 500);
-    }
 }
 
 async function handleRegisterSubmit(e) {
     e.preventDefault();
-    
+
     const form = e.target;
     const formData = new FormData(form);
-    
+
     // Validar todos los campos requeridos
     let isValid = true;
-    const requiredFields = ['businessName', 'phoneNumber', 'email', 'password', 'businessType', 'businessSize']; // AGREGADO businessSize
-    
+    const requiredFields = ['businessName', 'phoneNumber', 'email', 'password', 'businessType', 'businessSize'];
+
     const phoneCodeField = form.querySelector('#phoneCode');
     if (phoneCodeField && !phoneCodeField.value.trim()) {
         showFieldError(phoneCodeField, 'Código de país requerido');
         isValid = false;
     }
-    
+
     requiredFields.forEach(fieldName => {
         const field = form.querySelector(`[name="${fieldName}"]`);
         if (field && !validateRegisterField(field)) {
@@ -344,7 +333,7 @@ async function handleRegisterSubmit(e) {
         showNotificationIOS('Debes aceptar los términos y condiciones', 'error');
         isValid = false;
     }
-    
+
     if (!isValid) {
         showNotificationIOS('Por favor corrige los errores en el formulario', 'error');
         const firstError = form.querySelector('.form-input.error');
@@ -353,33 +342,33 @@ async function handleRegisterSubmit(e) {
         }
         return;
     }
-    
+
     // Preparar datos
     const businessTypeInput = document.getElementById('businessType');
     const businessTypeValue = businessTypeInput.getAttribute('data-value') || businessTypeInput.value;
-    
+
     const businessSizeInput = document.getElementById('businessSize');
     const businessSizeValue = businessSizeInput.getAttribute('data-value') || businessSizeInput.value;
-    
+
     const phoneCodeElement = document.getElementById('phoneCode');
     const phoneCodeValue = phoneCodeElement.value.trim();
     const phoneNumberValue = formData.get('phoneNumber').replace(/\s/g, '');
     const fullPhoneNumber = phoneCodeValue + phoneNumberValue;
-    
+
     const data = {
         businessName: formData.get('businessName'),
         phoneNumber: fullPhoneNumber,
         email: formData.get('email'),
         password: formData.get('password'),
         businessType: businessTypeValue,
-        businessSize: businessSizeValue // NUEVO
+        businessSize: businessSizeValue
     };
-    
+
     console.log('📤 Datos a enviar:', { ...data, password: '***' });
-    
+
     const submitBtn = form.querySelector('.auth-btn');
     setButtonLoading(submitBtn, true);
-    
+
     try {
         const response = await fetch('/api/register', {
             method: 'POST',
@@ -407,17 +396,17 @@ async function handleRegisterSubmit(e) {
 
 function handleRegisterSuccess(data) {
     console.log('✅ Registro exitoso:', data);
-    
+
     showNotificationIOS('¡Cuenta creada exitosamente!', 'success');
-    
+
     trackRegisterEvent('register_success', {
         method: 'email',
         business_type: data.user?.businessType || 'unknown',
         business_size: data.user?.businessSize || 'unknown'
     });
-    
+
     const redirectUrl = data.redirect || '/dashboard';
-    
+
     setTimeout(() => {
         window.location.href = redirectUrl;
     }, 1500);
@@ -425,12 +414,12 @@ function handleRegisterSuccess(data) {
 
 function handleRegisterError(message) {
     showNotificationIOS(message, 'error');
-    
+
     trackRegisterEvent('register_error', {
         method: 'email',
         error: message
     });
-    
+
     if (message.toLowerCase().includes('email')) {
         const emailField = document.getElementById('email');
         if (emailField) {
@@ -474,41 +463,41 @@ function initCustomSelect() {
     const optionsContainer = document.getElementById('selectOptionsContainer');
     const options = optionsContainer.querySelectorAll('.select-option');
     const noResults = document.getElementById('selectNoResults');
-    
+
     if (!selectWrapper || !selectInput || !dropdown) {
         console.warn('⚠️ Custom select elements no encontrados');
         return;
     }
 
-    selectInput.addEventListener('click', function(e) {
+    selectInput.addEventListener('click', function (e) {
         e.stopPropagation();
         toggleDropdown();
     });
 
     if (searchInput) {
-        searchInput.addEventListener('input', function() {
+        searchInput.addEventListener('input', function () {
             filterOptions(this.value);
         });
 
-        searchInput.addEventListener('click', function(e) {
+        searchInput.addEventListener('click', function (e) {
             e.stopPropagation();
         });
     }
 
     options.forEach(option => {
-        option.addEventListener('click', function(e) {
+        option.addEventListener('click', function (e) {
             e.stopPropagation();
             selectOption(this);
         });
     });
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (!selectWrapper.contains(e.target)) {
             closeDropdown();
         }
     });
 
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && selectWrapper.classList.contains('active')) {
             closeDropdown();
         }
@@ -516,7 +505,7 @@ function initCustomSelect() {
 
     function toggleDropdown() {
         const isActive = selectWrapper.classList.contains('active');
-        
+
         if (isActive) {
             closeDropdown();
         } else {
@@ -527,7 +516,7 @@ function initCustomSelect() {
     function openDropdown() {
         selectWrapper.classList.add('active');
         selectInput.classList.add('active');
-        
+
         if (searchInput) {
             setTimeout(() => {
                 searchInput.focus();
@@ -538,7 +527,7 @@ function initCustomSelect() {
             searchInput.value = '';
         }
         filterOptions('');
-        
+
         const visibleOptions = optionsContainer.querySelectorAll('.select-option:not(.hidden)');
         visibleOptions.forEach((option, index) => {
             option.style.animation = 'none';
@@ -553,7 +542,7 @@ function initCustomSelect() {
     function closeDropdown() {
         selectWrapper.classList.remove('active');
         selectInput.classList.remove('active');
-        
+
         if (searchInput) {
             searchInput.value = '';
         }
@@ -567,7 +556,7 @@ function initCustomSelect() {
             const text = option.querySelector('span').textContent.toLowerCase();
             const keywords = option.getAttribute('data-keywords') || '';
             const searchableText = text + ' ' + keywords.toLowerCase();
-            
+
             if (searchableText.includes(term)) {
                 option.classList.remove('hidden');
                 visibleCount++;
@@ -628,25 +617,25 @@ function initBusinessSizeSelect() {
     const dropdown = document.getElementById('businessSizeDropdown');
     const optionsContainer = document.getElementById('selectSizeOptionsContainer');
     const options = optionsContainer.querySelectorAll('.select-option');
-    
+
     if (!selectWrapper || !selectInput || !dropdown) {
         console.warn('⚠️ Business size select elements no encontrados');
         return;
     }
 
-    selectInput.addEventListener('click', function(e) {
+    selectInput.addEventListener('click', function (e) {
         e.stopPropagation();
         toggleSizeDropdown();
     });
 
     options.forEach(option => {
-        option.addEventListener('click', function(e) {
+        option.addEventListener('click', function (e) {
             e.stopPropagation();
             selectSizeOption(this);
         });
     });
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (!selectWrapper.contains(e.target)) {
             closeSizeDropdown();
         }
@@ -654,7 +643,7 @@ function initBusinessSizeSelect() {
 
     function toggleSizeDropdown() {
         const isActive = selectWrapper.classList.contains('active');
-        
+
         if (isActive) {
             closeSizeDropdown();
         } else {
@@ -665,7 +654,7 @@ function initBusinessSizeSelect() {
     function openSizeDropdown() {
         selectWrapper.classList.add('active');
         selectInput.classList.add('active');
-        
+
         const visibleOptions = optionsContainer.querySelectorAll('.select-option');
         visibleOptions.forEach((option, index) => {
             option.style.animation = 'none';
@@ -715,7 +704,7 @@ function initBusinessSizeSelect() {
 function initAutoFormat() {
     const emailInput = document.getElementById('email');
     if (emailInput) {
-        emailInput.addEventListener('input', function() {
+        emailInput.addEventListener('input', function () {
             this.value = this.value.replace(/\s/g, '').toLowerCase();
         });
     }
@@ -733,10 +722,10 @@ function isValidEmail(email) {
 function showFieldError(field, message) {
     field.classList.add('error');
     field.classList.remove('success');
-    
-    const errorElement = document.getElementById(field.name + 'Error') || 
-                        document.getElementById(field.id + 'Error');
-    
+
+    const errorElement = document.getElementById(field.name + 'Error') ||
+        document.getElementById(field.id + 'Error');
+
     if (errorElement) {
         errorElement.textContent = message;
         errorElement.classList.add('show');
@@ -750,10 +739,10 @@ function showFieldSuccess(field) {
 
 function clearFieldError(field) {
     field.classList.remove('error', 'success');
-    
-    const errorElement = document.getElementById(field.name + 'Error') || 
-                        document.getElementById(field.id + 'Error');
-    
+
+    const errorElement = document.getElementById(field.name + 'Error') ||
+        document.getElementById(field.id + 'Error');
+
     if (errorElement) {
         errorElement.textContent = '';
         errorElement.classList.remove('show');
@@ -763,7 +752,7 @@ function clearFieldError(field) {
 function setButtonLoading(button, isLoading) {
     const btnText = button.querySelector('.btn-text');
     const btnLoading = button.querySelector('.btn-loading');
-    
+
     if (isLoading) {
         button.disabled = true;
         btnText.style.display = 'none';
@@ -783,37 +772,37 @@ function showNotificationIOS(message, type = 'info') {
     if (!document.getElementById('notification-ios-styles')) {
         addNotificationIOSStyles();
     }
-    
+
     let container = document.getElementById('notification-ios-container');
     if (!container) {
         container = document.createElement('div');
         container.id = 'notification-ios-container';
         document.body.appendChild(container);
     }
-    
+
     const notification = document.createElement('div');
     notification.className = `notification-ios notification-ios-${type}`;
-    
+
     const iconHTML = getNotificationIconHTML(type);
-    
+
     notification.innerHTML = `
         <div class="notification-ios-content">
             <div class="notification-ios-icon">${iconHTML}</div>
             <span class="notification-ios-message">${message}</span>
         </div>
     `;
-    
+
     container.appendChild(notification);
     void notification.offsetWidth;
-    
+
     requestAnimationFrame(() => {
         notification.classList.add('notification-ios-show');
     });
-    
+
     setTimeout(() => {
         notification.classList.remove('notification-ios-show');
         notification.classList.add('notification-ios-hide');
-        
+
         setTimeout(() => {
             if (notification.parentElement) {
                 notification.parentElement.removeChild(notification);
@@ -868,7 +857,6 @@ function addNotificationIOSStyles() {
             align-items: center;
             gap: 12px;
         }
-        
         .notification-ios {
             background: #10B981;
             box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
@@ -883,134 +871,39 @@ function addNotificationIOSStyles() {
             opacity: 0;
             transform: translateY(-50px) scale(0.9);
         }
-        
-        .notification-ios-success {
-            background: #10B981;
-            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
-        }
-        
-        .notification-ios-error {
-            background: #EF4444;
-            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35);
-        }
-        
-        .notification-ios-warning {
-            background: #F59E0B;
-            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.35);
-        }
-        
-        .notification-ios-info {
-            background: #06B6D4;
-            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.35);
-        }
-        
-        .notification-ios-content {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-        }
-        
-        .notification-ios-icon {
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 26px;
-            height: 26px;
-        }
-        
-        .notification-ios-message {
-            color: white;
-            font-weight: 700;
-            font-size: 16px;
-            letter-spacing: 0.5px;
-            line-height: 1.4;
-        }
-        
+        .notification-ios-success { background: #10B981; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35); }
+        .notification-ios-error { background: #EF4444; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35); }
+        .notification-ios-warning { background: #F59E0B; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.35); }
+        .notification-ios-info { background: #06B6D4; box-shadow: 0 8px 24px rgba(6, 182, 212, 0.35); }
+        .notification-ios-content { display: flex; align-items: center; justify-content: center; gap: 12px; }
+        .notification-ios-icon { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; }
+        .notification-ios-message { color: white; font-weight: 700; font-size: 16px; letter-spacing: 0.5px; line-height: 1.4; }
         @keyframes notificationSlideIn {
-            0% {
-                opacity: 0;
-                transform: translateY(-50px) scale(0.9);
-            }
-            60% {
-                opacity: 1;
-                transform: translateY(5px) scale(1.02);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
+            0% { opacity: 0; transform: translateY(-50px) scale(0.9); }
+            60% { opacity: 1; transform: translateY(5px) scale(1.02); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
         }
-        
         @keyframes notificationSlideOut {
-            0% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-            40% {
-                opacity: 0.8;
-                transform: translateY(10px) scale(0.98);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(50px) scale(0.9);
-            }
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            40% { opacity: 0.8; transform: translateY(10px) scale(0.98); }
+            100% { opacity: 0; transform: translateY(50px) scale(0.9); }
         }
-        
         @keyframes iconBounce {
-            0% {
-                transform: rotate(0deg) scale(1);
-            }
-            20% {
-                transform: rotate(72deg) scale(1.1);
-            }
-            40% {
-                transform: rotate(144deg) scale(1.05);
-            }
-            60% {
-                transform: rotate(216deg) scale(1.1);
-            }
-            80% {
-                transform: rotate(288deg) scale(1.05);
-            }
-            100% {
-                transform: rotate(360deg) scale(1);
-            }
+            0% { transform: rotate(0deg) scale(1); }
+            20% { transform: rotate(72deg) scale(1.1); }
+            40% { transform: rotate(144deg) scale(1.05); }
+            60% { transform: rotate(216deg) scale(1.1); }
+            80% { transform: rotate(288deg) scale(1.05); }
+            100% { transform: rotate(360deg) scale(1); }
         }
-        
-        .notification-ios-show {
-            animation: notificationSlideIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-        
-        .notification-ios-show .notification-ios-icon {
-            animation: iconBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-        
-        .notification-ios-hide {
-            animation: notificationSlideOut 0.5s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
-        }
-        
-        @media (max-width: 768px) {
-            #notification-ios-container {
-                top: 100px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            #notification-ios-container {
-                top: 80px;
-                left: 10px;
-                right: 10px;
-            }
-            
-            .notification-ios {
-                padding: 16px 20px;
-            }
-            
-            .notification-ios-message {
-                font-size: 15px;
-            }
+        .notification-ios-show { animation: notificationSlideIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        .notification-ios-show .notification-ios-icon { animation: iconBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .notification-ios-hide { animation: notificationSlideOut 0.5s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards; }
+        @media (max-width: 768px) { #notification-ios-container { top: 100px; } }
+        @media (max-width: 480px) { 
+            #notification-ios-container { top: 80px; left: 10px; right: 10px; } 
+            .notification-ios { padding: 16px 20px; }
+            .notification-ios-message { font-size: 15px; }
         }
     `;
     document.head.appendChild(styles);
@@ -1022,7 +915,7 @@ function addNotificationIOSStyles() {
 
 function trackRegisterEvent(event, data = {}) {
     console.log(`📊 Register Event: ${event}`, data);
-    
+
     if (typeof gtag !== 'undefined') {
         gtag('event', event, {
             event_category: 'authentication',
@@ -1036,7 +929,7 @@ function trackRegisterEvent(event, data = {}) {
 // MANEJO DE ERRORES
 // ============================================
 
-window.addEventListener('error', function(e) {
+window.addEventListener('error', function (e) {
     console.error('Error en register.js:', e.error);
     showNotificationIOS('Ocurrió un error inesperado. Por favor recarga la página.', 'error');
     trackRegisterEvent('register_javascript_error', {
@@ -1048,7 +941,7 @@ window.addEventListener('error', function(e) {
 // KEYBOARD SHORTCUTS
 // ============================================
 
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && e.target.classList.contains('form-input')) {
         const form = e.target.closest('form');
         if (form && e.target.id !== 'businessName') {
@@ -1056,18 +949,15 @@ document.addEventListener('keydown', function(e) {
             form.querySelector('.auth-btn').click();
         }
     }
-    
+
     if (e.key === 'Escape') {
         const registerForm = document.getElementById('registerForm');
         if (registerForm) {
             registerForm.reset();
-            
             const errorElements = registerForm.querySelectorAll('.form-error.show');
             errorElements.forEach(error => error.classList.remove('show'));
-            
             const inputs = registerForm.querySelectorAll('.form-input');
             inputs.forEach(input => input.classList.remove('error', 'success'));
-            
             const strengthContainer = document.getElementById('passwordStrength');
             if (strengthContainer) {
                 strengthContainer.classList.remove('show');

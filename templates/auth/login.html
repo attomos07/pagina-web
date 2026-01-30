@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.title}} - Iniciar Sesión</title>
-    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.lineicons.com/4.0/lineicons.css" />
     <link rel="stylesheet" href="/static/css/partials/navbar.css">
     <link rel="stylesheet" href="/static/css/partials/footer.css">
     <link rel="stylesheet" href="/static/css/auth/login.css">
@@ -76,7 +76,7 @@
                             <div class="input-container">
                                 <i class="lni lni-lock input-icon"></i>
                                 <input type="password" id="password" name="password" class="form-input" required>
-                                <button type="button" class="password-toggle" title="Mostrar/Ocultar contraseña">
+                                <button type="button" class="password-toggle" onclick="togglePassword('password')">
                                     <i class="lni lni-eye" id="passwordToggleIcon"></i>
                                 </button>
                             </div>
