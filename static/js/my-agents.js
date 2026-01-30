@@ -3,7 +3,7 @@
 let agents = [];
 
 // Inicializar página
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     console.log('🚀 My Agents JS cargado');
     loadAgents();
     initializeDropdowns();
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeCreateAgentButton() {
     const createBtn = document.querySelector('.btn-primary[href="/onboarding"]');
     if (createBtn) {
-        createBtn.addEventListener('click', function(e) {
+        createBtn.addEventListener('click', function (e) {
             e.preventDefault();
             openOnboardingModal();
         });
@@ -81,21 +81,21 @@ async function loadOnboardingContent() {
         if (!response.ok) throw new Error('Error al cargar onboarding');
 
         const html = await response.text();
-        
+
         // Extraer solo el contenido principal del onboarding
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
         const mainContainer = doc.querySelector('.main-container');
-        
+
         if (mainContainer) {
             modalBody.innerHTML = mainContainer.innerHTML;
-            
+
             // Cargar el script de onboarding
             const script = document.createElement('script');
             script.src = '/static/js/onboarding.js';
-            script.onload = function() {
+            script.onload = function () {
                 console.log('✅ Script de onboarding cargado');
-                
+
                 // Reinicializar eventos después de cargar el script
                 setTimeout(() => {
                     reinitializeOnboardingEvents();
@@ -122,36 +122,36 @@ async function loadOnboardingContent() {
 // Reinicializar eventos del onboarding en el modal
 function reinitializeOnboardingEvents() {
     console.log('🔄 Reinicializando eventos del onboarding en modal');
-    
+
     // Reinicializar selección de red social
     const socialInputs = document.querySelectorAll('input[name="social"]');
     const btnStep1 = document.getElementById('btnStep1');
-    
+
     if (socialInputs.length > 0 && btnStep1) {
         // Limpiar eventos anteriores
         const newBtnStep1 = btnStep1.cloneNode(true);
         btnStep1.parentNode.replaceChild(newBtnStep1, btnStep1);
-        
+
         socialInputs.forEach(input => {
-            input.addEventListener('change', function() {
+            input.addEventListener('change', function () {
                 console.log('✅ Red social seleccionada:', this.value);
                 newBtnStep1.disabled = false;
             });
         });
-        
+
         // Evento para el botón de continuar
-        newBtnStep1.addEventListener('click', function() {
+        newBtnStep1.addEventListener('click', function () {
             console.log('🔘 Botón Continuar clickeado');
-            
+
             // Obtener red social seleccionada
             const selectedSocial = document.querySelector('input[name="social"]:checked');
             if (!selectedSocial) {
                 alert('Por favor selecciona una red social');
                 return;
             }
-            
+
             console.log('📱 Red social confirmada:', selectedSocial.value);
-            
+
             // Llamar a la función nextStep del onboarding si existe
             if (typeof window.onboardingNextStep === 'function') {
                 window.onboardingNextStep();
@@ -159,14 +159,14 @@ function reinitializeOnboardingEvents() {
                 // Si no existe, simular el cambio de paso manualmente
                 document.getElementById('step1').classList.remove('active');
                 document.getElementById('step2').classList.add('active');
-                
+
                 // Actualizar barra de progreso
                 updateModalProgressBar(2);
-                
+
                 console.log('✅ Paso cambiado a Step 2');
             }
         });
-        
+
         console.log('✅ Event listeners de red social añadidos');
     }
 }
@@ -177,23 +177,23 @@ function updateModalProgressBar(currentStep) {
     const progressPercentage = document.getElementById('progressPercentage');
     const totalSteps = 3;
     const totalCircles = progressSteps.length;
-    
+
     const circlesPerStep = totalCircles / totalSteps;
     const targetCircles = Math.ceil((currentStep - 1) * circlesPerStep) + 1;
-    
+
     progressSteps.forEach((step, index) => {
         step.classList.remove('active', 'completed', 'cascading');
-        
+
         if (index < targetCircles - 1) {
             step.classList.add('completed');
         } else if (index === targetCircles - 1) {
             step.classList.add('active');
         }
     });
-    
+
     const previousCircles = Math.ceil(((currentStep - 2) * circlesPerStep)) + 1;
     const startCascade = Math.max(0, previousCircles);
-    
+
     for (let i = startCascade; i < targetCircles; i++) {
         setTimeout(() => {
             if (progressSteps[i]) {
@@ -209,7 +209,7 @@ function updateModalProgressBar(currentStep) {
             }
         }, i * 80);
     }
-    
+
     if (progressPercentage) {
         const targetProgress = ((currentStep - 1) / 2) * 100;
         const currentProgress = parseInt(progressPercentage.textContent) || 0;
@@ -220,21 +220,21 @@ function updateModalProgressBar(currentStep) {
 function animatePercentage(start, end, element) {
     const duration = 600;
     const startTime = performance.now();
-    
+
     function update(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        
+
         const easeOutCubic = 1 - Math.pow(1 - progress, 3);
         const current = Math.round(start + (end - start) * easeOutCubic);
-        
+
         element.textContent = current + '%';
-        
+
         if (progress < 1) {
             requestAnimationFrame(update);
         }
     }
-    
+
     requestAnimationFrame(update);
 }
 
@@ -251,9 +251,9 @@ async function loadAgents() {
 
         const data = await response.json();
         agents = data.agents || [];
-        
+
         console.log('📊 Agentes cargados:', agents);
-        
+
         updateStats(agents);
         renderAgentsTable(agents);
     } catch (error) {
@@ -267,7 +267,7 @@ function updateStats(agents) {
     const activeCount = agents.filter(a => a.isActive && a.deployStatus === 'running').length;
     const totalCount = agents.length;
     const platformsCount = totalCount > 0 ? 1 : 0;
-    
+
     document.getElementById('activeAgentsCount').textContent = activeCount;
     document.getElementById('totalAgentsCount').textContent = totalCount;
     document.getElementById('platformsCount').textContent = platformsCount;
@@ -277,25 +277,25 @@ function updateStats(agents) {
 function renderAgentsTable(agents) {
     const emptyState = document.getElementById('emptyState');
     const tableContainer = document.getElementById('agentsTableContainer');
-    
+
     if (agents.length === 0) {
         if (emptyState) emptyState.style.display = 'block';
         if (tableContainer) tableContainer.style.display = 'none';
         return;
     }
-    
+
     if (emptyState) emptyState.style.display = 'none';
     if (tableContainer) tableContainer.style.display = 'block';
-    
+
     const tbody = document.getElementById('agentsTableBody');
     if (!tbody) {
         console.error('❌ No se encontró tbody con id="agentsTableBody"');
         return;
     }
-    
+
     const rows = agents.map(agent => createAgentRow(agent));
     tbody.innerHTML = rows.join('');
-    
+
     console.log('✅ Tabla renderizada con', agents.length, 'agentes');
 }
 
@@ -303,7 +303,7 @@ function renderAgentsTable(agents) {
 function createAgentRow(agent) {
     const phone = agent.phoneNumber || 'Sin número';
     const statusBadge = getStatusBadge(agent);
-    
+
     return `<tr data-agent-id="${agent.id}">
     <td>
         <div class="agent-name-cell">
@@ -395,19 +395,19 @@ function getStatusBadge(agent) {
 // Toggle dropdown con animación smooth
 function toggleDropdown(event, agentId) {
     event.stopPropagation();
-    
+
     const dropdown = document.getElementById(`dropdown-${agentId}`);
     if (!dropdown) return;
-    
+
     const allDropdowns = document.querySelectorAll('.actions-dropdown');
-    
+
     // Cerrar todos los otros dropdowns
     allDropdowns.forEach(d => {
         if (d !== dropdown && d.classList.contains('show')) {
             d.classList.remove('show');
         }
     });
-    
+
     // Toggle el dropdown actual
     dropdown.classList.toggle('show');
 }
@@ -415,13 +415,13 @@ function toggleDropdown(event, agentId) {
 // Inicializar event listeners para dropdowns
 function initializeDropdowns() {
     // Cerrar dropdowns al hacer click fuera
-    document.addEventListener('click', function(event) {
+    document.addEventListener('click', function (event) {
         if (!event.target.closest('.actions-menu')) {
             const allDropdowns = document.querySelectorAll('.actions-dropdown');
             allDropdowns.forEach(d => d.classList.remove('show'));
         }
     });
-    
+
     console.log('✅ Dropdowns inicializados');
 }
 
@@ -435,10 +435,10 @@ function viewAgentDetails(agentId) {
 async function toggleAgentStatus(agentId, currentStatus) {
     const agent = agents.find(a => a.id === agentId);
     if (!agent) return;
-    
+
     const action = currentStatus ? 'pausar' : 'activar';
     const actionTitle = currentStatus ? 'Pausar' : 'Activar';
-    
+
     showConfirmModal({
         type: 'warning',
         icon: currentStatus ? 'lni-pause' : 'lni-play',
@@ -461,11 +461,11 @@ async function toggleAgentStatus(agentId, currentStatus) {
                     method: 'PATCH',
                     credentials: 'include'
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Error al cambiar estado del agente');
                 }
-                
+
                 await loadAgents();
                 showNotification(`✅ Agente ${action === 'pausar' ? 'pausado' : 'activado'} exitosamente`, 'success');
             } catch (error) {
@@ -480,7 +480,7 @@ async function toggleAgentStatus(agentId, currentStatus) {
 function confirmDeleteAgent(agentId) {
     const agent = agents.find(a => a.id === agentId);
     if (!agent) return;
-    
+
     showConfirmModal({
         type: 'danger',
         icon: 'lni-trash-can',
@@ -504,11 +504,11 @@ async function deleteAgent(agentId) {
             method: 'DELETE',
             credentials: 'include'
         });
-        
+
         if (!response.ok) {
             throw new Error('Error al eliminar agente');
         }
-        
+
         await loadAgents();
         showNotification('✅ Agente eliminado exitosamente', 'success');
     } catch (error) {
@@ -527,9 +527,9 @@ function showConfirmModal(options) {
         list = [],
         confirmText = 'Confirmar',
         confirmClass = 'danger',
-        onConfirm = () => {}
+        onConfirm = () => { }
     } = options;
-    
+
     // Crear modal si no existe
     let modal = document.getElementById('confirmModal');
     if (!modal) {
@@ -538,7 +538,7 @@ function showConfirmModal(options) {
         modal.className = 'confirm-modal';
         document.body.appendChild(modal);
     }
-    
+
     // Renderizar contenido
     modal.innerHTML = `
         <div class="confirm-overlay" onclick="closeConfirmModal()"></div>
@@ -574,19 +574,19 @@ function showConfirmModal(options) {
             </div>
         </div>
     `;
-    
+
     // Mostrar modal
     modal.classList.add('active');
-    
+
     // Event listener para confirmar
-    document.getElementById('confirmActionBtn').addEventListener('click', async function() {
+    document.getElementById('confirmActionBtn').addEventListener('click', async function () {
         // Mostrar loading
         this.innerHTML = `
             <div class="loading-spinner-small"></div>
             <span>Procesando...</span>
         `;
         this.disabled = true;
-        
+
         try {
             await onConfirm();
             closeConfirmModal();
@@ -629,14 +629,14 @@ function showNotification(message, type = 'info') {
         font-weight: 600;
         animation: slideIn 0.3s ease;
     `;
-    
+
     notification.innerHTML = `
         <i class="lni lni-${type === 'success' ? 'checkmark-circle' : type === 'error' ? 'warning' : 'information'}"></i>
         <span>${message}</span>
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     setTimeout(() => {
         notification.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => notification.remove(), 300);
@@ -647,16 +647,16 @@ function showNotification(message, type = 'info') {
 function showEmptyState() {
     const emptyState = document.getElementById('emptyState');
     const tableContainer = document.getElementById('agentsTableContainer');
-    
+
     if (emptyState) emptyState.style.display = 'block';
     if (tableContainer) tableContainer.style.display = 'none';
-    
+
     updateStats([]);
-    
+
     // También interceptar el botón del empty state
     const emptyStateBtn = emptyState.querySelector('.btn-primary');
     if (emptyStateBtn) {
-        emptyStateBtn.addEventListener('click', function(e) {
+        emptyStateBtn.addEventListener('click', function (e) {
             e.preventDefault();
             openOnboardingModal();
         });
