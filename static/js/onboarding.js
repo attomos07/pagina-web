@@ -1592,15 +1592,31 @@ function initializeSocialMediaInputs() {
 // NAVIGATION
 // ============================================
 function initializeNavigationButtons() {
-  document.getElementById('btnStep1').addEventListener('click', () => nextStep());
+  const btnStep1 = document.getElementById('btnStep1');
+  if (btnStep1) {
+    btnStep1.addEventListener('click', () => nextStep());
+  }
   
   const btnStep2Unified = document.getElementById('btnStep2Unified');
   if (btnStep2Unified) {
     btnStep2Unified.addEventListener('click', () => nextStep());
   }
   
-  document.getElementById('btnBackStep3').addEventListener('click', () => previousStep());
-  document.getElementById('btnCreateAgent').addEventListener('click', () => createAgent());
+  const btnBackStep3 = document.getElementById('btnBackStep3');
+  if (btnBackStep3) {
+    btnBackStep3.addEventListener('click', () => previousStep());
+  }
+  
+  const btnCreateAgent = document.getElementById('btnCreateAgent');
+  if (btnCreateAgent) {
+    console.log('✅ Botón Crear Agente encontrado, agregando event listener');
+    btnCreateAgent.addEventListener('click', () => {
+      console.log('🔘 Click en botón Crear Agente');
+      createAgent();
+    });
+  } else {
+    console.warn('⚠️ Botón Crear Agente no encontrado en initializeNavigationButtons');
+  }
   
   const btnGoToDashboard = document.getElementById('btnGoToDashboard');
   if (btnGoToDashboard) {
@@ -2041,10 +2057,199 @@ function formatDay(day) {
 }
 
 // ============================================
+// ENSURE MODALS EXIST
+// ============================================
+function ensureModalsExist() {
+  // Verificar si ya existen los modales
+  if (document.getElementById('creatingModal') && document.getElementById('successModal')) {
+    return;
+  }
+  
+  // Crear el modal de creación si no existe
+  if (!document.getElementById('creatingModal')) {
+    const creatingModal = document.createElement('div');
+    creatingModal.id = 'creatingModal';
+    creatingModal.className = 'overlay creating-modal';
+    creatingModal.innerHTML = `
+      <div class="creating-content">
+        <div class="creating-icon-wrapper">
+          <div class="creating-icon robot-icon">
+            <i class="lni lni-bot"></i>
+          </div>
+          <div class="pulse-ring"></div>
+          <div class="pulse-ring"></div>
+          <div class="pulse-ring"></div>
+        </div>
+
+        <h2 class="creating-title">Creando tu Agente</h2>
+        <p class="creating-subtitle">
+          Configurando infraestructura y desplegando el bot
+        </p>
+
+        <div class="agent-info">
+          <div class="agent-info-label">Agente</div>
+          <div class="agent-info-value" id="agentNameDisplay">Mi Agente</div>
+        </div>
+
+        <div class="status-info">
+          <div class="current-status">
+            <i class="lni lni-cog status-icon" id="currentStatusIcon"></i>
+            <span class="status-text" id="currentStatusText">Iniciando creación...</span>
+          </div>
+
+          <div class="status-steps" id="statusStepsContainer">
+            <div class="status-step active">
+              <div class="status-step-indicator"></div>
+              <div class="status-step-text">
+                <i class="lni lni-apartment"></i> Creando infraestructura
+              </div>
+            </div>
+            <div class="status-step">
+              <div class="status-step-indicator"></div>
+              <div class="status-step-text">
+                <i class="lni lni-cog"></i> Inicializando sistema
+              </div>
+            </div>
+            <div class="status-step">
+              <div class="status-step-indicator"></div>
+              <div class="status-step-text">
+                <i class="lni lni-bot"></i> Desplegando bot
+              </div>
+            </div>
+            <div class="status-step">
+              <div class="status-step-indicator"></div>
+              <div class="status-step-text">
+                <i class="lni lni-checkmark"></i> Completado
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="progress-section">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="creationProgressBar"></div>
+          </div>
+
+          <div class="time-info">
+            <div class="time-item">
+              <div class="time-label">Transcurrido</div>
+              <div class="time-value" id="timeElapsed">0:00</div>
+            </div>
+            <div class="time-item">
+              <div class="time-label">Estimado</div>
+              <div class="time-value" id="timeRemaining">~15:00</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="creating-note">
+          <div class="creating-note-icon">
+            <i class="lni lni-information"></i>
+          </div>
+          <p class="creating-note-text">
+            Este proceso toma entre 10 y 20 minutos. Estamos configurando tu
+            infraestructura en la nube y desplegando tu bot personalizado.
+          </p>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(creatingModal);
+  }
+  
+  // Crear el modal de éxito si no existe
+  if (!document.getElementById('successModal')) {
+    const successModal = document.createElement('div');
+    successModal.id = 'successModal';
+    successModal.className = 'overlay creating-modal';
+    successModal.innerHTML = `
+      <div class="creating-content success-modal-content">
+        <div class="success-icon-large">
+          <i class="lni lni-checkmark-circle" style="color: #10b981"></i>
+        </div>
+        <h2 class="success-title">¡Agente Creado Exitosamente!</h2>
+        <p class="success-subtitle">Tu agente de IA está listo y operativo</p>
+
+        <div class="agent-details-box">
+          <div class="agent-detail-item">
+            <span class="agent-detail-label">Nombre:</span>
+            <span class="agent-detail-value" id="finalAgentName">Mi Agente</span>
+          </div>
+          <div class="agent-detail-item">
+            <span class="agent-detail-label">Servidor:</span>
+            <span class="agent-detail-value" id="finalAgentIP">Configurado</span>
+          </div>
+          <div class="agent-detail-item">
+            <span class="agent-detail-label">Estado:</span>
+            <span class="agent-detail-value" style="color: #10b981">
+              <i class="lni lni-circle-fill" style="font-size: 8px"></i> Activo
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          id="btnGoToDashboard"
+          class="btn btn-next"
+          style="width: 100%; justify-content: center"
+        >
+          <i class="lni lni-dashboard"></i>
+          <span>Ir al Dashboard</span>
+        </button>
+
+        <div class="creating-note" style="margin-top: 20px">
+          <div class="creating-note-icon"><i class="lni lni-bulb"></i></div>
+          <p class="creating-note-text">
+            Configura las credenciales de Meta WhatsApp API en el dashboard para
+            comenzar a usar tu agente.
+          </p>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(successModal);
+    
+    // Agregar event listener al botón "Ir al Dashboard"
+    setTimeout(() => {
+      const btnGoToDashboard = document.getElementById('btnGoToDashboard');
+      if (btnGoToDashboard) {
+        btnGoToDashboard.addEventListener('click', function() {
+          // Si ya estamos en el dashboard, recargar la página
+          // Si no, redirigir al dashboard
+          if (window.location.pathname === '/dashboard') {
+            window.location.reload();
+          } else {
+            window.location.href = '/dashboard';
+          }
+        });
+      }
+    }, 100);
+  }
+}
+
+// ============================================
 // CREATE AGENT
 // ============================================
 async function createAgent() {
-  document.getElementById('creatingModal').classList.add('show');
+  console.log('🚀 Iniciando creación de agente...');
+  
+  // Cerrar el modal del onboarding si existe (cuando se abre desde el dashboard)
+  const onboardingModal = document.getElementById('onboardingModal');
+  if (onboardingModal && typeof closeOnboardingModal === 'function') {
+    console.log('🔒 Cerrando modal del onboarding...');
+    closeOnboardingModal();
+  }
+  
+  // Asegurar que los modales existen
+  ensureModalsExist();
+  
+  const creatingModal = document.getElementById('creatingModal');
+  if (!creatingModal) {
+    console.error('❌ Modal de creación no encontrado');
+    alert('Error: No se pudo mostrar el modal de creación');
+    return;
+  }
+  
+  console.log('✅ Mostrando modal de creación...');
+  creatingModal.classList.add('show');
   
   let elapsedSeconds = 0;
   const maxSeconds = 1200;
@@ -2055,6 +2260,13 @@ async function createAgent() {
   }, 1000);
 
   try {
+    console.log('📤 Enviando petición de creación de agente...');
+    console.log('Datos del agente:', {
+      name: agentData.name,
+      phoneNumber: agentData.phoneNumber,
+      businessType: agentData.businessType
+    });
+    
     const response = await fetch('/api/agents', {
       method: 'POST',
       headers: {
@@ -2071,49 +2283,74 @@ async function createAgent() {
     });
 
     const data = await response.json();
+    console.log('📥 Respuesta recibida:', data);
 
     if (response.status === 202) {
       const agentId = data.agent.id;
+      console.log('✅ Agente creado con ID:', agentId);
       
-      document.getElementById('agentNameDisplay').textContent = data.agent.name;
+      const agentNameDisplay = document.getElementById('agentNameDisplay');
+      if (agentNameDisplay) {
+        agentNameDisplay.textContent = data.agent.name;
+      }
       
       const checkInterval = setInterval(async () => {
         try {
+          console.log('🔍 Verificando estado del agente...');
           const statusResp = await fetch(`/api/agents/${agentId}`, {
             credentials: 'include'
           });
           
           if (!statusResp.ok) {
-            console.error('Error al verificar estado:', statusResp.status);
+            console.error('❌ Error al verificar estado:', statusResp.status);
             return;
           }
           
           const statusData = await statusResp.json();
+          console.log('📊 Estado actual:', statusData.agent.deployStatus);
           
           updateCreationStatus(statusData.agent.deployStatus);
           
           if (statusData.agent.deployStatus === 'running') {
+            console.log('🎉 ¡Agente completado exitosamente!');
             clearInterval(checkInterval);
             clearInterval(timerInterval);
             
-            document.getElementById('creatingModal').classList.remove('show');
-            document.getElementById('successModal').classList.add('show');
+            creatingModal.classList.remove('show');
             
-            document.getElementById('finalAgentName').textContent = statusData.agent.name;
-            
-            const userResp = await fetch('/api/me', { credentials: 'include' });
-            const userData = await userResp.json();
-            document.getElementById('finalAgentIP').textContent = userData.user.sharedServerIp || 'N/A';
+            const successModal = document.getElementById('successModal');
+            if (successModal) {
+              successModal.classList.add('show');
+              
+              const finalAgentName = document.getElementById('finalAgentName');
+              if (finalAgentName) {
+                finalAgentName.textContent = statusData.agent.name;
+              }
+              
+              try {
+                const userResp = await fetch('/api/me', { credentials: 'include' });
+                const userData = await userResp.json();
+                const finalAgentIP = document.getElementById('finalAgentIP');
+                if (finalAgentIP) {
+                  finalAgentIP.textContent = userData.user.sharedServerIp || 'N/A';
+                }
+              } catch (error) {
+                console.error('Error obteniendo información del usuario:', error);
+              }
+            } else {
+              console.error('❌ Modal de éxito no encontrado');
+            }
             
           } else if (statusData.agent.deployStatus === 'error') {
+            console.error('❌ Error en el despliegue del agente');
             clearInterval(checkInterval);
             clearInterval(timerInterval);
             
-            document.getElementById('creatingModal').classList.remove('show');
+            creatingModal.classList.remove('show');
             alert('Error al crear el agente. Por favor contacta a soporte.');
           }
         } catch (error) {
-          console.error('Error verificando estado:', error);
+          console.error('❌ Error verificando estado:', error);
         }
       }, 5000);
       
@@ -2124,8 +2361,8 @@ async function createAgent() {
     
   } catch (error) {
     clearInterval(timerInterval);
-    console.error('Error:', error);
-    document.getElementById('creatingModal').classList.remove('show');
+    console.error('❌ Error:', error);
+    creatingModal.classList.remove('show');
     alert('Error al crear el agente. Por favor intenta de nuevo.');
   }
 }
