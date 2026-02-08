@@ -403,56 +403,6 @@ body {
     flex-wrap: wrap;
 }
 
-/* ICONOS REDES SOCIALES - MISMO ESTILO QUE FOOTER */
-.social-link {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    text-decoration: none;
-    font-size: 18px;
-    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-    position: relative;
-    overflow: hidden;
-    background: rgba(6, 182, 212, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(6, 182, 212, 0.2);
-}
-
-.social-link::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: rgba(6, 182, 212, 0.3);
-    border-radius: 50%;
-    transition: all 0.4s ease;
-    transform: translate(-50%, -50%);
-}
-
-.social-link:hover::before {
-    width: 100px;
-    height: 100px;
-}
-
-.social-link:hover {
-    transform: translateY(-5px) scale(1.1);
-    box-shadow: 0 15px 35px rgba(6, 182, 212, 0.3);
-    background: rgba(6, 182, 212, 0.2);
-    border-color: rgba(6, 182, 212, 0.4);
-}
-
-.social-link i {
-    color: #06b6d4;
-    font-size: 20px;
-    position: relative;
-    z-index: 1;
-}
 
 /* ============================================
    SUCCESS MESSAGE
