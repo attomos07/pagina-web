@@ -60,61 +60,77 @@ const MONTHS = [
 // LOAD PROFILE DATA
 // ============================================
 
-function initProfileData() {
-    const mockProfile = {
-        business: {
-            name: '',
-            type: '',
-            typeName: '',
-            description: '',
-            website: '',
-            email: ''
-        },
-        schedule: {
-            monday: { isOpen: true, open: '09:00', close: '20:00' },
-            tuesday: { isOpen: true, open: '09:00', close: '20:00' },
-            wednesday: { isOpen: true, open: '09:00', close: '20:00' },
-            thursday: { isOpen: true, open: '09:00', close: '20:00' },
-            friday: { isOpen: true, open: '09:00', close: '20:00' },
-            saturday: { isOpen: true, open: '10:00', close: '18:00' },
-            sunday: { isOpen: false, open: '09:00', close: '20:00' }
-        },
-        closedDays: '',
-        location: {
-            address: '',
-            betweenStreets: '',
-            number: '',
-            neighborhood: '',
-            city: '',
-            state: '',
-            country: '',
-            postalCode: ''
-        },
-        social: {
-            facebook: '',
-            instagram: '',
-            twitter: '',
-            linkedin: ''
-        }
-    };
+async function initProfileData() {
+    try {
+        const res = await fetch('/api/profile');
+        const profile = await res.json();
 
-    setInputValue('businessNameInput', mockProfile.business.name);
-    setInputValue('businessTypeInput', mockProfile.business.typeName);
-    setInputValue('descriptionInput', mockProfile.business.description);
-    setInputValue('websiteInput', mockProfile.business.website);
-    setInputValue('emailInput', mockProfile.business.email);
-    setInputValue('addressInput', mockProfile.location.address);
-    setInputValue('betweenStreetsInput', mockProfile.location.betweenStreets);
-    setInputValue('numberInput', mockProfile.location.number);
-    setInputValue('neighborhoodInput', mockProfile.location.neighborhood);
-    setInputValue('postalCodeInput', mockProfile.location.postalCode);
-    setInputValue('facebookInput', mockProfile.social.facebook);
-    setInputValue('instagramInput', mockProfile.social.instagram);
-    setInputValue('twitterInput', mockProfile.social.twitter);
-    setInputValue('linkedinInput', mockProfile.social.linkedin);
+        // BUSINESS
+        setInputValue('businessNameInput', profile.business.name);
+        setInputValue('descriptionInput', profile.business.description);
+        setInputValue('websiteInput', profile.business.website);
+        setInputValue('emailInput', profile.business.email);
 
-    console.log('📊 Profile data loaded:', mockProfile);
+        // Business type (custom select)
+        const typeInput = document.getElementById('businessTypeInput');
+        typeInput.value = profile.business.typeName;
+        typeInput.setAttribute('data-value', profile.business.type);
+
+        // LOCATION
+        setInputValue('addressInput', profile.location.address);
+        setInputValue('numberInput', profile.location.number);
+        setInputValue('neighborhoodInput', profile.location.neighborhood);
+        setInputValue('postalCodeInput', profile.location.postalCode);
+        setInputValue('betweenStreetsInput', profile.location.betweenStreets);
+
+        document.getElementById('countryInput').value = profile.location.country;
+        document.getElementById('stateInput').value = profile.location.state;
+        document.getElementById('cityInput').value = profile.location.city;
+
+        // SOCIAL MEDIA
+
+        setInputValue('facebookInput', profile.social.facebook);
+        setInputValue('instagramInput', profile.social.instagram);
+        setInputValue('twitterInput', profile.social.twitter);
+        setInputValue('linkedinInput', profile.social.linkedin);
+
+        // SCHEDULE
+        applySchedule(profile.schedule);
+
+        // HOLIDAYS
+        applyHolidays(profile.holidays);
+
+        console.log('📊 Profile real loaded:', profile);
+    } catch (e) {
+        console.error('Error loading profile', e);
+    }
 }
+
+function applySchedule(schedule) {
+    Object.entries(schedule).forEach(([day, data]) => {
+        const checkbox = document.getElementById(`day-${day}`);
+        const open = document.getElementById(`time-${day}-open`);
+        const close = document.getElementById(`time-${day}-close`);
+
+        if (!checkbox) return;
+
+        checkbox.checked = data.isOpen;
+        if (open) open.value = data.open;
+        if (close) close.value = data.close;
+    });
+}
+
+function applyHolidays(holidays = []) {
+    holidays.forEach(h => {
+        addHoliday();
+
+        const last = document.querySelector('.holiday-item:last-child');
+        last.querySelector('[data-field="month"]').value = h.month;
+        last.querySelector('[data-field="day"]').value = h.day;
+        last.querySelector('[data-field="name"]').value = h.name;
+    });
+}
+
 
 function setInputValue(elementId, value) {
     const element = document.getElementById(elementId);
@@ -775,7 +791,6 @@ function initSaveButton() {
         saveBtn.addEventListener('click', saveProfile);
     }
 }
-
 async function saveProfile() {
     const saveBtn = document.getElementById('saveProfileBtn');
     const originalText = saveBtn.innerHTML;
@@ -785,10 +800,6 @@ async function saveProfile() {
         <span>Guardando...</span>
     `;
     saveBtn.disabled = true;
-
-    const countryInput = document.getElementById('countryInput');
-    const stateInput = document.getElementById('stateInput');
-    const cityInput = document.getElementById('cityInput');
 
     const profileData = {
         business: {
@@ -805,9 +816,9 @@ async function saveProfile() {
             betweenStreets: document.getElementById('betweenStreetsInput').value,
             number: document.getElementById('numberInput').value,
             neighborhood: document.getElementById('neighborhoodInput').value,
-            city: cityInput.value,
-            state: stateInput.value,
-            country: countryInput.value,
+            city: document.getElementById('cityInput').value,
+            state: document.getElementById('stateInput').value,
+            country: document.getElementById('countryInput').value,
             postalCode: document.getElementById('postalCodeInput').value
         },
         social: {
@@ -818,24 +829,33 @@ async function saveProfile() {
         }
     };
 
-    console.log('💾 Saving profile data:', profileData);
-
     try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const response = await fetch('/api/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(profileData)
+        });
+
+        const result = await response.json();
 
         saveBtn.innerHTML = originalText;
         saveBtn.disabled = false;
 
-        showNotification('¡Cambios guardados exitosamente!', 'success');
-        console.log('Profile saved successfully');
-
+        if (response.ok && result.success) {
+            showNotification('¡Cambios guardados exitosamente!', 'success');
+            console.log('✅ Perfil guardado:', result);
+        } else {
+            if (response.status === 404) {
+                showNotification('⚠️ Primero debes crear un agente', 'warning');
+            } else {
+                throw new Error(result.error || 'Error desconocido');
+            }
+        }
     } catch (error) {
-        console.error('Error saving profile:', error);
-
+        console.error('❌ Error:', error);
         saveBtn.innerHTML = originalText;
         saveBtn.disabled = false;
-
-        showNotification('Error al guardar los cambios', 'error');
+        showNotification(error.message || 'Error al guardar', 'error');
     }
 }
 
