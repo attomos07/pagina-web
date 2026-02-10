@@ -178,6 +178,11 @@ func main() {
 		protected.DELETE("/agents/:id", handlers.DeleteAgent)
 		protected.PATCH("/agents/:id/toggle", handlers.ToggleAgentStatus)
 
+		// Agente config
+
+		protected.GET("/profile", handlers.GetProfile)
+		protected.POST("/profile", handlers.SaveProfile)
+
 		// ============================================
 		// ⭐ APPOINTMENTS - Obtener citas desde Google Sheets
 		// ============================================

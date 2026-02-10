@@ -61,6 +61,7 @@ func AuthRequired() gin.HandlerFunc {
 		// Establecer usuario en el contexto
 		c.Set("user", &user)
 		c.Set("userId", user.ID)
+		c.Set("db", config.DB)
 
 		c.Next()
 	}

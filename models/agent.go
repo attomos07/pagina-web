@@ -103,6 +103,34 @@ type AgentConfig struct {
 	Facilities          []string    `json:"facilities"`
 	Capabilities        []string    `json:"capabilities"`
 	SpecialInstructions string      `json:"specialInstructions"`
+
+	BusinessInfo BusinessProfileInfo `json:"businessInfo,omitempty"`
+	Location     LocationProfile     `json:"location,omitempty"`
+	SocialMedia  SocialMediaProfile  `json:"socialMedia,omitempty"`
+}
+
+type BusinessProfileInfo struct {
+	Description string `json:"description,omitempty"`
+	Website     string `json:"website,omitempty"`
+	Email       string `json:"email,omitempty"`
+}
+
+type LocationProfile struct {
+	Address        string `json:"address,omitempty"`
+	BetweenStreets string `json:"betweenStreets,omitempty"`
+	Number         string `json:"number,omitempty"`
+	Neighborhood   string `json:"neighborhood,omitempty"`
+	City           string `json:"city,omitempty"`
+	State          string `json:"state,omitempty"`
+	Country        string `json:"country,omitempty"`
+	PostalCode     string `json:"postalCode,omitempty"`
+}
+
+type SocialMediaProfile struct {
+	Facebook  string `json:"facebook,omitempty"`
+	Instagram string `json:"instagram,omitempty"`
+	Twitter   string `json:"twitter,omitempty"`
+	LinkedIn  string `json:"linkedin,omitempty"`
 }
 
 // Value implementa driver.Valuer para GORM
