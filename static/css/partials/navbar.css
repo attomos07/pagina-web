@@ -72,7 +72,7 @@
 }
 
 .nav-logo img {
-  height: 52px;
+  height: 82px;
   width: auto;
   display: block;
   filter: drop-shadow(0 2px 4px rgba(6, 182, 212, 0.1));
@@ -363,7 +363,7 @@
   }
 
   .nav-logo img {
-    height: 40px;
+    height: 70px;
   }
 
   /* Ocultar nav-auth (botones desktop) en mobile */
