@@ -23,44 +23,45 @@ func SaveProfile(c *gin.Context) {
 		return
 	}
 
-	// 1. Buscar el agente del usuario
-	var agent models.Agent
-	if err := db.Where("user_id = ?", userID).First(&agent).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "No se encontró un agente creado. Por favor crea un agente primero.",
-			})
-			return
+	// 1. Buscar TODOS los agentes
+	var agents []models.Agent
+	if err := db.Where("user_id = ?", userID).Find(&agents).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al buscar agentes"})
+		return
+	}
+
+	if len(agents) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No tienes agentes creados."})
+		return
+	}
+
+	// 2. Actualizar información básica de los agentes con transaction
+
+	err := db.Transaction(func(tx *gorm.DB) error {
+		for _, agent := range agents {
+			// Update info
+			agent.BusinessType = req.Business.Type
+
+			updateConfigWithProfile(&agent.Config, req)
+
+			// Guardar el agente en el loop especifico
+			if err := tx.Save(&agent).Error; err != nil {
+				return err // Rollback si se rompe en medio de las actualizaciones
+			}
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al buscar agente"})
+		return nil
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar agentes: " + err.Error()})
 		return
 	}
 
-	// 2. Actualizar información básica del agente
-	agent.Name = req.Business.Name
-	agent.BusinessType = req.Business.Type
-
-	// 3. Actualizar Config con estructura completa
-	updateConfigWithProfile(&agent.Config, req)
-
-	// 4. Guardar en BD
-	if err := db.Save(&agent).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Error al guardar: " + err.Error(),
-		})
-		return
-	}
-
-	fmt.Printf("✅ Perfil guardado: Agent ID=%d, Name=%s\n", agent.ID, agent.Name)
+	fmt.Printf("✅ Perfil guardado para %d agentes\n", len(agents))
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "Perfil actualizado exitosamente",
-		"agent": gin.H{
-			"id":       agent.ID,
-			"name":     agent.Name,
-			"isActive": agent.IsActive,
-		},
+		"message": fmt.Sprintf("Se actualizaron %d agentes exitosamente", len(agents)),
 	})
 }
 
@@ -119,10 +120,8 @@ func updateConfigWithProfile(config *models.AgentConfig, req ProfileRequest) {
 	// 6. Facilities (resumen legible)
 	config.Facilities = buildFacilities(req)
 
-	// 7. WelcomeMessage (si está vacío)
-	if config.WelcomeMessage == "" {
-		config.WelcomeMessage = generateWelcome(req)
-	}
+	// 7. WelcomeMessage
+	config.WelcomeMessage = generateWelcome(req)
 }
 
 func convertToModelDay(day DayScheduleInfo) models.DaySchedule {

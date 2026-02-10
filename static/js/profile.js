@@ -87,6 +87,13 @@ async function initProfileData() {
         document.getElementById('stateInput').value = profile.location.state;
         document.getElementById('cityInput').value = profile.location.city;
 
+        setInputValue('countryInputDisplay', profile.location.country);
+        setInputValue('stateInputDisplay', profile.location.state);
+        setInputValue('cityInputDisplay', profile.location.city);
+        updateDropdownSelection('countryInputWrapper', profile.location.country);
+        updateDropdownSelection('stateInputWrapper', profile.location.state);
+        updateDropdownSelection('cityInputWrapper', profile.location.city);
+
         // SOCIAL MEDIA
 
         setInputValue('facebookInput', profile.social.facebook);
@@ -105,6 +112,23 @@ async function initProfileData() {
         console.error('Error loading profile', e);
     }
 }
+
+// Makes the values selected from the dropdown, looks cleaner
+
+function updateDropdownSelection(wrapperId, value) {
+    const wrapper = document.getElementById(wrapperId);
+    if (!wrapper) return;
+
+    const options = wrapper.querySelectorAll('.select-option');
+    options.forEach(opt => {
+        if (opt.getAttribute('data-value') === value || opt.querySelector('span')?.textContent === value) {
+            opt.classList.add('selected');
+        } else {
+            opt.classList.remove('selected');
+        }
+    });
+}
+
 
 function applySchedule(schedule) {
     Object.entries(schedule).forEach(([day, data]) => {
