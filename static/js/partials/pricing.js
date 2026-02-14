@@ -61,6 +61,17 @@ async function loadPlansData() {
 function updatePricingCards() {
     if (!plansData) return;
     
+    // Verificar si las cards existen en el DOM
+    const existingCards = document.querySelectorAll('.pricing-card');
+    
+    // Si no hay cards en el HTML, renderizarlas dinámicamente
+    if (existingCards.length === 0) {
+        console.warn('⚠️ No hay cards en el HTML, renderizando dinámicamente...');
+        renderPricingCardsDynamically();
+        return;
+    }
+    
+    // Si las cards existen, solo actualizar precios
     plansData.forEach(plan => {
         const planCard = document.querySelector(`.pricing-card[data-plan="${plan.id}"]`);
         if (!planCard) return;
@@ -83,6 +94,66 @@ function updatePricingCards() {
         
         console.log(`💰 Precio actualizado para ${plan.id}: Monthly=${monthlyPrice}, Annual=${annualPrice}`);
     });
+}
+
+// ============================================
+// RENDERIZAR PRICING CARDS DINÁMICAMENTE
+// ============================================
+
+function renderPricingCardsDynamically() {
+    if (!plansData || plansData.length === 0) {
+        console.error('❌ No hay datos de planes para renderizar');
+        return;
+    }
+    
+    const pricingGrid = document.querySelector('.pricing-grid');
+    if (!pricingGrid) {
+        console.error('❌ No se encontró .pricing-grid');
+        return;
+    }
+    
+    console.log(`🎨 Renderizando ${plansData.length} pricing cards dinámicamente...`);
+    
+    pricingGrid.innerHTML = ''; // Limpiar grid
+    
+    plansData.forEach(plan => {
+        const cardHTML = `
+            <div class="pricing-card ${plan.popular ? 'featured' : ''}" data-plan="${plan.id}">
+                ${plan.popular ? '<div class="popular-badge">Más Popular</div>' : ''}
+                
+                <h3 class="plan-name">${plan.name}</h3>
+                <div class="plan-price">
+                    <span class="price-amount" data-monthly="${plan.monthly.amount}" data-annual="${plan.annual.amount}">$${plan.monthly.amount}</span>
+                    <span class="price-period">por mes</span>
+                </div>
+                <p class="plan-description">${plan.description}</p>
+                
+                <ul class="plan-features">
+                    ${plan.features.map(feature => `
+                        <li>
+                            <div class="check-icon"><i class="lni lni-checkmark"></i></div>
+                            <span>${feature}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+                
+                ${plan.id === 'electron' 
+                    ? '<button class="plan-button secondary" onclick="openWhatsApp()">Contactar Ventas</button>'
+                    : '<button class="plan-button primary">Elegir Plan</button>'
+                }
+            </div>
+        `;
+        
+        pricingGrid.insertAdjacentHTML('beforeend', cardHTML);
+    });
+    
+    console.log('✅ Cards renderizadas dinámicamente');
+    
+    // Re-inicializar interacciones después de renderizar
+    setTimeout(() => {
+        initPricingInteractions();
+        initPricingAnimations();
+    }, 100);
 }
 
 // ============================================
@@ -351,6 +422,12 @@ function initBillingToggle() {
                 price.style.transform = 'scale(1)';
                 price.style.opacity = '1';
             });
+            
+            // Actualizar texto del período
+            const periodElements = document.querySelectorAll('.price-period');
+            periodElements.forEach(period => {
+                period.textContent = isYearly ? 'por año' : 'por mes';
+            });
         }, 200);
         
         // Actualizar labels
@@ -375,6 +452,11 @@ function initBillingToggle() {
 function initPricingAnimations() {
     const pricingCards = document.querySelectorAll('.pricing-card');
     const comparisonTable = document.querySelector('.comparison-table');
+    
+    if (pricingCards.length === 0) {
+        console.log('⚠️ No hay cards para animar (se renderizarán dinámicamente)');
+        return;
+    }
     
     const animationObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
