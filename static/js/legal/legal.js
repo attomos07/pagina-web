@@ -63,7 +63,7 @@ function initSmoothScroll() {
 }
 
 // ============================================
-// PARTICLES SYSTEM
+// PARTICLES SYSTEM (CIAN COMO EN BLOG)
 // ============================================
 function initParticles() {
     const canvas = document.getElementById('particles-canvas');
@@ -100,19 +100,27 @@ function initParticles() {
             this.size = Math.random() * 2.5 + 1.5;
             this.vx = (Math.random() - 0.5) * 0.5;
             this.vy = (Math.random() - 0.5) * 0.5;
-            this.color = 'rgba(255, 255, 255, ';
+            
+            // Colores cian como en blog
+            const colors = [
+                'rgba(6, 182, 212, ',
+                'rgba(8, 145, 178, ',
+                'rgba(34, 211, 238, ',
+                'rgba(14, 165, 233, '
+            ];
+            this.color = colors[Math.floor(Math.random() * colors.length)];
         }
 
         draw() {
-            ctx.fillStyle = this.color + '0.8)';
+            ctx.fillStyle = this.color + '0.9)';
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
             ctx.closePath();
             ctx.fill();
             
-            ctx.fillStyle = this.color + '0.4)';
+            ctx.fillStyle = this.color + '0.5)';
             ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size + 2, 0, Math.PI * 2);
+            ctx.arc(this.x, this.y, this.size + 3, 0, Math.PI * 2);
             ctx.closePath();
             ctx.fill();
         }
@@ -175,8 +183,8 @@ function initParticles() {
                 if (distance < 120) {
                     let opacity = 1 - (distance / 120);
                     
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.3})`;
-                    ctx.lineWidth = opacity * 1.5;
+                    ctx.strokeStyle = `rgba(6, 182, 212, ${opacity * 0.5})`;
+                    ctx.lineWidth = opacity * 2;
                     ctx.beginPath();
                     ctx.moveTo(particles[a].x, particles[a].y);
                     ctx.lineTo(particles[b].x, particles[b].y);
@@ -201,5 +209,5 @@ function initParticles() {
     init();
     animate();
     
-    console.log('✅ Sistema de partículas inicializado');
+    console.log('✅ Sistema de partículas cian inicializado');
 }
