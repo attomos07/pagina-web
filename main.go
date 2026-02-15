@@ -119,6 +119,7 @@ func main() {
 		"templates/*.html",
 		"templates/auth/*.html",
 		"templates/partials/*.html",
+		"templates/legal/*.html",
 	}
 
 	// Construir el patrón final
@@ -286,9 +287,6 @@ func main() {
 		})
 	})
 
-	// ============================================
-	// RUTA BLOG - CORREGIDA
-	// ============================================
 	router.GET("/blog", func(c *gin.Context) {
 		c.HTML(200, "blog.html", gin.H{
 			"title": "Blog - Attomos",
@@ -306,6 +304,25 @@ func main() {
 			"title": "Contacto - Attomos",
 		})
 	})
+
+	// ============================================
+	// PÁGINAS LEGALES
+	// ============================================
+	router.GET("/terms", func(c *gin.Context) {
+		c.HTML(200, "terms.html", gin.H{
+			"title": "Términos y Condiciones - Attomos",
+		})
+	})
+
+	router.GET("/privacy", func(c *gin.Context) {
+		c.HTML(200, "privacy.html", gin.H{
+			"title": "Política de Privacidad - Attomos",
+		})
+	})
+
+	// ============================================
+	// PÁGINAS PROTEGIDAS
+	// ============================================
 
 	router.GET("/onboarding", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "onboarding.html", nil)
@@ -366,6 +383,7 @@ func main() {
 	log.Println("║    • Appointments integrado con Google Sheets           ║")
 	log.Println("║    • Auto-actualización cada 30 segundos                ║")
 	log.Println("║    • Webhook Proxy para Meta WhatsApp (OrbitalBot)      ║")
+	log.Println("║    • Páginas legales: Términos y Privacidad             ║")
 	log.Println("╚══════════════════════════════════════════════════════════╝")
 
 	if err := router.Run(":" + port); err != nil {

@@ -1,0 +1,173 @@
+{{define "privacy.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidad - Attomos</title>
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="stylesheet" href="/static/css/partials/navbar.css">
+    <link rel="stylesheet" href="/static/css/partials/footer.css">
+    <link rel="stylesheet" href="/static/css/legal/legal.css">
+</head>
+<body>
+    {{template "partials/navbar.html" .}}
+
+    <section class="legal-hero">
+        <div class="container">
+            <h1 class="legal-hero-title">Política de Privacidad</h1>
+            <p class="legal-hero-subtitle">En Attomos, la protección de tu información personal es nuestra prioridad</p>
+            <div class="legal-meta">
+                <div class="legal-meta-item">
+                    <i class="lni lni-calendar"></i>
+                    Última actualización: 12 de febrero de 2025
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="legal-content-section">
+        <div class="container">
+            <div class="legal-content">
+                <div class="highlight-box info">
+                    <div class="highlight-box-title">
+                        <i class="lni lni-shield"></i>
+                        Protección de Datos
+                    </div>
+                    <p>Cumplimos con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP) de México y utilizamos las mejores prácticas de seguridad para proteger tu información.</p>
+                </div>
+
+                <div class="legal-section" id="seccion-1">
+                    <h2 class="section-title">
+                        <span class="section-number">1</span>
+                        Responsable del Tratamiento de Datos
+                    </h2>
+                    <p><strong>Attomos Industries SAS</strong>, con domicilio en Hermosillo, Sonora, México, es el responsable del tratamiento de sus datos personales.</p>
+                    <p><strong>Contacto de privacidad:</strong> privacidad@attomos.mx</p>
+                </div>
+
+                <div class="legal-section" id="seccion-2">
+                    <h2 class="section-title">
+                        <span class="section-number">2</span>
+                        Datos que Recopilamos
+                    </h2>
+                    <h3 class="subsection-title">2.1 Datos de Identificación y Contacto</h3>
+                    <ul>
+                        <li>Nombre completo</li>
+                        <li>Correo electrónico</li>
+                        <li>Número de teléfono/WhatsApp</li>
+                        <li>Contraseña (encriptada)</li>
+                    </ul>
+
+                    <h3 class="subsection-title">2.2 Datos del Negocio</h3>
+                    <ul>
+                        <li>Nombre del negocio</li>
+                        <li>Giro o tipo de negocio</li>
+                        <li>Tamaño de la empresa</li>
+                        <li>Configuración de servicios y horarios</li>
+                    </ul>
+
+                    <h3 class="subsection-title">2.3 Datos de Pago</h3>
+                    <ul>
+                        <li>Información de tarjeta (procesada por Stripe)</li>
+                        <li>Historial de transacciones</li>
+                        <li>Datos fiscales (opcional)</li>
+                    </ul>
+                </div>
+
+                <div class="legal-section" id="seccion-3">
+                    <h2 class="section-title">
+                        <span class="section-number">3</span>
+                        Uso de los Datos
+                    </h2>
+                    <p>Utilizamos sus datos para:</p>
+                    <ul>
+                        <li>Prestar el servicio de automatización con IA</li>
+                        <li>Gestionar su cuenta y suscripción</li>
+                        <li>Procesar pagos y facturación</li>
+                        <li>Brindar soporte técnico</li>
+                        <li>Enviar notificaciones importantes del servicio</li>
+                        <li>Mejorar nuestros servicios</li>
+                    </ul>
+                </div>
+
+                <div class="legal-section" id="seccion-4">
+                    <h2 class="section-title">
+                        <span class="section-number">4</span>
+                        Compartición con Terceros
+                    </h2>
+                    <p>Compartimos datos únicamente con servicios necesarios para operar la plataforma:</p>
+                    <ul>
+                        <li><strong>Google (Gemini, Calendar, Sheets):</strong> Procesamiento de IA y gestión de citas</li>
+                        <li><strong>Meta WhatsApp API:</strong> Mensajería empresarial</li>
+                        <li><strong>Stripe:</strong> Procesamiento seguro de pagos</li>
+                        <li><strong>Chatwoot:</strong> Sistema CRM (planes de pago)</li>
+                    </ul>
+                    <div class="highlight-box warning">
+                        <div class="highlight-box-title">
+                            <i class="lni lni-information"></i>
+                            Importante
+                        </div>
+                        <p>No vendemos, alquilamos ni compartimos sus datos con terceros para fines de marketing sin su consentimiento explícito.</p>
+                    </div>
+                </div>
+
+                <div class="legal-section" id="seccion-5">
+                    <h2 class="section-title">
+                        <span class="section-number">5</span>
+                        Derechos ARCO
+                    </h2>
+                    <p>Usted tiene derecho a:</p>
+                    <ul>
+                        <li><strong>Acceder</strong> a sus datos personales</li>
+                        <li><strong>Rectificar</strong> datos inexactos o incompletos</li>
+                        <li><strong>Cancelar</strong> sus datos cuando no sean utilizados conforme a la ley</li>
+                        <li><strong>Oponerse</strong> al tratamiento para fines específicos</li>
+                    </ul>
+                    <p>Para ejercer sus derechos ARCO, envíe un correo a <strong>privacidad@attomos.mx</strong></p>
+                </div>
+
+                <div class="legal-section" id="seccion-6">
+                    <h2 class="section-title">
+                        <span class="section-number">6</span>
+                        Seguridad de los Datos
+                    </h2>
+                    <p>Implementamos medidas de seguridad técnicas y administrativas:</p>
+                    <ul>
+                        <li>Encriptación de contraseñas con bcrypt</li>
+                        <li>Comunicación HTTPS/SSL</li>
+                        <li>Firewalls y protección perimetral</li>
+                        <li>Respaldos encriptados regulares</li>
+                        <li>Acceso limitado al personal autorizado</li>
+                    </ul>
+                </div>
+
+                <div class="contact-section">
+                    <h2 class="contact-section-title">¿Dudas sobre Privacidad?</h2>
+                    <p class="contact-section-text">Si tiene preguntas sobre cómo manejamos sus datos personales, contáctenos:</p>
+                    <div class="contact-methods">
+                        <a href="mailto:privacidad@attomos.mx" class="contact-method">
+                            <i class="lni lni-envelope"></i>
+                            privacidad@attomos.mx
+                        </a>
+                        <a href="https://wa.me/528123092839" target="_blank" class="contact-method">
+                            <i class="lni lni-whatsapp"></i>
+                            +52 81 2309 2839
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{template "partials/footer.html" .}}
+
+    <button class="back-to-top" id="backToTop">
+        <i class="lni lni-chevron-up"></i>
+    </button>
+
+    <script src="/static/js/legal/legal.js"></script>
+</body>
+</html>
+{{end}}
