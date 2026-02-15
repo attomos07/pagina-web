@@ -1,5 +1,5 @@
 /* ============================================
-   REGISTER PAGE CSS - DISEÑO ÁTOMO ANIMADO (CORREGIDO)
+   REGISTER PAGE CSS - DISEÑO BLOB ANIMADO CON TEXTO
    ============================================ */
 
 /* Variables CSS */
@@ -121,7 +121,7 @@ body {
 }
 
 /* ============================================
-   DISEÑO ÁTOMO ANIMADO
+   DISEÑO BLOB ANIMADO CON TEXTO
    ============================================ */
 
 .orbital-container {
@@ -132,294 +132,49 @@ body {
   padding: 2rem;
 }
 
-#atome {
-  perspective: 1000px;
-  perspective-origin: 50% 50%;
-  height: 500px;
-  width: 500px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: translateZ(0);
-  will-change: transform;
+#animated-blob {
+  max-width: 500px;
+  max-height: 500px;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1/1;
+  filter: drop-shadow(0 10px 40px rgba(6, 182, 212, 0.2));
+  transition: filter 0.4s ease;
 }
 
-.atome-wrap {
-  height: 300px;
-  width: 300px;
-  margin: auto;
-  position: absolute;
-  transform-style: preserve-3d;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  animation: turn 12s infinite linear;
-  transform: translateZ(0);
-  will-change: transform;
+#animated-blob:hover {
+  filter: drop-shadow(0 15px 50px rgba(6, 182, 212, 0.35));
 }
 
-.atome-wrap:after,
-.atome-wrap:before {
-  content: "";
-  position: absolute;
-  height: 6px;
-  width: 6px;
-  border-radius: 100%;
-  background-color: #fff;
-  box-shadow:
-    0 0 8px rgba(100, 255, 249, 0.6),
-    0 0 12px rgba(100, 255, 249, 0.4);
-  top: 50%;
-  left: 50%;
-  margin-top: -3px;
-  margin-left: -3px;
-  transform: translateZ(0);
-  will-change: transform;
+/* Animación del clip path */
+#blobClip {
+  transform-origin: center;
+  transition: ease-out transform 0.4s;
 }
 
-.atome-wrap:before {
-  transform: rotateX(90deg) translateZ(0);
+#animated-blob:hover #blobClip {
+  transform: scale(1.15) translate(0%, 0%);
 }
 
-.circle {
-  height: 300px;
-  width: 300px;
-  position: absolute;
-  box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
-  border-radius: 100%;
-  border: dashed 1.5px rgba(6, 182, 212, 0.3);
-  transform: translateZ(0);
-  will-change: transform;
+/* Estilos del texto animado */
+.text-content {
+  font: 700 10px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  fill: var(--primary-cyan);
+  mix-blend-mode: normal;
+  transition: ease fill 0.5s;
 }
 
-.circle:before {
-  content: "";
-  position: absolute;
-  height: 3px;
-  width: 6px;
-  border-radius: 100%;
-  background-color: #fff;
-  box-shadow:
-    0 0 8px rgba(193, 255, 253, 0.5),
-    0 0 12px rgba(124, 255, 255, 0.4),
-    0 0 20px rgba(54, 255, 255, 0.3);
-  animation: electrons 2.5s infinite linear;
-  transform: translateZ(0);
-  will-change: transform, opacity;
+#animated-blob:hover .text-content {
+  fill: white;
+  mix-blend-mode: overlay;
 }
 
-.circle:after {
-  content: "";
-  position: absolute;
-  height: 6px;
-  width: 6px;
-  border-radius: 100%;
-  background-color: #fff;
-  top: 50%;
-  left: 50%;
-  margin-top: -3px;
-  margin-left: -3px;
-  box-shadow:
-    0 0 8px rgba(100, 255, 249, 0.6),
-    0 0 12px rgba(100, 255, 249, 0.4);
-  transform: translateZ(0);
-}
-
-.circle_0 {
-  transform: translateZ(0) rotateY(0deg);
-  animation: rotate_0 2.4s infinite linear;
-  height: 450px;
-  width: 450px;
-  top: -75px;
-  left: -75px;
-}
-.circle_0:before {
-  top: 50%;
-  left: 0;
-  margin-left: -2px;
-  height: 6px;
-  width: 2px;
-}
-
-.circle_1 {
-  transform: translateZ(0) rotateY(90deg);
-  animation: rotate_1 2.4s infinite linear;
-  height: 450px;
-  width: 450px;
-  top: -75px;
-  left: -75px;
-}
-.circle_1:before {
-  top: 50%;
-  right: 0;
-  margin-right: -1px;
-  width: 2px;
-  height: 6px;
-}
-
-.circle_2 {
-  transform: translateZ(0) rotateY(45deg);
-  animation: rotate_2 1.6s infinite linear;
-}
-.circle_2:before {
-  top: 50%;
-  right: 0;
-  margin-right: -2px;
-  height: 6px;
-  width: 2px;
-}
-
-.circle_3 {
-  transform: translateZ(0) rotateY(135deg);
-  animation: rotate_3 1.6s infinite linear;
-}
-.circle_3:before {
-  bottom: 50%;
-  right: 0;
-  margin-right: -2px;
-  height: 6px;
-  width: 2px;
-}
-
-.circle_4 {
-  transform: rotateX(90deg) rotateY(-30deg) translateZ(0);
-  animation: rotate_4 0.7s infinite linear;
-  height: 150px;
-  width: 150px;
-  top: 75px;
-  left: 75px;
-}
-.circle_4:before {
-  top: 50%;
-  left: 0;
-  margin-left: -2px;
-  height: 6px;
-  width: 2px;
-}
-
-.circle_5 {
-  transform: rotateX(90deg) rotateY(45deg) translateZ(0);
-  animation: rotate_5 0.7s infinite linear;
-  height: 150px;
-  width: 150px;
-  top: 75px;
-  left: 75px;
-}
-.circle_5:before {
-  top: 50%;
-  right: 0;
-  margin-right: -1px;
-  width: 2px;
-  height: 6px;
-}
-
-@keyframes turn {
-  0% {
-    transform: rotateX(0deg) rotateZ(0deg) translateZ(0);
-  }
-  100% {
-    transform: rotateX(360deg) rotateZ(360deg) translateZ(0);
-  }
-}
-@keyframes electrons {
-  0% {
-    transform: rotateY(0deg) translateZ(0);
-    opacity: 1;
-  }
-  50% {
-    transform: rotateY(180deg) translateZ(0);
-    opacity: 0.3;
-  }
-  100% {
-    transform: rotateY(360deg) translateZ(0);
-    opacity: 1;
-  }
-}
-@keyframes rotate_0 {
-  0% {
-    transform: translateZ(0) rotateY(0deg) rotateZ(0deg);
-    border-color: rgba(6, 182, 212, 0.2);
-  }
-  50% {
-    transform: translateZ(0) rotateY(0deg) rotateZ(180deg);
-    border-color: rgba(6, 182, 212, 0.8);
-  }
-  100% {
-    transform: translateZ(0) rotateY(0deg) rotateZ(360deg);
-    border-color: rgba(6, 182, 212, 0.2);
-  }
-}
-@keyframes rotate_1 {
-  0% {
-    transform: translateZ(0) rotateY(90deg) rotateZ(0deg);
-    border-color: rgba(6, 182, 212, 0.2);
-  }
-  50% {
-    transform: translateZ(0) rotateY(90deg) rotateZ(-180deg);
-    border-color: rgba(6, 182, 212, 0.8);
-  }
-  100% {
-    transform: translateZ(0) rotateY(90deg) rotateZ(-360deg);
-    border-color: rgba(6, 182, 212, 0.2);
-  }
-}
-@keyframes rotate_2 {
-  0% {
-    transform: translateZ(0) rotateY(0deg) rotateX(135deg) rotateZ(0deg);
-    border-color: rgba(6, 182, 212, 0.2);
-  }
-  50% {
-    transform: translateZ(0) rotateY(0deg) rotateX(135deg) rotateZ(180deg);
-    border-color: rgba(6, 182, 212, 0.8);
-  }
-  100% {
-    transform: translateZ(0) rotateY(0deg) rotateX(135deg) rotateZ(360deg);
-    border-color: rgba(6, 182, 212, 0.2);
-  }
-}
-@keyframes rotate_3 {
-  0% {
-    transform: translateZ(0) rotateY(0deg) rotateX(45deg) rotateZ(0deg);
-    border-color: rgba(6, 182, 212, 0.2);
-  }
-  50% {
-    transform: translateZ(0) rotateY(0deg) rotateX(45deg) rotateZ(-180deg);
-    border-color: rgba(6, 182, 212, 0.8);
-  }
-  100% {
-    transform: translateZ(0) rotateY(0deg) rotateX(45deg) rotateZ(-360deg);
-    border-color: rgba(6, 182, 212, 0.2);
-  }
-}
-@keyframes rotate_4 {
-  0% {
-    transform: rotateX(90deg) rotateY(-30deg) translateZ(0) rotateZ(0deg);
-    border-color: rgba(6, 182, 212, 0.8);
-  }
-  50% {
-    transform: rotateX(90deg) rotateY(-30deg) translateZ(0) rotateZ(180deg);
-    border-color: rgba(6, 182, 212, 0.2);
-  }
-  100% {
-    transform: rotateX(90deg) rotateY(-30deg) translateZ(0) rotateZ(360deg);
-    border-color: rgba(6, 182, 212, 0.8);
-  }
-}
-@keyframes rotate_5 {
-  0% {
-    transform: rotateX(90deg) rotateY(45deg) translateZ(0) rotateZ(0deg);
-    border-color: rgba(6, 182, 212, 0.8);
-  }
-  50% {
-    transform: rotateX(90deg) rotateY(45deg) translateZ(0) rotateZ(-180deg);
-    border-color: rgba(6, 182, 212, 0.2);
-  }
-  100% {
-    transform: rotateX(90deg) rotateY(45deg) translateZ(0) rotateZ(-360deg);
-    border-color: rgba(6, 182, 212, 0.8);
-  }
+/* Path del blob (invisible pero define la forma) */
+.blob {
+  fill: none;
+  stroke: none;
 }
 
 /* ============================================
@@ -581,12 +336,10 @@ body {
 }
 
 /* --- ESTILO UNIFICADO PARA INPUTS (CORREGIDO) --- */
-/* Left padding 45px = espacio para el icono */
-/* Right padding 45px = espacio para iconos de acción (ojo, flecha) */
 .form-input,
 .phone-number-input {
   width: 100%;
-  height: 50px; /* Altura fija */
+  height: 50px;
   padding: 0 45px 0 45px;
   border: 2px solid var(--border-gray);
   border-radius: 12px;
@@ -623,7 +376,7 @@ body {
 
 .form-input::placeholder,
 .phone-number-input::placeholder {
-  color: transparent; /* Ocultamos placeholder nativo */
+  color: transparent;
 }
 
 /* --- ICONOS SVG (CORREGIDO) --- */
@@ -633,15 +386,15 @@ body {
 .phone-code-container i,
 .phone-number-container i {
   position: absolute;
-  left: 15px; /* Alineación izquierda fija */
+  left: 15px;
   top: 50%;
   transform: translateY(-50%);
   width: 20px;
   height: 20px;
   color: var(--gray-text);
   opacity: 0.6;
-  z-index: 2; /* Por encima del fondo del input */
-  pointer-events: none; /* Permite clic a través del icono */
+  z-index: 2;
+  pointer-events: none;
   transition: all 0.3s ease;
 }
 
@@ -665,12 +418,12 @@ body {
   color: var(--gray-text);
   cursor: pointer;
   padding: 0;
-  width: 40px; /* Área clicleable */
+  width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10; /* Asegura que esté por encima del input */
+  z-index: 10;
   outline: none !important;
   opacity: 0.6;
   transition: all 0.3s ease;
@@ -728,7 +481,7 @@ body {
 .phone-code-input {
   width: 100%;
   height: 50px;
-  padding: 0 10px 0 35px; /* Espacio izq para icono, texto centrado */
+  padding: 0 10px 0 35px;
   border: 2px solid var(--border-gray);
   border-radius: 12px;
   font-size: 0.95rem;
@@ -1109,29 +862,12 @@ body {
     max-width: 1100px;
     gap: 3rem;
   }
-  #atome {
-    height: 400px;
-    width: 400px;
+  
+  #animated-blob {
+    max-width: 400px;
+    max-height: 400px;
   }
-  .atome-wrap,
-  .circle {
-    height: 250px;
-    width: 250px;
-  }
-  .circle_0,
-  .circle_1 {
-    height: 380px;
-    width: 380px;
-    top: -65px;
-    left: -65px;
-  }
-  .circle_4,
-  .circle_5 {
-    height: 120px;
-    width: 120px;
-    top: 65px;
-    left: 65px;
-  }
+
   .auth-form-container {
     padding: 2.5rem;
   }
