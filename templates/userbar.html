@@ -97,7 +97,18 @@
         <div class="user-info-header">
             <div class="user-name" id="userName">Cargando...</div>
             <div class="user-role" id="userRole">...</div>
-            <div class="user-plan" id="userPlan">Plan Gratuito</div>
+            {{/* Plan inyectado desde el servidor - evita parpadeo con valor incorrecto */}}
+            <div class="user-plan" id="userPlan" data-server-plan="{{.currentPlan}}">
+                {{if .currentPlan}}
+                    {{if eq .currentPlan "gratuito"}}Plan Gratuito
+                    {{else if eq .currentPlan "proton"}}Plan Protón
+                    {{else if eq .currentPlan "neutron"}}Plan Neutrón
+                    {{else if eq .currentPlan "electron"}}Plan Electrón
+                    {{else if eq .currentPlan "pending"}}Pago Pendiente
+                    {{else}}Plan Gratuito
+                    {{end}}
+                {{else}}Plan Gratuito{{end}}
+            </div>
         </div>
 
         <div class="menu-divider"></div>

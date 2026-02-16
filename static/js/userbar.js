@@ -57,10 +57,17 @@ function updateUserbarUI(user) {
     }
 
     // Actualizar plan actual
+    // El plan puede venir ya renderizado por el servidor (Go template).
+    // Solo sobreescribimos si el servidor NO inyectó un plan válido,
+    // usando data-server-plan como indicador de lo que el servidor conoce.
     const userPlanElement = document.getElementById('userPlan');
-    if (userPlanElement && user.currentPlan) {
-        const planName = getPlanName(user.currentPlan);
-        userPlanElement.textContent = planName;
+    if (userPlanElement) {
+        const serverPlan = userPlanElement.getAttribute('data-server-plan');
+        // Si el servidor no tenía el plan (atributo vacío o ausente), usar el de la API
+        if (!serverPlan && user.currentPlan) {
+            userPlanElement.textContent = getPlanName(user.currentPlan);
+        }
+        // Si el servidor sí tenía el plan, se respeta lo que ya está renderizado
     }
 
     // Actualizar iniciales del avatar
