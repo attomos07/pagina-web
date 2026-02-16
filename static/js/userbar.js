@@ -56,6 +56,13 @@ function updateUserbarUI(user) {
         userRoleElement.textContent = businessType;
     }
 
+    // Actualizar plan actual
+    const userPlanElement = document.getElementById('userPlan');
+    if (userPlanElement && user.currentPlan) {
+        const planName = getPlanName(user.currentPlan);
+        userPlanElement.textContent = planName;
+    }
+
     // Actualizar iniciales del avatar
     const userInitialsElement = document.getElementById('userInitials');
     const userAvatarImg = document.getElementById('userAvatarImg');
@@ -80,6 +87,22 @@ function updateUserbarUI(user) {
 
     // Guardar datos en localStorage para acceso rápido
     localStorage.setItem('userData', JSON.stringify(user));
+}
+
+// ============================================
+// OBTENER NOMBRE DEL PLAN
+// ============================================
+
+function getPlanName(planId) {
+    const planNames = {
+        'gratuito': 'Plan Gratuito',
+        'proton': 'Plan Protón',
+        'neutron': 'Plan Neutrón',
+        'electron': 'Plan Electrón',
+        'pending': 'Pago Pendiente'
+    };
+    
+    return planNames[planId] || 'Plan Gratuito';
 }
 
 // ============================================
@@ -377,5 +400,6 @@ window.userbarUtils = {
     updateUserData,
     updateUserbarUI,
     getBusinessTypeLabel,
+    getPlanName,
     showToast
 };

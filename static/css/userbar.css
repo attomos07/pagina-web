@@ -475,6 +475,13 @@
   color: #6b7280;
 }
 
+.user-plan {
+  font-size: 12px;
+  color: #06b6d4;
+  margin-top: 6px;
+  font-weight: 600;
+}
+
 .menu-divider {
   height: 1px;
   background: linear-gradient(
@@ -784,17 +791,17 @@
   .sidebar .tooltip,
   .sidebar span,
   .sidebar div {
-    display: block !important; /* O inline-block según tu diseño */
+    display: block !important;
     opacity: 1 !important;
     visibility: visible !important;
-    position: static !important; /* Para que no floten si tenían la clase tooltip */
+    position: static !important;
     width: auto !important;
   }
 
   .icon-button {
-    width: 36px; /* Botones ligeramente más pequeños */
+    width: 36px;
     height: 36px;
-    background: transparent; /* Fondo más limpio */
+    background: transparent;
   }
 
   .icon-button svg {
@@ -808,12 +815,11 @@
     border: 1px solid #fff;
   }
 
-  /* 5. Avatar de usuario */
   .user-avatar {
     width: 36px;
     height: 36px;
-    box-shadow: none; /* Quitar sombra pesada en móvil */
-    border: 2px solid rgba(6, 182, 212, 0.2); /* Borde sutil */
+    box-shadow: none;
+    border: 2px solid rgba(6, 182, 212, 0.2);
   }
 
   .divider {
@@ -821,6 +827,7 @@
     margin: 0 2px;
     background: #f1f5f9;
   }
+
   .notification-panel {
     position: fixed;
     top: 70px;
@@ -835,7 +842,6 @@
     margin: 0;
   }
 
-  /* Menú de Usuario */
   .user-dropdown {
     position: fixed;
     top: 70px;
@@ -848,6 +854,7 @@
     visibility: hidden;
     margin: 0;
   }
+
   .notification-container:active .notification-panel,
   .notification-container:focus-within .notification-panel {
     max-height: 80vh;
