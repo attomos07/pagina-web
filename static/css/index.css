@@ -66,6 +66,18 @@ body {
     margin-bottom: 24px;
     min-height: 80px;
     visibility: visible;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.hero-title .title-line-1 {
+    font-size: 64px;
+    font-weight: 800;
+    color: #1a1a1a;
+    text-align: center;
 }
 
 .hero-title .highlight {
@@ -73,6 +85,40 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+}
+
+/* SVG Liquid Wave Animation */
+.hero-title svg {
+    font-weight: 800;
+    width: 100%;
+    height: auto;
+    max-width: 600px;
+    display: block;
+    margin: 0 auto;
+}
+
+.hero-title svg text {
+    font-size: 64px;
+    font-weight: 800;
+}
+
+.hero-title .text-base {
+    fill: white;
+    fill-opacity: 0.1;
+}
+
+.hero-title .text-wave {
+    fill: url(#wave);
+    fill-opacity: 1;
+}
+
+/* Gradient para el efecto de onda */
+#gradient stop {
+    stop-color: #06b6d4;
+}
+
+#gradient stop:nth-child(2) {
+    stop-color: #0891b2;
 }
 
 .hero-subtitle {
@@ -636,34 +682,31 @@ body {
    ============================================ */
 
 .pricing-section {
-    max-width: 1400px;
-    margin: 80px auto;
-    padding: 80px 20px;
-    background: #ffffff;
+    background: #f9fafb;
+    padding: 100px 20px;
 }
 
 .pricing-header {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 48px;
 }
 
 .pricing-title {
-    font-size: 2.5rem;
+    font-size: 48px;
     font-weight: 800;
+    margin-bottom: 16px;
     background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 1rem;
-    text-align: center;
 }
 
 .pricing-subtitle {
-    font-size: 1.125rem;
+    font-size: 20px;
     color: #6b7280;
-    max-width: 600px;
+    max-width: 700px;
     margin: 0 auto;
-    text-align: justify;
+    line-height: 1.6;
 }
 
 /* Billing Toggle */
@@ -671,24 +714,32 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
-    margin-bottom: 3rem;
+    gap: 16px;
+    margin-bottom: 48px;
 }
 
 .toggle-label {
-    font-size: 1rem;
+    font-size: 16px;
     font-weight: 600;
-    color: #374151;
+    color: #6b7280;
+    transition: all 0.3s ease;
 }
 
 .savings-badge {
-    display: none;
+    display: inline-block;
+    padding: 4px 12px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 12px;
+    margin-left: 8px;
 }
 
 .toggle-switch {
     position: relative;
     display: inline-block;
-    width: 56px;
+    width: 60px;
     height: 32px;
 }
 
@@ -705,9 +756,9 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #e5e7eb;
-    transition: 0.4s;
+    background: linear-gradient(135deg, #e5e7eb, #d1d5db);
     border-radius: 32px;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .toggle-slider:before {
@@ -717,47 +768,63 @@ body {
     width: 24px;
     left: 4px;
     bottom: 4px;
-    background-color: white;
-    transition: 0.4s;
+    background: white;
     border-radius: 50%;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-input:checked + .toggle-slider {
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+.toggle-switch input:checked + .toggle-slider {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
 }
 
-input:checked + .toggle-slider:before {
-    transform: translateX(24px);
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(28px);
 }
 
 .pricing-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 32px;
     max-width: 1400px;
     margin: 0 auto;
 }
 
-@media (max-width: 1200px) {
-    .pricing-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 768px) {
-    .pricing-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
 .pricing-card {
     background: white;
-    border-radius: 20px;
-    padding: 2.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
+    border-radius: 24px;
+    padding: 48px 40px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     border: 2px solid transparent;
+    position: relative;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Animaciones para cada card */
+.pricing-card:nth-child(1) { 
+    animation: fadeInUp 0.8s 0.1s cubic-bezier(0.23, 1, 0.32, 1) backwards; 
+}
+.pricing-card:nth-child(2) { 
+    animation: fadeInUp 0.8s 0.2s cubic-bezier(0.23, 1, 0.32, 1) backwards; 
+}
+.pricing-card:nth-child(3) { 
+    animation: fadeInUp 0.8s 0.3s cubic-bezier(0.23, 1, 0.32, 1) backwards; 
+}
+.pricing-card:nth-child(4) { 
+    animation: fadeInUp 0.8s 0.4s cubic-bezier(0.23, 1, 0.32, 1) backwards; 
+}
+
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .pricing-card:hover {
@@ -768,98 +835,105 @@ input:checked + .toggle-slider:before {
 
 .pricing-card.featured {
     border-color: #06b6d4;
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, white 100%);
+    box-shadow: 0 8px 30px rgba(6, 182, 212, 0.3);
 }
 
 .popular-badge {
     position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0.5rem 1.25rem;
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    top: 0;
+    right: 40px;
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
     color: white;
-    border-radius: 20px;
-    font-size: 0.75rem;
+    padding: 8px 20px;
+    border-radius: 0 0 12px 12px;
+    font-size: 13px;
     font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
 }
 
 .plan-name {
-    font-size: 1.5rem;
+    font-size: 24px;
     font-weight: 700;
     color: #1a1a1a;
-    margin-bottom: 1rem;
+    margin-bottom: 16px;
 }
 
 .plan-price {
-    display: flex;
-    align-items: baseline;
-    gap: 0.25rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 24px;
 }
 
 .price-amount {
-    font-size: 3rem;
+    font-size: 56px;
     font-weight: 800;
-    background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #06b6d4;
+    line-height: 1;
+    transition: all 0.3s ease;
 }
 
 .price-period {
-    font-size: 1rem;
+    display: block;
+    font-size: 14px;
     color: #6b7280;
-    font-weight: 500;
+    margin-top: 8px;
 }
 
 .plan-description {
+    font-size: 15px;
     color: #6b7280;
-    margin-bottom: 2rem;
     line-height: 1.6;
+    margin-bottom: 32px;
+    min-height: 48px;
 }
 
 .plan-features {
     list-style: none;
-    margin-bottom: 2rem;
+    padding: 0;
+    margin: 0 0 32px 0;
 }
 
 .plan-features li {
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 0;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    font-size: 15px;
     color: #374151;
 }
 
 .check-icon {
     width: 24px;
     height: 24px;
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(6, 182, 212, 0.2));
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    font-size: 12px;
     flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.check-icon i {
+    font-size: 14px;
+    color: #06b6d4;
 }
 
 .plan-button {
     width: 100%;
-    padding: 1rem 2rem;
-    border: none;
+    padding: 16px 32px;
     border-radius: 12px;
+    border: none;
+    font-size: 16px;
     font-weight: 600;
-    font-size: 1rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .plan-button.primary {
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
     color: white;
     box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
 }
@@ -870,14 +944,14 @@ input:checked + .toggle-slider:before {
 }
 
 .plan-button.secondary {
-    background: white;
+    background: transparent;
     color: #06b6d4;
     border: 2px solid #06b6d4;
 }
 
 .plan-button.secondary:hover {
-    background: #06b6d4;
-    color: white;
+    background: rgba(6, 182, 212, 0.1);
+    transform: translateY(-3px);
 }
 
 /* Estilos para Plan Electrón */
@@ -1210,6 +1284,18 @@ input:checked + .toggle-slider:before {
         font-size: 42px;
         min-height: 50px;
     }
+    
+    .hero-title .title-line-1 {
+        font-size: 42px;
+    }
+    
+    .hero-title svg {
+        max-width: 450px;
+    }
+    
+    .hero-title svg text {
+        font-size: 42px;
+    }
 
     .hero-subtitle {
         font-size: 18px;
@@ -1341,18 +1427,22 @@ input:checked + .toggle-slider:before {
         padding: 60px 20px;
     }
     
-    .pricing-title,
-    .faq-title {
-        font-size: 32px;
+    .pricing-title {
+        font-size: 36px;
     }
     
     .pricing-grid {
         grid-template-columns: 1fr;
         gap: 24px;
+        max-width: 500px;
     }
     
     .pricing-card {
-        padding: 32px 24px;
+        padding: 36px 28px;
+    }
+    
+    .price-amount {
+        font-size: 48px;
     }
     
     /* WhatsApp Float Mobile */
@@ -1377,6 +1467,18 @@ input:checked + .toggle-slider:before {
     .hero-title {
         font-size: 36px;
         min-height: 45px;
+    }
+    
+    .hero-title .title-line-1 {
+        font-size: 36px;
+    }
+    
+    .hero-title svg {
+        max-width: 380px;
+    }
+    
+    .hero-title svg text {
+        font-size: 36px;
     }
 
     .hero-subtitle {

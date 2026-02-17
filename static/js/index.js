@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicializar todas las funcionalidades
     initParticles();
     initHeroButtons();
-    initTypewriterEffect();
+    // initTypewriterEffect(); // Comentado - ahora usamos SVG con animación de onda
     initSectionFadeIn();
     initSocialPlatforms();
     initPlatformsCarousel();
