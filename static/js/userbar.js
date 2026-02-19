@@ -355,9 +355,9 @@ document.addEventListener('DOMContentLoaded', setupLogout);
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     const colors = {
-        info: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-        error: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-        success: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+        info: '#06b6d4',
+        error: '#ef4444',
+        success: '#10b981'
     };
     
     toast.style.cssText = `

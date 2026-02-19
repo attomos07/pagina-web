@@ -541,7 +541,7 @@ body {
 }
 
 .section-navigation::-webkit-scrollbar-thumb:hover {
-  background: #0891b2;
+  background: #06b6d4;
 }
 
 .section-nav-btn {
@@ -1245,7 +1245,7 @@ input:checked + .toggle-slider:before {
 }
 
 .time-picker-confirm:hover {
-  background: #0891b2;
+  background: #06b6d4;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
 }
@@ -2314,7 +2314,7 @@ input:checked + .toggle-slider:before {
 }
 
 .location-option:hover i {
-  color: #0891b2;
+  color: #06b6d4;
   transform: scale(1.1);
 }
 
@@ -2327,7 +2327,7 @@ input:checked + .toggle-slider:before {
 }
 
 .location-option.selected i {
-  color: #0891b2;
+  color: #06b6d4;
 }
 
 .location-option.hidden {
@@ -2384,7 +2384,7 @@ input:checked + .toggle-slider:before {
 .creating-icon {
   width: 120px;
   height: 120px;
-  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  background: #06b6d4;
   border-radius: 50%;
   display: flex;
   align-items: center;

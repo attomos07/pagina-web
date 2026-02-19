@@ -166,10 +166,10 @@
   left: 16px;
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  background: #06b6d4;
   border: none;
   border-radius: 50%;
-  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.4);
+  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.3);
   cursor: pointer;
   /* FIX CRÍTICO: Z-index mayor que la sidebar para poder cerrarlo */
   z-index: 2005;
@@ -345,11 +345,11 @@
   }
 
   .icon-button.active svg {
-    stroke: #0284c7; /* Azul fuerte */
+    stroke: #06b6d4; /* Azul fuerte */
   }
 
   .icon-button.active .tooltip {
-    color: #0284c7; /* Texto azul fuerte */
+    color: #06b6d4; /* Texto azul fuerte */
     font-weight: 600;
   }
 
@@ -478,11 +478,11 @@
   }
 
   .icon-button.active svg {
-    stroke: #0284c7 !important; /* Icono azul */
+    stroke: #06b6d4 !important; /* Icono azul */
   }
 
   .icon-button.active .tooltip {
-    color: #0284c7 !important; /* Texto azul */
+    color: #06b6d4 !important; /* Texto azul */
     font-weight: 600 !important;
   }
 

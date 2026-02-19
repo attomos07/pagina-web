@@ -339,7 +339,7 @@ function initializeCostChart() {
                     pointBackgroundColor: '#06b6d4',
                     pointBorderColor: '#fff',
                     pointBorderWidth: 2,
-                    pointHoverBackgroundColor: '#0891b2',
+                    pointHoverBackgroundColor: '#06b6d4',
                     pointHoverBorderColor: '#fff'
                 }
             ]
