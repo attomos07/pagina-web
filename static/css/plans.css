@@ -49,10 +49,7 @@ body {
 .page-title {
     font-size: 2.5rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #1a1a1a;
     margin-bottom: 1rem;
 }
 
@@ -79,15 +76,15 @@ body {
 .banner-icon {
     width: 56px;
     height: 56px;
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(6, 182, 212, 0.25));
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 24px;
-    color: white;
+    color: #06b6d4;
     flex-shrink: 0;
-    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.15);
 }
 
 .banner-content {
@@ -116,7 +113,7 @@ body {
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    background: #06b6d4;
     color: white;
     border-radius: 12px;
     text-decoration: none;
@@ -152,7 +149,7 @@ body {
 .savings-badge {
     display: inline-block;
     padding: 3px 10px;
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: #10b981;
     color: white;
     font-size: 11px;
     font-weight: 700;
@@ -199,7 +196,7 @@ body {
 }
 
 input:checked + .toggle-slider {
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    background: #06b6d4;
 }
 
 input:checked + .toggle-slider:before {
@@ -272,28 +269,32 @@ input:checked + .toggle-slider:before {
 .free-badge {
     position: absolute;
     top: 0;
-    right: 40px;
-    background: linear-gradient(135deg, #10b981, #059669);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #10b981;
     color: white;
     padding: 8px 20px;
     border-radius: 0 0 12px 12px;
     font-size: 13px;
     font-weight: 700;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
     letter-spacing: 0.03em;
+    white-space: nowrap;
 }
 
 .popular-badge {
     position: absolute;
     top: 0;
-    right: 40px;
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #06b6d4;
     color: white;
     padding: 8px 20px;
     border-radius: 0 0 12px 12px;
     font-size: 13px;
     font-weight: 700;
-    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.25);
+    white-space: nowrap;
 }
 
 /* Plan info */
@@ -391,7 +392,7 @@ input:checked + .toggle-slider:before {
 
 .plan-button.upgrade,
 .plan-button.primary {
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    background: #06b6d4;
     color: white;
     box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
 }
@@ -403,9 +404,9 @@ input:checked + .toggle-slider:before {
 }
 
 .plan-button.free-trial {
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: #10b981;
     color: white;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
 }
 
 .plan-button.free-trial:hover {
@@ -444,10 +445,6 @@ input:checked + .toggle-slider:before {
     color: #1a1a1a;
     text-align: center;
     margin-bottom: 2rem;
-    background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
 }
 
 .comparison-table-wrapper {
@@ -489,8 +486,8 @@ input:checked + .toggle-slider:before {
 .comparison-table th.featured-column {
     background: linear-gradient(180deg, rgba(6, 182, 212, 0.12) 0%, rgba(6, 182, 212, 0.06) 100%);
     color: #06b6d4;
-    border-left: 1px solid rgba(6, 182, 212, 0.2);
-    border-right: 1px solid rgba(6, 182, 212, 0.2);
+    border-left: 2px solid rgba(6, 182, 212, 0.5);
+    border-right: 2px solid rgba(6, 182, 212, 0.5);
     position: relative;
 }
 
@@ -511,8 +508,9 @@ input:checked + .toggle-slider:before {
     border-bottom: 1px solid #f3f4f6;
 }
 
-.comparison-table tbody tr:last-child {
-    border-bottom: none;
+.comparison-table tbody tr:last-child .featured-cell {
+    border-bottom: 2px solid rgba(6, 182, 212, 0.5);
+    border-radius: 0 0 4px 4px;
 }
 
 .comparison-table tbody tr:hover {
@@ -550,8 +548,8 @@ input:checked + .toggle-slider:before {
 
 .comparison-table td.featured-cell {
     background: rgba(6, 182, 212, 0.04);
-    border-left: 1px solid rgba(6, 182, 212, 0.15);
-    border-right: 1px solid rgba(6, 182, 212, 0.15);
+    border-left: 2px solid rgba(6, 182, 212, 0.5);
+    border-right: 2px solid rgba(6, 182, 212, 0.5);
     font-weight: 600;
 }
 
@@ -562,8 +560,8 @@ input:checked + .toggle-slider:before {
     justify-content: center;
     width: 24px;
     height: 24px;
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.22));
-    color: #10b981;
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(6, 182, 212, 0.22));
+    color: #06b6d4;
     font-size: 13px;
     font-weight: 700;
     border-radius: 50%;
@@ -597,10 +595,6 @@ input:checked + .toggle-slider:before {
     color: #1a1a1a;
     text-align: center;
     margin-bottom: 2rem;
-    background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
 }
 
 .faq-list {
@@ -671,7 +665,7 @@ input:checked + .toggle-slider:before {
 }
 
 .faq-item.active .faq-toggle {
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    background: #06b6d4;
     transform: rotate(180deg);
     box-shadow: 0 3px 10px rgba(6, 182, 212, 0.3);
 }
