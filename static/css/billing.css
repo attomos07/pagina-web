@@ -140,7 +140,7 @@ body {
 }
 
 .change-plan-btn {
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    background: #06b6d4;
     color: white;
     border: none;
     padding: 1rem 2rem;
@@ -522,7 +522,7 @@ body {
 }
 
 .filter-tab.active {
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    background: #06b6d4;
     color: white;
     box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
 }
@@ -742,7 +742,7 @@ body {
     align-items: center;
     gap: 0.5rem;
     padding: 0.875rem 1.5rem;
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    background: #06b6d4;
     color: white;
     border: none;
     border-radius: 10px;
@@ -785,7 +785,7 @@ body {
 .invoice-icon {
     width: 48px;
     height: 48px;
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    background: #06b6d4;
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -885,4 +885,219 @@ body {
     .invoices-grid {
         grid-template-columns: 1fr;
     }
+}
+/* ==========================================
+   PAYMENTS TABLE (NEW)
+   ========================================== */
+.payments-section {
+    background: white;
+    border-radius: 24px;
+    padding: 2rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid #f0f0f0;
+    margin-bottom: 3rem;
+}
+
+.payments-header {
+    margin-bottom: 1.5rem;
+}
+
+.payments-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.payments-table-wrapper {
+    overflow-x: auto;
+}
+
+.payments-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.payments-table thead tr {
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.payments-table th {
+    padding: 1rem 1.25rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.payments-table th.th-amount {
+    color: #06b6d4;
+}
+
+.payments-table td {
+    padding: 1.25rem 1.25rem;
+    border-bottom: 1px solid #f5f5f5;
+    font-size: 0.9375rem;
+    color: #1a1a1a;
+    vertical-align: middle;
+}
+
+.payments-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.payments-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.payments-table tbody tr:hover {
+    background: rgba(6, 182, 212, 0.03);
+}
+
+/* ID de pago - monospace truncado */
+.pay-id {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8125rem;
+    color: #6b7280;
+}
+
+/* ID de recibo */
+.receipt-id {
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+/* Subscripción coloreada en cian */
+.pay-subscription {
+    font-weight: 600;
+    color: #06b6d4;
+}
+
+/* Cantidad coloreada en cian */
+.pay-amount {
+    font-weight: 700;
+    color: #06b6d4;
+}
+
+/* Badge facturado SI */
+.badge-invoiced-yes {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.875rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+/* Badge facturado NO */
+.badge-invoiced-no {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.875rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+}
+
+/* Menú 3 puntos */
+.row-menu-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.375rem 0.5rem;
+    border-radius: 6px;
+    color: #9ca3af;
+    font-size: 1.125rem;
+    transition: all 0.2s ease;
+    line-height: 1;
+    letter-spacing: 1px;
+}
+
+.row-menu-btn:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+/* ==========================================
+   PAGINATION
+   ========================================== */
+.pagination-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #f0f0f0;
+}
+
+.page-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #6b7280;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+    border-color: #06b6d4;
+    color: #06b6d4;
+}
+
+.page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.page-numbers {
+    display: flex;
+    gap: 0.375rem;
+}
+
+.page-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #374151;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.page-number:hover {
+    border-color: #06b6d4;
+    color: #06b6d4;
+}
+
+.page-number.active {
+    background: #06b6d4;
+    border-color: #06b6d4;
+    color: white;
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
 }

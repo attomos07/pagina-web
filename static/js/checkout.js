@@ -805,3 +805,256 @@ console.log('✅ Checkout JS initialized');
 console.log('🔒 Security: PCI compliant payment processing');
 console.log('💳 Stripe integration: READY');
 console.log('💰 Dynamic pricing: ENABLED');
+// ============================================
+// FACTURACIÓN - NUEVOS CAMPOS
+// ============================================
+
+function initBillingFields() {
+    const checkbox = document.getElementById('requiresInvoice');
+    const billingFields = document.getElementById('billingFields');
+    if (!checkbox || !billingFields) return;
+
+    checkbox.addEventListener('change', function() {
+        billingFields.style.display = this.checked ? 'block' : 'none';
+        checkFormCompletion();
+    });
+
+    // RFC uppercase
+    const rfcInput = document.getElementById('rfc');
+    if (rfcInput) {
+        rfcInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    }
+
+    // Código postal solo números
+    const cpInput = document.getElementById('codigoPostal');
+    if (cpInput) {
+        cpInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    }
+
+    // Attach blur validation to billing inputs
+    const billingInputs = ['razonSocial', 'rfc', 'direccionFiscal', 'codigoPostal', 'emailFactura'];
+    billingInputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.addEventListener('blur', () => { checkFormCompletion(); });
+            input.addEventListener('input', () => { checkFormCompletion(); });
+        }
+    });
+
+    // Init CFDI dropdowns
+    initCfdiSelect('usoCfdi-trigger', 'usoCfdi-dropdown', 'usoCfdi-selected', 'usoCfdi');
+    initCfdiSelect('regimenFiscal-trigger', 'regimenFiscal-dropdown', 'regimenFiscal-selected', 'regimenFiscal');
+
+    console.log('✅ Billing fields initialized');
+}
+
+function initCfdiSelect(triggerId, dropdownId, selectedId, inputId) {
+    const trigger = document.getElementById(triggerId);
+    const dropdown = document.getElementById(dropdownId);
+    const selectedEl = document.getElementById(selectedId);
+    const input = document.getElementById(inputId);
+    if (!trigger || !dropdown || !selectedEl || !input) return;
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = dropdown.classList.contains('open');
+        // Close all other dropdowns
+        document.querySelectorAll('.cfdi-select-dropdown.open').forEach(d => {
+            d.classList.remove('open');
+            d.previousElementSibling?.classList.remove('open');
+        });
+        if (!isOpen) {
+            dropdown.classList.add('open');
+            trigger.classList.add('open');
+        }
+    });
+
+    trigger.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); trigger.click(); }
+    });
+
+    dropdown.querySelectorAll('.cfdi-option').forEach(option => {
+        option.addEventListener('click', () => {
+            const value = option.dataset.value;
+            const text = option.textContent.trim();
+            selectedEl.textContent = text;
+            input.value = value;
+            dropdown.querySelectorAll('.cfdi-option').forEach(o => o.classList.remove('selected'));
+            if (value) option.classList.add('selected');
+            trigger.classList.remove('open');
+            dropdown.classList.remove('open');
+            checkFormCompletion();
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+            trigger.classList.remove('open');
+            dropdown.classList.remove('open');
+        }
+    });
+}
+
+// ============================================
+// CUPÓN DE DESCUENTO
+// ============================================
+
+const couponState = {
+    applied: false,
+    discountAmount: 0,
+    originalAmount: 0,
+    finalAmount: 0
+};
+
+function initCoupon() {
+    const applyBtn = document.getElementById('apply-coupon');
+    const removeBtn = document.getElementById('remove-coupon');
+    const couponInput = document.getElementById('coupon-code');
+    if (!applyBtn || !couponInput) return;
+
+    applyBtn.addEventListener('click', () => applyCoupon());
+    couponInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') applyCoupon();
+    });
+    if (removeBtn) removeBtn.addEventListener('click', removeCoupon);
+}
+
+async function applyCoupon() {
+    const code = document.getElementById('coupon-code')?.value.trim();
+    if (!code) {
+        showCouponResult('Ingresa un código de descuento', 'error');
+        return;
+    }
+
+    const applyBtn = document.getElementById('apply-coupon');
+    if (applyBtn) applyBtn.disabled = true;
+    showCouponResult('Validando...', 'loading');
+
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const plan = urlParams.get('plan') || 'neutron';
+        const period = urlParams.get('billing') || 'monthly';
+
+        const res = await fetch('/api/billing/validate-coupon', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ coupon_code: code, plan, period })
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+            couponState.applied = true;
+            couponState.discountAmount = result.discount_amount || 0;
+            couponState.finalAmount = result.final_amount || couponState.originalAmount;
+
+            document.getElementById('coupon-input-container').style.display = 'none';
+            document.getElementById('discount-breakdown').style.display = 'block';
+
+            const nameEl = document.getElementById('coupon-name');
+            if (nameEl) nameEl.textContent = result.coupon_name || 'Cupón aplicado';
+
+            showCouponResult(`¡Cupón aplicado! ${result.discount_text || ''}`, 'success');
+            updatePriceDisplay();
+        } else {
+            showCouponResult(result.error || 'Código inválido', 'error');
+        }
+    } catch (err) {
+        showCouponResult('Error al validar el código. Intenta de nuevo.', 'error');
+    } finally {
+        if (applyBtn) applyBtn.disabled = false;
+    }
+}
+
+function removeCoupon() {
+    couponState.applied = false;
+    couponState.discountAmount = 0;
+    couponState.finalAmount = couponState.originalAmount;
+
+    document.getElementById('coupon-input-container').style.display = 'block';
+    document.getElementById('discount-breakdown').style.display = 'none';
+    document.getElementById('coupon-result').style.display = 'none';
+
+    const codeInput = document.getElementById('coupon-code');
+    if (codeInput) codeInput.value = '';
+
+    updatePriceDisplay();
+}
+
+function showCouponResult(message, type) {
+    const el = document.getElementById('coupon-result');
+    if (!el) return;
+    const icons = { success: 'lni-checkmark-circle', error: 'lni-warning', loading: 'lni-spinner' };
+    el.className = `coupon-result ${type}`;
+    el.innerHTML = `<i class="lni ${icons[type] || 'lni-information'}"></i> ${message}`;
+    el.style.display = 'flex';
+    if (type === 'success') {
+        setTimeout(() => { el.style.display = 'none'; }, 3000);
+    }
+}
+
+function updatePriceDisplay() {
+    const subtotalEl = document.getElementById('subtotal');
+    const discountLine = document.getElementById('discount-line');
+    const discountSummaryEl = document.getElementById('discount-summary');
+    const totalEl = document.getElementById('total');
+
+    if (!subtotalEl || !totalEl) return;
+
+    // Parse current subtotal
+    const subtotalText = subtotalEl.textContent.replace(/[^0-9.]/g, '');
+    const subtotal = parseFloat(subtotalText) || couponState.originalAmount;
+    const currency = subtotalEl.textContent.includes('MXN') ? 'MXN' : '';
+
+    const taxRate = 0.16;
+
+    if (couponState.applied && couponState.discountAmount > 0) {
+        const discounted = subtotal - (couponState.discountAmount / 100);
+        const tax = discounted * taxRate;
+        const total = discounted + tax;
+
+        if (discountLine) discountLine.style.display = 'flex';
+        if (discountSummaryEl) discountSummaryEl.textContent = `-$${(couponState.discountAmount / 100).toFixed(2)} ${currency}`;
+        totalEl.textContent = `$${total.toFixed(2)} ${currency}`;
+    } else {
+        const tax = subtotal * taxRate;
+        const total = subtotal + tax;
+        if (discountLine) discountLine.style.display = 'none';
+        totalEl.textContent = `$${total.toFixed(2)} ${currency}`;
+    }
+}
+
+// ============================================
+// PATCH checkFormCompletion para incluir campos nuevos
+// ============================================
+const _originalCheckFormCompletion = checkFormCompletion;
+checkFormCompletion = function() {
+    const result = _originalCheckFormCompletion();
+
+    // Validar campos de facturación si están activos
+    const checkbox = document.getElementById('requiresInvoice');
+    if (checkbox && checkbox.checked) {
+        const required = ['razonSocial', 'rfc', 'direccionFiscal', 'codigoPostal', 'emailFactura', 'usoCfdi', 'regimenFiscal'];
+        const allFilled = required.every(id => {
+            const el = document.getElementById(id);
+            return el && el.value.trim().length > 0;
+        });
+        if (!allFilled) {
+            const submitButton = document.getElementById('submitButton');
+            if (submitButton) submitButton.disabled = true;
+            return false;
+        }
+    }
+    return result;
+};
+
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    initBillingFields();
+    initCoupon();
+});

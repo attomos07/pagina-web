@@ -56,7 +56,7 @@
                         <div class="form-group">
                             <label class="form-label">Email *</label>
                             <input type="email" class="form-input" id="email" required>
-                            <small class="input-hint">juan@ejemplo.com</small>
+                            <small class="input-hint"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f49e81959ab4919e919984989bda979b99">[email&#160;protected]</a></small>
                             <div class="error-message"></div>
                         </div>
                         <div class="form-group">
@@ -66,6 +66,21 @@
                                 <input type="tel" class="form-input phone-number-input" id="phone">
                             </div>
                             <small class="input-hint">6621234567</small>
+                            <div class="error-message"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Compañía *</label>
+                            <input type="text" class="form-input" id="compania" placeholder="Mi Empresa SA" required>
+                            <small class="input-hint">Nombre de tu empresa</small>
+                            <div class="error-message"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Dirección *</label>
+                            <input type="text" class="form-input" id="direccion" placeholder="Calle Ejemplo 123, Col. Centro" required>
+                            <small class="input-hint">Tu dirección de contacto</small>
                             <div class="error-message"></div>
                         </div>
                     </div>
@@ -128,6 +143,116 @@
                             <input type="text" class="form-input" id="postalCode" required>
                             <small class="input-hint">83000</small>
                             <div class="error-message"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Facturación -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="lni lni-invoice"></i>
+                        Facturación
+                    </h3>
+
+                    <div class="form-group invoice-toggle-group">
+                        <label class="invoice-checkbox-label">
+                            <input type="checkbox" id="requiresInvoice">
+                            <span class="checkbox-custom"></span>
+                            <span>¿Requieres Factura?</span>
+                        </label>
+                    </div>
+
+                    <div id="billingFields" style="display:none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Razón Social *</label>
+                                <input type="text" class="form-input" id="razonSocial" placeholder="Nombre o Razón Social">
+                                <div class="error-message"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">RFC *</label>
+                                <input type="text" class="form-input" id="rfc" placeholder="XAXX010101000" maxlength="13" style="text-transform:uppercase;">
+                                <div class="error-message"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label class="form-label">Dirección Fiscal *</label>
+                                <textarea class="form-input" id="direccionFiscal" placeholder="Calle, Número, Colonia, Municipio, Estado" style="min-height:80px; resize:vertical;"></textarea>
+                                <div class="error-message"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Código Postal *</label>
+                                <input type="text" class="form-input" id="codigoPostal" placeholder="83000" maxlength="5">
+                                <div class="error-message"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email para Factura *</label>
+                                <input type="email" class="form-input" id="emailFactura" placeholder="facturacion@empresa.com">
+                                <div class="error-message"></div>
+                            </div>
+                        </div>
+
+                        <!-- Uso CFDI -->
+                        <div class="form-group">
+                            <label class="form-label">Uso del CFDI *</label>
+                            <div class="cfdi-select-wrapper">
+                                <div class="cfdi-select-trigger" id="usoCfdi-trigger" tabindex="0">
+                                    <span id="usoCfdi-selected">Seleccionar uso</span>
+                                    <i class="lni lni-chevron-down"></i>
+                                </div>
+                                <div class="cfdi-select-dropdown" id="usoCfdi-dropdown">
+                                    <div class="cfdi-option" data-value="">Seleccionar uso</div>
+                                    <div class="cfdi-option" data-value="G01">G01 – Adquisición de mercancías</div>
+                                    <div class="cfdi-option" data-value="G02">G02 – Devoluciones, descuentos o bonificaciones</div>
+                                    <div class="cfdi-option" data-value="G03">G03 – Gastos en general</div>
+                                    <div class="cfdi-option" data-value="I01">I01 – Construcciones</div>
+                                    <div class="cfdi-option" data-value="I02">I02 – Mobiliario y equipo de oficina</div>
+                                    <div class="cfdi-option" data-value="I03">I03 – Equipo de transporte</div>
+                                    <div class="cfdi-option" data-value="I04">I04 – Equipo de cómputo y accesorios</div>
+                                    <div class="cfdi-option" data-value="I08">I08 – Otra maquinaria y equipo</div>
+                                    <div class="cfdi-option" data-value="S01">S01 – Sin efectos fiscales</div>
+                                </div>
+                                <input type="hidden" id="usoCfdi" value="">
+                            </div>
+                            <div class="error-message" id="usoCfdi-error"></div>
+                        </div>
+
+                        <!-- Régimen Fiscal -->
+                        <div class="form-group">
+                            <label class="form-label">Régimen Fiscal *</label>
+                            <div class="cfdi-select-wrapper">
+                                <div class="cfdi-select-trigger" id="regimenFiscal-trigger" tabindex="0">
+                                    <span id="regimenFiscal-selected">Seleccionar régimen</span>
+                                    <i class="lni lni-chevron-down"></i>
+                                </div>
+                                <div class="cfdi-select-dropdown" id="regimenFiscal-dropdown">
+                                    <div class="cfdi-option" data-value="">Seleccionar régimen</div>
+                                    <div class="cfdi-option" data-value="601">601 – General de Ley Personas Morales</div>
+                                    <div class="cfdi-option" data-value="603">603 – Personas Morales con Fines no Lucrativos</div>
+                                    <div class="cfdi-option" data-value="605">605 – Sueldos y Salarios e Ingresos Asimilados</div>
+                                    <div class="cfdi-option" data-value="606">606 – Arrendamiento</div>
+                                    <div class="cfdi-option" data-value="612">612 – Personas Físicas con Actividades Empresariales</div>
+                                    <div class="cfdi-option" data-value="616">616 – Sin obligaciones fiscales</div>
+                                    <div class="cfdi-option" data-value="621">621 – Incorporación Fiscal</div>
+                                    <div class="cfdi-option" data-value="625">625 – Actividades a través de Plataformas Tecnológicas</div>
+                                    <div class="cfdi-option" data-value="626">626 – Régimen Simplificado de Confianza (RESICO)</div>
+                                </div>
+                                <input type="hidden" id="regimenFiscal" value="">
+                            </div>
+                            <div class="error-message" id="regimenFiscal-error"></div>
+                        </div>
+
+                        <div class="billing-info-notice">
+                            <i class="lni lni-information"></i>
+                            <div>
+                                <p>La factura tarda <strong>3 días hábiles</strong> en ser emitida.</p>
+                                <p>¿Dudas? Contáctanos por WhatsApp.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -222,11 +347,44 @@
                 </div>
             </div>
 
+            <!-- Cupón de Descuento -->
+            <div class="coupon-section">
+                <div class="coupon-header">
+                    <i class="lni lni-tag"></i>
+                    <span>¿Tienes un cupón?</span>
+                </div>
+                <div id="coupon-input-container">
+                    <div class="coupon-input-row">
+                        <input type="text" class="coupon-input" id="coupon-code" placeholder="Código de descuento" maxlength="50">
+                        <button type="button" id="apply-coupon" class="btn-coupon">
+                            <i class="lni lni-checkmark"></i>
+                            Aplicar
+                        </button>
+                    </div>
+                    <div class="coupon-result" id="coupon-result" style="display:none;"></div>
+                </div>
+                <div id="discount-breakdown" style="display:none;">
+                    <div class="coupon-applied-badge">
+                        <div class="coupon-applied-info">
+                            <i class="lni lni-checkmark-circle"></i>
+                            <span id="coupon-name">Cupón aplicado</span>
+                        </div>
+                        <button type="button" id="remove-coupon" class="btn-remove-coupon">
+                            <i class="lni lni-close"></i> Quitar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Price Breakdown -->
             <div class="price-breakdown">
                 <div class="price-item">
                     <span class="price-label">Subtotal</span>
                     <span class="price-value" id="subtotal">$255.00</span>
+                </div>
+                <div class="price-item" id="discount-line" style="display:none;">
+                    <span class="price-label" style="color:#10b981;">Descuento</span>
+                    <span class="price-value" id="discount-summary" style="color:#10b981;">-$0.00</span>
                 </div>
                 <div class="price-item">
                     <span class="price-label">IVA (16%)</span>

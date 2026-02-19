@@ -48,41 +48,6 @@
                         </a>
                     </div>
 
-                    <!-- Summary Cards -->
-                    <div class="summary-grid">
-                        <!-- Total Pagado -->
-                        <div class="summary-card">
-                            <div class="summary-icon blue">
-                                <i class="lni lni-credit-cards"></i>
-                            </div>
-                            <div class="summary-content">
-                                <div class="summary-label">Total Pagado</div>
-                                <div class="summary-value">$15.00</div>
-                            </div>
-                        </div>
-
-                        <!-- Pagos Exitosos -->
-                        <div class="summary-card">
-                            <div class="summary-icon green">
-                                <i class="lni lni-checkmark-circle"></i>
-                            </div>
-                            <div class="summary-content">
-                                <div class="summary-label">Pagos Exitosos</div>
-                                <div class="summary-value">1</div>
-                            </div>
-                        </div>
-
-                        <!-- Último Pago -->
-                        <div class="summary-card">
-                            <div class="summary-icon purple">
-                                <i class="lni lni-calendar"></i>
-                            </div>
-                            <div class="summary-content">
-                                <div class="summary-label">Último Pago</div>
-                                <div class="summary-value">08 Oct</div>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Current Subscription -->
                     <div class="subscription-card">
@@ -133,122 +98,48 @@
                         </div>
                     </div>
 
-                    <!-- Transactions Section -->
-                    <div class="transactions-section">
-                        <div class="transactions-header">
-                            <h2 class="transactions-title">Transacciones Recientes</h2>
-                            
-                            <!-- Filter Tabs -->
-                            <div class="filter-tabs">
-                                <button class="filter-tab active" data-filter="all">
-                                    <span>Todos</span>
-                                </button>
-                                <button class="filter-tab" data-filter="completed">
-                                    <span>Completados</span>
-                                </button>
-                                <button class="filter-tab" data-filter="pending">
-                                    <span>Pendientes</span>
-                                </button>
-                                <button class="filter-tab" data-filter="failed">
-                                    <span>Fallidos</span>
-                                </button>
-                            </div>
+                    <!-- Payments Table Section -->
+                    <div class="payments-section">
+                        <div class="payments-header">
+                            <h2 class="payments-title">
+                                <i class="lni lni-credit-cards"></i>
+                                Historial de Pagos
+                            </h2>
                         </div>
-
-                        <!-- Transactions Table -->
-                        <div class="transactions-table-wrapper">
-                            <table class="transactions-table">
+                        <div class="payments-table-wrapper">
+                            <table class="payments-table" id="paymentsTable">
                                 <thead>
                                     <tr>
-                                        <th class="th-id">ID TRANSACCIÓN</th>
-                                        <th>FECHA</th>
-                                        <th>PLAN</th>
-                                        <th>PERÍODO</th>
-                                        <th>MONTO</th>
-                                        <th>ESTADO</th>
-                                        <th>ACCIONES</th>
+                                        <th>ID DE PAGO</th>
+                                        <th>ID DE RECIBO</th>
+                                        <th>SUBSCRIPCIÓN</th>
+                                        <th>MES</th>
+                                        <th>FECHA DE PAGO</th>
+                                        <th class="th-amount">CANTIDAD</th>
+                                        <th>FACTURADO (SI/NO)</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
-                                <tbody id="transactionsTableBody">
-                                    <!-- Transaction Row 1 -->
-                                    <tr class="transaction-row" data-status="completed">
-                                        <td class="transaction-id">
-                                            <span class="id-text">pi_3SG0nqH0kpgdEo6U0L1bL...</span>
-                                            <button class="copy-btn" onclick="copyToClipboard('pi_3SG0nqH0kpgdEo6U0L1bL...')" title="Copiar ID">
-                                                <i class="lni lni-files"></i>
-                                            </button>
-                                        </td>
-                                        <td class="transaction-date">08 Oct 2025</td>
-                                        <td>
-                                            <span class="plan-badge professional">Profesional</span>
-                                        </td>
-                                        <td class="transaction-period">Mensual</td>
-                                        <td class="transaction-amount">$15.00 MXN</td>
-                                        <td>
-                                            <span class="status-badge completed">
-                                                <i class="lni lni-checkmark-circle"></i>
-                                                Activo
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <button class="action-btn" onclick="downloadReceipt('pi_3SG0nqH0kpgdEo6U0L1bL...')">
-                                                <i class="lni lni-download"></i>
-                                                Recibo
-                                            </button>
-                                        </td>
-                                    </tr>
-
-                                    <!-- More transactions would be loaded dynamically -->
-                                </tbody>
+                                <tbody id="paymentsTableBody"></tbody>
                             </table>
-
-                            <!-- Empty State -->
                             <div class="empty-state" id="emptyState" style="display: none;">
-                                <div class="empty-icon">
-                                    <i class="lni lni-empty-file"></i>
-                                </div>
-                                <h3>No hay transacciones</h3>
-                                <p>No se encontraron transacciones para este filtro</p>
+                                <div class="empty-icon"><i class="lni lni-empty-file"></i></div>
+                                <h3>No hay pagos registrados</h3>
+                                <p>Aquí aparecerán tus pagos una vez que realices una suscripción</p>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Invoices Section -->
-                    <div class="invoices-section">
-                        <div class="invoices-header">
-                            <h2 class="invoices-title">
-                                <i class="lni lni-files"></i>
-                                Facturas
-                            </h2>
-                            <button class="request-invoice-btn">
-                                <i class="lni lni-plus"></i>
-                                Solicitar Factura
+                        <div class="pagination-wrapper" id="paginationWrapper" style="display:none;">
+                            <button class="page-btn" id="prevBtn" onclick="changePage(-1)">
+                                <i class="lni lni-chevron-left"></i>
+                            </button>
+                            <div class="page-numbers" id="pageNumbers"></div>
+                            <button class="page-btn" id="nextBtn" onclick="changePage(1)">
+                                <i class="lni lni-chevron-right"></i>
                             </button>
                         </div>
-
-                        <div class="invoices-grid">
-                            <div class="invoice-card">
-                                <div class="invoice-icon">
-                                    <i class="lni lni-file"></i>
-                                </div>
-                                <div class="invoice-info">
-                                    <div class="invoice-number">Factura #0001</div>
-                                    <div class="invoice-date">08 Oct 2025</div>
-                                    <div class="invoice-amount">$15.00 MXN</div>
-                                </div>
-                                <div class="invoice-actions">
-                                    <button class="invoice-action-btn view" title="Ver factura">
-                                        <i class="lni lni-eye"></i>
-                                    </button>
-                                    <button class="invoice-action-btn download" title="Descargar">
-                                        <i class="lni lni-download"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- More invoices would be displayed here -->
-                        </div>
                     </div>
+
+
                 </div>
             </div>
         </div>
