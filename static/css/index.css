@@ -81,7 +81,7 @@ body {
 }
 
 .hero-title .highlight {
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    background: #06b6d4;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -118,7 +118,7 @@ body {
 }
 
 #gradient stop:nth-child(2) {
-    stop-color: #0891b2;
+    stop-color: #06b6d4;
 }
 
 .hero-subtitle {
@@ -154,7 +154,7 @@ body {
 }
 
 .hero-btn-primary {
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    background: #06b6d4;
     color: white;
     box-shadow: 0 8px 30px rgba(6, 182, 212, 0.3);
 }
@@ -205,9 +205,9 @@ body {
 .social-platforms-title {
     font-size: 36px;
     font-weight: 700;
-    color: #1f2937;
+    color: #1a1a1a;
     margin-bottom: 50px;
-    background: linear-gradient(135deg, #1f2937 0%, #06b6d4 100%);
+    background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -335,7 +335,7 @@ body {
 .social-platform-name {
     font-size: 14px;
     font-weight: 600;
-    color: #1f2937;
+    color: #1a1a1a;
     transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
     position: relative;
 }
@@ -348,7 +348,7 @@ body {
     transform: translateX(-50%);
     width: 0;
     height: 2px;
-    background: linear-gradient(90deg, #06b6d4, #22d3ee);
+    background: #06b6d4;
     transition: width 0.3s ease;
 }
 
@@ -427,10 +427,6 @@ body {
     font-weight: 700;
     color: #1a1a1a;
     margin-bottom: 16px;
-    background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
     text-align: center;
 }
 
@@ -546,7 +542,7 @@ body {
     display: flex;
     align-items: center;
     gap: 16px;
-    color: #1f2937;
+    color: #1a1a1a;
 }
 
 .platform-icon {
@@ -563,7 +559,7 @@ body {
 }
 
 .platform-icon-black {
-    background: #000000 !important;
+    background: #06b6d4 !important;
 }
 
 .platform-description {
@@ -600,17 +596,18 @@ body {
 .platform-features li .check-icon {
     width: 24px;
     height: 24px;
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
-    color: white;
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(6, 182, 212, 0.2));
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    font-size: 12px;
     flex-shrink: 0;
     margin-top: 2px;
-    box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
+}
+
+.platform-features li .check-icon i {
+    font-size: 14px;
+    color: #06b6d4;
 }
 
 /* Flechas del carrusel */
@@ -635,7 +632,7 @@ body {
 }
 
 .carousel-arrow:hover {
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    background: #06b6d4;
     color: white;
     border-color: #06b6d4;
     transform: translateY(-50%) scale(1.1);
@@ -668,7 +665,7 @@ body {
 }
 
 .carousel-indicator.active {
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    background: #06b6d4;
     width: 32px;
     border-radius: 6px;
 }
@@ -682,7 +679,7 @@ body {
    ============================================ */
 
 .pricing-section {
-    background: #f9fafb;
+    background: #ffffff;
     padding: 100px 20px;
 }
 
@@ -695,10 +692,7 @@ body {
     font-size: 48px;
     font-weight: 800;
     margin-bottom: 16px;
-    background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #1a1a1a;
 }
 
 .pricing-subtitle {
@@ -775,7 +769,7 @@ body {
 }
 
 .toggle-switch input:checked + .toggle-slider {
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    background: #06b6d4;
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
@@ -841,8 +835,10 @@ body {
 .popular-badge {
     position: absolute;
     top: 0;
-    right: 40px;
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    background: #06b6d4;
     color: white;
     padding: 8px 20px;
     border-radius: 0 0 12px 12px;
@@ -933,7 +929,7 @@ body {
 }
 
 .plan-button.primary {
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    background: #06b6d4;
     color: white;
     box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
 }
@@ -1029,7 +1025,7 @@ body {
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    background: #06b6d4;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
     transition: all 0.3s ease;
@@ -1044,7 +1040,7 @@ body {
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    background: #06b6d4;
     cursor: pointer;
     border: none;
     box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
@@ -1062,7 +1058,7 @@ body {
     top: -12px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    background: #06b6d4;
     color: white;
     padding: 8px 20px;
     border-radius: 20px;
@@ -1091,10 +1087,6 @@ body {
     font-weight: 700;
     color: #1a1a1a;
     margin-bottom: 16px;
-    background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
     text-align: center;
 }
 
@@ -1142,7 +1134,7 @@ body {
     align-items: center;
     font-size: 18px;
     font-weight: 600;
-    color: #1f2937;
+    color: #1a1a1a;
     border: none;
     background: none;
     width: 100%;
@@ -1158,7 +1150,7 @@ body {
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    background: #06b6d4;
     color: white;
     display: flex;
     align-items: center;
@@ -1170,7 +1162,7 @@ body {
 
 .faq-item.active .faq-icon {
     transform: rotate(45deg);
-    background: linear-gradient(135deg, #06b6d4, #22d3ee);
+    background: #06b6d4;
 }
 
 .faq-answer {
@@ -1237,7 +1229,7 @@ body {
     right: 70px;
     top: 50%;
     transform: translateY(-50%);
-    background: #1f2937;
+    background: #1a1a1a;
     color: white;
     padding: 8px 12px;
     border-radius: 8px;
@@ -1256,7 +1248,7 @@ body {
     top: 50%;
     transform: translateY(-50%);
     border: 5px solid transparent;
-    border-left-color: #1f2937;
+    border-left-color: #1a1a1a;
 }
 
 .whatsapp-float:hover .whatsapp-tooltip {

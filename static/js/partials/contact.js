@@ -144,10 +144,10 @@ function initParticles() {
             this.vy = (Math.random() - 0.5) * 0.5;
             
             const colors = [
-                'rgba(6, 182, 212, ',
-                'rgba(8, 145, 178, ',
                 'rgba(34, 211, 238, ',
-                'rgba(14, 165, 233, '
+                'rgba(103, 232, 249, ',
+                'rgba(34, 211, 238, ',
+                'rgba(103, 232, 249, '
             ];
             this.color = colors[Math.floor(Math.random() * colors.length)];
         }
@@ -224,7 +224,7 @@ function initParticles() {
                 if (distance < 120) {
                     let opacity = 1 - (distance / 120);
                     
-                    ctx.strokeStyle = `rgba(6, 182, 212, ${opacity * 0.5})`;
+                    ctx.strokeStyle = `rgba(34, 211, 238, ${opacity * 0.4})`;
                     ctx.lineWidth = opacity * 2;
                     ctx.beginPath();
                     ctx.moveTo(particles[a].x, particles[a].y);

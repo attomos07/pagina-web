@@ -136,7 +136,6 @@
   background: linear-gradient(
     135deg,
     rgba(6, 182, 212, 0.1),
-    rgba(34, 211, 238, 0.1)
   );
   transform: translateY(-100%);
   transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
@@ -168,7 +167,7 @@
   transform: translateX(-50%);
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, #06b6d4, #22d3ee);
+  background: #06b6d4;
   border-radius: 2px;
   transition: width 0.3s cubic-bezier(0.23, 1, 0.32, 1);
 }
@@ -195,12 +194,11 @@
   background: linear-gradient(
     135deg,
     rgba(6, 182, 212, 0.1),
-    rgba(34, 211, 238, 0.1)
   );
 }
 
 .nav-login:hover {
-  color: #0891b2 !important;
+  color: #06b6d4 !important;
   border-color: rgba(6, 182, 212, 0.6);
   transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(6, 182, 212, 0.2);
@@ -208,7 +206,7 @@
 
 /* Botón CTA (Registrarse) */
 .nav-cta {
-  background: linear-gradient(135deg, #06b6d4, #0891b2) !important;
+  background: #06b6d4 !important;
   color: white !important;
   padding: 0.75rem 1.75rem !important;
   border-radius: 12px;
@@ -245,7 +243,7 @@
 }
 
 .nav-cta:hover {
-  background: linear-gradient(135deg, #0891b2, #0e7490) !important;
+  background: #0891b2 !important;
   transform: translateY(-3px);
   box-shadow: 0 8px 30px rgba(6, 182, 212, 0.4);
 }
@@ -282,7 +280,7 @@
   position: absolute;
   width: 100%;
   height: 2px;
-  background: #374151;
+  background: #06b6d4;
   border-radius: 2px;
   left: 0;
   transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -343,15 +341,15 @@
     display: flex;
     position: absolute;
     left: 1rem;
-    background: rgba(0, 0, 0, 0.08);
+    background: rgba(6, 182, 212, 0.08);
   }
 
   .mobile-menu-btn.active {
-    background: rgba(0, 0, 0, 0.12);
+    background: rgba(6, 182, 212, 0.12);
   }
 
   .menu-icon span {
-    background: #374151;
+    background: #06b6d4;
   }
 
   /* Logo CENTRADO en mobile */
@@ -466,10 +464,10 @@
     width: 100%;
     text-align: left;
     color: #374151;
-    background: rgba(0, 0, 0, 0.03);
+    background: rgba(6, 182, 212, 0.04);
     border-radius: 14px;
     margin-bottom: 8px;
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(6, 182, 212, 0.12);
     position: relative;
     -webkit-tap-highlight-color: transparent;
   }
@@ -481,7 +479,7 @@
   .nav-link::after {
     content: "›";
     font-size: 1.5rem;
-    color: rgba(0, 0, 0, 0.3);
+    color: rgba(6, 182, 212, 0.4);
     position: static;
     width: auto;
     height: auto;
@@ -492,17 +490,17 @@
 
   .nav-link:active {
     transform: scale(0.97);
-    background: rgba(0, 0, 0, 0.06);
+    background: rgba(6, 182, 212, 0.08);
   }
 
   .nav-link.active {
     background: rgba(6, 182, 212, 0.15);
-    color: #22d3ee;
+    color: #06b6d4;
     border-color: rgba(6, 182, 212, 0.3);
   }
 
   .nav-link.active::after {
-    color: #22d3ee;
+    color: #06b6d4;
   }
 
   /* Separador visual - iOS Style */
@@ -511,7 +509,7 @@
     width: 100%;
     max-width: 400px;
     height: 1px;
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(6, 182, 212, 0.15);
     margin: 12px 0;
     opacity: 0;
     transform: scaleX(0);
@@ -527,7 +525,7 @@
 
   /* Botón login en mobile - iOS Style */
   .nav-login {
-    color: #22d3ee !important;
+    color: #06b6d4 !important;
     background: rgba(6, 182, 212, 0.1) !important;
     border-color: rgba(6, 182, 212, 0.2) !important;
     font-weight: 500;
@@ -542,12 +540,12 @@
   }
 
   .nav-login::after {
-    color: #22d3ee;
+    color: #06b6d4;
   }
 
   /* CTA en mobile - iOS Style */
   .nav-cta {
-    background: linear-gradient(135deg, #06b6d4, #0891b2) !important;
+    background: #06b6d4 !important;
     color: white !important;
     border: none !important;
     font-weight: 600;
