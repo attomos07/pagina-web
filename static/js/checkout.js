@@ -815,7 +815,22 @@ function initBillingFields() {
     if (!checkbox || !billingFields) return;
 
     checkbox.addEventListener('change', function() {
-        billingFields.style.display = this.checked ? 'block' : 'none';
+        if (this.checked) {
+            billingFields.classList.add('open');
+        } else {
+            billingFields.classList.remove('open');
+            // Clear values when hidden
+            ['razonSocial','rfc','direccionFiscal','codigoPostal','emailFactura'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.value = ''; el.classList.remove('error'); }
+            });
+            ['usoCfdi','regimenFiscal'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            document.getElementById('usoCfdi-selected').textContent = 'Seleccionar uso';
+            document.getElementById('regimenFiscal-selected').textContent = 'Seleccionar régimen';
+        }
         checkFormCompletion();
     });
 

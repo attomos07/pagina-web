@@ -20,6 +20,10 @@
         <div class="payment-section">
             <!-- Logo Header Animado DENTRO del formulario -->
             <header class="checkout-header">
+                <a href="/plans" class="cancel-link-top">
+                    <i class="lni lni-arrow-left"></i>
+                    Volver a Planes
+                </a>
                 <div class="logo-container">
                     <h1>ATTMOS</h1>
                     <svg id="svg">
@@ -56,7 +60,7 @@
                         <div class="form-group">
                             <label class="form-label">Email *</label>
                             <input type="email" class="form-input" id="email" required>
-                            <small class="input-hint"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f49e81959ab4919e919984989bda979b99">[email&#160;protected]</a></small>
+                            <small class="input-hint">juan@ejemplo.com</small>
                             <div class="error-message"></div>
                         </div>
                         <div class="form-group">
@@ -162,8 +166,8 @@
                         </label>
                     </div>
 
-                    <div id="billingFields" style="display:none;">
-                        <div class="form-row">
+                    <div id="billingFields" class="billing-fields-container">
+                        <div class="form-row billing-row">
                             <div class="form-group">
                                 <label class="form-label">Razón Social *</label>
                                 <input type="text" class="form-input" id="razonSocial" placeholder="Nombre o Razón Social">
@@ -176,15 +180,15 @@
                             </div>
                         </div>
 
-                        <div class="form-row">
-                            <div class="form-group" style="grid-column: 1 / -1;">
+                        <div class="billing-row">
+                            <div class="form-group">
                                 <label class="form-label">Dirección Fiscal *</label>
                                 <textarea class="form-input" id="direccionFiscal" placeholder="Calle, Número, Colonia, Municipio, Estado" style="min-height:80px; resize:vertical;"></textarea>
                                 <div class="error-message"></div>
                             </div>
                         </div>
 
-                        <div class="form-row">
+                        <div class="form-row billing-row">
                             <div class="form-group">
                                 <label class="form-label">Código Postal *</label>
                                 <input type="text" class="form-input" id="codigoPostal" placeholder="83000" maxlength="5">
@@ -198,7 +202,7 @@
                         </div>
 
                         <!-- Uso CFDI -->
-                        <div class="form-group">
+                        <div class="form-group billing-row">
                             <label class="form-label">Uso del CFDI *</label>
                             <div class="cfdi-select-wrapper">
                                 <div class="cfdi-select-trigger" id="usoCfdi-trigger" tabindex="0">
@@ -223,7 +227,7 @@
                         </div>
 
                         <!-- Régimen Fiscal -->
-                        <div class="form-group">
+                        <div class="form-group billing-row">
                             <label class="form-label">Régimen Fiscal *</label>
                             <div class="cfdi-select-wrapper">
                                 <div class="cfdi-select-trigger" id="regimenFiscal-trigger" tabindex="0">
@@ -303,6 +307,12 @@
                     <i class="lni lni-lock"></i>
                     <span>Realizar Pago Seguro</span>
                 </button>
+
+                <!-- Subscription notice -->
+                <div class="subscription-renewal-notice">
+                    <i class="lni lni-reload"></i>
+                    <span>Estás contratando una membresía <strong>mensual</strong> con renovación automática. Puedes cancelar en cualquier momento.</span>
+                </div>
 
                 <!-- Cancel Link -->
                 <a href="/plans" class="cancel-link">
