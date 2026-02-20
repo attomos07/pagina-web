@@ -334,7 +334,7 @@ body {
 }
 
 .agents-table td {
-  padding: 1.5rem 2rem;
+  padding: 0.85rem 2rem;
   color: #1f2937;
   font-size: 0.95rem;
   vertical-align: middle;
@@ -358,30 +358,9 @@ body {
 .agent-name-cell {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  min-width: 240px; /* evita que la columna se encoja */
 }
 
-.agent-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: white;
-  border: 2px solid #06b6d4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #06b6d4;
-  box-shadow: 0 2px 5px rgba(6, 182, 212, 0.15);
-  transition: transform 0.2s;
-}
-.agent-avatar:hover {
-  transform: scale(1.1);
-}
-.agent-avatar svg {
-  width: 24px;
-  height: 24px;
-}
+
 
 .agent-info {
   display: flex;
@@ -476,9 +455,9 @@ body {
   transition: all 0.2s;
 }
 .actions-trigger:hover {
-  border-color: #06b6d4;
-  color: #06b6d4;
-  background: #f0fdfa;
+  border-color: #f59e0b;
+  color: #f59e0b;
+  background: #fffbeb;
 }
 
 /* Dropdown Menu */
@@ -726,7 +705,7 @@ body {
   line-height: 1.5;
 }
 .confirm-actions {
-  padding: 1.5rem 0 2rem;
+  padding: 1.5rem 2rem 2rem;
   display: flex;
   gap: 1rem;
 }
@@ -756,70 +735,25 @@ body {
 }
 
 
-/* =========================================
-   CONFIRM MODAL - BODY & LIST
-   ========================================= */
-.confirm-body {
-  padding: 0 2rem;
-}
-
-.confirm-list {
-  background: #f9fafb;
-  border: 1px solid #f3f4f6;
-  border-radius: 12px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.confirm-list-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.9rem;
-  color: #374151;
+/* ID Badge columna propia */
+.agent-id-badge {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-family: monospace;
+  color: #9ca3af;
+  background: #f3f4f6;
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
   font-weight: 500;
-  padding: 0.25rem 0;
 }
 
-.confirm-list-item i {
-  font-size: 0.75rem;
-  color: #ef4444;
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  background: #fee2e2;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Hover amarillo en dropdown de pausa */
+.dropdown-item.pause:hover {
+  background: #fffbeb;
+  color: #b45309;
 }
-
-/* Warning (Pausar) - ítems amarillos */
-.confirm-modal.warning-modal .confirm-list-item i {
+.dropdown-item.pause:hover i {
   color: #f59e0b;
-  background: #fef3c7;
-}
-
-/* Warning icon circle */
-.confirm-icon.warning {
-  background: #fef3c7;
-  color: #f59e0b;
-}
-
-/* Warning button */
-.btn-confirm-action.warning {
-  background: #f59e0b;
-}
-.btn-confirm-action.warning:hover {
-  background: #d97706;
-}
-
-/* Confirm actions dentro de confirm-body */
-.confirm-body .confirm-actions {
-  padding: 0 0 2rem 0;
 }
 
 /* =========================================
