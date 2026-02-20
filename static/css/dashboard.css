@@ -3417,3 +3417,294 @@ body {
     font-size: 0.75rem;
   }
 }
+/* =================== VIEW TOGGLE STYLES =================== */
+
+.view-toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: rgba(0,0,0,0.06);
+    border-radius: 8px;
+    padding: 3px;
+}
+
+.dark .view-toggle-group {
+    background: rgba(255,255,255,0.08);
+}
+
+.view-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.view-toggle-btn:hover {
+    background: rgba(6, 182, 212, 0.15);
+    color: #06b6d4;
+}
+
+.view-toggle-btn.active {
+    background: white;
+    color: #06b6d4;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.dark .view-toggle-btn.active {
+    background: rgba(255,255,255,0.12);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+/* =================== DATA TABLE STYLES =================== */
+
+.billing-table-container,
+.pie-table-container {
+    padding: 0 4px;
+}
+
+.data-table-wrapper {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.06);
+}
+
+.dark .data-table-wrapper {
+    border-color: rgba(255,255,255,0.08);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.data-table thead tr {
+    background: rgba(6, 182, 212, 0.08);
+}
+
+.data-table th {
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.dark .data-table th {
+    color: #d1d5db;
+}
+
+.data-table td {
+    padding: 9px 14px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    color: #4b5563;
+}
+
+.dark .data-table td {
+    color: #9ca3af;
+    border-top-color: rgba(255,255,255,0.05);
+}
+
+.data-table tbody tr:hover {
+    background: rgba(6, 182, 212, 0.04);
+}
+
+.data-table tfoot tr {
+    background: rgba(0,0,0,0.03);
+    border-top: 2px solid rgba(0,0,0,0.08);
+}
+
+.dark .data-table tfoot tr {
+    background: rgba(255,255,255,0.04);
+    border-top-color: rgba(255,255,255,0.1);
+}
+
+.data-table tfoot td {
+    border-top: none;
+    font-size: 13px;
+}
+
+.cost-cell {
+    font-weight: 600;
+    color: #374151;
+    font-variant-numeric: tabular-nums;
+}
+
+.dark .cost-cell {
+    color: #e5e7eb;
+}
+
+.cost-cell-accent {
+    font-weight: 600;
+    color: #06b6d4;
+    font-variant-numeric: tabular-nums;
+}
+
+.rank-cell {
+    color: #9ca3af;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.count-cell {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.count-cell.cyan { color: #06b6d4; }
+.count-cell.purple { color: #8b5cf6; }
+
+/* Mini percentage bar in table */
+.pct-bar-mini {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pct-bar-mini > span {
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 36px;
+    color: #6b7280;
+}
+
+.pct-bar-fill-mini {
+    height: 6px;
+    border-radius: 3px;
+    min-width: 4px;
+    transition: width 0.4s ease;
+}
+
+.pct-bar-fill-mini.cyan { background: #06b6d4; }
+.pct-bar-fill-mini.purple { background: #8b5cf6; }
+
+/* color dot for pie table */
+.color-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    vertical-align: middle;
+}
+
+/* service-data-table adjustments */
+.service-data-table .pct-bar-mini {
+    min-width: 120px;
+}
+
+/* billing controls flex update */
+.billing-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* service-chart-header flex for toggle */
+.service-chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* =================== UNIFIED SERVICES SECTION =================== */
+
+.services-unified-section {
+    margin-top: 2rem;
+}
+
+.services-unified-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 1.25rem;
+}
+
+.services-unified-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+    .services-unified-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.service-unified-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    border: 1px solid rgba(0,0,0,0.05);
+    transition: box-shadow 0.2s;
+}
+
+.service-unified-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
+}
+
+.dark .service-unified-card {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.08);
+}
+
+.service-unified-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.service-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.service-card-title i {
+    color: #06b6d4;
+    font-size: 18px;
+}
+
+.service-unified-card.least-requested .service-card-title i {
+    color: #8b5cf6;
+}
+
+.service-card-title h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.dark .service-card-title h3 {
+    color: #f3f4f6;
+}
+
+.service-view-panel {
+    animation: fadeInPanel 0.22s ease;
+}
+
+@keyframes fadeInPanel {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}

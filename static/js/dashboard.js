@@ -73,7 +73,177 @@ function convertCurrency(amountUSD, toCurrency) {
     return amountUSD * (currencyRates[toCurrency] || 1);
 }
 
-// Inicializar dashboard
+// View states
+let billingView = 'line'; // 'line', 'bar', 'table'
+let billingTimelineData = null; // cached timeline for view switching
+
+// =================== VIEW TOGGLE FUNCTIONS ===================
+
+function setBillingView(view) {
+    billingView = view;
+
+    // Update toggle button states
+    document.querySelectorAll('#billingViewToggle .view-toggle-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === view);
+    });
+
+    const chartContainer = document.getElementById('costChartContainer');
+    const tableContainer = document.getElementById('costTableContainer');
+
+    if (view === 'table') {
+        chartContainer.style.display = 'none';
+        tableContainer.style.display = 'block';
+        if (billingTimelineData) renderBillingTable(billingTimelineData);
+    } else {
+        chartContainer.style.display = 'block';
+        tableContainer.style.display = 'none';
+        if (costChart) {
+            costChart.config.type = view === 'bar' ? 'bar' : 'line';
+            if (view === 'bar') {
+                costChart.data.datasets[0].fill = false;
+                costChart.data.datasets[0].tension = 0;
+                costChart.data.datasets[0].backgroundColor = 'rgba(6, 182, 212, 0.7)';
+                costChart.data.datasets[0].borderColor = '#06b6d4';
+                costChart.data.datasets[0].borderWidth = 1;
+                costChart.data.datasets[0].pointRadius = 0;
+            } else {
+                costChart.data.datasets[0].fill = true;
+                costChart.data.datasets[0].tension = 0.4;
+                costChart.data.datasets[0].backgroundColor = 'rgba(6, 182, 212, 0.1)';
+                costChart.data.datasets[0].borderColor = '#06b6d4';
+                costChart.data.datasets[0].borderWidth = 3;
+                costChart.data.datasets[0].pointRadius = 4;
+            }
+            costChart.update();
+        }
+    }
+}
+
+function renderBillingTable(timeline) {
+    const container = document.getElementById('costTableContainer');
+    if (!container || !timeline) return;
+
+    const currency = document.getElementById('currencySelect')?.value || 'MXN';
+    const symbol = getCurrencySymbol(currency);
+
+    let prevCost = 0;
+    const rows = timeline.labels.map((label, i) => {
+        const cumulative = convertCurrency(timeline.costs[i], currency);
+        const daily = i === 0 ? cumulative : cumulative - convertCurrency(timeline.costs[i - 1], currency);
+        return { label, cumulative, daily };
+    });
+
+    container.innerHTML = `
+        <div class="data-table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Costo Diario</th>
+                        <th>Costo Acumulado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows.map(row => `
+                        <tr>
+                            <td>${row.label}</td>
+                            <td class="cost-cell">${symbol}${row.daily.toFixed(4)} ${currency}</td>
+                            <td class="cost-cell-accent">${symbol}${row.cumulative.toFixed(4)} ${currency}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function setUnifiedView(section, view) {
+    const barsViewId   = section === 'most' ? 'mostBarsView'  : 'leastBarsView';
+    const pieViewId    = section === 'most' ? 'mostPieView'   : 'leastPieView';
+    const tableViewId  = section === 'most' ? 'mostTableView' : 'leastTableView';
+    const data         = section === 'most' ? servicesData?.mostRequested : servicesData?.leastRequested;
+    const isLeast      = section === 'least';
+
+    // Update toggle buttons
+    document.querySelectorAll(`[data-section="${section}"].view-toggle-btn`).forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === view);
+    });
+
+    // Hide all panels
+    [barsViewId, pieViewId, tableViewId].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+
+    if (view === 'bars') {
+        const panel = document.getElementById(barsViewId);
+        if (panel) panel.style.display = '';
+        const containerId = section === 'most' ? 'mostRequestedServicesContainer' : 'leastRequestedServicesContainer';
+        renderServiceBars(containerId, data, isLeast);
+
+    } else if (view === 'pie') {
+        const panel = document.getElementById(pieViewId);
+        if (panel) panel.style.display = '';
+        const canvasId = section === 'most' ? 'mostRequestedPieChart' : 'leastRequestedPieChart';
+        const legendId = section === 'most' ? 'mostRequestedLegend'   : 'leastRequestedLegend';
+        const totalId  = section === 'most' ? 'mostRequestedTotal'     : 'leastRequestedTotal';
+        renderPieChart(canvasId, legendId, totalId, data, isLeast);
+
+    } else if (view === 'table') {
+        const panel = document.getElementById(tableViewId);
+        if (panel) {
+            panel.style.display = '';
+            renderServiceTable(panel, data, isLeast);
+        }
+    }
+}
+
+
+function renderServiceTable(container, services, isLeast = false) {
+    if (!services || services.length === 0) {
+        container.innerHTML = `<div class="service-chart-empty"><i class="lni lni-pie-chart"></i><p>No hay datos disponibles</p></div>`;
+        return;
+    }
+    const total = services.reduce((sum, s) => sum + s.count, 0);
+    const accentClass = isLeast ? 'purple' : 'cyan';
+    container.innerHTML = `
+        <div class="data-table-wrapper">
+            <table class="data-table service-data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Servicio</th>
+                        <th>Solicitudes</th>
+                        <th>Porcentaje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${services.map((s, i) => {
+                        const pct = ((s.count / total) * 100).toFixed(1);
+                        return `
+                        <tr>
+                            <td class="rank-cell">${i + 1}</td>
+                            <td>${s.name}</td>
+                            <td class="count-cell ${accentClass}">${s.count}</td>
+                            <td>
+                                <div class="pct-bar-mini">
+                                    <div class="pct-bar-fill-mini ${accentClass}" style="width:${pct}%"></div>
+                                    <span>${pct}%</span>
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+                <tfoot>
+                    <tr><td colspan="2"><strong>Total</strong></td><td class="count-cell ${accentClass}"><strong>${total}</strong></td><td></td></tr>
+                </tfoot>
+            </table>
+        </div>
+    `;
+}
+
+
+
 document.addEventListener('DOMContentLoaded', function () {
     console.log('dashboard.js listo');
     loadAgentStats();
@@ -415,6 +585,11 @@ function updateCostSummary(summary) {
 }
 
 function updateCostChart(timeline) {
+    billingTimelineData = timeline; // cache for table view
+    if (billingView === 'table') {
+        renderBillingTable(timeline);
+        return;
+    }
     if (!costChart) return;
     const currency = document.getElementById('currencySelect')?.value || 'MXN';
     const convertedCosts = timeline.costs.map((cost) => convertCurrency(cost, currency));

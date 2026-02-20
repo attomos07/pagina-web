@@ -109,6 +109,17 @@
                                 <span class="billing-badge">Gemini API</span>
                             </div>
                             <div class="billing-controls">
+                                <div class="view-toggle-group" id="billingViewToggle">
+                                    <button class="view-toggle-btn active" data-view="line" onclick="setBillingView('line')" title="Gráfico de línea">
+                                        <i class="lni lni-graph"></i>
+                                    </button>
+                                    <button class="view-toggle-btn" data-view="bar" onclick="setBillingView('bar')" title="Gráfico de barras">
+                                        <i class="lni lni-bar-chart"></i>
+                                    </button>
+                                    <button class="view-toggle-btn" data-view="table" onclick="setBillingView('table')" title="Tabla">
+                                        <i class="lni lni-list"></i>
+                                    </button>
+                                </div>
                                 <select class="currency-select" id="currencySelect">
                                     <option value="MXN" selected>🇲🇽 MXN</option>
                                     <option value="USD">🇺🇸 USD</option>
@@ -136,9 +147,11 @@
                                 </div>
                             </div>
 
-                            <div class="chart-container">
+                            <div class="chart-container" id="costChartContainer">
                                 <canvas id="costChart"></canvas>
                             </div>
+
+                            <div class="billing-table-container" id="costTableContainer" style="display:none;"></div>
 
                             <div class="billing-footer">
                                 <div class="billing-info">
@@ -149,31 +162,13 @@
                         </div>
                     </div>
 
-                    <!-- Services Statistics Section -->
-                    <div class="services-stats-section">
-                        <div class="services-stats-grid">
-                            <div class="service-chart-card">
-                                <div class="service-chart-header">
-                                    <h3><i class="lni lni-bar-chart"></i>Servicios Más Pedidos</h3>
-                                </div>
-                                <div id="mostRequestedServicesContainer" class="service-bars-container"></div>
-                            </div>
-
-                            <div class="service-chart-card least-requested">
-                                <div class="service-chart-header">
-                                    <h3><i class="lni lni-stats-down"></i>Servicios Menos Pedidos</h3>
-                                </div>
-                                <div id="leastRequestedServicesContainer" class="service-bars-container"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pie Charts Section -->
-                    <div class="pie-charts-section">
-                        <div class="pie-charts-header">
-                            <div class="pie-charts-title">
-                                <h2><i class="lni lni-pie-chart"></i>Distribución de Servicios</h2>
-                            </div>
+                    <!-- Unified Services Section -->
+                    <div class="services-unified-section">
+                        <div class="services-unified-header">
+                            <h2 class="section-title">
+                                <i class="lni lni-bar-chart"></i>
+                                Estadísticas de Servicios
+                            </h2>
                             <div class="export-buttons">
                                 <button class="btn-export btn-export-excel" onclick="exportToExcel()">
                                     <i class="lni lni-download"></i>
@@ -186,38 +181,88 @@
                             </div>
                         </div>
 
-                        <div class="pie-charts-grid">
-                            <div class="pie-chart-card">
-                                <div class="pie-chart-header">
-                                    <div class="pie-chart-title">
-                                        <i class="lni lni-graph"></i>
-                                        <h3>Servicios Más Solicitados</h3>
+                        <div class="services-unified-grid">
+
+                            <!-- Most Requested Card -->
+                            <div class="service-unified-card">
+                                <div class="service-unified-card-header">
+                                    <div class="service-card-title">
+                                        <i class="lni lni-bar-chart"></i>
+                                        <h3>Servicios Más Pedidos</h3>
+                                        <span class="pie-chart-badge" id="mostRequestedTotal">0 Total</span>
                                     </div>
-                                    <span class="pie-chart-badge" id="mostRequestedTotal">0 Total</span>
-                                </div>
-                                <div class="pie-chart-content">
-                                    <div class="pie-chart-canvas-wrapper">
-                                        <canvas id="mostRequestedPieChart"></canvas>
+                                    <div class="view-toggle-group">
+                                        <button class="view-toggle-btn active" onclick="setUnifiedView('most', 'bars')" data-section="most" data-view="bars" title="Barras horizontales">
+                                            <i class="lni lni-bar-chart"></i>
+                                        </button>
+                                        <button class="view-toggle-btn" onclick="setUnifiedView('most', 'pie')" data-section="most" data-view="pie" title="Gráfico circular">
+                                            <i class="lni lni-pie-chart"></i>
+                                        </button>
+                                        <button class="view-toggle-btn" onclick="setUnifiedView('most', 'table')" data-section="most" data-view="table" title="Tabla">
+                                            <i class="lni lni-list"></i>
+                                        </button>
                                     </div>
-                                    <div class="pie-chart-legend" id="mostRequestedLegend"></div>
                                 </div>
+
+                                <!-- Bars view -->
+                                <div id="mostBarsView" class="service-view-panel">
+                                    <div id="mostRequestedServicesContainer" class="service-bars-container"></div>
+                                </div>
+
+                                <!-- Pie view -->
+                                <div id="mostPieView" class="service-view-panel" style="display:none;">
+                                    <div class="pie-chart-content">
+                                        <div class="pie-chart-canvas-wrapper">
+                                            <canvas id="mostRequestedPieChart"></canvas>
+                                        </div>
+                                        <div class="pie-chart-legend" id="mostRequestedLegend"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Table view -->
+                                <div id="mostTableView" class="service-view-panel" style="display:none;"></div>
                             </div>
 
-                            <div class="pie-chart-card">
-                                <div class="pie-chart-header">
-                                    <div class="pie-chart-title">
-                                        <i class="lni lni-graph"></i>
-                                        <h3>Servicios Menos Solicitados</h3>
+                            <!-- Least Requested Card -->
+                            <div class="service-unified-card least-requested">
+                                <div class="service-unified-card-header">
+                                    <div class="service-card-title">
+                                        <i class="lni lni-stats-down"></i>
+                                        <h3>Servicios Menos Pedidos</h3>
+                                        <span class="pie-chart-badge" id="leastRequestedTotal">0 Total</span>
                                     </div>
-                                    <span class="pie-chart-badge" id="leastRequestedTotal">0 Total</span>
-                                </div>
-                                <div class="pie-chart-content">
-                                    <div class="pie-chart-canvas-wrapper">
-                                        <canvas id="leastRequestedPieChart"></canvas>
+                                    <div class="view-toggle-group">
+                                        <button class="view-toggle-btn active" onclick="setUnifiedView('least', 'bars')" data-section="least" data-view="bars" title="Barras horizontales">
+                                            <i class="lni lni-bar-chart"></i>
+                                        </button>
+                                        <button class="view-toggle-btn" onclick="setUnifiedView('least', 'pie')" data-section="least" data-view="pie" title="Gráfico circular">
+                                            <i class="lni lni-pie-chart"></i>
+                                        </button>
+                                        <button class="view-toggle-btn" onclick="setUnifiedView('least', 'table')" data-section="least" data-view="table" title="Tabla">
+                                            <i class="lni lni-list"></i>
+                                        </button>
                                     </div>
-                                    <div class="pie-chart-legend" id="leastRequestedLegend"></div>
                                 </div>
+
+                                <!-- Bars view -->
+                                <div id="leastBarsView" class="service-view-panel">
+                                    <div id="leastRequestedServicesContainer" class="service-bars-container"></div>
+                                </div>
+
+                                <!-- Pie view -->
+                                <div id="leastPieView" class="service-view-panel" style="display:none;">
+                                    <div class="pie-chart-content">
+                                        <div class="pie-chart-canvas-wrapper">
+                                            <canvas id="leastRequestedPieChart"></canvas>
+                                        </div>
+                                        <div class="pie-chart-legend" id="leastRequestedLegend"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Table view -->
+                                <div id="leastTableView" class="service-view-panel" style="display:none;"></div>
                             </div>
+
                         </div>
                     </div>
 
