@@ -576,6 +576,7 @@ function showConfirmModal(options) {
     `;
 
     // Mostrar modal
+    modal.classList.toggle('warning-modal', type === 'warning');
     modal.classList.add('active');
 
     // Event listener para confirmar

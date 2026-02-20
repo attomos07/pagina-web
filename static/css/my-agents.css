@@ -726,7 +726,7 @@ body {
   line-height: 1.5;
 }
 .confirm-actions {
-  padding: 1.5rem 2rem 2rem;
+  padding: 1.5rem 0 2rem;
   display: flex;
   gap: 1rem;
 }
@@ -753,6 +753,73 @@ body {
 }
 .btn-confirm-action:hover {
   background: #dc2626;
+}
+
+
+/* =========================================
+   CONFIRM MODAL - BODY & LIST
+   ========================================= */
+.confirm-body {
+  padding: 0 2rem;
+}
+
+.confirm-list {
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.confirm-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: #374151;
+  font-weight: 500;
+  padding: 0.25rem 0;
+}
+
+.confirm-list-item i {
+  font-size: 0.75rem;
+  color: #ef4444;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  background: #fee2e2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Warning (Pausar) - ítems amarillos */
+.confirm-modal.warning-modal .confirm-list-item i {
+  color: #f59e0b;
+  background: #fef3c7;
+}
+
+/* Warning icon circle */
+.confirm-icon.warning {
+  background: #fef3c7;
+  color: #f59e0b;
+}
+
+/* Warning button */
+.btn-confirm-action.warning {
+  background: #f59e0b;
+}
+.btn-confirm-action.warning:hover {
+  background: #d97706;
+}
+
+/* Confirm actions dentro de confirm-body */
+.confirm-body .confirm-actions {
+  padding: 0 0 2rem 0;
 }
 
 /* =========================================
