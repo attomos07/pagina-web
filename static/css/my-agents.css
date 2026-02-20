@@ -295,13 +295,13 @@ body {
 /* =========================================
    AGENTS TABLE
    ========================================= */
+/* ── Tabla estilo Pricing ── */
 .agents-table-container {
   background: white;
-  border-radius: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid #f3f4f6;
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
   margin-bottom: 2rem;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .table-header {
@@ -310,54 +310,49 @@ body {
 
 .agents-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+.agents-table thead {
+  background: #ffffff;
+  border-bottom: 2px solid #06b6d4;
 }
 
 .agents-table th {
-  padding: 1.25rem 2rem;
-  background: #f9fafb;
+  padding: 1.25rem 1.5rem;
   text-align: left;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  color: #6b7280;
+  color: #1a1a1a;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-bottom: 1px solid #e5e7eb;
-}
-.agents-table th:first-child {
-  border-top-left-radius: 24px;
 }
 .agents-table th:last-child {
-  border-top-right-radius: 24px;
   text-align: right;
 }
 
 .agents-table td {
-  padding: 0.85rem 2rem;
-  color: #1f2937;
+  padding: 1rem 1.5rem;
+  color: #374151;
   font-size: 0.95rem;
   vertical-align: middle;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
   background: white;
+  transition: background 0.2s ease;
 }
 .agents-table tbody tr:last-child td {
   border-bottom: none;
 }
-.agents-table tbody tr:last-child td:first-child {
-  border-bottom-left-radius: 24px;
-}
-.agents-table tbody tr:last-child td:last-child {
-  border-bottom-right-radius: 24px;
-}
 .agents-table tbody tr:hover td {
-  background: #fcfcfc;
+  background: rgba(6, 182, 212, 0.02);
 }
 
 /* Celdas Específicas */
 .agent-name-cell {
   display: flex;
   align-items: center;
+  gap: 1rem;
+  min-width: 240px; /* evita que la columna se encoja */
 }
 
 
@@ -455,9 +450,9 @@ body {
   transition: all 0.2s;
 }
 .actions-trigger:hover {
-  border-color: #f59e0b;
-  color: #f59e0b;
-  background: #fffbeb;
+  border-color: #06b6d4;
+  color: #06b6d4;
+  background: #f0fdfa;
 }
 
 /* Dropdown Menu */
@@ -735,10 +730,40 @@ body {
 }
 
 
-/* ID Badge columna propia */
+/* Robot icon inline con nombre */
+.agent-robot-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(6, 182, 212, 0.08);
+  border: 1.5px solid rgba(6, 182, 212, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #06b6d4;
+  flex-shrink: 0;
+}
+.agent-robot-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.agent-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.agent-name {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+/* ID Badge */
 .agent-id-badge {
   display: inline-block;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-family: monospace;
   color: #9ca3af;
   background: #f3f4f6;
@@ -747,7 +772,14 @@ body {
   font-weight: 500;
 }
 
-/* Hover amarillo en dropdown de pausa */
+/* Hover amarillo botón 3 puntos */
+.actions-trigger:hover {
+  border-color: #f59e0b;
+  color: #f59e0b;
+  background: #fffbeb;
+}
+
+/* Hover amarillo dropdown pausa */
 .dropdown-item.pause:hover {
   background: #fffbeb;
   color: #b45309;
