@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function initUserbar() {
     try {
-        // Obtener datos del usuario desde la API
         const response = await fetch('/api/me', {
             method: 'GET',
             credentials: 'include'
@@ -28,10 +27,7 @@ async function initUserbar() {
         if (response.ok) {
             const data = await response.json();
             updateUserbarUI(data.user);
-            console.log('✅ Datos de usuario cargados:', data.user);
         } else {
-            console.warn('⚠️ No se pudieron cargar los datos del usuario');
-            // Redirigir al login si no está autenticado
             if (response.status === 401) {
                 window.location.href = '/login';
             }
@@ -42,47 +38,36 @@ async function initUserbar() {
 }
 
 function updateUserbarUI(user) {
-    // Actualizar nombre de usuario en dropdown
     const userNameElement = document.getElementById('userName');
     if (userNameElement) {
         const businessName = user.firstName || user.company || 'Mi Empresa';
         userNameElement.textContent = businessName;
     }
 
-    // Actualizar rol/tipo de negocio
     const userRoleElement = document.getElementById('userRole');
     if (userRoleElement) {
         const businessType = getBusinessTypeLabel(user.businessType) || 'Negocio';
         userRoleElement.textContent = businessType;
     }
 
-    // Actualizar plan actual
-    // El plan puede venir ya renderizado por el servidor (Go template).
-    // Solo sobreescribimos si el servidor NO inyectó un plan válido,
-    // usando data-server-plan como indicador de lo que el servidor conoce.
     const userPlanElement = document.getElementById('userPlan');
     if (userPlanElement) {
         const serverPlan = userPlanElement.getAttribute('data-server-plan');
-        // Si el servidor no tenía el plan (atributo vacío o ausente), usar el de la API
         if (!serverPlan && user.currentPlan) {
             userPlanElement.textContent = getPlanName(user.currentPlan);
         }
-        // Si el servidor sí tenía el plan, se respeta lo que ya está renderizado
     }
 
-    // Actualizar iniciales del avatar
     const userInitialsElement = document.getElementById('userInitials');
     const userAvatarImg = document.getElementById('userAvatarImg');
     
     if (user.profileImage && userAvatarImg) {
-        // Si tiene imagen de perfil, mostrar imagen
         userAvatarImg.src = user.profileImage;
         userAvatarImg.style.display = 'block';
         if (userInitialsElement) {
             userInitialsElement.style.display = 'none';
         }
     } else if (userInitialsElement) {
-        // Si no tiene imagen, mostrar iniciales
         const name = user.firstName || user.company || 'Usuario';
         const initials = name.split(' ')
             .map(word => word[0])
@@ -92,7 +77,6 @@ function updateUserbarUI(user) {
         userInitialsElement.textContent = initials;
     }
 
-    // Guardar datos en localStorage para acceso rápido
     localStorage.setItem('userData', JSON.stringify(user));
 }
 
@@ -140,32 +124,166 @@ function getBusinessTypeLabel(businessType) {
 // NOTIFICACIONES
 // ============================================
 
+async function loadAppointmentNotifications() {
+    try {
+        const res = await fetch('/api/appointments', { credentials: 'include' });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.appointments || [];
+    } catch (e) {
+        console.error('Error cargando citas para notificaciones:', e);
+        return [];
+    }
+}
+
+function buildNotificationsFromAppointments(appointments) {
+    const notifications = [];
+    const now = new Date();
+
+    // Fecha local en formato YYYY-MM-DD (sin offset UTC)
+    const pad = n => String(n).padStart(2, '0');
+    const todayStr    = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+    const tomorrowD   = new Date(now); tomorrowD.setDate(tomorrowD.getDate() + 1);
+    const tomorrowStr = `${tomorrowD.getFullYear()}-${pad(tomorrowD.getMonth()+1)}-${pad(tomorrowD.getDate())}`;
+
+    // Solo citas activas
+    const active = appointments.filter(a => a.status !== 'cancelled');
+
+    // ── Citas de hoy ──────────────────────────────────────────────────
+    const todayAppts = active.filter(a => a.date === todayStr);
+    todayAppts.forEach(a => {
+        const [h, m] = a.time.split(':').map(Number);
+        const apptTime = new Date(now);
+        apptTime.setHours(h, m, 0, 0);
+        const diffMin = (apptTime - now) / 60000;
+
+        if (diffMin > 0 && diffMin <= 60) {
+            notifications.push({
+                type: 'urgent',
+                text: `⏰ Cita con <strong>${a.client}</strong> en ${Math.round(diffMin)} min (${a.time})`,
+                time: 'En breve',
+                unread: true
+            });
+        } else if (diffMin > 60) {
+            notifications.push({
+                type: 'appointment',
+                text: `📅 <strong>${a.client}</strong> — ${a.service} a las ${a.time}`,
+                time: 'Hoy',
+                unread: true
+            });
+        }
+    });
+
+    // ── Resumen de citas de mañana ────────────────────────────────────
+    const tomorrowAppts = active.filter(a => a.date === tomorrowStr);
+    if (tomorrowAppts.length > 0) {
+        const s = tomorrowAppts.length;
+        notifications.push({
+            type: 'warning',
+            text: `Tienes <strong>${s} cita${s > 1 ? 's' : ''}</strong> programada${s > 1 ? 's' : ''} para mañana`,
+            time: 'Mañana',
+            unread: true
+        });
+    }
+
+    // ── Sin citas próximas ────────────────────────────────────────────
+    return notifications;
+}
+
+function renderNotifications(notifications) {
+    const list  = document.getElementById('notificationList');
+    const badge = document.getElementById('notificationBadge');
+    if (!list) return;
+
+    if (notifications.length === 0) {
+        list.innerHTML = `
+            <div style="padding:32px 20px;text-align:center;color:#9ca3af;">
+                <svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:#d1d5db;stroke-width:1.5;fill:none;margin:0 auto 12px;display:block;">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <div style="font-size:14px;font-weight:500;">Sin notificaciones</div>
+                <div style="font-size:12px;margin-top:4px;">No hay citas próximas</div>
+            </div>`;
+        if (badge) badge.classList.add('hidden');
+        return;
+    }
+
+    const icons = {
+        urgent: `<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" x2="12" y1="8" y2="12"/>
+                    <line x1="12" x2="12.01" y1="16" y2="16"/>
+                 </svg>`,
+        appointment: `<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none;">
+                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                        <line x1="16" x2="16" y1="2" y2="6"/>
+                        <line x1="8" x2="8" y1="2" y2="6"/>
+                        <line x1="3" x2="21" y1="10" y2="10"/>
+                      </svg>`,
+        warning: `<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none;">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                    <line x1="12" x2="12" y1="9" y2="13"/>
+                    <line x1="12" x2="12.01" y1="17" y2="17"/>
+                  </svg>`
+    };
+
+    list.innerHTML = notifications.map(n => `
+        <div class="notification-item ${n.unread ? 'unread' : ''}">
+            <div class="notification-content">
+                <div class="notification-icon">${icons[n.type] || icons.appointment}</div>
+                <div class="notification-body">
+                    <div class="notification-text">${n.text}</div>
+                    <div class="notification-time">${n.time}</div>
+                </div>
+            </div>
+        </div>`).join('');
+
+    const unreadCount = notifications.filter(n => n.unread).length;
+    if (badge) {
+        if (unreadCount > 0) {
+            badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+}
+
 function initNotifications() {
-    const notificationBtn = document.getElementById('notificationBtn');
+    const notificationBtn   = document.getElementById('notificationBtn');
     const notificationPanel = document.getElementById('notificationPanel');
-    const markAllBtn = document.getElementById('markAllBtn');
+    const markAllBtn        = document.getElementById('markAllBtn');
     const notificationBadge = document.getElementById('notificationBadge');
 
     if (!notificationBtn || !notificationPanel) return;
 
+    // Cargar notificaciones desde el endpoint de citas
+    loadAppointmentNotifications().then(appointments => {
+        const notifications = buildNotificationsFromAppointments(appointments);
+        renderNotifications(notifications);
+    });
+
+    // Refrescar cada 5 minutos
+    setInterval(() => {
+        loadAppointmentNotifications().then(appointments => {
+            const notifications = buildNotificationsFromAppointments(appointments);
+            renderNotifications(notifications);
+        });
+    }, 5 * 60 * 1000);
+
     const isMobile = window.innerWidth <= 768;
 
-    // Mobile: Tap to toggle notifications
     if (isMobile) {
         notificationBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            
-            // Cerrar user dropdown si está abierto
             const userDropdown = document.getElementById('userDropdown');
             if (userDropdown) {
                 userDropdown.classList.remove('mobile-active');
             }
-            
-            // Toggle notification panel
             notificationPanel.classList.toggle('mobile-active');
         });
 
-        // Close notification panel when clicking outside
         document.addEventListener('click', (e) => {
             if (!notificationPanel.contains(e.target) && !notificationBtn.contains(e.target)) {
                 notificationPanel.classList.remove('mobile-active');
@@ -173,7 +291,6 @@ function initNotifications() {
         });
     }
 
-    // Mark all notifications as read
     if (markAllBtn) {
         markAllBtn.addEventListener('click', () => {
             const unreadItems = document.querySelectorAll('.notification-item.unread');
@@ -186,7 +303,6 @@ function initNotifications() {
         });
     }
 
-    // Mark individual notification as read on click
     document.querySelectorAll('.notification-item').forEach(item => {
         item.addEventListener('click', function() {
             if (this.classList.contains('unread')) {
@@ -222,29 +338,22 @@ function initUserDropdown() {
 
     const isMobile = window.innerWidth <= 768;
 
-    // Mobile: Tap to toggle user dropdown
     if (isMobile) {
         userAvatar.addEventListener('click', (e) => {
             e.stopPropagation();
-            
-            // Cerrar notification panel si está abierto
             const notificationPanel = document.getElementById('notificationPanel');
             if (notificationPanel) {
                 notificationPanel.classList.remove('mobile-active');
             }
-            
-            // Toggle user dropdown
             userDropdown.classList.toggle('mobile-active');
         });
 
-        // Close user dropdown when clicking outside
         document.addEventListener('click', (e) => {
             if (!userDropdown.contains(e.target) && !userAvatar.contains(e.target)) {
                 userDropdown.classList.remove('mobile-active');
             }
         });
 
-        // Close dropdown when clicking on a link
         const dropdownLinks = userDropdown.querySelectorAll('.dropdown-menu-button');
         dropdownLinks.forEach(link => {
             link.addEventListener('click', () => {
@@ -252,14 +361,10 @@ function initUserDropdown() {
             });
         });
     } else {
-        // Desktop: Hover to show dropdown
         let isHoveringAvatar = false;
         let isHoveringDropdown = false;
 
-        userAvatar.addEventListener('mouseenter', () => {
-            isHoveringAvatar = true;
-        });
-
+        userAvatar.addEventListener('mouseenter', () => { isHoveringAvatar = true; });
         userAvatar.addEventListener('mouseleave', () => {
             isHoveringAvatar = false;
             setTimeout(() => {
@@ -270,10 +375,7 @@ function initUserDropdown() {
             }, 100);
         });
 
-        userDropdown.addEventListener('mouseenter', () => {
-            isHoveringDropdown = true;
-        });
-
+        userDropdown.addEventListener('mouseenter', () => { isHoveringDropdown = true; });
         userDropdown.addEventListener('mouseleave', () => {
             isHoveringDropdown = false;
             setTimeout(() => {
@@ -285,19 +387,15 @@ function initUserDropdown() {
         });
     }
 
-    // Logo click - ir al dashboard
     if (logoContainer) {
         logoContainer.addEventListener('click', () => {
             window.location.href = '/dashboard';
         });
     }
 
-    // Handle window resize
     window.addEventListener('resize', () => {
         const wasMobile = isMobile;
         const nowMobile = window.innerWidth <= 768;
-
-        // Reset states when switching between mobile/desktop
         if (wasMobile !== nowMobile) {
             const notificationPanel = document.getElementById('notificationPanel');
             if (notificationPanel) {
@@ -318,65 +416,43 @@ function setupLogout() {
     if (userbarLogoutBtn) {
         userbarLogoutBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            
             try {
                 const response = await fetch('/api/logout', {
                     method: 'POST',
                     credentials: 'include'
                 });
-
                 if (response.ok) {
-                    // Limpiar localStorage
                     localStorage.removeItem('sidebarPinned');
                     localStorage.removeItem('userData');
-                    
-                    // Redirigir al login
                     window.location.href = '/login';
                 } else {
-                    console.error('Error al cerrar sesión');
                     showToast('Error al cerrar sesión. Por favor intenta de nuevo.', 'error');
                 }
             } catch (error) {
-                console.error('Error:', error);
                 showToast('Error al cerrar sesión. Por favor intenta de nuevo.', 'error');
             }
         });
     }
 }
 
-// Inicializar logout al cargar
 document.addEventListener('DOMContentLoaded', setupLogout);
 
 // ============================================
 // FUNCIONES DE UTILIDAD
 // ============================================
 
-// Mostrar toast/notificación
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
-    const colors = {
-        info: '#06b6d4',
-        error: '#ef4444',
-        success: '#10b981'
-    };
-    
+    const colors = { info: '#06b6d4', error: '#ef4444', success: '#10b981' };
     toast.style.cssText = `
-        position: fixed; 
-        top: 24px; 
-        right: 24px;
+        position: fixed; top: 24px; right: 24px;
         background: ${colors[type] || colors.info};
-        color: white; 
-        padding: 16px 24px; 
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-        z-index: 10000; 
-        max-width: 400px;
-        font-size: 14px;
-        font-weight: 500;
-    `;
+        color: white; padding: 16px 24px; border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        z-index: 10000; max-width: 400px;
+        font-size: 14px; font-weight: 500;`;
     toast.textContent = message;
     document.body.appendChild(toast);
-    
     setTimeout(() => {
         toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
         toast.style.opacity = '0';
@@ -385,13 +461,11 @@ function showToast(message, type = 'info') {
     }, 4000);
 }
 
-// Obtener datos del usuario desde localStorage (para acceso rápido)
 function getUserData() {
     const userData = localStorage.getItem('userData');
     return userData ? JSON.parse(userData) : null;
 }
 
-// Actualizar un dato específico del usuario
 function updateUserData(key, value) {
     const userData = getUserData();
     if (userData) {
@@ -401,12 +475,7 @@ function updateUserData(key, value) {
     }
 }
 
-// Exportar funciones para uso global
 window.userbarUtils = {
-    getUserData,
-    updateUserData,
-    updateUserbarUI,
-    getBusinessTypeLabel,
-    getPlanName,
-    showToast
+    getUserData, updateUserData, updateUserbarUI,
+    getBusinessTypeLabel, getPlanName, showToast
 };

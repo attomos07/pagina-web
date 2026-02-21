@@ -76,19 +76,16 @@ function setupEventListeners() {
 }
 
 // ==========================================
-// LÓGICA DEL MODAL "NUEVA CITA" (CORREGIDO)
+// LÓGICA DEL MODAL "NUEVA CITA"
 // ==========================================
 
-// Esta función se llama desde el HTML (onclick)
 function openAppointmentModal() {
     const modal = document.getElementById('appointmentModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalBody = document.getElementById('modalBody');
 
-    // Configurar Título
     modalTitle.innerHTML = '<i class="lni lni-calendar-plus" style="color: #06b6d4;"></i> Nueva Cita';
 
-    // Inyectar el Formulario HTML
     modalBody.innerHTML = `
         <form id="createAppointmentForm" class="appointment-form">
             <div class="form-grid">
@@ -155,20 +152,16 @@ function openAppointmentModal() {
         </form>
     `;
 
-    // Inicializar lógica de los inputs personalizados
     initAgentDropdown();
     initTimeDropdown();
 
-    // Configurar fecha mínima (hoy)
     const dateInput = document.getElementById('appointmentDate');
     const today = new Date().toISOString().split('T')[0];
     dateInput.min = today;
     dateInput.value = today;
 
-    // Listener para el envío del formulario
     document.getElementById('createAppointmentForm').addEventListener('submit', handleCreateAppointment);
 
-    // Mostrar Modal
     modal.classList.add('active');
 }
 
@@ -183,7 +176,6 @@ function closeAppointmentModal() {
 async function handleCreateAppointment(e) {
     e.preventDefault();
 
-    // Recopilar datos
     const formData = {
         client: document.getElementById('clientName').value,
         phone: document.getElementById('clientPhone').value,
@@ -195,58 +187,47 @@ async function handleCreateAppointment(e) {
         status: document.getElementById('appointmentStatus').value
     };
 
-    // Validación básica
     if (!formData.agentId) {
         showNotification('Por favor selecciona un agente', 'error');
         return;
     }
 
-    // Estado de carga en el botón
     const submitBtn = e.target.querySelector('.btn-submit');
     const originalHTML = submitBtn.innerHTML;
     submitBtn.innerHTML = `<div class="loading-spinner-small"></div> <span>Creando...</span>`;
     submitBtn.disabled = true;
 
     try {
-        // Simular llamada a API (aquí iría tu fetch real)
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        // Crear objeto cita localmente
         const newAppointment = {
             id: `temp-${Date.now()}`,
             ...formData,
             agentName: agents.find(a => a.id === formData.agentId)?.name || 'Agente desconocido'
         };
 
-        // Actualizar estado global
         appointments.unshift(newAppointment);
 
-        // Actualizar UI
         updateStats();
         renderAppointments();
         hideEmptyState();
         closeAppointmentModal();
 
         showNotification('✅ Cita creada exitosamente', 'success');
-        console.log('✅ Nueva cita creada:', newAppointment);
 
     } catch (error) {
         console.error('❌ Error al crear cita:', error);
         showNotification('❌ Error al crear la cita', 'error');
-
-        // Restaurar botón
         submitBtn.innerHTML = originalHTML;
         submitBtn.disabled = false;
     }
 }
 
 // ==========================================
-// DROPDOWNS PERSONALIZADOS (LÓGICA)
+// DROPDOWNS PERSONALIZADOS
 // ==========================================
 
-// Configuración genérica
 function setupCustomDropdown(wrapper, display, hidden, placeholder, defaultValue = '') {
-    // Toggle abrir/cerrar
     display.onclick = function (e) {
         e.stopPropagation();
         document.querySelectorAll('.custom-dropdown-wrapper.active').forEach(w => {
@@ -255,7 +236,6 @@ function setupCustomDropdown(wrapper, display, hidden, placeholder, defaultValue
         wrapper.classList.toggle('active');
     };
 
-    // Selección de opción
     const menu = wrapper.querySelector('.dropdown-menu');
     menu.onclick = function (e) {
         const option = e.target.closest('.dropdown-option');
@@ -266,7 +246,6 @@ function setupCustomDropdown(wrapper, display, hidden, placeholder, defaultValue
         if (!value) return;
 
         const text = option.querySelector('span').innerText;
-
         display.value = text;
         hidden.value = value;
 
@@ -275,7 +254,6 @@ function setupCustomDropdown(wrapper, display, hidden, placeholder, defaultValue
         wrapper.classList.remove('active');
     };
 
-    // Click fuera para cerrar
     document.addEventListener('click', function (e) {
         if (!wrapper.contains(e.target)) {
             wrapper.classList.remove('active');
@@ -284,14 +262,11 @@ function setupCustomDropdown(wrapper, display, hidden, placeholder, defaultValue
 
     if (defaultValue) {
         hidden.value = defaultValue;
-        // Intentar marcar visualmente si la opción ya existe
-        /* Lógica opcional para preseleccionar visualmente */
     } else {
         display.placeholder = placeholder;
     }
 }
 
-// Inicializador de Agentes
 function initAgentDropdown() {
     const wrapper = document.getElementById('agentDropdownWrapper');
     const display = document.getElementById('agentSelectDisplay');
@@ -317,7 +292,6 @@ function initAgentDropdown() {
     setupCustomDropdown(wrapper, display, hidden, 'Selecciona un agente');
 }
 
-// Inicializador de Horas
 function initTimeDropdown() {
     const wrapper = document.getElementById('timeDropdownWrapper');
     const display = document.getElementById('timeSelectDisplay');
@@ -345,7 +319,6 @@ function initTimeDropdown() {
         }
     }
 
-    // Hora por defecto (ahora redondeada)
     const now = new Date();
     const curH = String(now.getHours()).padStart(2, '0');
     const curM = String(Math.ceil(now.getMinutes() / 15) * 15).padStart(2, '0');
@@ -354,7 +327,6 @@ function initTimeDropdown() {
     setupCustomDropdown(wrapper, display, hidden, 'Selecciona hora', defVal);
 }
 
-// Inicializador de Estado (usado en filtros si fuera necesario, o en modal si lo activas)
 function initStatusDropdown() {
     const wrapper = document.getElementById('statusDropdownWrapper');
     const display = document.getElementById('statusSelectDisplay');
@@ -363,26 +335,21 @@ function initStatusDropdown() {
     setupCustomDropdown(wrapper, display, hidden, 'Selecciona estado', 'confirmed');
 }
 
-
 // ==========================================
-// CARGA DE DATOS (API / MOCK)
+// CARGA DE DATOS
 // ==========================================
 
 async function loadAgents() {
     try {
-        console.log('📋 Cargando agentes...');
         const response = await fetch('/api/agents', { credentials: 'include' });
-
         if (!response.ok) throw new Error('Error API Agentes');
-
         const data = await response.json();
         if (data.agents) {
             agents = data.agents;
-            populateAgentFilter(); // Llenar el filtro de la barra superior
+            populateAgentFilter();
         }
     } catch (error) {
         console.warn('⚠️ Fallo carga de agentes, usando backup local.');
-        // Datos de respaldo por si falla la API
         agents = [
             { id: 1, name: 'Respaldo 1' },
             { id: 2, name: 'Respaldo 2' }
@@ -395,7 +362,6 @@ function populateAgentFilter() {
     const filter = document.getElementById('agentFilter');
     if (!filter) return;
 
-    // Mantener solo la opción "Todos"
     while (filter.options.length > 1) filter.remove(1);
 
     agents.forEach(agent => {
@@ -408,26 +374,21 @@ function populateAgentFilter() {
 
 async function loadAppointments() {
     try {
-        console.log('📊 Cargando citas...');
         const response = await fetch('/api/appointments', { credentials: 'include' });
-
         if (!response.ok) throw new Error('Error API Citas');
-
         const data = await response.json();
         appointments = data.appointments || [];
-
         if (appointments.length === 0) showEmptyState();
         else hideEmptyState();
-
     } catch (error) {
         console.error('❌ Error cargando citas:', error);
-        appointments = []; // Iniciar vacío
+        appointments = [];
         showEmptyState();
     }
 }
 
 // ==========================================
-// RENDERIZADO (UI)
+// RENDERIZADO
 // ==========================================
 
 function showEmptyState() {
@@ -458,24 +419,21 @@ function updateStats() {
 function filterAppointments() {
     let filtered = [...appointments];
 
-    // Filtro Estado
     if (currentFilters.status !== 'all') {
         filtered = filtered.filter(a => a.status === currentFilters.status);
     }
 
-    // Filtro Agente
     if (currentFilters.agent !== 'all') {
         filtered = filtered.filter(a => a.agentId === parseInt(currentFilters.agent));
     }
 
-    // Filtro Fecha
     if (currentFilters.date !== 'all') {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         filtered = filtered.filter(a => {
             const d = new Date(a.date);
-            d.setHours(0, 0, 0, 0); // Ajuste simple
+            d.setHours(0, 0, 0, 0);
             const dTime = d.getTime();
             const tTime = today.getTime();
 
@@ -484,14 +442,12 @@ function filterAppointments() {
                 case 'tomorrow': return dTime === tTime + 86400000;
                 case 'week': return dTime >= tTime && dTime <= tTime + (86400000 * 7);
                 case 'month':
-                    // Lógica simple mes actual
                     return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
                 default: return true;
             }
         });
     }
 
-    // Búsqueda
     if (currentFilters.search) {
         const s = currentFilters.search;
         filtered = filtered.filter(a =>
@@ -510,17 +466,15 @@ function renderAppointments() {
 
     if (!list) return;
 
-    // Caso: No hay resultados tras filtrar
     if (filtered.length === 0 && appointments.length > 0) {
         list.innerHTML = `
             <tr><td colspan="9" style="text-align: center; padding: 3rem; color: #6b7280;">
-                <i class="lni lni-search-alt" style="font-size: 3rem; opacity: 0.5;"></i>
+                <i class="lni lni-search-alt" style="font-size: 3rem; opacity: 0.5; display:block; margin-bottom:0.5rem;"></i>
                 <p>No se encontraron citas con estos filtros</p>
             </td></tr>`;
         return;
     }
 
-    // Ordenar: Más recientes primero
     filtered.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time));
 
     list.innerHTML = filtered.map(createTableRow).join('');
@@ -530,7 +484,6 @@ function createTableRow(appt) {
     const agent = agents.find(a => a.id === appt.agentId);
     const agentName = agent ? agent.name : (appt.agentName || 'Desconocido');
 
-    // Formato fecha seguro
     const [y, m, d] = appt.date.split('-');
     const dateObj = new Date(y, m - 1, d);
     const dateStr = dateObj.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -549,7 +502,12 @@ function createTableRow(appt) {
             </td>
             <td><div class="table-date">${dateStr}</div></td>
             <td><div class="table-time">${formatTime(appt.time)}</div></td>
-            <td><div class="table-agent"><i class="lni lni-database"></i> ${escapeHtml(agentName)}</div></td>
+            <td>
+                <div class="agent-tag">
+                    <span class="agent-tag-icon"><i class="lni lni-database"></i></span>
+                    ${escapeHtml(agentName)}
+                </div>
+            </td>
             <td><span class="appointment-status status-${appt.status}">${getStatusText(appt.status)}</span></td>
             <td>
                 <div class="actions-dropdown">
@@ -557,8 +515,8 @@ function createTableRow(appt) {
                         <i class="lni lni-more-alt"></i>
                     </button>
                     <div class="actions-menu" id="dropdown-${appt.id}">
-                        ${appt.sheetUrl ? `<div class="action-item" onclick="openGoogleSheet('${appt.sheetUrl}')"><i class="lni lni-text-format"></i> Ver Sheet</div>` : ''}
-                        ${appt.phone ? `<div class="action-item" onclick="sendWhatsApp('${appt.phone}', '${escapeHtml(appt.client)}')"><i class="lni lni-whatsapp"></i> WhatsApp</div>` : ''}
+                        ${appt.sheetUrl ? `<div class="action-item sheet" onclick="openGoogleSheet('${appt.sheetUrl}')"><i class="lni lni-text-format"></i> Ver Sheet</div>` : ''}
+                        ${appt.phone ? `<div class="action-item whatsapp" onclick="sendWhatsApp('${appt.phone}', '${escapeHtml(appt.client)}')"><i class="lni lni-whatsapp"></i> WhatsApp</div>` : ''}
                     </div>
                 </div>
             </td>
@@ -595,7 +553,6 @@ function renderCalendar() {
     title.textContent = `${months[currentMonth]} ${currentYear}`;
     grid.innerHTML = '';
 
-    // Cabeceras
     ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].forEach(d => {
         const div = document.createElement('div');
         div.className = 'calendar-day-header';
@@ -606,10 +563,8 @@ function renderCalendar() {
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-    // Espacios vacíos
     for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
 
-    // Días
     for (let d = 1; d <= daysInMonth; d++) {
         const cell = document.createElement('div');
         cell.className = 'calendar-day';
@@ -636,7 +591,6 @@ function changeMonth(delta) {
 }
 
 function showDayAppointments(dateStr) {
-    // Reutilizamos el modal para mostrar detalles del día
     const modal = document.getElementById('appointmentModal');
     const title = document.getElementById('modalTitle');
     const body = document.getElementById('modalBody');
@@ -660,7 +614,6 @@ function showDayAppointments(dateStr) {
 
     modal.classList.add('active');
 }
-
 
 // ==========================================
 // UTILIDADES Y ACCIONES
@@ -715,7 +668,7 @@ function escapeHtml(text) {
 function showNotification(msg, type = 'info') {
     const div = document.createElement('div');
     const color = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#06b6d4');
-    div.style.cssText = `position:fixed; top:2rem; right:2rem; background:${color}; color:white; padding:1rem 1.5rem; border-radius:12px; z-index:10000; font-weight:600; animation: slideIn 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display:flex; gap:0.5rem; align-items:center;`;
+    div.style.cssText = `position:fixed; top:2rem; right:2rem; background:${color}; color:white; padding:1rem 1.5rem; border-radius:12px; z-index:10000; font-weight:600; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display:flex; gap:0.5rem; align-items:center; animation: slideIn 0.3s ease;`;
     div.innerHTML = `<i class="lni lni-${type === 'success' ? 'checkmark-circle' : 'warning'}"></i> ${msg}`;
     document.body.appendChild(div);
     setTimeout(() => {
@@ -726,7 +679,6 @@ function showNotification(msg, type = 'info') {
     }, 3000);
 }
 
-// Estilos dinámicos para notificaciones
 const styleSheet = document.createElement("style");
 styleSheet.innerText = `
 @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
