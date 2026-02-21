@@ -301,7 +301,7 @@ body {
   border-radius: 20px;
   border: 1px solid #e5e7eb;
   margin-bottom: 2rem;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .table-header {
@@ -313,6 +313,10 @@ body {
   border-collapse: collapse;
 }
 
+.agents-table {
+  border-radius: 20px;
+  overflow: hidden;
+}
 .agents-table thead {
   background: #ffffff;
   border-bottom: 2px solid #06b6d4;
@@ -453,6 +457,16 @@ body {
   border-color: #06b6d4;
   color: #06b6d4;
   background: #f0fdfa;
+}
+.actions-trigger:hover .lni-more-alt {
+  animation: dotsWiggle 0.4s ease forwards;
+}
+@keyframes dotsWiggle {
+  0%   { transform: scale(1) rotate(0deg); }
+  25%  { transform: scale(1.3) rotate(-10deg); }
+  50%  { transform: scale(1.3) rotate(10deg); }
+  75%  { transform: scale(1.2) rotate(-5deg); }
+  100% { transform: scale(1) rotate(0deg); }
 }
 
 /* Dropdown Menu */
