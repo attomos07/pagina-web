@@ -11,6 +11,10 @@
     
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/profile.css">
+
+    <!-- Sileo toast system -->
+    <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
+    <link rel="stylesheet" href="/static/css/sileo.css">
 </head>
 <body>
     <div class="app-container">
@@ -277,7 +281,11 @@
         <span>Guardar Cambios</span>
     </button>
 
+    <!-- Sileo viewport (injected dynamically by profile.js if not present) -->
+    <div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
+
     <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/sileo.js"></script>
     <script src="/static/js/profile.js"></script>
 </body>
 </html>

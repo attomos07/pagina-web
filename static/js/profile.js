@@ -65,18 +65,15 @@ async function initProfileData() {
         const res = await fetch('/api/profile');
         const profile = await res.json();
 
-        // BUSINESS
         setInputValue('businessNameInput', profile.business.name);
         setInputValue('descriptionInput', profile.business.description);
         setInputValue('websiteInput', profile.business.website);
         setInputValue('emailInput', profile.business.email);
 
-        // Business type (custom select)
         const typeInput = document.getElementById('businessTypeInput');
         typeInput.value = profile.business.typeName;
         typeInput.setAttribute('data-value', profile.business.type);
 
-        // LOCATION
         setInputValue('addressInput', profile.location.address);
         setInputValue('numberInput', profile.location.number);
         setInputValue('neighborhoodInput', profile.location.neighborhood);
@@ -94,17 +91,12 @@ async function initProfileData() {
         updateDropdownSelection('stateInputWrapper', profile.location.state);
         updateDropdownSelection('cityInputWrapper', profile.location.city);
 
-        // SOCIAL MEDIA
-
         setInputValue('facebookInput', profile.social.facebook);
         setInputValue('instagramInput', profile.social.instagram);
         setInputValue('twitterInput', profile.social.twitter);
         setInputValue('linkedinInput', profile.social.linkedin);
 
-        // SCHEDULE
         applySchedule(profile.schedule);
-
-        // HOLIDAYS
         applyHolidays(profile.holidays);
 
         console.log('📊 Profile real loaded:', profile);
@@ -112,8 +104,6 @@ async function initProfileData() {
         console.error('Error loading profile', e);
     }
 }
-
-// Makes the values selected from the dropdown, looks cleaner
 
 function updateDropdownSelection(wrapperId, value) {
     const wrapper = document.getElementById(wrapperId);
@@ -128,7 +118,6 @@ function updateDropdownSelection(wrapperId, value) {
         }
     });
 }
-
 
 function applySchedule(schedule) {
     Object.entries(schedule).forEach(([day, data]) => {
@@ -154,7 +143,6 @@ function applyHolidays(holidays = []) {
         last.querySelector('[data-field="name"]').value = h.name;
     });
 }
-
 
 function setInputValue(elementId, value) {
     const element = document.getElementById(elementId);
@@ -210,21 +198,13 @@ function initCustomSelect() {
 
     function toggleDropdown() {
         const isActive = selectWrapper.classList.contains('active');
-
-        if (isActive) {
-            closeDropdown();
-        } else {
-            openDropdown();
-        }
+        if (isActive) { closeDropdown(); } else { openDropdown(); }
     }
 
     function openDropdown() {
         selectWrapper.classList.add('active');
-
         if (searchInput) {
-            setTimeout(() => {
-                searchInput.focus();
-            }, 100);
+            setTimeout(() => { searchInput.focus(); }, 100);
             searchInput.value = '';
         }
         filterOptions('');
@@ -232,18 +212,13 @@ function initCustomSelect() {
 
     function closeDropdown() {
         selectWrapper.classList.remove('active');
-
-        if (searchInput) {
-            searchInput.value = '';
-        }
+        if (searchInput) { searchInput.value = ''; }
     }
 
     function filterOptions(searchTerm) {
         const term = searchTerm.toLowerCase().trim();
-
         options?.forEach(option => {
             const text = option.querySelector('span')?.textContent.toLowerCase() || '';
-
             if (text.includes(term)) {
                 option.classList.remove('hidden');
             } else {
@@ -263,7 +238,6 @@ function initCustomSelect() {
         option.classList.add('selected');
 
         closeDropdown();
-
         console.log(`✅ Giro seleccionado: ${text} (${value})`);
     }
 
@@ -366,9 +340,7 @@ function toggleLocationDropdown(wrapper, searchInput) {
     const isActive = wrapper.classList.contains('active');
 
     document.querySelectorAll('.custom-select-wrapper.active').forEach(w => {
-        if (w !== wrapper) {
-            w.classList.remove('active');
-        }
+        if (w !== wrapper) { w.classList.remove('active'); }
     });
 
     if (isActive) {
@@ -627,7 +599,6 @@ let holidayCounter = 0;
 
 function initHolidays() {
     const btnAddHoliday = document.getElementById('btnAddHoliday');
-
     if (btnAddHoliday) {
         btnAddHoliday.addEventListener('click', addHoliday);
     }
@@ -740,9 +711,7 @@ function toggleHolidayDropdown(wrapper) {
     const isActive = wrapper.classList.contains('active');
 
     document.querySelectorAll('.custom-select-wrapper.active').forEach(w => {
-        if (w !== wrapper) {
-            w.classList.remove('active');
-        }
+        if (w !== wrapper) { w.classList.remove('active'); }
     });
 
     if (isActive) {
@@ -792,12 +761,7 @@ function collectHolidaysData() {
         const name = nameInput?.value;
 
         if (month && day && name) {
-            holidays.push({
-                month: month,
-                day: day,
-                name: name,
-                date: `${day}/${month}`
-            });
+            holidays.push({ month, day, name, date: `${day}/${month}` });
         }
     });
 
@@ -810,11 +774,11 @@ function collectHolidaysData() {
 
 function initSaveButton() {
     const saveBtn = document.getElementById('saveProfileBtn');
-
     if (saveBtn) {
         saveBtn.addEventListener('click', saveProfile);
     }
 }
+
 async function saveProfile() {
     const saveBtn = document.getElementById('saveProfileBtn');
     const originalText = saveBtn.innerHTML;
@@ -903,237 +867,38 @@ function collectScheduleData() {
 }
 
 // ============================================
-// NOTIFICATION SYSTEM (ESTILO iOS - PORTADO DEL LOGIN)
+// NOTIFICATION VIA SILEO
 // ============================================
 
+function initSileoViewport() {
+    if (!document.getElementById('sileo-vp')) {
+        const vp = document.createElement('div');
+        vp.id = 'sileo-vp';
+        vp.setAttribute('role', 'region');
+        vp.setAttribute('aria-live', 'polite');
+        document.body.appendChild(vp);
+        initRenderer();
+    }
+}
+
 function showNotification(message, type = 'info') {
-    // 1. Asegurar que los estilos estén cargados
-    if (!document.getElementById('notification-ios-styles')) {
-        addNotificationStyles();
-    }
-
-    // 2. Crear contenedor si no existe
-    let container = document.getElementById('notification-ios-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'notification-ios-container';
-        document.body.appendChild(container);
-    }
-
-    // 3. Crear la notificación
-    const notification = document.createElement('div');
-    notification.className = `notification-ios notification-ios-${type}`;
-
-    const iconHTML = getNotificationIconHTML(type);
-
-    notification.innerHTML = `
-        <div class="notification-ios-content">
-            <div class="notification-ios-icon">${iconHTML}</div>
-            <span class="notification-ios-message">${message}</span>
-        </div>
-    `;
-
-    container.appendChild(notification);
-
-    // 4. Forzar reflow para activar animación
-    void notification.offsetWidth;
-
-    // 5. Activar animación de entrada (Slide In + Bounce)
-    requestAnimationFrame(() => {
-        notification.classList.add('notification-ios-show');
-    });
-
-    // 6. Programar la salida
-    setTimeout(() => {
-        notification.classList.remove('notification-ios-show');
-        notification.classList.add('notification-ios-hide');
-
-        // Remover del DOM después de la animación de salida
-        setTimeout(() => {
-            if (notification.parentElement) {
-                notification.parentElement.removeChild(notification);
-            }
-        }, 500);
-    }, 3000); // 3 segundos visible
-}
-
-// Helper para los iconos SVG (Idénticos al Login)
-function getNotificationIconHTML(type) {
-    const icons = {
-        success: `
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" fill="white"/>
-                <path d="M9 12l2 2 4-4" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        `,
-        error: `
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" fill="white"/>
-                <path d="M15 9l-6 6M9 9l6 6" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        `,
-        warning: `
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" fill="white"/>
-                <path d="M12 8v4M12 16h.01" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        `,
-        info: `
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" fill="white"/>
-                <path d="M12 16v-4M12 8h.01" stroke="#06B6D4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        `
+    initSileoViewport();
+    const titles = {
+        success: 'Guardado',
+        error:   'Error',
+        warning: 'Aviso',
+        info:    'Información'
     };
-    return icons[type] || icons.info;
+    const opts = { title: titles[type] || 'Aviso', description: message };
+    if (Sileo[type]) {
+        Sileo[type](opts);
+    } else {
+        Sileo.info(opts);
+    }
 }
 
-// Inyección de estilos CSS dinámicos
-function addNotificationStyles() {
-    const styles = document.createElement('style');
-    styles.id = 'notification-ios-styles';
-    styles.textContent = `
-        /* Contenedor CENTRADO en la parte superior */
-        #notification-ios-container {
-            position: fixed;
-            top: 25px; /* Un poco más abajo del borde superior */
-            left: 0;
-            right: 0;
-            z-index: 10000;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        /* Estilo Base de la Tarjeta - AUMENTADO TAMAÑO */
-        .notification-ios {
-            background: #10B981;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); /* Sombra más pronunciada */
-            border-radius: 50px;
-            /* 🔽 CAMBIO CLAVE: Más padding hace la caja más grande */
-            padding: 16px 30px; 
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            will-change: transform, opacity;
-            pointer-events: auto;
-            min-width: auto;
-            max-width: 90%;
-            opacity: 0;
-            transform: translateY(-60px); /* Empieza un poco más arriba */
-        }
-        
-        /* Variantes de Color (con un poco más de transparencia para modernidad) */
-        .notification-ios-success { background: rgba(16, 185, 129, 0.92); }
-        .notification-ios-error { background: rgba(239, 68, 68, 0.92); }
-        .notification-ios-warning { background: rgba(245, 158, 11, 0.92); }
-        .notification-ios-info { background: rgba(6, 182, 212, 0.92); }
-        
-        /* Layout Interno */
-        .notification-ios-content {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            /* 🔽 CAMBIO CLAVE: Más espacio entre icono y texto */
-            gap: 14px; 
-        }
-        
-        .notification-ios-icon {
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            /* 🔽 CAMBIO CLAVE: Icono más grande */
-            width: 30px; 
-            height: 30px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 50%;
-            padding: 5px; /* Ajuste del padding interno del icono */
-        }
+// ============================================
+// ANIMATIONS
+// ============================================
 
-        .notification-ios-icon svg {
-            width: 100%;
-            height: 100%;
-        }
-        
-        .notification-ios-message {
-            color: white;
-            font-weight: 600;
-            /* 🔽 CAMBIO CLAVE: Texto más grande */
-            font-size: 16px; 
-            line-height: 1.4;
-            white-space: nowrap;
-        }
-        
-        /* Animación de ENTRADA (Cae desde arriba) */
-        @keyframes notificationSlideInDown {
-            0% { 
-                opacity: 0; 
-                transform: translateY(-60px) scale(0.9); 
-            }
-            60% { 
-                opacity: 1; 
-                transform: translateY(5px) scale(1.03); /* Rebote un poco más fuerte */
-            }
-            100% { 
-                opacity: 1; 
-                transform: translateY(0) scale(1); 
-            }
-        }
-        
-        /* Animación de SALIDA (Se desvanece hacia abajo) */
-        @keyframes notificationFadeDownOut {
-            0% { 
-                opacity: 1; 
-                transform: translateY(0) scale(1); 
-            }
-            100% { 
-                opacity: 0; 
-                transform: translateY(30px) scale(0.95); /* Baja más al desaparecer */
-            }
-        }
-        
-        /* Animación del Icono */
-        @keyframes iconPop {
-            0% { transform: scale(0.5); opacity: 0; }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        
-        /* Clases de estado */
-        .notification-ios-show {
-            animation: notificationSlideInDown 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-        
-        .notification-ios-show .notification-ios-icon {
-            animation: iconPop 0.4s 0.1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-        
-        .notification-ios-hide {
-            animation: notificationFadeDownOut 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
-        }
-        
-        /* Responsive - Ajustes para móvil */
-        @media (max-width: 480px) {
-            #notification-ios-container {
-                top: 15px;
-            }
-            .notification-ios { 
-                padding: 14px 20px; /* Un poco menos de padding en móvil pero aún grande */
-                border-radius: 30px;
-            }
-            .notification-ios-message {
-                white-space: normal;
-                /* 🔽 Texto un poco más grande en móvil también */
-                font-size: 14px; 
-                text-align: center;
-            }
-             .notification-ios-icon {
-                width: 26px;
-                height: 26px;
-            }
-        }
-    `;
-    document.head.appendChild(styles);
-}
+// (fadeIn/fadeOut are handled by profile.css keyframes)
