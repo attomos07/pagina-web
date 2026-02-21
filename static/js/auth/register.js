@@ -152,7 +152,6 @@ function initPhoneNumberFormat() {
 
     if (!phoneCodeInput || !phoneNumberInput) return;
 
-    // ===== CÓDIGO DE PAÍS (LADA) =====
     phoneCodeInput.addEventListener('focus', function () {
         if (!this.value.startsWith('+')) {
             this.value = '+' + this.value.replace(/\+/g, '');
@@ -182,7 +181,6 @@ function initPhoneNumberFormat() {
         }
     });
 
-    // ===== NÚMERO DE TELÉFONO =====
     phoneNumberInput.addEventListener('input', function (e) {
         let value = this.value.replace(/[^\d\s]/g, '');
         value = value.replace(/\s/g, '');
@@ -279,17 +277,15 @@ function updatePasswordStrength(password) {
 
 function togglePassword(fieldId) {
     const field = document.getElementById(fieldId);
-    const iconFn = document.getElementById(fieldId + 'ToggleIcon'); // El SVG
+    const iconFn = document.getElementById(fieldId + 'ToggleIcon');
 
     if (!field || !iconFn) return;
 
     if (field.type === 'password') {
         field.type = 'text';
-        // SVG de Ojo Tachado
         iconFn.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
     } else {
         field.type = 'password';
-        // SVG de Ojo Normal
         iconFn.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
     }
 }
@@ -311,7 +307,6 @@ async function handleRegisterSubmit(e) {
     const form = e.target;
     const formData = new FormData(form);
 
-    // Validar todos los campos requeridos
     let isValid = true;
     const requiredFields = ['businessName', 'phoneNumber', 'email', 'password', 'businessType', 'businessSize'];
 
@@ -343,7 +338,6 @@ async function handleRegisterSubmit(e) {
         return;
     }
 
-    // Preparar datos
     const businessTypeInput = document.getElementById('businessType');
     const businessTypeValue = businessTypeInput.getAttribute('data-value') || businessTypeInput.value;
 
@@ -505,7 +499,6 @@ function initCustomSelect() {
 
     function toggleDropdown() {
         const isActive = selectWrapper.classList.contains('active');
-
         if (isActive) {
             closeDropdown();
         } else {
@@ -518,34 +511,17 @@ function initCustomSelect() {
         selectInput.classList.add('active');
 
         if (searchInput) {
-            setTimeout(() => {
-                searchInput.focus();
-            }, 100);
-        }
-
-        if (searchInput) {
+            setTimeout(() => { searchInput.focus(); }, 100);
             searchInput.value = '';
         }
         filterOptions('');
-
-        const visibleOptions = optionsContainer.querySelectorAll('.select-option:not(.hidden)');
-        visibleOptions.forEach((option, index) => {
-            option.style.animation = 'none';
-            setTimeout(() => {
-                option.style.animation = '';
-            }, 10);
-        });
-
         trackRegisterEvent('business_type_dropdown_opened');
     }
 
     function closeDropdown() {
         selectWrapper.classList.remove('active');
         selectInput.classList.remove('active');
-
-        if (searchInput) {
-            searchInput.value = '';
-        }
+        if (searchInput) { searchInput.value = ''; }
     }
 
     function filterOptions(searchTerm) {
@@ -574,11 +550,6 @@ function initCustomSelect() {
                 optionsContainer.style.display = 'block';
             }
         }
-
-        const visibleOptions = optionsContainer.querySelectorAll('.select-option:not(.hidden)');
-        visibleOptions.forEach((option, index) => {
-            option.style.animationDelay = `${index * 0.05}s`;
-        });
     }
 
     function selectOption(option) {
@@ -593,14 +564,9 @@ function initCustomSelect() {
 
         clearFieldError(selectInput);
         showFieldSuccess(selectInput);
-
         closeDropdown();
 
-        trackRegisterEvent('business_type_selected', {
-            business_type: value,
-            business_name: text
-        });
-
+        trackRegisterEvent('business_type_selected', { business_type: value, business_name: text });
         console.log(`✅ Giro seleccionado: ${text} (${value})`);
     }
 
@@ -643,26 +609,12 @@ function initBusinessSizeSelect() {
 
     function toggleSizeDropdown() {
         const isActive = selectWrapper.classList.contains('active');
-
-        if (isActive) {
-            closeSizeDropdown();
-        } else {
-            openSizeDropdown();
-        }
+        if (isActive) { closeSizeDropdown(); } else { openSizeDropdown(); }
     }
 
     function openSizeDropdown() {
         selectWrapper.classList.add('active');
         selectInput.classList.add('active');
-
-        const visibleOptions = optionsContainer.querySelectorAll('.select-option');
-        visibleOptions.forEach((option, index) => {
-            option.style.animation = 'none';
-            setTimeout(() => {
-                option.style.animation = '';
-            }, 10);
-        });
-
         trackRegisterEvent('business_size_dropdown_opened');
     }
 
@@ -683,14 +635,9 @@ function initBusinessSizeSelect() {
 
         clearFieldError(selectInput);
         showFieldSuccess(selectInput);
-
         closeSizeDropdown();
 
-        trackRegisterEvent('business_size_selected', {
-            business_size: value,
-            business_size_name: text
-        });
-
+        trackRegisterEvent('business_size_selected', { business_size: value, business_size_name: text });
         console.log(`✅ Tamaño seleccionado: ${text} (${value})`);
     }
 
@@ -845,11 +792,12 @@ function addNotificationIOSStyles() {
     const styles = document.createElement('style');
     styles.id = 'notification-ios-styles';
     styles.textContent = `
+        /* Contenedor CENTRADO en la parte superior */
         #notification-ios-container {
             position: fixed;
-            top: 120px;
-            left: 20px;
-            right: 20px;
+            top: 25px;
+            left: 0;
+            right: 0;
             z-index: 10000;
             pointer-events: none;
             display: flex;
@@ -859,53 +807,60 @@ function addNotificationIOSStyles() {
         }
         .notification-ios {
             background: #10B981;
-            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
-            border-radius: 16px;
-            padding: 18px 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            border-radius: 50px;
+            padding: 16px 30px;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             will-change: transform, opacity;
             pointer-events: auto;
-            max-width: 500px;
-            width: 100%;
+            min-width: auto;
+            max-width: 90%;
             opacity: 0;
-            transform: translateY(-50px) scale(0.9);
+            transform: translateY(-60px);
         }
-        .notification-ios-success { background: #10B981; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35); }
-        .notification-ios-error { background: #EF4444; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35); }
-        .notification-ios-warning { background: #F59E0B; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.35); }
-        .notification-ios-info { background: #06B6D4; box-shadow: 0 8px 24px rgba(6, 182, 212, 0.35); }
-        .notification-ios-content { display: flex; align-items: center; justify-content: center; gap: 12px; }
-        .notification-ios-icon { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; }
-        .notification-ios-message { color: white; font-weight: 700; font-size: 16px; letter-spacing: 0.5px; line-height: 1.4; }
-        @keyframes notificationSlideIn {
-            0% { opacity: 0; transform: translateY(-50px) scale(0.9); }
-            60% { opacity: 1; transform: translateY(5px) scale(1.02); }
+        .notification-ios-success { background: rgba(16, 185, 129, 0.92); }
+        .notification-ios-error { background: rgba(239, 68, 68, 0.92); }
+        .notification-ios-warning { background: rgba(245, 158, 11, 0.92); }
+        .notification-ios-info { background: rgba(6, 182, 212, 0.92); }
+        .notification-ios-content { display: flex; align-items: center; justify-content: center; gap: 14px; }
+        .notification-ios-icon {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            padding: 5px;
+        }
+        .notification-ios-icon svg { width: 100%; height: 100%; }
+        .notification-ios-message { color: white; font-weight: 600; font-size: 16px; line-height: 1.4; white-space: nowrap; }
+        @keyframes notificationSlideInDown {
+            0% { opacity: 0; transform: translateY(-60px) scale(0.9); }
+            60% { opacity: 1; transform: translateY(5px) scale(1.03); }
             100% { opacity: 1; transform: translateY(0) scale(1); }
         }
-        @keyframes notificationSlideOut {
+        @keyframes notificationFadeDownOut {
             0% { opacity: 1; transform: translateY(0) scale(1); }
-            40% { opacity: 0.8; transform: translateY(10px) scale(0.98); }
-            100% { opacity: 0; transform: translateY(50px) scale(0.9); }
+            100% { opacity: 0; transform: translateY(30px) scale(0.95); }
         }
-        @keyframes iconBounce {
-            0% { transform: rotate(0deg) scale(1); }
-            20% { transform: rotate(72deg) scale(1.1); }
-            40% { transform: rotate(144deg) scale(1.05); }
-            60% { transform: rotate(216deg) scale(1.1); }
-            80% { transform: rotate(288deg) scale(1.05); }
-            100% { transform: rotate(360deg) scale(1); }
+        @keyframes iconPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
         }
-        .notification-ios-show { animation: notificationSlideIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
-        .notification-ios-show .notification-ios-icon { animation: iconBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-        .notification-ios-hide { animation: notificationSlideOut 0.5s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards; }
-        @media (max-width: 768px) { #notification-ios-container { top: 100px; } }
-        @media (max-width: 480px) { 
-            #notification-ios-container { top: 80px; left: 10px; right: 10px; } 
-            .notification-ios { padding: 16px 20px; }
-            .notification-ios-message { font-size: 15px; }
+        .notification-ios-show { animation: notificationSlideInDown 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        .notification-ios-show .notification-ios-icon { animation: iconPop 0.4s 0.1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .notification-ios-hide { animation: notificationFadeDownOut 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards; }
+        @media (max-width: 480px) {
+            #notification-ios-container { top: 15px; }
+            .notification-ios { padding: 14px 20px; border-radius: 30px; }
+            .notification-ios-message { white-space: normal; font-size: 14px; text-align: center; }
+            .notification-ios-icon { width: 26px; height: 26px; }
         }
-    `;
+`;
     document.head.appendChild(styles);
 }
 
