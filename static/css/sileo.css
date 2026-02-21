@@ -22,11 +22,11 @@
   --c-action:  oklch(0.623 0.214 259.815);
   --c-loading: oklch(0.556 0 0);
 
-  /* Toast shell colors — dark frosted glass */
-  --toast-bg:      #18181b;
-  --toast-surface: #27272a;
-  --toast-border:  rgba(255,255,255,0.08);
-  --toast-shadow:  0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
+  /* Toast shell colors — light frosted glass */
+  --toast-bg:      #ffffff;
+  --toast-surface: #f4f4f5;
+  --toast-border:  rgba(0,0,0,0.08);
+  --toast-shadow:  0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.07);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -118,10 +118,6 @@
 }
 .sileo-canvas svg { overflow: visible; display: block; }
 
-/* Override the SVG rects fill via CSS custom property approach.
-   The JS passes fill as attribute, so we override via a CSS filter trick.
-   Instead, we use a ::before overlay on the canvas to create the dark background. */
-
 /* Dark pill background overlay */
 .sileo-toast .sileo-canvas::before {
   content: '';
@@ -139,8 +135,6 @@
     left   var(--dur) var(--spring-easing);
   z-index: -1;
 }
-
-/* Border rects outside gooey filter — follow the toast shape exactly */
 
 /* ═══════════════════════════════════════════════════════
    HEADER
@@ -205,7 +199,7 @@
   line-height: 1rem;
   font-weight: 600;
   text-transform: capitalize;
-  color: #f4f4f5;
+  color: #18181b;
   letter-spacing: 0.01em;
 }
 
@@ -220,7 +214,7 @@
 
 .sileo-badge, .sileo-title {
   --tone:    var(--_c);
-  --tone-bg: color-mix(in oklch, var(--_c) 25%, rgba(255,255,255,0.05));
+  --tone-bg: color-mix(in oklch, var(--_c) 20%, rgba(0,0,0,0.04));
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -245,7 +239,7 @@
   padding: 1.5rem 1rem 1rem;
   font-size: .875rem;
   line-height: 1.4rem;
-  color: #a1a1aa;
+  color: #52525b;
   text-align: center;
 }
 
@@ -262,12 +256,12 @@
   font-weight: 500;
   cursor: pointer;
   color: var(--_c);
-  background: color-mix(in oklch, var(--_c) 12%, rgba(0,0,0,0.3));
+  background: color-mix(in oklch, var(--_c) 12%, rgba(0,0,0,0.05));
   transition: background 150ms ease;
   text-decoration: none;
 }
 .sileo-action-btn:hover {
-  background: color-mix(in oklch, var(--_c) 22%, rgba(0,0,0,0.3));
+  background: color-mix(in oklch, var(--_c) 22%, rgba(0,0,0,0.05));
 }
 
 /* Progress bar */
@@ -275,7 +269,7 @@
   margin-top: .75rem;
   height: 6px;
   width: 100%;
-  background: rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.08);
   border-radius: 9999px;
   overflow: hidden;
   position: relative;
@@ -290,7 +284,7 @@
 .sileo-progress-text {
   font-size: .7rem;
   margin-top: .4rem;
-  color: #71717a;
+  color: #a1a1aa;
   font-weight: 500;
 }
 

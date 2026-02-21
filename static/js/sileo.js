@@ -64,7 +64,7 @@ function createToast(opts) {
     : {};
 
   const item = {
-    fill: '#18181b',  /* PATCHED: dark fill so toast is visible on white backgrounds */
+    fill: '#ffffff',  /* PATCHED: light fill for white theme */
     ...opts,
     id,
     instanceId: genId(),
@@ -90,7 +90,7 @@ function updateToast(id, opts) {
     ? { expandDelayMs: Math.min(dur, AUTO_EXPAND_DLY), collapseDelayMs: Math.min(dur, AUTO_COLLAPSE_DLY) }
     : {};
   const item = {
-    fill: '#18181b',  /* PATCHED: dark fill */
+    fill: '#ffffff',  /* PATCHED: light fill */
     ...ex, ...opts, id,
     instanceId: genId(),
     duration: dur,
@@ -184,7 +184,7 @@ function initRenderer() {
 function buildDom(item) {
   const blur     = ROUNDNESS * BLUR_RATIO;
   const filterId = `gooey-${item.id}`;
-  const fill     = item.fill || '#18181b';  /* PATCHED: dark default */
+  const fill     = item.fill || '#ffffff';  /* PATCHED: light default */
 
   const el = document.createElement('div');
   el.className = 'sileo-toast';
@@ -350,7 +350,7 @@ function syncDom(item, latestId) {
 ──────────────────────────────────────────────────────────────── */
 function applyView(inst, item) {
   const state = item.state || 'success';
-  const fill  = item.fill  || '#18181b';  /* PATCHED: dark default */
+  const fill  = item.fill  || '#ffffff';  /* PATCHED: light default */
   inst.view = { ...item };
   inst.fill = fill;
   inst.el.setAttribute('data-state', state);
