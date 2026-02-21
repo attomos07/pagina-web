@@ -35,7 +35,7 @@ body {
   min-height: 100vh;
   position: relative;
   z-index: 1;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Columna Derecha: Contiene Userbar + Scrollable Content */
@@ -211,7 +211,8 @@ body {
 /* --- Stats Cards --- */
 .agents-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, auto);
   gap: 2rem;
   margin-bottom: 3rem;
 }
@@ -580,8 +581,200 @@ body {
   }
 }
 
+
 /* =========================================
-   MODALES (Confirm & Onboarding)
+   MODAL DE CONFIRMACIÓN - ESTILOS COMPLETOS
+   ========================================= */
+.confirm-content {
+  position: relative;
+  background: white;
+  width: 90%;
+  max-width: 480px;
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.3s ease-out;
+  overflow: hidden;
+}
+
+.confirm-header {
+  padding: 2.5rem 2.5rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.confirm-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.confirm-icon.danger {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: #ef4444;
+}
+
+.confirm-icon.warning {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #f59e0b;
+}
+
+.confirm-icon.info {
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  color: #06b6d4;
+}
+
+.confirm-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.confirm-message {
+  font-size: 0.95rem;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.confirm-body {
+  padding: 0 2.5rem 2.5rem;
+}
+
+.confirm-list {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.confirm-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.confirm-list-item i {
+  font-size: 1rem;
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-confirm-cancel {
+  flex: 1;
+  padding: 0.875rem 1.25rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: 1.5px solid #e5e7eb;
+  background: white;
+  color: #374151;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-confirm-cancel:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.btn-confirm-action {
+  flex: 1;
+  padding: 0.875rem 1.25rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: none;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-confirm-action.danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+}
+
+.btn-confirm-action.danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45);
+}
+
+.btn-confirm-action.warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+}
+
+.btn-confirm-action.warning:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+}
+
+.btn-confirm-action:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading-spinner-small {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Fix: border-radius en celdas para overflow:visible */
+.agents-table thead tr:first-child th:first-child { border-radius: 20px 0 0 0; }
+.agents-table thead tr:first-child th:last-child  { border-radius: 0 20px 0 0; }
+.agents-table tbody tr:last-child td:first-child  { border-radius: 0 0 0 20px; }
+.agents-table tbody tr:last-child td:last-child   { border-radius: 0 0 20px 0; }
+
+.agent-name-link {
+  text-decoration: none;
+  color: #111827;
+  transition: color 0.2s ease;
+}
+.agent-name-link:hover {
+  color: #06b6d4;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* =========================================
+   MODALES (Confirm & Onboarding) - estilos legacy
    ========================================= */
 .confirm-modal,
 .onboarding-modal {
@@ -734,7 +927,7 @@ body {
 .agent-robot-icon {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: 50%;
   background: rgba(6, 182, 212, 0.08);
   border: 1.5px solid rgba(6, 182, 212, 0.25);
   display: flex;
@@ -772,11 +965,11 @@ body {
   font-weight: 500;
 }
 
-/* Hover amarillo botón 3 puntos */
+/* Hover cian botón 3 puntos */
 .actions-trigger:hover {
-  border-color: #f59e0b;
-  color: #f59e0b;
-  background: #fffbeb;
+  border-color: #06b6d4;
+  color: #06b6d4;
+  background: #ecfeff;
 }
 
 /* Hover amarillo dropdown pausa */
@@ -832,5 +1025,9 @@ body {
     height: auto !important;
     padding: 1rem !important;
     padding-top: 80px !important;
+  }
+
+  .agents-stats {
+    grid-template-columns: 1fr !important;
   }
 }

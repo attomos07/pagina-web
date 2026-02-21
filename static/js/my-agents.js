@@ -324,7 +324,7 @@ function createAgentRow(agent) {
                     <rect x="26" y="38" width="4" height="4" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
                 </svg>
             </div>
-            <span class="agent-name">${escapeHtml(agent.name)}</span>
+            <a class="agent-name agent-name-link" href="/agents/${agent.id}">${escapeHtml(agent.name)}</a>
         </div>
     </td>
     <td>

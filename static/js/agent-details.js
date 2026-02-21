@@ -125,6 +125,9 @@ async function loadQRCode() {
     if (agent.botType !== 'atomic') {
         const qrSection = document.getElementById('qrSection');
         qrSection.style.display = 'none';
+        // Expand layout to full width when no QR
+        const detailsGrid = document.querySelector('.details-grid');
+        if (detailsGrid) detailsGrid.classList.add('no-qr');
         return;
     }
     

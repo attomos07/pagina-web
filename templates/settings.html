@@ -75,7 +75,24 @@
         /* Settings Grid */
         .settings-grid {
             display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
             gap: 2rem;
+        }
+
+        .settings-grid > .settings-card:nth-child(1) {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .settings-grid > .settings-card:nth-child(2) {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .settings-grid > .settings-card:nth-child(3) {
+            grid-column: 1 / -1;
+            grid-row: 2;
         }
 
         /* Settings Card */
@@ -151,6 +168,37 @@
             font-weight: 500;
         }
 
+
+        /* Password Input Wrapper */
+        .password-input-wrapper {
+            position: relative;
+        }
+
+        .password-input-wrapper .form-input {
+            padding-right: 3.5rem;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #9ca3af;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem;
+            transition: color 0.2s ease;
+            z-index: 2;
+        }
+
+        .toggle-password:hover {
+            color: #06b6d4;
+        }
         /* Form Group */
         .form-group {
             margin-bottom: 2rem;
@@ -741,6 +789,18 @@
         }
 
         /* Responsive */
+        @media (max-width: 900px) {
+            .settings-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .settings-grid > .settings-card:nth-child(1),
+            .settings-grid > .settings-card:nth-child(2),
+            .settings-grid > .settings-card:nth-child(3) {
+                grid-column: 1 !important;
+                grid-row: auto !important;
+            }
+        }
+
         @media (max-width: 768px) {
             .content-wrapper {
                 padding: 1rem;
@@ -806,12 +866,17 @@
                             <form id="passwordForm">
                                 <div class="form-group">
                                     <label class="form-label" for="newPassword">Nueva Contraseña</label>
-                                    <input 
-                                        type="password" 
-                                        id="newPassword" 
-                                        class="form-input"
-                                        required
-                                    >
+                                    <div class="password-input-wrapper">
+                                        <input 
+                                            type="password" 
+                                            id="newPassword" 
+                                            class="form-input"
+                                            required
+                                        >
+                                        <button type="button" class="toggle-password" onclick="togglePassword('newPassword', this)" tabindex="-1">
+                                            <i class="lni lni-eye"></i>
+                                        </button>
+                                    </div>
                                     <div class="form-description">
                                         <i class="lni lni-information"></i>
                                         <span>Mínimo 8 caracteres, incluyendo mayúsculas, minúsculas, números y símbolos</span>
@@ -820,12 +885,17 @@
 
                                 <div class="form-group">
                                     <label class="form-label" for="confirmPassword">Confirmar Nueva Contraseña</label>
-                                    <input 
-                                        type="password" 
-                                        id="confirmPassword" 
-                                        class="form-input"
-                                        required
-                                    >
+                                    <div class="password-input-wrapper">
+                                        <input 
+                                            type="password" 
+                                            id="confirmPassword" 
+                                            class="form-input"
+                                            required
+                                        >
+                                        <button type="button" class="toggle-password" onclick="togglePassword('confirmPassword', this)" tabindex="-1">
+                                            <i class="lni lni-eye"></i>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <button type="submit" class="btn btn-primary">
@@ -992,6 +1062,23 @@
             }, duration);
         }
 
+
+        // Toggle Password Visibility
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('lni-eye');
+                icon.classList.add('lni-eye-slash');
+                btn.style.color = '#06b6d4';
+            } else {
+                input.type = 'password';
+                icon.classList.remove('lni-eye-slash');
+                icon.classList.add('lni-eye');
+                btn.style.color = '';
+            }
+        }
         // Password Form Handling
         document.getElementById('passwordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
