@@ -301,7 +301,7 @@ body {
   border-radius: 20px;
   border: 1px solid #e5e7eb;
   margin-bottom: 2rem;
-  overflow: visible;
+  overflow: visible; /* CRITICAL: must be visible so dropdowns escape */
 }
 
 .table-header {
@@ -315,7 +315,7 @@ body {
 
 .agents-table {
   border-radius: 20px;
-  overflow: hidden;
+  overflow: visible; /* FIX: was 'hidden', which clipped the action dropdowns */
 }
 .agents-table thead {
   background: #ffffff;
@@ -434,6 +434,7 @@ body {
 .actions-cell {
   text-align: right;
   position: relative;
+  overflow: visible; /* FIX: ensure cell doesn't clip dropdown */
 }
 .actions-menu {
   position: relative;
@@ -484,7 +485,7 @@ body {
   visibility: hidden;
   transform: translateY(-10px);
   transition: all 0.2s ease;
-  z-index: 100;
+  z-index: 9999; /* FIX: raise z-index to be above table rows */
   padding: 0.5rem;
 }
 .actions-dropdown.show {
