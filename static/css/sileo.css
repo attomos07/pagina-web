@@ -145,7 +145,7 @@
   z-index: 20;
   display: flex;
   align-items: center;
-  padding: .5rem;
+  padding: .5rem .9rem;
   height: var(--h);
   overflow: hidden;
   left: var(--_px, 0px);
@@ -236,7 +236,7 @@
   transition: opacity calc(var(--dur)*.6) ease calc(var(--dur)*.3);
 }
 .sileo-description {
-  padding: 1.5rem 1rem 1rem;
+  padding: 2.2rem 1rem 1.2rem;
   font-size: .875rem;
   line-height: 1.4rem;
   color: #52525b;
