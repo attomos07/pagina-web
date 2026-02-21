@@ -2,13 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#06b6d4">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>Facturación - Attomos</title>
-
-    <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
-    
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/billing.css">
 </head>
@@ -33,6 +34,7 @@
             <!-- Content Wrapper -->
             <div class="content-wrapper">
                 <div class="billing-layout">
+
                     <!-- Page Header -->
                     <div class="page-header">
                         <div class="header-content">
@@ -47,7 +49,6 @@
                             <span>Cambiar Plan</span>
                         </a>
                     </div>
-
 
                     <!-- Current Subscription -->
                     <div class="subscription-card">
@@ -84,7 +85,6 @@
                                     </span>
                                 </div>
                             </div>
-
                             <div class="subscription-actions">
                                 <a href="/plans" class="action-link upgrade">
                                     <i class="lni lni-arrow-up-circle"></i>
@@ -98,36 +98,39 @@
                         </div>
                     </div>
 
-                    <!-- Payments Table Section -->
-                    <div class="payments-section">
-                        <div class="payments-header">
-                            <h2 class="payments-title">
-                                <i class="lni lni-credit-cards"></i>
-                                Historial de Pagos
-                            </h2>
-                        </div>
-                        <div class="payments-table-wrapper">
-                            <table class="payments-table" id="paymentsTable">
-                                <thead>
-                                    <tr>
-                                        <th>ID DE PAGO</th>
-                                        <th>ID DE RECIBO</th>
-                                        <th>SUBSCRIPCIÓN</th>
-                                        <th>MES</th>
-                                        <th>FECHA DE PAGO</th>
-                                        <th class="th-amount">CANTIDAD</th>
-                                        <th>FACTURADO (SI/NO)</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="paymentsTableBody"></tbody>
-                            </table>
-                            <div class="empty-state" id="emptyState" style="display: none;">
-                                <div class="empty-icon"><i class="lni lni-empty-file"></i></div>
-                                <h3>No hay pagos registrados</h3>
-                                <p>Aquí aparecerán tus pagos una vez que realices una suscripción</p>
+                    <!-- Payments Table — same design as my-agents table -->
+                    <div class="agents-table-container" id="paymentsTableContainer">
+                        <table class="agents-table" id="paymentsTable">
+                            <thead>
+                                <tr>
+                                    <th>ID de Pago</th>
+                                    <th>ID de Recibo</th>
+                                    <th>Suscripción</th>
+                                    <th>Mes</th>
+                                    <th>Fecha de Pago</th>
+                                    <th style="color:#06b6d4;">Cantidad</th>
+                                    <th>Facturado</th>
+                                    <th style="text-align:right;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="paymentsTableBody"></tbody>
+                        </table>
+
+                        <!-- Empty State -->
+                        <div class="empty-state" id="emptyState" style="display:none;">
+                            <div class="empty-icon">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="10" y="14" width="44" height="36" rx="5" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                    <line x1="10" y1="26" x2="54" y2="26" stroke="currentColor" stroke-width="2.5"/>
+                                    <line x1="22" y1="14" x2="22" y2="50" stroke="currentColor" stroke-width="2.5"/>
+                                    <circle cx="38" cy="38" r="3" fill="currentColor"/>
+                                </svg>
                             </div>
+                            <h3>No hay pagos registrados</h3>
+                            <p>Aquí aparecerán tus pagos una vez que realices una suscripción</p>
                         </div>
+
+                        <!-- Pagination -->
                         <div class="pagination-wrapper" id="paginationWrapper" style="display:none;">
                             <button class="page-btn" id="prevBtn" onclick="changePage(-1)">
                                 <i class="lni lni-chevron-left"></i>
@@ -138,7 +141,6 @@
                             </button>
                         </div>
                     </div>
-
 
                 </div>
             </div>

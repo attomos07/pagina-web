@@ -868,3 +868,33 @@
     overflow-y: auto;
   }
 }
+
+/* ==========================================
+   FIX: DESKTOP DROPDOWN - clase .is-open
+   Los estilos inline que aplicaba el JS al cerrar
+   bloqueaban el hover en visitas posteriores.
+   Ahora se usa una clase CSS para abrir/cerrar.
+   ========================================== */
+
+.user-dropdown.is-open {
+  max-height: 650px;
+  opacity: 1;
+}
+
+.user-dropdown.is-open .dropdown-menu-item {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.user-dropdown.is-open .dropdown-menu-item:nth-child(1) { transition-delay: 0.05s; }
+.user-dropdown.is-open .dropdown-menu-item:nth-child(2) { transition-delay: 0.1s; }
+.user-dropdown.is-open .dropdown-menu-item:nth-child(3) { transition-delay: 0.15s; }
+.user-dropdown.is-open .dropdown-menu-item:nth-child(4) { transition-delay: 0.2s; }
+.user-dropdown.is-open .dropdown-menu-item:nth-child(5) { transition-delay: 0.25s; }
+.user-dropdown.is-open .dropdown-menu-item:nth-child(6) { transition-delay: 0.3s; }
+
+.user-dropdown.is-open .logout-section {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.35s;
+}

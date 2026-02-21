@@ -5,7 +5,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('👤 Userbar flotante cargado correctamente');
     
-    // Inicializar todas las funcionalidades
     initUserbar();
     initNotifications();
     initUserDropdown();
@@ -92,7 +91,6 @@ function getPlanName(planId) {
         'electron': 'Plan Electrón',
         'pending': 'Pago Pendiente'
     };
-    
     return planNames[planId] || 'Plan Gratuito';
 }
 
@@ -116,7 +114,6 @@ function getBusinessTypeLabel(businessType) {
         'agencia': 'Agencia',
         'otro': 'Otro'
     };
-
     return businessTypes[businessType] || businessType || 'Negocio';
 }
 
@@ -140,16 +137,13 @@ function buildNotificationsFromAppointments(appointments) {
     const notifications = [];
     const now = new Date();
 
-    // Fecha local en formato YYYY-MM-DD (sin offset UTC)
     const pad = n => String(n).padStart(2, '0');
     const todayStr    = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
     const tomorrowD   = new Date(now); tomorrowD.setDate(tomorrowD.getDate() + 1);
     const tomorrowStr = `${tomorrowD.getFullYear()}-${pad(tomorrowD.getMonth()+1)}-${pad(tomorrowD.getDate())}`;
 
-    // Solo citas activas
     const active = appointments.filter(a => a.status !== 'cancelled');
 
-    // ── Citas de hoy ──────────────────────────────────────────────────
     const todayAppts = active.filter(a => a.date === todayStr);
     todayAppts.forEach(a => {
         const [h, m] = a.time.split(':').map(Number);
@@ -174,7 +168,6 @@ function buildNotificationsFromAppointments(appointments) {
         }
     });
 
-    // ── Resumen de citas de mañana ────────────────────────────────────
     const tomorrowAppts = active.filter(a => a.date === tomorrowStr);
     if (tomorrowAppts.length > 0) {
         const s = tomorrowAppts.length;
@@ -186,7 +179,6 @@ function buildNotificationsFromAppointments(appointments) {
         });
     }
 
-    // ── Sin citas próximas ────────────────────────────────────────────
     return notifications;
 }
 
@@ -258,13 +250,11 @@ function initNotifications() {
 
     if (!notificationBtn || !notificationPanel) return;
 
-    // Cargar notificaciones desde el endpoint de citas
     loadAppointmentNotifications().then(appointments => {
         const notifications = buildNotificationsFromAppointments(appointments);
         renderNotifications(notifications);
     });
 
-    // Refrescar cada 5 minutos
     setInterval(() => {
         loadAppointmentNotifications().then(appointments => {
             const notifications = buildNotificationsFromAppointments(appointments);
@@ -278,9 +268,7 @@ function initNotifications() {
         notificationBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const userDropdown = document.getElementById('userDropdown');
-            if (userDropdown) {
-                userDropdown.classList.remove('mobile-active');
-            }
+            if (userDropdown) userDropdown.classList.remove('mobile-active');
             notificationPanel.classList.toggle('mobile-active');
         });
 
@@ -293,13 +281,10 @@ function initNotifications() {
 
     if (markAllBtn) {
         markAllBtn.addEventListener('click', () => {
-            const unreadItems = document.querySelectorAll('.notification-item.unread');
-            unreadItems.forEach(item => {
+            document.querySelectorAll('.notification-item.unread').forEach(item => {
                 item.classList.remove('unread');
             });
-            if (notificationBadge) {
-                notificationBadge.classList.add('hidden');
-            }
+            if (notificationBadge) notificationBadge.classList.add('hidden');
         });
     }
 
@@ -330,7 +315,7 @@ function initNotifications() {
 // ============================================
 
 function initUserDropdown() {
-    const userAvatar = document.getElementById('userAvatar');
+    const userAvatar   = document.getElementById('userAvatar');
     const userDropdown = document.getElementById('userDropdown');
     const logoContainer = document.getElementById('logoContainer');
 
@@ -342,9 +327,7 @@ function initUserDropdown() {
         userAvatar.addEventListener('click', (e) => {
             e.stopPropagation();
             const notificationPanel = document.getElementById('notificationPanel');
-            if (notificationPanel) {
-                notificationPanel.classList.remove('mobile-active');
-            }
+            if (notificationPanel) notificationPanel.classList.remove('mobile-active');
             userDropdown.classList.toggle('mobile-active');
         });
 
@@ -354,37 +337,34 @@ function initUserDropdown() {
             }
         });
 
-        const dropdownLinks = userDropdown.querySelectorAll('.dropdown-menu-button');
-        dropdownLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                userDropdown.classList.remove('mobile-active');
-            });
+        userDropdown.querySelectorAll('.dropdown-menu-button').forEach(link => {
+            link.addEventListener('click', () => userDropdown.classList.remove('mobile-active'));
         });
+
     } else {
-        let isHoveringAvatar = false;
+        // ── FIX: usar clase .is-open en lugar de estilos inline ──────────
+        // El bug original: al cerrar se aplicaba element.style.maxHeight='0'
+        // (estilo inline). Los estilos inline tienen mayor especificidad que
+        // cualquier regla CSS, así que el selector :hover ya no podía
+        // sobrescribirlo en visitas posteriores. Con .is-open el CSS mantiene
+        // el control completo y el dropdown funciona siempre.
+        let isHoveringAvatar   = false;
         let isHoveringDropdown = false;
 
-        userAvatar.addEventListener('mouseenter', () => { isHoveringAvatar = true; });
-        userAvatar.addEventListener('mouseleave', () => {
-            isHoveringAvatar = false;
+        const openDropdown  = () => userDropdown.classList.add('is-open');
+        const closeDropdown = () => {
             setTimeout(() => {
                 if (!isHoveringAvatar && !isHoveringDropdown) {
-                    userDropdown.style.maxHeight = '0';
-                    userDropdown.style.opacity = '0';
+                    userDropdown.classList.remove('is-open');
                 }
             }, 100);
-        });
+        };
 
-        userDropdown.addEventListener('mouseenter', () => { isHoveringDropdown = true; });
-        userDropdown.addEventListener('mouseleave', () => {
-            isHoveringDropdown = false;
-            setTimeout(() => {
-                if (!isHoveringAvatar && !isHoveringDropdown) {
-                    userDropdown.style.maxHeight = '0';
-                    userDropdown.style.opacity = '0';
-                }
-            }, 100);
-        });
+        userAvatar.addEventListener('mouseenter', () => { isHoveringAvatar = true;  openDropdown(); });
+        userAvatar.addEventListener('mouseleave', () => { isHoveringAvatar = false; closeDropdown(); });
+
+        userDropdown.addEventListener('mouseenter', () => { isHoveringDropdown = true;  openDropdown(); });
+        userDropdown.addEventListener('mouseleave', () => { isHoveringDropdown = false; closeDropdown(); });
     }
 
     if (logoContainer) {
@@ -394,14 +374,12 @@ function initUserDropdown() {
     }
 
     window.addEventListener('resize', () => {
-        const wasMobile = isMobile;
         const nowMobile = window.innerWidth <= 768;
-        if (wasMobile !== nowMobile) {
+        if (isMobile !== nowMobile) {
             const notificationPanel = document.getElementById('notificationPanel');
-            if (notificationPanel) {
-                notificationPanel.classList.remove('mobile-active');
-            }
+            if (notificationPanel) notificationPanel.classList.remove('mobile-active');
             userDropdown.classList.remove('mobile-active');
+            userDropdown.classList.remove('is-open');
         }
     });
 }
@@ -412,27 +390,26 @@ function initUserDropdown() {
 
 function setupLogout() {
     const userbarLogoutBtn = document.getElementById('userbarLogoutBtn');
-    
-    if (userbarLogoutBtn) {
-        userbarLogoutBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            try {
-                const response = await fetch('/api/logout', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                if (response.ok) {
-                    localStorage.removeItem('sidebarPinned');
-                    localStorage.removeItem('userData');
-                    window.location.href = '/login';
-                } else {
-                    showToast('Error al cerrar sesión. Por favor intenta de nuevo.', 'error');
-                }
-            } catch (error) {
+    if (!userbarLogoutBtn) return;
+
+    userbarLogoutBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        try {
+            const response = await fetch('/api/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
+            if (response.ok) {
+                localStorage.removeItem('sidebarPinned');
+                localStorage.removeItem('userData');
+                window.location.href = '/login';
+            } else {
                 showToast('Error al cerrar sesión. Por favor intenta de nuevo.', 'error');
             }
-        });
-    }
+        } catch (error) {
+            showToast('Error al cerrar sesión. Por favor intenta de nuevo.', 'error');
+        }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', setupLogout);

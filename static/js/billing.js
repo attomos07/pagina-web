@@ -52,13 +52,13 @@ function renderTable() {
 
     tbody.innerHTML = pageItems.map(p => `
         <tr>
-            <td><span class="pay-id">...${p.paymentId.slice(-8)}</span></td>
-            <td><span class="receipt-id">${p.receiptId}</span></td>
-            <td><span class="pay-subscription">${p.subscription}</span></td>
-            <td>${p.month}</td>
-            <td>${p.paymentDate}</td>
-            <td><span class="pay-amount">${p.amount}</span></td>
-            <td>${p.invoiced
+            <td data-label="ID de Pago"><span class="pay-id">...${p.paymentId.slice(-8)}</span></td>
+            <td data-label="ID de Recibo"><span class="receipt-id">${p.receiptId}</span></td>
+            <td data-label="Suscripción"><span class="pay-subscription">${p.subscription}</span></td>
+            <td data-label="Mes">${p.month}</td>
+            <td data-label="Fecha">${p.paymentDate}</td>
+            <td data-label="Cantidad"><span class="pay-amount">${p.amount}</span></td>
+            <td data-label="Facturado">${p.invoiced
                 ? '<span class="badge-invoiced-yes">✓ Sí</span>'
                 : '<span class="badge-invoiced-no">✕ No</span>'}</td>
             <td><button class="row-menu-btn" onclick="openRowMenu(this, '${p.paymentId}')">⋮</button></td>
@@ -102,7 +102,8 @@ function openRowMenu(btn, paymentId) {
         <button onclick="downloadReceipt('${paymentId}')"><i class="lni lni-download"></i> Descargar recibo</button>
     `;
     const rect = btn.getBoundingClientRect();
-    menu.style.cssText = `position:fixed;top:${rect.bottom+4}px;left:${rect.left-140}px;background:white;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);padding:0.5rem;z-index:9999;min-width:180px;`;
+    const menuLeft = Math.max(8, rect.left - 140);
+    menu.style.cssText = `position:fixed;top:${rect.bottom+4}px;left:${menuLeft}px;background:white;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);padding:0.5rem;z-index:9999;min-width:180px;`;
     menu.querySelectorAll('button').forEach(b => {
         b.style.cssText = 'display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.625rem 0.75rem;background:none;border:none;border-radius:8px;font-size:0.875rem;font-weight:500;color:#374151;cursor:pointer;text-align:left;';
         b.addEventListener('mouseenter', () => b.style.background = '#f3f4f6');
