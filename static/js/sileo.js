@@ -64,7 +64,7 @@ function createToast(opts) {
     : {};
 
   const item = {
-    fill: '#ffffff',
+    fill: '#18181b',  /* PATCHED: dark fill so toast is visible on white backgrounds */
     ...opts,
     id,
     instanceId: genId(),
@@ -90,7 +90,7 @@ function updateToast(id, opts) {
     ? { expandDelayMs: Math.min(dur, AUTO_EXPAND_DLY), collapseDelayMs: Math.min(dur, AUTO_COLLAPSE_DLY) }
     : {};
   const item = {
-    fill: '#ffffff',
+    fill: '#18181b',  /* PATCHED: dark fill */
     ...ex, ...opts, id,
     instanceId: genId(),
     duration: dur,
@@ -184,7 +184,7 @@ function initRenderer() {
 function buildDom(item) {
   const blur     = ROUNDNESS * BLUR_RATIO;
   const filterId = `gooey-${item.id}`;
-  const fill     = item.fill || '#ffffff';
+  const fill     = item.fill || '#18181b';  /* PATCHED: dark default */
 
   const el = document.createElement('div');
   el.className = 'sileo-toast';
@@ -201,7 +201,29 @@ function buildDom(item) {
               values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10" result="goo"/>
             <feComposite in="SourceGraphic" in2="goo" operator="atop"/>
           </filter>
+          <filter id="${filterId}-border" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="${blur}" result="blur"/>
+            <feColorMatrix in="blur" mode="matrix"
+              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10" result="goo"/>
+            <feComposite in="SourceGraphic" in2="goo" operator="atop" result="merged"/>
+            <feMorphology in="merged" operator="dilate" radius="2" result="thick"/>
+            <feComposite in="thick" in2="merged" operator="out" result="ring"/>
+            <feFlood class="border-flood" flood-color="white" flood-opacity="1" result="color"/>
+            <feComposite in="color" in2="ring" operator="in"/>
+          </filter>
         </defs>
+        <g class="border-group" style="filter:url(#${filterId}-border); pointer-events:none">
+          <rect class="pill-border"
+            x="0" y="0"
+            width="${HEIGHT}" height="${HEIGHT}"
+            rx="${ROUNDNESS}" ry="${ROUNDNESS}"
+            fill="white" stroke-width="0"/>
+          <rect class="body-border"
+            x="0" y="${HEIGHT}"
+            width="${WIDTH}" height="0"
+            rx="${ROUNDNESS}" ry="${ROUNDNESS}"
+            fill="white" stroke-width="0" opacity="0"/>
+        </g>
         <g style="filter:url(#${filterId})">
           <rect class="pill"
             x="0" y="0"
@@ -233,6 +255,18 @@ function buildDom(item) {
   `;
 
   vp.appendChild(el);
+
+  /* Set initial border flood color */
+  const _stateColors = {
+    success: 'oklch(0.723 0.219 142.136)',
+    error:   'oklch(0.637 0.237 25.331)',
+    warning: 'oklch(0.795 0.184 86.047)',
+    info:    'oklch(0.685 0.169 237.323)',
+    action:  'oklch(0.623 0.214 259.815)',
+    loading: 'oklch(0.556 0 0)',
+  };
+  const _flood = el.querySelector('.border-flood');
+  if (_flood) _flood.setAttribute('flood-color', _stateColors[item.state||'success'] || _stateColors.success);
 
   const inst = {
     el, filterId, fill,
@@ -316,13 +350,25 @@ function syncDom(item, latestId) {
 ──────────────────────────────────────────────────────────────── */
 function applyView(inst, item) {
   const state = item.state || 'success';
-  const fill  = item.fill  || '#ffffff';
+  const fill  = item.fill  || '#18181b';  /* PATCHED: dark default */
   inst.view = { ...item };
   inst.fill = fill;
   inst.el.setAttribute('data-state', state);
 
   inst.el.querySelector('.pill').setAttribute('fill', fill);
   inst.el.querySelector('.body').setAttribute('fill', fill);
+
+  /* Update border flood color to match state */
+  const stateColors = {
+    success: 'oklch(0.723 0.219 142.136)',
+    error:   'oklch(0.637 0.237 25.331)',
+    warning: 'oklch(0.795 0.184 86.047)',
+    info:    'oklch(0.685 0.169 237.323)',
+    action:  'oklch(0.623 0.214 259.815)',
+    loading: 'oklch(0.556 0 0)',
+  };
+  const flood = inst.el.querySelector('.border-flood');
+  if (flood) flood.setAttribute('flood-color', stateColors[state] || stateColors.success);
 
   applyHeader(inst, state, item.title || state, item.icon);
   applyDescription(inst, item);
@@ -437,9 +483,11 @@ function measureContent(inst) {
    GEOMETRY
 ──────────────────────────────────────────────────────────────── */
 function syncGeometry(inst, first) {
-  const pill = inst.el.querySelector('.pill');
-  const body = inst.el.querySelector('.body');
-  const svg  = inst.el.querySelector('svg');
+  const pill       = inst.el.querySelector('.pill');
+  const body       = inst.el.querySelector('.body');
+  const pillBorder = inst.el.querySelector('.pill-border');
+  const bodyBorder = inst.el.querySelector('.body-border');
+  const svg        = inst.el.querySelector('svg');
   if (!pill || !body || !svg) return;
 
   const pw    = Math.max(inst.pillWidth || HEIGHT, HEIGHT);
@@ -484,6 +532,14 @@ function syncGeometry(inst, first) {
     { height: bodyH, opacity: inst.open ? 1 : 0 },
     first ? { duration: 0 } : (inst.open ? SPRING : SPRING_NO_BOUNCE)
   );
+
+  /* Animate border rects in sync */
+  if (pillBorder) {
+    animate(pillBorder, { x: pillX, width: pw, height: pillH }, first ? { duration: 0 } : SPRING);
+  }
+  if (bodyBorder) {
+    animate(bodyBorder, { height: bodyH, opacity: inst.open ? 1 : 0 }, first ? { duration: 0 } : (inst.open ? SPRING : SPRING_NO_BOUNCE));
+  }
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -553,7 +609,7 @@ function clearInstTimers(inst) {
 
 /* ════════════════════════════════════════════════════════════════
    SWIPE DISMISS
-──────────────────────────────────────────────────────────────── */
+════════════════════════════════════════════════════════════════ */
 function onPointerDown(e, id, inst) {
   if (e.target.closest('.sileo-action-btn')) return;
   inst.pointerStart = e.clientY;
@@ -617,14 +673,14 @@ function demoBooking() {
   flightDetails.innerHTML = `
     <style>
       .flight-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; }
-      .airline-logo { font-weight:700; font-size:.75rem; letter-spacing:.05em; color:#111; display:flex; align-items:center; gap:.35rem; }
-      .airline-logo svg { width:14px; height:14px; fill:#111; }
-      .flight-number { font-size:.7rem; color:#888; font-weight:500; }
+      .airline-logo { font-weight:700; font-size:.75rem; letter-spacing:.05em; color:#f4f4f5; display:flex; align-items:center; gap:.35rem; }
+      .airline-logo svg { width:14px; height:14px; fill:#f4f4f5; }
+      .flight-number { font-size:.7rem; color:#71717a; font-weight:500; }
       .flight-route { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; position:relative; }
-      .airport { font-size:1.75rem; font-weight:700; color:#111; letter-spacing:-.02em; }
+      .airport { font-size:1.75rem; font-weight:700; color:#f4f4f5; letter-spacing:-.02em; }
       .flight-path { flex:1; margin:0 1.5rem; position:relative; height:2px; }
       .flight-line { position:absolute; top:0; left:0; right:0; height:2px;
-        background: repeating-linear-gradient(to right, #d0d0d0 0px, #d0d0d0 6px, transparent 6px, transparent 12px); }
+        background: repeating-linear-gradient(to right, #3f3f46 0px, #3f3f46 6px, transparent 6px, transparent 12px); }
       .plane-icon { position:absolute; top:50%; left:0; transform:translate(-50%,-50%);
         animation:fly 3s ease-in-out infinite; color:var(--c-success); filter:drop-shadow(0 0 4px rgba(76,175,80,.3)); }
       .plane-icon svg { width:18px; height:18px; transform:rotate(-45deg); }
@@ -634,7 +690,7 @@ function demoBooking() {
       <div class="airline-logo">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
-          <path d="M8 12h8M12 8v8" stroke="#fff" stroke-width="2"/>
+          <path d="M8 12h8M12 8v8" stroke="#18181b" stroke-width="2"/>
         </svg>
         UNITED
       </div>
@@ -652,7 +708,7 @@ function demoBooking() {
 
   const viewBtn = document.createElement('a');
   viewBtn.href = '#';
-  viewBtn.className = 'sileo-action-btn c-success';
+  viewBtn.className = `sileo-action-btn c-success`;
   viewBtn.style.cssText = '--_c: var(--c-success); width:100%; justify-content:center; margin-top:0.5rem;';
   viewBtn.textContent = 'View Details';
   viewBtn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); alert('Opening flight details...'); });

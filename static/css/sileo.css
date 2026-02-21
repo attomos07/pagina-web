@@ -21,10 +21,16 @@
   --c-info:    oklch(0.685 0.169 237.323);
   --c-action:  oklch(0.623 0.214 259.815);
   --c-loading: oklch(0.556 0 0);
+
+  /* Toast shell colors — dark frosted glass */
+  --toast-bg:      #18181b;
+  --toast-surface: #27272a;
+  --toast-border:  rgba(255,255,255,0.08);
+  --toast-shadow:  0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
 }
 
 /* ═══════════════════════════════════════════════════════
-   VIEWPORT  (top-center) — único elemento fijo en body
+   VIEWPORT  (top-center)
 ═══════════════════════════════════════════════════════ */
 #sileo-vp {
   position: fixed;
@@ -40,15 +46,13 @@
   max-width: calc(100vw - 1.5rem);
   contain: layout style;
   align-items: center;
-  /* Reset limpio solo para este contenedor */
   box-sizing: border-box;
   margin: 0;
-  padding: .75rem;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', ui-sans-serif, sans-serif;
 }
 
 /* ═══════════════════════════════════════════════════════
-   RESET SCOPED — solo afecta hijos de #sileo-vp
+   RESET SCOPED
 ═══════════════════════════════════════════════════════ */
 #sileo-vp *,
 #sileo-vp *::before,
@@ -76,6 +80,7 @@
   contain: layout style;
   overflow: visible;
   cursor: pointer;
+  filter: drop-shadow(var(--toast-shadow));
 }
 .sileo-toast[data-state="loading"] { cursor: default; }
 
@@ -112,6 +117,30 @@
   overflow: visible;
 }
 .sileo-canvas svg { overflow: visible; display: block; }
+
+/* Override the SVG rects fill via CSS custom property approach.
+   The JS passes fill as attribute, so we override via a CSS filter trick.
+   Instead, we use a ::before overlay on the canvas to create the dark background. */
+
+/* Dark pill background overlay */
+.sileo-toast .sileo-canvas::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%; 
+  transform: translateX(-50%);
+  width: var(--_pw, var(--w));
+  height: var(--_h, var(--h));
+  background: var(--toast-bg);
+  border-radius: 20px;
+  border: none;
+  transition:
+    width  var(--dur) var(--spring-easing),
+    height var(--dur) var(--spring-easing),
+    left   var(--dur) var(--spring-easing);
+  z-index: -1;
+}
+
+/* Border rects outside gooey filter — follow the toast shape exactly */
 
 /* ═══════════════════════════════════════════════════════
    HEADER
@@ -174,9 +203,10 @@
 .sileo-title {
   font-size: .825rem;
   line-height: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: capitalize;
-  color: var(--tone);
+  color: #f4f4f5;
+  letter-spacing: 0.01em;
 }
 
 .c-success { --_c: var(--c-success); }
@@ -186,9 +216,11 @@
 .c-action  { --_c: var(--c-action);  }
 .c-loading { --_c: var(--c-loading); }
 
+
+
 .sileo-badge, .sileo-title {
   --tone:    var(--_c);
-  --tone-bg: color-mix(in oklch, var(--_c) 20%, transparent);
+  --tone-bg: color-mix(in oklch, var(--_c) 25%, rgba(255,255,255,0.05));
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -210,11 +242,11 @@
   transition: opacity calc(var(--dur)*.6) ease calc(var(--dur)*.3);
 }
 .sileo-description {
-  padding: 1rem;
+  padding: 1.5rem 1rem 1rem;
   font-size: .875rem;
   line-height: 1.4rem;
-  color: #555;
-  text-align: left;
+  color: #a1a1aa;
+  text-align: center;
 }
 
 /* Action button inside toast */
@@ -225,17 +257,17 @@
   padding: 0 .625rem;
   margin-top: .75rem;
   border-radius: 9999px;
-  border: 0;
+  border: 1px solid color-mix(in oklch, var(--_c) 40%, transparent);
   font-size: .75rem;
   font-weight: 500;
   cursor: pointer;
   color: var(--_c);
-  background: color-mix(in oklch, var(--_c) 15%, transparent);
+  background: color-mix(in oklch, var(--_c) 12%, rgba(0,0,0,0.3));
   transition: background 150ms ease;
   text-decoration: none;
 }
 .sileo-action-btn:hover {
-  background: color-mix(in oklch, var(--_c) 25%, transparent);
+  background: color-mix(in oklch, var(--_c) 22%, rgba(0,0,0,0.3));
 }
 
 /* Progress bar */
@@ -243,7 +275,7 @@
   margin-top: .75rem;
   height: 6px;
   width: 100%;
-  background: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.08);
   border-radius: 9999px;
   overflow: hidden;
   position: relative;
@@ -258,7 +290,7 @@
 .sileo-progress-text {
   font-size: .7rem;
   margin-top: .4rem;
-  color: #888;
+  color: #71717a;
   font-weight: 500;
 }
 
