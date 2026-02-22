@@ -536,6 +536,9 @@ function createTableRow(appt) {
                     <div class="actions-menu" id="dropdown-${appt.id}">
                         ${appt.sheetUrl ? `<div class="action-item sheet" onclick="openGoogleSheet('${appt.sheetUrl}')"><i class="lni lni-text-format"></i> Ver Sheet</div>` : ''}
                         ${appt.phone ? `<div class="action-item whatsapp" onclick="sendWhatsApp('${appt.phone}', '${escapeHtml(appt.client)}')"><i class="lni lni-whatsapp"></i> WhatsApp</div>` : ''}
+                        ${appt.status !== 'completed' ? `<div class="action-item complete" onclick="updateAppointmentStatus('${appt.id}', 'completed')"><i class="lni lni-checkmark-circle"></i> Marcar Completada</div>` : ''}
+                        ${appt.status !== 'cancelled' ? `<div class="action-item cancel" onclick="updateAppointmentStatus('${appt.id}', 'cancelled')"><i class="lni lni-ban"></i> Marcar Cancelada</div>` : ''}
+                        <div class="action-item delete" onclick="deleteAppointment('${appt.id}', '${escapeHtml(appt.client)}')"><i class="lni lni-trash-3"></i> Eliminar</div>
                     </div>
                 </div>
             </td>
@@ -654,6 +657,44 @@ function closeAllDropdowns() {
 function openGoogleSheet(url) {
     window.open(url, '_blank');
     closeAllDropdowns();
+}
+
+
+async function updateAppointmentStatus(id, newStatus) {
+    const labels = { completed: 'completada', cancelled: 'cancelada' };
+    closeAllDropdowns();
+    try {
+        const response = await fetch(`/api/appointments/${id}`, {
+            method: 'PATCH',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+        });
+        if (!response.ok) throw new Error('Error al actualizar');
+        showToast(`Cita marcada como ${labels[newStatus]}`, 'success');
+        await loadAppointments();
+    } catch (err) {
+        console.error('Error updating appointment status:', err);
+        showToast('Error al actualizar el estado', 'error');
+    }
+}
+
+async function deleteAppointment(id, clientName) {
+    const confirmed = confirm(`¿Estás seguro de que deseas eliminar la cita de ${clientName}?`);
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch(`/api/appointments/${id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        if (!response.ok) throw new Error('Error al eliminar');
+        showToast('Cita eliminada correctamente', 'success');
+        await loadAppointments();
+    } catch (err) {
+        console.error('Error deleting appointment:', err);
+        showToast('Error al eliminar la cita', 'error');
+    }
 }
 
 function sendWhatsApp(phone, name) {
