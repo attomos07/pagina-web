@@ -46,6 +46,7 @@ func main() {
 		&models.Payment{},
 		&models.GoogleCloudProject{},
 		&models.GlobalServer{}, // ← Servidor compartido global para AtomicBots
+		&models.Appointment{},  // ← Citas (manual + Google Sheets + agente)
 	); err != nil {
 		log.Fatal("❌ Error en migración:", err)
 	}
@@ -185,9 +186,12 @@ func main() {
 		protected.POST("/profile", handlers.SaveProfile)
 
 		// ============================================
-		// ⭐ APPOINTMENTS - Obtener citas desde Google Sheets
+		// ⭐ APPOINTMENTS - CRUD completo (BD + Sheets sync)
 		// ============================================
 		protected.GET("/appointments", handlers.GetAppointments)
+		protected.POST("/appointments", handlers.CreateManualAppointment)
+		protected.PATCH("/appointments/:id/status", handlers.UpdateAppointmentStatus)
+		protected.DELETE("/appointments/:id", handlers.DeleteAppointment)
 
 		// Billing
 		protected.GET("/billing/data", handlers.GetBillingData)

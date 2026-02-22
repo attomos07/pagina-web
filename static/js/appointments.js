@@ -89,9 +89,13 @@ function openAppointmentModal() {
     modalBody.innerHTML = `
         <form id="createAppointmentForm" class="appointment-form">
             <div class="form-grid">
-                <div class="form-group full-width">
-                    <label class="form-label"><i class="lni lni-user"></i> Nombre del Cliente</label>
-                    <input type="text" class="form-input" id="clientName" required>
+                <div class="form-group">
+                    <label class="form-label"><i class="lni lni-user"></i> Nombre(s)</label>
+                    <input type="text" class="form-input" id="clientFirstName" placeholder="Nombre(s)" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="lni lni-user"></i> Apellido(s)</label>
+                    <input type="text" class="form-input" id="clientLastName" placeholder="Apellido(s)" required>
                 </div>
 
                 <div class="form-group">
@@ -177,7 +181,7 @@ async function handleCreateAppointment(e) {
     e.preventDefault();
 
     const formData = {
-        client: document.getElementById('clientName').value,
+        client: (document.getElementById('clientFirstName').value + ' ' + document.getElementById('clientLastName').value).trim(),
         phone: document.getElementById('clientPhone').value,
         service: document.getElementById('serviceName').value,
         worker: document.getElementById('workerName').value,
