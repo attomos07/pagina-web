@@ -230,8 +230,133 @@
                     <!-- Se genera dinámicamente con JS -->
                   </div>
 
-                  <!-- SECCIÓN 1: Información Básica -->
-                  <div class="section-container active" id="section-basic">
+                  <!-- SECCIÓN 0: Información del Negocio -->
+                  <div class="section-container active" id="section-business">
+                    <div class="form-section">
+                      <h3 class="section-title">
+                        <i class="lni lni-briefcase"></i>
+                        Información del Negocio
+                      </h3>
+
+                      <div class="form-grid form-grid-2col">
+                        <div class="form-group">
+                          <label class="form-label">
+                            Nombre del Negocio
+                            <span class="form-label-required">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            id="businessNameInput"
+                            class="form-input"
+                            placeholder="Ej: Mi Negocio Ejemplo"
+                          />
+                          <span class="form-help">Nombre con el que se conoce tu negocio</span>
+                        </div>
+
+                        <div class="form-group">
+                          <label class="form-label">Giro del Negocio</label>
+                          <div class="custom-select-wrapper" id="businessTypeWrapper">
+                            <input
+                              type="text"
+                              class="form-input form-select"
+                              id="businessTypeInput"
+                              readonly
+                              placeholder="Selecciona un giro..."
+                            />
+                            <i class="lni lni-chevron-down select-arrow"></i>
+                            <div class="select-dropdown" id="businessTypeDropdown">
+                              <div class="select-search-container">
+                                <input
+                                  type="text"
+                                  class="select-search"
+                                  id="businessTypeSearch"
+                                  placeholder="Buscar giro..."
+                                  autocomplete="off"
+                                />
+                                <i class="lni lni-search-alt search-icon"></i>
+                              </div>
+                              <div class="select-options-container" id="businessTypeOptions">
+                                <div class="select-option" data-value="clinica-dental"><i class="lni lni-hospital"></i><span>Clínica Dental</span></div>
+                                <div class="select-option" data-value="peluqueria"><i class="lni lni-cut"></i><span>Peluquería / Salón de Belleza</span></div>
+                                <div class="select-option" data-value="restaurante"><i class="lni lni-restaurant"></i><span>Restaurante</span></div>
+                                <div class="select-option" data-value="pizzeria"><i class="lni lni-pizza"></i><span>Pizzería</span></div>
+                                <div class="select-option" data-value="escuela"><i class="lni lni-graduation"></i><span>Escuela / Educación</span></div>
+                                <div class="select-option" data-value="gym"><i class="lni lni-dumbbell"></i><span>Gimnasio / Fitness</span></div>
+                                <div class="select-option" data-value="spa"><i class="lni lni-leaf"></i><span>Spa / Wellness</span></div>
+                                <div class="select-option" data-value="consultorio"><i class="lni lni-heart-monitor"></i><span>Consultorio Médico</span></div>
+                                <div class="select-option" data-value="veterinaria"><i class="lni lni-bug"></i><span>Veterinaria</span></div>
+                                <div class="select-option" data-value="hotel"><i class="lni lni-home"></i><span>Hotel / Hospedaje</span></div>
+                                <div class="select-option" data-value="tienda"><i class="lni lni-cart"></i><span>Tienda / Retail</span></div>
+                                <div class="select-option" data-value="agencia"><i class="lni lni-briefcase"></i><span>Agencia / Servicios</span></div>
+                                <div class="select-option" data-value="otro"><i class="lni lni-more"></i><span>Otro</span></div>
+                              </div>
+                            </div>
+                          </div>
+                          <span class="form-help">Ej: Peluquería / Salón de Belleza</span>
+                        </div>
+
+                        <div class="form-group form-group-full">
+                          <label class="form-label">Descripción del Negocio</label>
+                          <textarea
+                            id="businessDescInput"
+                            class="form-input form-textarea"
+                            rows="4"
+                            placeholder="Ej: Somos un salón de belleza especializado en cortes modernos..."
+                          ></textarea>
+                          <span class="form-help">Describe brevemente tu negocio y lo que ofrece</span>
+                        </div>
+
+                        <div class="form-group">
+                          <label class="form-label">
+                            <i class="lni lni-website" style="color:#06b6d4;margin-right:4px;"></i>
+                            Sitio Web
+                          </label>
+                          <input
+                            type="url"
+                            id="websiteInput"
+                            class="form-input"
+                            placeholder="https://minegocio.com"
+                          />
+                          <span class="form-help">URL de tu página web (opcional)</span>
+                        </div>
+
+                        <div class="form-group">
+                          <label class="form-label">
+                            <i class="lni lni-envelope" style="color:#06b6d4;margin-right:4px;"></i>
+                            Email de Contacto
+                          </label>
+                          <input
+                            type="email"
+                            id="emailContactInput"
+                            class="form-input"
+                            placeholder="contacto@minegocio.com"
+                          />
+                          <span class="form-help">Email principal de contacto del negocio</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="action-buttons">
+                      <button
+                        type="button"
+                        class="btn btn-back btn-prev-section"
+                        style="display: none"
+                      >
+                        <i class="lni lni-arrow-left"></i>
+                        <span>Anterior</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-next btn-next-section"
+                      >
+                        <span>Siguiente</span>
+                        <i class="lni lni-arrow-right"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                                    <!-- SECCIÓN 1: Información Básica -->
+                  <div class="section-container" id="section-basic">
                     <div class="form-section">
                       <h3 class="section-title">
                         <i class="lni lni-information"></i>

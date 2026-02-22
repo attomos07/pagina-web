@@ -7,7 +7,11 @@ let selectedSocial = '';
 let userBusinessType = '';
 let agentData = {
   social: '',
+  businessName: '',
   businessType: '',
+  businessDescription: '',
+  website: '',
+  emailContact: '',
   name: '',
   phoneNumber: '',
   useDifferentPhone: false,
@@ -52,14 +56,15 @@ let agentData = {
 
 // Section definitions
 const SECTIONS = [
-  { id: 1, name: 'Información Básica', icon: 'lni-information', containerId: 'section-basic' },
-  { id: 2, name: 'Ubicación', icon: 'lni-map-marker', containerId: 'section-location' },
-  { id: 3, name: 'Redes Sociales', icon: 'lni-share-alt', containerId: 'section-social' },
-  { id: 4, name: 'Personalidad', icon: 'lni-comments', containerId: 'section-personality' },
-  { id: 5, name: 'Horarios', icon: 'lni-calendar', containerId: 'section-schedule' },
-  { id: 6, name: 'Días Festivos', icon: 'lni-gift', containerId: 'section-holidays' },
-  { id: 7, name: 'Servicios', icon: 'lni-package', containerId: 'section-services' },
-  { id: 8, name: 'Trabajadores', icon: 'lni-users', containerId: 'section-workers' }
+  { id: 1, name: 'Info. Negocio', icon: 'lni-briefcase', containerId: 'section-business' },
+  { id: 2, name: 'Info. Básica', icon: 'lni-information', containerId: 'section-basic' },
+  { id: 3, name: 'Ubicación', icon: 'lni-map-marker', containerId: 'section-location' },
+  { id: 4, name: 'Redes Sociales', icon: 'lni-share-alt', containerId: 'section-social' },
+  { id: 5, name: 'Personalidad', icon: 'lni-comments', containerId: 'section-personality' },
+  { id: 6, name: 'Horarios', icon: 'lni-calendar', containerId: 'section-schedule' },
+  { id: 7, name: 'Días Festivos', icon: 'lni-gift', containerId: 'section-holidays' },
+  { id: 8, name: 'Servicios', icon: 'lni-package', containerId: 'section-services' },
+  { id: 9, name: 'Trabajadores', icon: 'lni-users', containerId: 'section-workers' }
 ];
 
 // Location data
@@ -91,6 +96,7 @@ const CITIES_MEXICO = {
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
   fetchUserData();
+  initializeBusinessTypeSelect();
   initializeSocialSelection();
   initializeNavigationButtons();
   initializeSectionNavigation();
@@ -152,6 +158,9 @@ function initializeSectionNavigation() {
       }
     });
   });
+
+  // Mostrar primera sección al iniciar
+  navigateToSection(1);
 }
 
 function navigateToSection(sectionId) {
@@ -840,6 +849,53 @@ function applyWorkerTime(wrapper, nativeInput, customInput, hoursColumn, minutes
 // ============================================
 // USER DATA
 // ============================================
+
+// ============================================
+// BUSINESS TYPE SELECT (Información del Negocio)
+// ============================================
+function initializeBusinessTypeSelect() {
+  const wrapper = document.getElementById('businessTypeWrapper');
+  const input = document.getElementById('businessTypeInput');
+  const dropdown = document.getElementById('businessTypeDropdown');
+  const search = document.getElementById('businessTypeSearch');
+  const options = document.querySelectorAll('#businessTypeOptions .select-option');
+
+  if (!wrapper) return;
+
+  wrapper.addEventListener('click', function(e) {
+    e.stopPropagation();
+    wrapper.classList.toggle('active');
+  });
+
+  options.forEach(option => {
+    option.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const value = this.dataset.value;
+      const text = this.querySelector('span').textContent;
+      input.value = text;
+      input.dataset.value = value;
+      agentData.businessType = value;
+      options.forEach(o => o.classList.remove('selected'));
+      this.classList.add('selected');
+      wrapper.classList.remove('active');
+    });
+  });
+
+  if (search) {
+    search.addEventListener('input', function(e) {
+      e.stopPropagation();
+      const q = this.value.toLowerCase();
+      options.forEach(opt => {
+        const match = opt.querySelector('span').textContent.toLowerCase().includes(q);
+        opt.style.display = match ? '' : 'none';
+      });
+    });
+    search.addEventListener('click', e => e.stopPropagation());
+  }
+
+  document.addEventListener('click', () => wrapper.classList.remove('active'));
+}
+
 async function fetchUserData() {
   try {
     const response = await fetch('/api/me', {
@@ -1768,6 +1824,24 @@ function animatePercentage(start, end, element) {
 }
 
 function collectFormData() {
+  // Información del negocio
+  const businessNameEl = document.getElementById('businessNameInput');
+  if (businessNameEl) agentData.businessName = businessNameEl.value.trim();
+
+  const businessTypeEl = document.getElementById('businessTypeInput');
+  if (businessTypeEl && businessTypeEl.dataset.value) {
+    agentData.businessType = businessTypeEl.dataset.value;
+  }
+
+  const businessDescEl = document.getElementById('businessDescInput');
+  if (businessDescEl) agentData.businessDescription = businessDescEl.value.trim();
+
+  const websiteEl = document.getElementById('websiteInput');
+  if (websiteEl) agentData.website = websiteEl.value.trim();
+
+  const emailContactEl = document.getElementById('emailContactInput');
+  if (emailContactEl) agentData.emailContact = emailContactEl.value.trim();
+
   agentData.name = document.getElementById('agentName').value;
 
   const useDifferentPhone = document.getElementById('phoneToggle').checked;
@@ -2276,7 +2350,11 @@ async function createAgent() {
       body: JSON.stringify({
         name: agentData.name,
         phoneNumber: agentData.phoneNumber,
+        businessName: agentData.businessName,
         businessType: agentData.businessType,
+        businessDescription: agentData.businessDescription,
+        website: agentData.website,
+        emailContact: agentData.emailContact,
         metaDocument: '',
         config: agentData.config
       }),
