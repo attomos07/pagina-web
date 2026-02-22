@@ -898,3 +898,39 @@
   transform: translateY(0);
   transition-delay: 0.35s;
 }
+/* ==========================================
+   NOTIFICATION DISMISS BUTTON
+   ========================================== */
+
+.notif-dismiss-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid #e5e7eb;
+  background: white;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 8px;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.notif-dismiss-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.notif-dismiss-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #ef4444;
+  transform: scale(1.15);
+}
+
+.notification-content {
+  align-items: center;
+}

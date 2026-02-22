@@ -220,16 +220,46 @@ function renderNotifications(notifications) {
                   </svg>`
     };
 
-    list.innerHTML = notifications.map(n => `
-        <div class="notification-item ${n.unread ? 'unread' : ''}">
+    list.innerHTML = notifications.map((n, idx) => `
+        <div class="notification-item ${n.unread ? 'unread' : ''}" data-idx="${idx}">
             <div class="notification-content">
                 <div class="notification-icon">${icons[n.type] || icons.appointment}</div>
                 <div class="notification-body">
                     <div class="notification-text">${n.text}</div>
                     <div class="notification-time">${n.time}</div>
                 </div>
+                <button class="notif-dismiss-btn" data-idx="${idx}" title="Eliminar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
             </div>
         </div>`).join('');
+
+    // Wire up dismiss buttons
+    list.querySelectorAll('.notif-dismiss-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const idx = parseInt(btn.dataset.idx);
+            const item = list.querySelector(`.notification-item[data-idx="${idx}"]`);
+            if (item) {
+                item.style.transition = 'all 0.25s ease';
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(20px)';
+                item.style.maxHeight = item.offsetHeight + 'px';
+                setTimeout(() => {
+                    item.style.maxHeight = '0';
+                    item.style.marginBottom = '0';
+                    item.style.padding = '0';
+                    setTimeout(() => {
+                        notifications.splice(idx, 1);
+                        renderNotifications(notifications);
+                    }, 200);
+                }, 200);
+            }
+        });
+    });
 
     const unreadCount = notifications.filter(n => n.unread).length;
     if (badge) {

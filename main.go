@@ -350,6 +350,10 @@ func main() {
 		c.HTML(200, "profile.html", nil)
 	})
 
+	router.GET("/notifications", middleware.AuthRequired(), func(c *gin.Context) {
+		c.HTML(200, "notifications.html", nil)
+	})
+
 	// ============================================
 	// HEALTH CHECK
 	// ============================================
