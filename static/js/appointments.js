@@ -679,22 +679,29 @@ async function updateAppointmentStatus(id, newStatus) {
     }
 }
 
-async function deleteAppointment(id, clientName) {
-    const confirmed = confirm(`¿Estás seguro de que deseas eliminar la cita de ${clientName}?`);
-    if (!confirmed) return;
-
-    try {
-        const response = await fetch(`/api/appointments/${id}`, {
-            method: 'DELETE',
-            credentials: 'include'
-        });
-        if (!response.ok) throw new Error('Error al eliminar');
-        showNotification('Cita eliminada correctamente', 'success');
-        await loadAppointments();
-    } catch (err) {
-        console.error('Error deleting appointment:', err);
-        showNotification('Error al eliminar la cita', 'error');
-    }
+function deleteAppointment(id, clientName) {
+    closeAllDropdowns();
+    showConfirmModal({
+        type: 'danger',
+        icon: 'lni-trash-3',
+        title: '¿Eliminar Cita?',
+        message: `Estás a punto de eliminar la cita de <strong>${clientName}</strong>`,
+        list: [
+            'Esta acción no se puede deshacer',
+            'Se perderán todos los datos de la cita'
+        ],
+        confirmText: 'Eliminar Cita',
+        confirmClass: 'danger',
+        onConfirm: async () => {
+            const response = await fetch(`/api/appointments/${id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+            if (!response.ok) throw new Error('Error al eliminar');
+            showNotification('Cita eliminada correctamente', 'success');
+            await loadAppointments();
+        }
+    });
 }
 
 function sendWhatsApp(phone, name) {
@@ -723,6 +730,87 @@ function escapeHtml(text) {
     return String(text).replace(/[&<>"']/g, function (m) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
     });
+}
+
+// ── Modal de Confirmación ──────────────────────────────────
+function showConfirmModal(options) {
+    const {
+        type = 'warning',
+        icon = 'lni-warning',
+        title = '¿Estás seguro?',
+        message = '',
+        list = [],
+        confirmText = 'Confirmar',
+        confirmClass = 'danger',
+        onConfirm = () => {}
+    } = options;
+
+    let modal = document.getElementById('confirmModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'confirmModal';
+        modal.className = 'confirm-modal';
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div class="confirm-overlay" onclick="closeConfirmModal()"></div>
+        <div class="confirm-content">
+            <div class="confirm-header">
+                <div class="confirm-icon ${type}">
+                    <i class="lni ${icon}"></i>
+                </div>
+                <h3 class="confirm-title">${title}</h3>
+                <p class="confirm-message">${message}</p>
+            </div>
+            <div class="confirm-body">
+                ${list.length > 0 ? `
+                    <div class="confirm-list">
+                        ${list.map(item => `
+                            <div class="confirm-list-item">
+                                <i class="lni lni-close"></i>
+                                <span>${item}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+                <div class="confirm-actions">
+                    <button class="btn-confirm-cancel" onclick="closeConfirmModal()">
+                        <i class="lni lni-close"></i>
+                        <span>Cancelar</span>
+                    </button>
+                    <button class="btn-confirm-action ${confirmClass}" id="confirmActionBtn">
+                        <i class="lni lni-checkmark"></i>
+                        <span>${confirmText}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    modal.classList.add('active');
+
+    document.getElementById('confirmActionBtn').addEventListener('click', async function () {
+        this.innerHTML = `<div class="loading-spinner-small"></div><span>Procesando...</span>`;
+        this.disabled = true;
+        try {
+            await onConfirm();
+            closeConfirmModal();
+        } catch (error) {
+            console.error('Error en confirmación:', error);
+            this.disabled = false;
+            this.innerHTML = `<i class="lni lni-checkmark"></i><span>${confirmText}</span>`;
+            showNotification('Ocurrió un error, intenta de nuevo', 'error');
+        }
+    });
+}
+
+function closeConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.remove(), 300);
+    }
 }
 
 function showNotification(message, type = 'info') {
