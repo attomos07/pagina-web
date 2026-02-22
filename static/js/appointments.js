@@ -180,21 +180,26 @@ function closeAppointmentModal() {
 async function handleCreateAppointment(e) {
     e.preventDefault();
 
-    const formData = {
-        client: (document.getElementById('clientFirstName').value + ' ' + document.getElementById('clientLastName').value).trim(),
-        phone: document.getElementById('clientPhone').value,
-        service: document.getElementById('serviceName').value,
-        worker: document.getElementById('workerName').value,
-        agentId: parseInt(document.getElementById('agentSelect').value),
-        date: document.getElementById('appointmentDate').value,
-        time: document.getElementById('appointmentTime').value,
-        status: document.getElementById('appointmentStatus').value
-    };
+    const clientFirstName = document.getElementById('clientFirstName').value.trim();
+    const clientLastName = document.getElementById('clientLastName').value.trim();
+    const agentId = parseInt(document.getElementById('agentSelect').value);
 
-    if (!formData.agentId) {
+    if (!agentId) {
         showNotification('Por favor selecciona un agente', 'error');
         return;
     }
+
+    const payload = {
+        clientFirstName,
+        clientLastName,
+        clientPhone: document.getElementById('clientPhone').value.trim(),
+        service: document.getElementById('serviceName').value.trim(),
+        worker: document.getElementById('workerName').value.trim(),
+        agentId,
+        date: document.getElementById('appointmentDate').value,
+        time: document.getElementById('appointmentTime').value,
+        status: document.getElementById('appointmentStatus').value || 'confirmed'
+    };
 
     const submitBtn = e.target.querySelector('.btn-submit');
     const originalHTML = submitBtn.innerHTML;
@@ -202,12 +207,33 @@ async function handleCreateAppointment(e) {
     submitBtn.disabled = true;
 
     try {
-        await new Promise(resolve => setTimeout(resolve, 800));
+        const response = await fetch('/api/appointments', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || `HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        // Build local appointment object from the submitted data + server ID
         const newAppointment = {
-            id: `temp-${Date.now()}`,
-            ...formData,
-            agentName: agents.find(a => a.id === formData.agentId)?.name || 'Agente desconocido'
+            id: String(result.id),
+            client: `${clientFirstName} ${clientLastName}`.trim(),
+            phone: payload.clientPhone,
+            service: payload.service,
+            worker: payload.worker,
+            agentId: payload.agentId,
+            agentName: agents.find(a => a.id === payload.agentId)?.name || 'Agente desconocido',
+            date: payload.date,
+            time: payload.time,
+            status: payload.status,
+            source: 'manual'
         };
 
         appointments.unshift(newAppointment);
@@ -221,7 +247,7 @@ async function handleCreateAppointment(e) {
 
     } catch (error) {
         console.error('❌ Error al crear cita:', error);
-        showNotification('❌ Error al crear la cita', 'error');
+        showNotification(`❌ Error al crear la cita: ${error.message}`, 'error');
         submitBtn.innerHTML = originalHTML;
         submitBtn.disabled = false;
     }
