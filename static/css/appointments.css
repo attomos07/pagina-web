@@ -296,8 +296,8 @@ body {
 }
 
 .stat-icon.orange {
-  background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
 .stat-icon.purple {
@@ -793,11 +793,11 @@ body {
 }
 
 .action-item.delete:hover {
-  background: #fef2f2;
-  color: #dc2626;
+  background: #fff1f2;
+  color: #9f1239;
 }
 .action-item.delete:hover i {
-  color: #dc2626;
+  color: #be123c;
 }
 .action-item.delete {
   border-top: 1px solid #f3f4f6;

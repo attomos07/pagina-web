@@ -671,11 +671,11 @@ async function updateAppointmentStatus(id, newStatus) {
             body: JSON.stringify({ status: newStatus })
         });
         if (!response.ok) throw new Error('Error al actualizar');
-        showToast(`Cita marcada como ${labels[newStatus]}`, 'success');
+        showNotification(`Cita marcada como ${labels[newStatus]}`, 'success');
         await loadAppointments();
     } catch (err) {
         console.error('Error updating appointment status:', err);
-        showToast('Error al actualizar el estado', 'error');
+        showNotification('Error al actualizar el estado', 'error');
     }
 }
 
@@ -689,11 +689,11 @@ async function deleteAppointment(id, clientName) {
             credentials: 'include'
         });
         if (!response.ok) throw new Error('Error al eliminar');
-        showToast('Cita eliminada correctamente', 'success');
+        showNotification('Cita eliminada correctamente', 'success');
         await loadAppointments();
     } catch (err) {
         console.error('Error deleting appointment:', err);
-        showToast('Error al eliminar la cita', 'error');
+        showNotification('Error al eliminar la cita', 'error');
     }
 }
 
@@ -725,22 +725,23 @@ function escapeHtml(text) {
     });
 }
 
-function showNotification(msg, type = 'info') {
-    const div = document.createElement('div');
-    const color = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#06b6d4');
-    div.style.cssText = `position:fixed; top:2rem; right:2rem; background:${color}; color:white; padding:1rem 1.5rem; border-radius:12px; z-index:10000; font-weight:600; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display:flex; gap:0.5rem; align-items:center; animation: slideIn 0.3s ease;`;
-    div.innerHTML = `<i class="lni lni-${type === 'success' ? 'checkmark-circle' : 'warning'}"></i> ${msg}`;
-    document.body.appendChild(div);
-    setTimeout(() => {
-        div.style.opacity = '0';
-        div.style.transform = 'translateX(100%)';
-        div.style.transition = 'all 0.3s ease';
-        setTimeout(() => div.remove(), 300);
-    }, 3000);
+function showNotification(message, type = 'info') {
+    const titles = {
+        success: 'Listo',
+        error:   'Error',
+        warning: 'Aviso',
+        info:    'Información'
+    };
+    const opts = { title: titles[type] || 'Aviso', description: message };
+    if (typeof Sileo !== 'undefined' && Sileo[type]) {
+        Sileo[type](opts);
+    } else {
+        // fallback si Sileo no cargó aún
+        const color = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#06b6d4');
+        const div = document.createElement('div');
+        div.style.cssText = `position:fixed;top:1.5rem;left:50%;transform:translateX(-50%);background:white;color:#18181b;padding:.75rem 1.25rem;border-radius:20px;z-index:10000;font-weight:600;font-size:.875rem;box-shadow:0 8px 32px rgba(0,0,0,0.10);border:1px solid rgba(0,0,0,0.08);display:flex;align-items:center;gap:.5rem;`;
+        div.innerHTML = `<span style="background:color-mix(in srgb,${color} 20%,transparent);color:${color};border-radius:9999px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:.75rem;">●</span><span>${message}</span>`;
+        document.body.appendChild(div);
+        setTimeout(() => { div.style.opacity='0'; div.style.transition='opacity .3s'; setTimeout(()=>div.remove(),300); }, 3000);
+    }
 }
-
-const styleSheet = document.createElement("style");
-styleSheet.innerText = `
-@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-`;
-document.head.appendChild(styleSheet);
