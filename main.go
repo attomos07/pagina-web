@@ -193,8 +193,13 @@ func main() {
 		protected.PATCH("/appointments/:id/status", handlers.UpdateAppointmentStatus)
 		protected.DELETE("/appointments/:id", handlers.DeleteAppointment)
 
-		// Billing
+		// Billing GCP (costos BigQuery)
 		protected.GET("/billing/data", handlers.GetBillingData)
+
+		// Billing Suscripciones y Pagos Stripe
+		protected.GET("/billing/info", handlers.GetBillingInfo)
+		protected.GET("/billing/payments", handlers.GetBillingPayments)
+		protected.POST("/billing/cancel", handlers.CancelSubscription)
 
 		// Chatwoot
 		protected.GET("/chatwoot/info", handlers.GetChatwootInfo)

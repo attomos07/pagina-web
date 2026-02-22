@@ -207,6 +207,15 @@ func GetCurrentUser(c *gin.Context) {
 	// Precargar proyecto GCP si existe
 	config.DB.Preload("GoogleCloudProject").First(&user, user.ID)
 
+	// Obtener plan actual desde suscripción
+	var subscription models.Subscription
+	currentPlan := "gratuito"
+	if err := config.DB.Where("user_id = ?", user.ID).First(&subscription).Error; err == nil {
+		if subscription.Plan != "" && subscription.Plan != "pending" {
+			currentPlan = subscription.Plan
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"user": gin.H{
 			"id":            user.ID,
@@ -216,6 +225,7 @@ func GetCurrentUser(c *gin.Context) {
 			"businessSize":  user.BusinessSize,
 			"phoneNumber":   user.PhoneNumber,
 			"projectStatus": user.GetGCPProjectStatus(),
+			"currentPlan":   currentPlan,
 		},
 	})
 }

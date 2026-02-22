@@ -40,9 +40,9 @@
                         <div class="header-content">
                             <h1 class="page-title">
                                 <i class="lni lni-credit-cards"></i>
-                                Historial de Pagos
+                                Facturación
                             </h1>
-                            <p class="page-subtitle">Gestiona y revisa todas tus transacciones</p>
+                            <p class="page-subtitle">Gestiona tu suscripción y revisa tus transacciones</p>
                         </div>
                         <a href="/plans" class="change-plan-btn">
                             <i class="lni lni-layers"></i>
@@ -50,12 +50,12 @@
                         </a>
                     </div>
 
-                    <!-- Current Subscription -->
+                    <!-- Current Subscription (dinámica via JS) -->
                     <div class="subscription-card">
                         <div class="subscription-header">
                             <div class="subscription-title-wrapper">
                                 <h2 class="subscription-title">Suscripción Actual</h2>
-                                <span class="subscription-status active">Activa</span>
+                                <span class="subscription-status inactive" id="subscriptionStatus">Cargando...</span>
                             </div>
                             <a href="/billing/payment-method" class="edit-payment-btn">
                                 <i class="lni lni-pencil"></i>
@@ -65,23 +65,23 @@
 
                         <div class="subscription-details">
                             <div class="subscription-info">
-                                <div class="info-row">
+                                <div class="info-row" id="subPlanRow">
                                     <span class="info-label">Plan:</span>
-                                    <span class="info-value">Plan Protón</span>
+                                    <span class="info-value" style="color:#9ca3af;">Cargando...</span>
                                 </div>
-                                <div class="info-row">
+                                <div class="info-row" id="subPriceRow">
                                     <span class="info-label">Precio:</span>
-                                    <span class="info-value">$149 MXN / mes</span>
+                                    <span class="info-value">—</span>
                                 </div>
-                                <div class="info-row">
+                                <div class="info-row" id="subNextRow">
                                     <span class="info-label">Próximo cobro:</span>
-                                    <span class="info-value">15 de Noviembre, 2025</span>
+                                    <span class="info-value">—</span>
                                 </div>
-                                <div class="info-row">
+                                <div class="info-row" id="subMethodRow" style="display:none;">
                                     <span class="info-label">Método de pago:</span>
                                     <span class="info-value">
-                                        <i class="lni lni-mastercard"></i>
-                                        •••• 4242
+                                        <i class="lni lni-credit-cards"></i>
+                                        Stripe
                                     </span>
                                 </div>
                             </div>
@@ -90,7 +90,7 @@
                                     <i class="lni lni-arrow-up-circle"></i>
                                     Actualizar Plan
                                 </a>
-                                <button class="action-link danger" onclick="cancelSubscription()">
+                                <button class="action-link danger" id="cancelBtn" onclick="cancelSubscription()">
                                     <i class="lni lni-close-circle"></i>
                                     Cancelar Suscripción
                                 </button>
@@ -98,8 +98,11 @@
                         </div>
                     </div>
 
-                    <!-- Payments Table — same design as my-agents table -->
+                    <!-- Payments Table -->
                     <div class="agents-table-container" id="paymentsTableContainer">
+                        <div style="padding:1.25rem 1.5rem 0.5rem;border-bottom:1px solid #f3f4f6;">
+                            <h3 style="font-size:1rem;font-weight:700;color:#1a1a1a;">Historial de Pagos</h3>
+                        </div>
                         <table class="agents-table" id="paymentsTable">
                             <thead>
                                 <tr>
@@ -109,7 +112,7 @@
                                     <th>Mes</th>
                                     <th>Fecha de Pago</th>
                                     <th style="color:#06b6d4;">Cantidad</th>
-                                    <th>Facturado</th>
+                                    <th>Estado</th>
                                     <th style="text-align:right;"></th>
                                 </tr>
                             </thead>

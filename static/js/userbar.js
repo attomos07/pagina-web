@@ -50,11 +50,9 @@ function updateUserbarUI(user) {
     }
 
     const userPlanElement = document.getElementById('userPlan');
-    if (userPlanElement) {
-        const serverPlan = userPlanElement.getAttribute('data-server-plan');
-        if (!serverPlan && user.currentPlan) {
-            userPlanElement.textContent = getPlanName(user.currentPlan);
-        }
+    if (userPlanElement && user.currentPlan) {
+        // Siempre usar el plan que viene de /api/me (fuente de verdad)
+        userPlanElement.textContent = getPlanName(user.currentPlan);
     }
 
     const userInitialsElement = document.getElementById('userInitials');
