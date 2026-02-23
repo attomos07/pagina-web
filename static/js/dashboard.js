@@ -446,6 +446,7 @@ function reinitializeOnboardingEvents() {
     if (typeof initializeWorkers === 'function') initializeWorkers();
     if (typeof initializeLocationDropdowns === 'function') initializeLocationDropdowns();
     if (typeof initializeSocialMediaInputs === 'function') initializeSocialMediaInputs();
+    if (typeof initializeBusinessTypeSelect === 'function') initializeBusinessTypeSelect();
 
     setTimeout(() => {
         if (typeof initBusinessTimePickers === 'function') initBusinessTimePickers();
