@@ -17,6 +17,12 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================
 
 async function initUserbar() {
+    // Render from cache immediately to avoid flash of placeholder text
+    const cached = localStorage.getItem('userData');
+    if (cached) {
+        try { updateUserbarUI(JSON.parse(cached)); } catch(e) {}
+    }
+
     try {
         const response = await fetch('/api/me', {
             method: 'GET',
@@ -41,12 +47,14 @@ function updateUserbarUI(user) {
     if (userNameElement) {
         const businessName = user.firstName || user.company || 'Mi Empresa';
         userNameElement.textContent = businessName;
+        userNameElement.style.visibility = 'visible';
     }
 
     const userRoleElement = document.getElementById('userRole');
     if (userRoleElement) {
         const businessType = getBusinessTypeLabel(user.businessType) || 'Negocio';
         userRoleElement.textContent = businessType;
+        userRoleElement.style.visibility = 'visible';
     }
 
     const userPlanElement = document.getElementById('userPlan');
@@ -64,6 +72,8 @@ function updateUserbarUI(user) {
         if (userInitialsElement) {
             userInitialsElement.style.display = 'none';
         }
+        // Ensure avatar area is visible
+        userAvatarImg.style.visibility = 'visible';
     } else if (userInitialsElement) {
         const name = user.firstName || user.company || 'Usuario';
         const initials = name.split(' ')
@@ -72,6 +82,7 @@ function updateUserbarUI(user) {
             .toUpperCase()
             .substring(0, 2);
         userInitialsElement.textContent = initials;
+        userInitialsElement.style.visibility = 'visible';
     }
 
     localStorage.setItem('userData', JSON.stringify(user));

@@ -46,15 +46,15 @@
     <!-- User Avatar & Dropdown -->
     <div class="user-avatar" id="userAvatar">
         <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop" alt="Perfil" id="userAvatarImg" style="display: none;">
-        <span class="user-initials" id="userInitials">JD</span>
+        <span class="user-initials" id="userInitials" style="visibility:hidden"></span>
         <span class="tooltip">Perfil</span>
     </div>
 
     <!-- User Dropdown Menu -->
     <div class="user-dropdown" id="userDropdown">
         <div class="user-info-header">
-            <div class="user-name" id="userName">Cargando...</div>
-            <div class="user-role" id="userRole">...</div>
+            <div class="user-name" id="userName" style="visibility:hidden"></div>
+            <div class="user-role" id="userRole" style="visibility:hidden"></div>
             {{/* Plan inyectado desde el servidor - evita parpadeo con valor incorrecto */}}
             <div class="user-plan" id="userPlan" data-server-plan="{{.currentPlan}}">
                 {{if .currentPlan}}
