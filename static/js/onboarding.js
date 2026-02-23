@@ -91,15 +91,14 @@ const CITIES_MEXICO = {
               'León', 'Juárez', 'Zapopan', 'Mérida', 'Cancún']
 };
 
-
 // ============================================
-// DOT INDICATOR CONFIG
+// DOT INDICATOR ENGINE
 // ============================================
-const DOT_COUNT = 10;          // puntos totales
-const DOT_INTERVAL_MS = 600;   // velocidad 0.6 s por punto
-let _dotTimer = null;
-let _dotCurrent = 0;           // índice del punto activo (0-based)
-let _dotTarget = 0;            // hasta qué punto (inclusive) puede avanzar
+const DOT_COUNT = 10;
+const DOT_INTERVAL_MS = 600;   // velocidad 0.6s
+let _dotTimer   = null;
+let _dotCurrent = 0;
+let _dotTarget  = 0;
 
 function initDotIndicator() {
   const container = document.getElementById('progressDots');
@@ -113,44 +112,41 @@ function initDotIndicator() {
   }
   _dotCurrent = 0;
   _dotTarget  = 0;
-  renderDots();
-  startDotAnimation();
+  _renderDots();
+  _startDotAnim();
 }
 
-function renderDots() {
+function _renderDots() {
   for (let i = 0; i < DOT_COUNT; i++) {
     const d = document.getElementById('pdot-' + i);
     if (!d) continue;
     d.className = 'progress-step';
-    if (i === _dotCurrent)      d.classList.add('dot-active');
-    else if (i < _dotCurrent)   d.classList.add('dot-lit');
+    if (i === _dotCurrent)    d.classList.add('dot-active');
+    else if (i < _dotCurrent) d.classList.add('dot-lit');
   }
 }
 
-function startDotAnimation() {
+function _startDotAnim() {
   if (_dotTimer) clearInterval(_dotTimer);
-  _dotTimer = setInterval(tickDot, DOT_INTERVAL_MS);
+  _dotTimer = setInterval(_tickDot, DOT_INTERVAL_MS);
 }
 
-function tickDot() {
+function _tickDot() {
   const next = _dotCurrent + 1;
   if (next > _dotTarget) {
-    // llegó al destino – apagar todos y reiniciar desde 0
+    // llegó al tope: apagar todo y reiniciar desde 0
     _dotCurrent = 0;
-    renderDots();
-    return;
+  } else {
+    _dotCurrent = next;
   }
-  _dotCurrent = next;
-  renderDots();
+  _renderDots();
 }
 
-// Llama esto cuando cambia el paso/sección del onboarding
-function setDotTarget(progressFraction) {
-  // progressFraction: 0.0 → 1.0
-  _dotTarget = Math.round(progressFraction * (DOT_COUNT - 1));
-  // Si el cursor ya pasó el nuevo tope, lo reposicionamos
+function setDotTarget(fraction) {
+  // fraction 0.0 → 1.0
+  _dotTarget = Math.round(fraction * (DOT_COUNT - 1));
   if (_dotCurrent > _dotTarget) _dotCurrent = 0;
-  renderDots();
+  _renderDots();
 }
 
 // ============================================
@@ -273,7 +269,7 @@ function navigateToSection(sectionId) {
   // Scroll al inicio del contenedor
   window.scrollTo(0, 0);
 
-  // Actualizar dot-indicator con la fracción correcta
+  // Actualizar dot-indicator
   updateProgressBar();
 }
 
@@ -1813,23 +1809,17 @@ function updateStepDisplay() {
 }
 
 function updateProgressBar() {
-  // ── Calcular fracción de progreso considerando pasos Y secciones ──────────
-  // Paso 1 (elegir red social): 0/2
-  // Paso 2 (configuración 9 secciones): proporcional dentro del rango 1/2→2/2
-  // Paso 3 (resumen): 2/2
   let fraction;
   if (currentStep === 1) {
     fraction = 0;
   } else if (currentStep === 2) {
-    const totalSections = 9;
-    // sección 1..9 → fracción 0.5 .. <1.0 dentro del rango [1/2, 2/2]
-    const sectionFraction = (currentSection - 1) / totalSections;
-    fraction = 0.5 + sectionFraction * 0.5;
+    // Opción B: solo las 9 secciones del paso 2 marcan el progreso real (0%→100%)
+    fraction = currentSection / 9;
   } else {
     fraction = 1.0;
   }
 
-  // ── Actualizar porcentaje numérico ────────────────────────────────────────
+  // Porcentaje numérico
   const progressPercentage = document.getElementById('progressPercentage');
   if (progressPercentage) {
     const targetPct = Math.round(fraction * 100);
@@ -1837,7 +1827,7 @@ function updateProgressBar() {
     animatePercentage(currentPct, targetPct, progressPercentage);
   }
 
-  // ── Mover el límite del dot-indicator ────────────────────────────────────
+  // Mover tope del dot-indicator
   setDotTarget(fraction);
 }
 

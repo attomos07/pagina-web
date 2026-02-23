@@ -2832,3 +2832,9 @@ input:checked + .toggle-slider:before {
   text-align: center;
   flex-shrink: 0;
 }
+
+/* ── Social brand colors (from profile) ── */
+.form-label i.lni-facebook-oval { color: #1877f2 !important; }
+.form-label i.lni-instagram      { color: #e4405f !important; }
+.form-label i.lni-twitter        { color: #1da1f2 !important; }
+.form-label i.lni-linkedin       { color: #0a66c2 !important; }
