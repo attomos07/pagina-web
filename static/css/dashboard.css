@@ -3834,3 +3834,12 @@ body {
   text-align: center;
   flex-shrink: 0;
 }
+
+/* ============================================
+   SOCIAL MEDIA BRAND COLORS - Onboarding Modal
+   (same as profile.css)
+   ============================================ */
+.form-label i.lni-facebook-oval { color: #1877f2 !important; }
+.form-label i.lni-instagram      { color: #e4405f !important; }
+.form-label i.lni-twitter        { color: #1da1f2 !important; }
+.form-label i.lni-linkedin       { color: #0a66c2 !important; }
