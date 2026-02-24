@@ -123,13 +123,15 @@ function updateStatusBadge(agent) {
 async function loadQRCode() {
     // Only load QR for atomic bots (WhatsApp Web)
     if (agent.botType !== 'atomic') {
-        const qrSection = document.getElementById('qrSection');
-        qrSection.style.display = 'none';
-        // Expand layout to full width when no QR
-        const detailsGrid = document.querySelector('.details-grid');
-        if (detailsGrid) detailsGrid.classList.add('no-qr');
+        // qrSection is already hidden by default in HTML, nothing to do
         return;
     }
+    
+    // It IS atomic: show qrSection and switch to 2-column layout
+    const qrSection = document.getElementById('qrSection');
+    if (qrSection) qrSection.style.display = '';
+    const detailsGrid = document.getElementById('detailsGrid') || document.querySelector('.details-grid');
+    if (detailsGrid) detailsGrid.classList.remove('no-qr');
     
     try {
         const response = await fetch(`/api/agents/${agentId}/qr`, {

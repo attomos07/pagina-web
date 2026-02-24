@@ -538,7 +538,7 @@ function createTableRow(appt) {
                         ${appt.phone ? `<div class="action-item whatsapp" onclick="sendWhatsApp('${appt.phone}', '${escapeHtml(appt.client)}')"><i class="lni lni-whatsapp"></i> WhatsApp</div>` : ''}
                         ${appt.status !== 'completed' ? `<div class="action-item complete" onclick="updateAppointmentStatus('${appt.id}', 'completed')"><i class="lni lni-checkmark-circle"></i> Marcar Completada</div>` : ''}
                         ${appt.status !== 'cancelled' ? `<div class="action-item cancel" onclick="updateAppointmentStatus('${appt.id}', 'cancelled')"><i class="lni lni-ban"></i> Marcar Cancelada</div>` : ''}
-                        <div class="action-item delete" onclick="deleteAppointment('${appt.id}', '${escapeHtml(appt.client)}')"><i class="lni lni-trash-3"></i> Eliminar</div>
+                        <div class="action-item delete" onclick="deleteAppointment('${appt.id}', '${escapeHtml(appt.client)}')"><i class="lni lni-trash-can"></i> Eliminar</div>
                     </div>
                 </div>
             </td>
@@ -683,7 +683,7 @@ function deleteAppointment(id, clientName) {
     closeAllDropdowns();
     showConfirmModal({
         type: 'danger',
-        icon: 'lni-trash-3',
+        icon: 'lni-trash-can',
         title: '¿Eliminar Cita?',
         message: `Estás a punto de eliminar la cita de <strong>${clientName}</strong>`,
         list: [

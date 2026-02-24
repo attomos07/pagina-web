@@ -610,37 +610,27 @@ function closeConfirmModal() {
     }
 }
 
-// Mostrar notificación
+// Mostrar notificación — usa Sileo toast system
 function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 2rem;
-        right: 2rem;
-        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#06b6d4'};
-        color: white;
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-        z-index: 10000;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-weight: 600;
-        animation: slideIn 0.3s ease;
-    `;
+    if (typeof Sileo === 'undefined') {
+        console.warn('Sileo no disponible, fallback a console');
+        console.log(`[${type}] ${message}`);
+        return;
+    }
 
-    notification.innerHTML = `
-        <i class="lni lni-${type === 'success' ? 'checkmark-circle' : type === 'error' ? 'warning' : 'information'}"></i>
-        <span>${message}</span>
-    `;
+    const titleMap = {
+        success: 'Éxito',
+        error:   'Error',
+        warning: 'Advertencia',
+        info:    'Información'
+    };
 
-    document.body.appendChild(notification);
+    const sileoType = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'info';
 
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
+    Sileo[sileoType]({
+        title:       titleMap[sileoType],
+        description: message
+    });
 }
 
 // Mostrar estado vacío
@@ -700,14 +690,6 @@ style.textContent = `
         animation: spin 1s linear infinite;
     }
     
-    @keyframes slideIn {
-        from { transform: translateX(400px); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(400px); opacity: 0; }
-    }
+    /* slideIn / slideOut removed — using Sileo toast system */
 `;
 document.head.appendChild(style);
