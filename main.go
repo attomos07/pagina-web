@@ -360,6 +360,20 @@ func main() {
 	})
 
 	// ============================================
+	// RECOVER PASSWORD (PÚBLICAS — sin autenticación)
+	// ============================================
+
+	// Página
+	router.GET("/recover-password", func(c *gin.Context) {
+		c.HTML(200, "recover-password.html", gin.H{
+			"title": "Recuperar Contraseña - Attomos",
+		})
+	})
+
+	// API — el usuario no está autenticado, va fuera del grupo protected
+	router.POST("/api/user/password-reset", handlers.RequestPasswordReset)
+
+	// ============================================
 	// HEALTH CHECK
 	// ============================================
 
