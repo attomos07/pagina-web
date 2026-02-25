@@ -201,6 +201,13 @@ func main() {
 		protected.GET("/billing/payments", handlers.GetBillingPayments)
 		protected.POST("/billing/cancel", handlers.CancelSubscription)
 
+		// Payment Methods
+		protected.GET("/billing/payment-methods", handlers.GetPaymentMethods)
+		protected.POST("/billing/payment-methods", handlers.AddPaymentMethod)
+		protected.PUT("/billing/payment-methods/:id", handlers.UpdatePaymentMethod)
+		protected.POST("/billing/payment-methods/:id/default", handlers.SetDefaultPaymentMethod)
+		protected.DELETE("/billing/payment-methods/:id", handlers.DeletePaymentMethod)
+
 		// Chatwoot
 		protected.GET("/chatwoot/info", handlers.GetChatwootInfo)
 
@@ -340,6 +347,8 @@ func main() {
 	router.GET("/billing", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "billing.html", nil)
 	})
+
+	router.GET("/billing/payment-method", middleware.AuthRequired(), handlers.GetPaymentMethodPage)
 
 	router.GET("/plans", middleware.AuthRequired(), handlers.GetPlansPage)
 

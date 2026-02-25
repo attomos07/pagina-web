@@ -73,10 +73,21 @@ function renderSubscriptionCard(data) {
         setInfoRow('subNextRow', 'Vence en:', `<span style="color:#f59e0b;font-weight:600;">${sub.daysRemaining} días</span>`);
     }
 
-    // Botón cancelar
+    // Inicio de plan/prueba
+    if (sub.startDate) {
+        const startLabel = sub.isTrial ? 'Inicio de prueba:' : 'Inicio del plan:';
+        setInfoRow('subStartRow', startLabel, sub.startDate);
+    } else {
+        const startEl = document.getElementById('subStartRow');
+        if (startEl) startEl.style.display = 'none';
+    }
+
+    // Botón cancelar — ocultar si plan gratuito O si ya está cancelado
     const cancelBtn = document.getElementById('cancelBtn');
     if (cancelBtn) {
-        if (sub.cancelAtPeriodEnd) {
+        const isFree = sub.isFree || sub.planKey === 'free' || sub.planKey === 'gratuito' ||
+                       (sub.planDisplay && sub.planDisplay.toLowerCase().includes('gratuito'));
+        if (sub.cancelAtPeriodEnd || isFree) {
             cancelBtn.style.display = 'none';
         } else {
             cancelBtn.style.display = '';
@@ -218,24 +229,115 @@ function copyPaymentId(id) {
 // CANCELAR SUSCRIPCIÓN
 // ============================================
 
-async function cancelSubscription() {
-    if (!confirm('¿Estás seguro de que quieres cancelar tu suscripción? Seguirás teniendo acceso hasta el final del período actual.')) return;
-
-    try {
-        showNotification('Procesando cancelación...', 'info');
-        const response = await fetch('/api/billing/cancel', {
-            method: 'POST',
-            credentials: 'include'
-        });
-        const data = await response.json();
-        if (response.ok) {
-            showNotification('Suscripción cancelada. Acceso activo hasta fin del período.', 'success');
-            setTimeout(() => loadBillingInfo(), 1000);
-        } else {
-            showNotification(data.error || 'Error al cancelar', 'error');
+function cancelSubscription() {
+    showConfirmModal({
+        type: 'danger',
+        icon: 'lni-warning',
+        title: '¿Cancelar Suscripción?',
+        message: 'Estás a punto de cancelar tu suscripción activa.',
+        list: [
+            'Mantendrás acceso hasta el fin del período actual',
+            'No se realizarán más cobros automáticos',
+            'Podrás reactivar tu plan en cualquier momento'
+        ],
+        confirmText: 'Sí, cancelar',
+        confirmClass: 'danger',
+        onConfirm: async () => {
+            const response = await fetch('/api/billing/cancel', {
+                method: 'POST',
+                credentials: 'include'
+            });
+            const data = await response.json();
+            if (response.ok) {
+                showNotification('Suscripción cancelada. Acceso activo hasta fin del período.', 'success');
+                setTimeout(() => loadBillingInfo(), 1000);
+            } else {
+                throw new Error(data.error || 'Error al cancelar');
+            }
         }
-    } catch (e) {
-        showNotification('Error de conexión', 'error');
+    });
+}
+
+// ============================================
+// MODAL DE CONFIRMACIÓN (idéntico a my-agents)
+// ============================================
+
+function showConfirmModal(options) {
+    const {
+        type = 'warning',
+        icon = 'lni-warning',
+        title = '¿Estás seguro?',
+        message = '',
+        list = [],
+        confirmText = 'Confirmar',
+        confirmClass = 'danger',
+        onConfirm = () => {}
+    } = options;
+
+    let modal = document.getElementById('confirmModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'confirmModal';
+        modal.className = 'confirm-modal';
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div class="confirm-overlay" onclick="closeConfirmModal()"></div>
+        <div class="confirm-content">
+            <div class="confirm-header">
+                <div class="confirm-icon ${type}">
+                    <i class="lni ${icon}"></i>
+                </div>
+                <h3 class="confirm-title">${title}</h3>
+                <p class="confirm-message">${message}</p>
+            </div>
+            <div class="confirm-body">
+                ${list.length > 0 ? `
+                    <div class="confirm-list">
+                        ${list.map(item => `
+                            <div class="confirm-list-item">
+                                <i class="lni lni-close"></i>
+                                <span>${item}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+                <div class="confirm-actions">
+                    <button class="btn-confirm-cancel" onclick="closeConfirmModal()">
+                        <i class="lni lni-close"></i>
+                        <span>Volver</span>
+                    </button>
+                    <button class="btn-confirm-action ${confirmClass}" id="confirmActionBtn">
+                        <i class="lni lni-checkmark"></i>
+                        <span>${confirmText}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    modal.classList.add('active');
+
+    document.getElementById('confirmActionBtn').addEventListener('click', async function () {
+        this.innerHTML = `<div class="loading-spinner-small"></div><span>Procesando...</span>`;
+        this.disabled = true;
+        try {
+            await onConfirm();
+            closeConfirmModal();
+        } catch (error) {
+            showNotification(error.message || 'Error al procesar', 'error');
+            this.disabled = false;
+            this.innerHTML = `<i class="lni lni-checkmark"></i><span>${confirmText}</span>`;
+        }
+    });
+}
+
+function closeConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.remove(), 300);
     }
 }
 
