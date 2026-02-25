@@ -202,26 +202,46 @@ async function handleCreateAppointment(e) {
     submitBtn.disabled = true;
 
     try {
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        const newAppointment = {
-            id: `temp-${Date.now()}`,
-            ...formData,
-            agentName: agents.find(a => a.id === formData.agentId)?.name || 'Agente desconocido'
+        // El backend espera date (YYYY-MM-DD) y time (HH:MM) como campos separados
+        const body = {
+            clientFirstName: document.getElementById('clientFirstName').value.trim(),
+            clientLastName:  document.getElementById('clientLastName').value.trim(),
+            clientPhone:     formData.phone,
+            service:         formData.service,
+            worker:          formData.worker,
+            agentId:         formData.agentId,
+            date:            formData.date,                               // YYYY-MM-DD
+            time:            formData.time || '09:00',                    // HH:MM
+            notes:           '',
+            status:          formData.status || 'confirmed'
         };
 
-        appointments.unshift(newAppointment);
+        console.log('📤 Enviando cita:', body);
 
+        const response = await fetch('/api/appointments', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            const errText = await response.text().catch(() => '');
+            console.error('❌ Respuesta del servidor:', errText);
+            let err = {};
+            try { err = JSON.parse(errText); } catch (e) {}
+            throw new Error(err.details || err.error || err.message || errText || 'Error al crear la cita');
+        }
+
+        closeAppointmentModal();
+        showNotification('✅ Cita creada exitosamente', 'success');
+        await loadAppointments();
         updateStats();
         renderAppointments();
-        hideEmptyState();
-        closeAppointmentModal();
-
-        showNotification('✅ Cita creada exitosamente', 'success');
 
     } catch (error) {
         console.error('❌ Error al crear cita:', error);
-        showNotification('❌ Error al crear la cita', 'error');
+        showNotification(`❌ ${error.message || 'Error al crear la cita'}`, 'error');
         submitBtn.innerHTML = originalHTML;
         submitBtn.disabled = false;
     }
@@ -381,7 +401,16 @@ async function loadAppointments() {
         const response = await fetch('/api/appointments', { credentials: 'include' });
         if (!response.ok) throw new Error('Error API Citas');
         const data = await response.json();
-        appointments = data.appointments || [];
+        // El backend devuelve { appointments: [...] } con:
+        // id (string numérico real del DB), client, phone, service, worker,
+        // date (YYYY-MM-DD), time (HH:MM), status, agentId, agentName, source, sheetUrl, sheetCell
+        appointments = (data.appointments || []).map(a => ({
+            ...a,
+            // Asegurar que el id sea siempre el numérico de BD (no el sheetCell)
+            id: a.id,
+            // Guardar sheetCell por separado para no confundirlo con el id
+            sheetCell: a.sheetCell || ''
+        }));
         if (appointments.length === 0) showEmptyState();
         else hideEmptyState();
     } catch (error) {
@@ -530,15 +559,15 @@ function createTableRow(appt) {
             <td><span class="appointment-status status-${appt.status}">${getStatusText(appt.status)}</span></td>
             <td>
                 <div class="actions-dropdown">
-                    <button class="actions-btn" onclick="toggleDropdown(event, '${appt.id}')">
+                    <button class="actions-btn" onclick="toggleDropdown(event, ${appt.id})">
                         <i class="lni lni-more-alt"></i>
                     </button>
                     <div class="actions-menu" id="dropdown-${appt.id}">
                         ${appt.sheetUrl ? `<div class="action-item sheet" onclick="openGoogleSheet('${appt.sheetUrl}')"><i class="lni lni-text-format"></i> Ver Sheet</div>` : ''}
                         ${appt.phone ? `<div class="action-item whatsapp" onclick="sendWhatsApp('${appt.phone}', '${escapeHtml(appt.client)}')"><i class="lni lni-whatsapp"></i> WhatsApp</div>` : ''}
-                        ${appt.status !== 'completed' ? `<div class="action-item complete" onclick="updateAppointmentStatus('${appt.id}', 'completed')"><i class="lni lni-checkmark-circle"></i> Marcar Completada</div>` : ''}
-                        ${appt.status !== 'cancelled' ? `<div class="action-item cancel" onclick="updateAppointmentStatus('${appt.id}', 'cancelled')"><i class="lni lni-ban"></i> Marcar Cancelada</div>` : ''}
-                        <div class="action-item delete" onclick="deleteAppointment('${appt.id}', '${escapeHtml(appt.client)}')"><i class="lni lni-trash-can"></i> Eliminar</div>
+                        ${appt.status !== 'completed' ? `<div class="action-item complete" onclick="updateAppointmentStatus(${appt.id}, 'completed')"><i class="lni lni-checkmark-circle"></i> Marcar Completada</div>` : ''}
+                        ${appt.status !== 'cancelled' ? `<div class="action-item cancel" onclick="updateAppointmentStatus(${appt.id}, 'cancelled')"><i class="lni lni-ban"></i> Marcar Cancelada</div>` : ''}
+                        <div class="action-item delete" onclick="deleteAppointment(${appt.id}, '${escapeHtml(appt.client)}')"><i class="lni lni-trash-can"></i> Eliminar</div>
                     </div>
                 </div>
             </td>
@@ -644,6 +673,7 @@ function showDayAppointments(dateStr) {
 function toggleDropdown(event, id) {
     event.stopPropagation();
     const el = document.getElementById(`dropdown-${id}`);
+    if (!el) return;
     if (openDropdown && openDropdown !== el) openDropdown.classList.remove('active');
     el.classList.toggle('active');
     openDropdown = el.classList.contains('active') ? el : null;
@@ -664,18 +694,29 @@ async function updateAppointmentStatus(id, newStatus) {
     const labels = { completed: 'completada', cancelled: 'cancelada' };
     closeAllDropdowns();
     try {
-        const response = await fetch(`/api/appointments/${id}`, {
+        // Ruta correcta del backend: PATCH /api/appointments/:id/status
+        const response = await fetch(`/api/appointments/${id}/status`, {
             method: 'PATCH',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: newStatus })
         });
-        if (!response.ok) throw new Error('Error al actualizar');
+
+        if (!response.ok) {
+            const errText = await response.text().catch(() => '');
+            console.error(`❌ PATCH /api/appointments/${id}/status → ${response.status}:`, errText);
+            let err = {};
+            try { err = JSON.parse(errText); } catch (e) {}
+            throw new Error(err.error || err.message || `Error ${response.status}`);
+        }
+
         showNotification(`Cita marcada como ${labels[newStatus]}`, 'success');
         await loadAppointments();
+        updateStats();
+        renderAppointments();
     } catch (err) {
-        console.error('Error updating appointment status:', err);
-        showNotification('Error al actualizar el estado', 'error');
+        console.error('❌ Error updating appointment status:', err);
+        showNotification(`Error al actualizar el estado: ${err.message}`, 'error');
     }
 }
 
@@ -700,6 +741,8 @@ function deleteAppointment(id, clientName) {
             if (!response.ok) throw new Error('Error al eliminar');
             showNotification('Cita eliminada correctamente', 'success');
             await loadAppointments();
+            updateStats();
+            renderAppointments();
         }
     });
 }
