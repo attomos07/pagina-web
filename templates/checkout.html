@@ -60,7 +60,7 @@
                         <div class="form-group">
                             <label class="form-label">Email *</label>
                             <input type="email" class="form-input" id="email" required>
-                            <small class="input-hint">juan@ejemplo.com</small>
+                            <small class="input-hint"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="553f20343b15303f303825393a7b363a38">[email&#160;protected]</a></small>
                             <div class="error-message"></div>
                         </div>
                         <div class="form-group">
@@ -322,10 +322,7 @@
 
                 <!-- Security Badges al final -->
                 <div class="payment-security-badges">
-                    <div class="security-badge-item">
-                        <i class="lni lni-lock"></i>
-                        <span>Pago 100% seguro</span>
-                    </div>
+                    
                     <div class="security-badge-item">
                         <i class="lni lni-shield"></i>
                         <span>Cifrado SSL</span>
@@ -388,23 +385,16 @@
 
             <!-- Price Breakdown -->
             <div class="price-breakdown">
-                <div class="price-item">
-                    <span class="price-label">Subtotal</span>
-                    <span class="price-value" id="subtotal">$255.00</span>
-                </div>
                 <div class="price-item" id="discount-line" style="display:none;">
                     <span class="price-label" style="color:#10b981;">Descuento</span>
                     <span class="price-value" id="discount-summary" style="color:#10b981;">-$0.00</span>
                 </div>
-                <div class="price-item">
-                    <span class="price-label">IVA (16%)</span>
-                    <span class="price-value" id="tax">$40.80</span>
-                </div>
                 <div class="price-separator"></div>
                 <div class="price-item total">
                     <span class="price-label">Total a Pagar</span>
-                    <span class="price-value" id="total">$295.80</span>
+                    <span class="price-value" id="total">...</span>
                 </div>
+                
             </div>
 
             <!-- Features Included -->
@@ -457,6 +447,8 @@
         </div>
     </div>
 
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/checkout.js"></script>
 </body>
 </html>

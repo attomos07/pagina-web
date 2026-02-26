@@ -4,12 +4,29 @@
 
 let paymentMethods = [];
 let activeMethodId = null;
+let stripeInstance  = null;
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     populateYears();
     loadPaymentMethods();
     initCardLivePreview();
+    await initStripe();
 });
+
+// ============================================
+// INIT STRIPE
+// ============================================
+async function initStripe() {
+    try {
+        const res = await fetch('/api/stripe/public-key', { credentials: 'include' });
+        const data = await res.json();
+        if (data.publicKey) {
+            stripeInstance = Stripe(data.publicKey);
+        }
+    } catch (e) {
+        console.error('Error inicializando Stripe:', e);
+    }
+}
 
 // ============================================
 // POPULATE YEAR SELECT
@@ -325,20 +342,47 @@ async function saveCard() {
     btn.querySelector('i').className = 'lni lni-reload';
 
     try {
-        const payload = {
-            holderName: holder,
-            expMonth,
-            expYear,
-            setDefault,
-        };
+        let url, method, payload;
 
         if (!editingId) {
-            payload.number = number;
-            payload.cvc    = cvc;
-        }
+            // ── NUEVA TARJETA: tokenizar con Stripe primero ──
+            if (!stripeInstance) {
+                throw new Error('Stripe no está inicializado. Recarga la página.');
+            }
 
-        const url    = editingId ? `/api/billing/payment-methods/${editingId}` : '/api/billing/payment-methods';
-        const method = editingId ? 'PUT' : 'POST';
+            const { paymentMethod, error: stripeError } = await stripeInstance.createPaymentMethod({
+                type: 'card',
+                card: {
+                    number,
+                    exp_month: parseInt(expMonth),
+                    exp_year:  parseInt(expYear),
+                    cvc,
+                },
+                billing_details: { name: holder },
+            });
+
+            if (stripeError) {
+                throw new Error(stripeError.message);
+            }
+
+            payload = {
+                paymentMethodId: paymentMethod.id,
+                setDefault,
+            };
+            url    = '/api/billing/payment-methods';
+            method = 'POST';
+
+        } else {
+            // ── EDITAR TARJETA EXISTENTE: solo actualizar datos no sensibles ──
+            payload = {
+                holderName: holder,
+                expMonth,
+                expYear,
+                setDefault,
+            };
+            url    = `/api/billing/payment-methods/${editingId}`;
+            method = 'PUT';
+        }
 
         const res  = await fetch(url, {
             method,

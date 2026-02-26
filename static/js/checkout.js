@@ -736,20 +736,15 @@ function loadPlanDetails() {
     const subtotal = priceData.amount || 0;
     const currency = priceData.currency || 'MXN';
     
-    // Calcular IVA (16%)
-    const tax = subtotal * 0.16;
-    const total = subtotal + tax;
-    
+    // IVA incluido en el precio — no se suma
+    const total = subtotal;
+
     // Actualizar elementos de precio
     const subtotalElement = document.getElementById('subtotal');
-    const taxElement = document.getElementById('tax');
     const totalElement = document.getElementById('total');
-    
+
     if (subtotalElement) {
         subtotalElement.textContent = `$${subtotal.toFixed(2)} ${currency}`;
-    }
-    if (taxElement) {
-        taxElement.textContent = `$${tax.toFixed(2)} ${currency}`;
     }
     if (totalElement) {
         totalElement.textContent = `$${total.toFixed(2)} ${currency}`;

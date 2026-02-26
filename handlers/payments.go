@@ -59,23 +59,34 @@ func GetBillingInfo(c *gin.Context) {
 	}
 
 	priceDisplay := ""
-	var lastPayment models.Payment
-	if err := config.DB.Where("user_id = ? AND status = ?", user.ID, "succeeded").
-		Order("paid_at DESC").First(&lastPayment).Error; err == nil {
-		priceDisplay = lastPayment.GetFormattedAmount()
-		if subscription.BillingCycle == "monthly" {
-			priceDisplay += " / mes"
-		} else {
-			priceDisplay += " / año"
+	if subscription.Plan == "gratuito" {
+		priceDisplay = "Gratis"
+	} else {
+		var lastPayment models.Payment
+		if err := config.DB.Where("user_id = ? AND status = ?", user.ID, "succeeded").
+			Order("paid_at DESC").First(&lastPayment).Error; err == nil {
+			priceDisplay = lastPayment.GetFormattedAmount()
+			if subscription.BillingCycle == "monthly" {
+				priceDisplay += " / mes"
+			} else {
+				priceDisplay += " / año"
+			}
 		}
 	}
 
+	months := []string{"enero", "febrero", "marzo", "abril", "mayo", "junio",
+		"julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"}
+
 	nextBillingDisplay := ""
 	if subscription.CurrentPeriodEnd != nil {
-		months := []string{"enero", "febrero", "marzo", "abril", "mayo", "junio",
-			"julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"}
 		t := *subscription.CurrentPeriodEnd
 		nextBillingDisplay = fmt.Sprintf("%d de %s, %d", t.Day(), months[t.Month()-1], t.Year())
+	}
+
+	startDisplay := ""
+	if subscription.CurrentPeriodStart != nil {
+		t := *subscription.CurrentPeriodStart
+		startDisplay = fmt.Sprintf("%d de %s, %d", t.Day(), months[t.Month()-1], t.Year())
 	}
 
 	statusDisplay := "Inactiva"
@@ -107,6 +118,7 @@ func GetBillingInfo(c *gin.Context) {
 			"statusDisplay":     statusDisplay,
 			"statusClass":       statusClass,
 			"priceDisplay":      priceDisplay,
+			"startDate":         startDisplay,
 			"nextBilling":       nextBillingDisplay,
 			"currentPeriodEnd":  subscription.CurrentPeriodEnd,
 			"cancelAtPeriodEnd": subscription.CancelAtPeriodEnd,
