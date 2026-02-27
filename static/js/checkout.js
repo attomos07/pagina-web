@@ -605,7 +605,7 @@ async function processPayment() {
         
         // Confirmar pago con Stripe
         console.log('💳 Confirming payment with Stripe...');
-        const { error: confirmError } = await stripe.confirmCardPayment(
+        const { error: confirmError, paymentIntent: confirmedPI } = await stripe.confirmCardPayment(
             checkoutData.clientSecret,
             {
                 payment_method: {
@@ -629,7 +629,12 @@ async function processPayment() {
             alert(`Error: ${confirmError.message}`);
             return;
         }
-        
+
+        // Usar el ID real del paymentIntent confirmado
+        const confirmedPaymentIntentId = confirmedPI
+            ? confirmedPI.id
+            : checkoutData.clientSecret.split('_secret_')[0];
+
         console.log('✅ Payment confirmed with Stripe');
         
         // Confirmar pago en el backend
@@ -640,7 +645,7 @@ async function processPayment() {
             },
             credentials: 'include',
             body: JSON.stringify({
-                paymentIntentId: checkoutData.clientSecret.split('_secret_')[0],
+                paymentIntentId: confirmedPaymentIntentId,
                 plan,
                 billingPeriod
             })

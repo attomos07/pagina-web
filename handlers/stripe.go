@@ -241,10 +241,12 @@ func ConfirmPayment(c *gin.Context) {
 		PaidAt:                &now,
 	}
 
-	if err := config.DB.Create(&payment).Error; err != nil {
-		// No es fatal, loguear pero no romper el flujo
-		log.Printf("⚠️  [User %d] Error guardando registro de pago: %v", user.ID, err)
+	var existingPayment models.Payment
+	result := config.DB.Where("stripe_payment_intent_id = ?", pi.ID).FirstOrCreate(&existingPayment, payment)
+	if result.Error != nil {
+		log.Printf("⚠️  [User %d] Error guardando registro de pago: %v", user.ID, result.Error)
 	} else {
+		payment = existingPayment
 		log.Printf("✅ [User %d] Pago registrado en BD: ID %d, $%.2f MXN", user.ID, payment.ID, float64(pi.Amount)/100)
 	}
 
