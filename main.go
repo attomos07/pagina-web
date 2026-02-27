@@ -216,6 +216,9 @@ func main() {
 		protected.POST("/stripe/confirm", handlers.ConfirmPayment)
 		protected.GET("/stripe/public-key", handlers.GetStripePublicKey)
 
+		// Recibos PDF
+		protected.GET("/billing/receipt/:id", handlers.GetReceiptPDF)
+
 		// Select Plan
 		protected.POST("/select-plan", handlers.SelectPlan)
 

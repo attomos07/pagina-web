@@ -147,7 +147,11 @@ func ConfirmPayment(c *gin.Context) {
 	// ============================================
 	stripe_lib.Key = os.Getenv("STRIPE_SECRET_KEY")
 
-	pi, err := paymentintent.Get(req.PaymentIntentID, nil)
+	pi, err := paymentintent.Get(req.PaymentIntentID, &stripe_lib.PaymentIntentParams{
+		Params: stripe_lib.Params{
+			Expand: []*string{stripe_lib.String("latest_charge")},
+		},
+	})
 	if err != nil {
 		log.Printf("❌ [User %d] Error obteniendo PaymentIntent de Stripe: %v", user.ID, err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "PaymentIntent no encontrado"})

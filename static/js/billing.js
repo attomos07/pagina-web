@@ -160,7 +160,7 @@ function renderTable() {
             <td data-label="Fecha">${p.paymentDate}</td>
             <td data-label="Cantidad"><span class="pay-amount">${p.amount}</span></td>
             <td data-label="Estado">${statusBadge(p.status)}</td>
-            <td><button class="row-menu-btn" onclick="openRowMenu(this, '${p.paymentId}', '${p.chargeId || ''}')">⋮</button></td>
+            <td><button class="row-menu-btn" onclick="openRowMenu(this, '${p.paymentId}', '${p.chargeId || ''}', ${p.id || 0})">⋮</button></td>
         </tr>
     `).join('');
 
@@ -195,14 +195,13 @@ function goToPage(page) { currentPage = page; renderTable(); }
 // MENÚ DE FILA
 // ============================================
 
-function openRowMenu(btn, paymentId, chargeId) {
+function openRowMenu(btn, paymentId, chargeId, dbId) {
     document.querySelectorAll('.row-context-menu').forEach(m => m.remove());
     const menu = document.createElement('div');
     menu.className = 'row-context-menu';
-    const receiptUrl = chargeId ? `https://dashboard.stripe.com/charges/${chargeId}` : null;
     menu.innerHTML = `
         <button onclick="copyPaymentId('${paymentId}')"><i class="lni lni-files"></i> Copiar ID</button>
-        ${receiptUrl ? `<button onclick="window.open('${receiptUrl}','_blank')"><i class="lni lni-download"></i> Ver recibo en Stripe</button>` : ''}
+        ${dbId ? `<button onclick="downloadReceipt(${dbId})"><i class="lni lni-download"></i> Descargar recibo PDF</button>` : ''}
     `;
     const rect = btn.getBoundingClientRect();
     const menuLeft = Math.max(8, rect.left - 140);
@@ -223,6 +222,12 @@ function openRowMenu(btn, paymentId, chargeId) {
 function copyPaymentId(id) {
     navigator.clipboard.writeText(id).then(() => showNotification('ID copiado al portapapeles', 'success'));
     document.querySelectorAll('.row-context-menu').forEach(m => m.remove());
+}
+
+function downloadReceipt(dbId) {
+    document.querySelectorAll('.row-context-menu').forEach(m => m.remove());
+    showNotification('Generando recibo...', 'info');
+    window.location.href = `/api/billing/receipt/${dbId}`;
 }
 
 // ============================================
