@@ -889,8 +889,8 @@ function initLazyLoading() {
 
 function preloadImages() {
     const criticalImages = [
-        '/static/images/mockup.png',
-        '/static/images/attomos-logo.png'
+        '/static/images/mockup.webp',
+        '/static/images/attomos-logo.webp'
     ];
     
     criticalImages.forEach(imageSrc => {
