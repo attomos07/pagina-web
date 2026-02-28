@@ -28,8 +28,8 @@ type Payment struct {
 	BillingCycle string `gorm:"size:20" json:"billingCycle"`
 
 	// Description and Metadata
-	Description string `gorm:"size:500" json:"description"`
-	Metadata    string `gorm:"type:json" json:"metadata"` // JSON para datos adicionales
+	Description string  `gorm:"size:500" json:"description"`
+	Metadata    *string `gorm:"type:json;default:null" json:"metadata"` // JSON para datos adicionales
 
 	// Dates
 	PaidAt     *time.Time `json:"paidAt"`
