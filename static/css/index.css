@@ -128,7 +128,7 @@ body {
     line-height: 1.6;
     max-width: 700px;
     opacity: 0;
-    animation: fadeInUp 1s cubic-bezier(0.23, 1, 0.32, 1) 1.5s forwards;
+    animation: blurReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
 }
 
 .hero-buttons {
@@ -137,7 +137,7 @@ body {
     justify-content: center;
     flex-wrap: wrap;
     opacity: 0;
-    animation: fadeInUp 1s cubic-bezier(0.23, 1, 0.32, 1) 1.8s forwards;
+    animation: riseClip 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards;
 }
 
 .hero-btn {
@@ -175,15 +175,44 @@ body {
     transform: translateY(-3px);
 }
 
-@keyframes fadeInUp {
-    0% {
-        opacity: 0;
-        transform: translateY(50px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Blur Reveal — texto aparece desde desenfocado */
+@keyframes blurReveal {
+    0%   { opacity: 0; filter: blur(12px); transform: translateY(16px) scale(0.98); }
+    60%  { opacity: 1; filter: blur(2px); }
+    100% { opacity: 1; filter: blur(0); transform: translateY(0) scale(1); }
+}
+
+/* Rise Clip — sube con clip-path desde abajo */
+@keyframes riseClip {
+    0%   { opacity: 0; clip-path: inset(100% 0 0 0); transform: translateY(20px); }
+    100% { opacity: 1; clip-path: inset(0% 0 0 0); transform: translateY(0); }
+}
+
+/* Soft Float Up — para secciones al hacer scroll */
+@keyframes softFloatUp {
+    0%   { opacity: 0; transform: translateY(40px) scale(0.97); }
+    60%  { opacity: 1; }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Stagger Slide — para items en grid (redes sociales) */
+@keyframes staggerSlide {
+    0%   { opacity: 0; transform: translateY(24px) rotate(-1deg); }
+    70%  { transform: translateY(-3px) rotate(0.3deg); }
+    100% { opacity: 1; transform: translateY(0) rotate(0); }
+}
+
+/* Card Rise — para pricing cards */
+@keyframes cardRise {
+    0%   { opacity: 0; transform: translateY(50px) scale(0.95); }
+    50%  { opacity: 1; }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Fade Slide — para FAQ items */
+@keyframes fadeSlide {
+    0%   { opacity: 0; transform: translateX(-16px); }
+    100% { opacity: 1; transform: translateX(0); }
 }
 
 /* ============================================
@@ -241,7 +270,7 @@ body {
     overflow: hidden;
     opacity: 0;
     transform: translateY(30px);
-    animation: fadeInUp 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    animation: staggerSlide 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     border: 2px solid transparent;
     width: 150px;
     height: 150px;
@@ -798,27 +827,16 @@ body {
 
 /* Animaciones para cada card */
 .pricing-card:nth-child(1) { 
-    animation: fadeInUp 0.8s 0.1s cubic-bezier(0.23, 1, 0.32, 1) backwards; 
+    animation: cardRise 0.8s 0.1s cubic-bezier(0.16, 1, 0.3, 1) backwards; 
 }
 .pricing-card:nth-child(2) { 
-    animation: fadeInUp 0.8s 0.2s cubic-bezier(0.23, 1, 0.32, 1) backwards; 
+    animation: cardRise 0.8s 0.22s cubic-bezier(0.16, 1, 0.3, 1) backwards; 
 }
 .pricing-card:nth-child(3) { 
-    animation: fadeInUp 0.8s 0.3s cubic-bezier(0.23, 1, 0.32, 1) backwards; 
+    animation: cardRise 0.8s 0.34s cubic-bezier(0.16, 1, 0.3, 1) backwards; 
 }
 .pricing-card:nth-child(4) { 
-    animation: fadeInUp 0.8s 0.4s cubic-bezier(0.23, 1, 0.32, 1) backwards; 
-}
-
-@keyframes fadeInUp {
-    0% {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    animation: cardRise 0.8s 0.46s cubic-bezier(0.16, 1, 0.3, 1) backwards; 
 }
 
 .pricing-card:hover {
@@ -1112,7 +1130,7 @@ body {
     transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
     opacity: 0;
     transform: translateY(20px);
-    animation: fadeInUp 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    animation: fadeSlide 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .faq-item:nth-child(1) { animation-delay: 0.1s; }

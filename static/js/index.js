@@ -183,8 +183,8 @@ function initSectionFadeIn() {
     // Agregar estilo inicial a cada sección
     sections.forEach(section => {
         section.style.opacity = '0';
-        section.style.transform = 'translateY(30px)';
-        section.style.transition = 'opacity 1s cubic-bezier(0.23, 1, 0.32, 1), transform 1s cubic-bezier(0.23, 1, 0.32, 1)';
+        section.style.transform = 'translateY(40px) scale(0.97)';
+        section.style.transition = 'opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1)';
     });
     
     // Crear observer para detectar cuando las secciones entran en viewport
@@ -192,7 +192,7 @@ function initSectionFadeIn() {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
+                entry.target.style.transform = 'translateY(0) scale(1)';
                 sectionObserver.unobserve(entry.target);
             }
         });
