@@ -161,6 +161,7 @@ func GetBillingPayments(c *gin.Context) {
 		"Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"}
 
 	type PaymentRow struct {
+		ID           uint    `json:"id"`
 		PaymentID    string  `json:"paymentId"`
 		ReceiptID    string  `json:"receiptId"`
 		Subscription string  `json:"subscription"`
@@ -202,6 +203,7 @@ func GetBillingPayments(c *gin.Context) {
 		}
 
 		rows = append(rows, PaymentRow{
+			ID:           p.ID,
 			PaymentID:    p.StripePaymentIntentID,
 			ReceiptID:    receiptID,
 			Subscription: planDisplay,
