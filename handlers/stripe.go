@@ -4,15 +4,12 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"attomos/config"
 	"attomos/models"
 	"attomos/services"
 
 	"github.com/gin-gonic/gin"
-	stripe_lib "github.com/stripe/stripe-go/v78"
-	"github.com/stripe/stripe-go/v78/paymentintent"
 )
 
 type CheckoutRequest struct {
@@ -32,7 +29,7 @@ type CheckoutResponse struct {
 	Currency     string `json:"currency"`
 }
 
-// CreateCheckoutSession crea una sesión de checkout con Stripe
+// CreateCheckoutSession crea una Subscription real en Stripe (cobro recurrente)
 func CreateCheckoutSession(c *gin.Context) {
 	var req CheckoutRequest
 
@@ -65,6 +62,7 @@ func CreateCheckoutSession(c *gin.Context) {
 		return
 	}
 
+	// ── Obtener o crear customer en Stripe ──────────────────────────────────
 	var subscription models.Subscription
 	err = config.DB.Where("user_id = ?", user.ID).First(&subscription).Error
 
@@ -87,7 +85,6 @@ func CreateCheckoutSession(c *gin.Context) {
 		if subscription.ID != 0 {
 			subscription.StripeCustomerID = stripeCustomerID
 			config.DB.Save(&subscription)
-			log.Printf("✅ [CHECKOUT] StripeCustomerID guardado en suscripción existente ID: %d", subscription.ID)
 		} else {
 			subscription = models.Subscription{
 				UserID:           user.ID,
@@ -97,44 +94,73 @@ func CreateCheckoutSession(c *gin.Context) {
 				Currency:         "mxn",
 			}
 			config.DB.Create(&subscription)
-			log.Printf("✅ [CHECKOUT] Nueva suscripción creada con ID: %d", subscription.ID)
 		}
 	}
 
-	amount := stripeService.CalculateAmount(req.Plan, req.BillingPeriod)
-	if amount == 0 {
-		log.Printf("❌ [CHECKOUT] Plan inválido o monto 0 para plan: %s", req.Plan)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Plan inválido"})
+	// ── Obtener Price ID del plan ────────────────────────────────────────────
+	priceID := stripeService.GetPriceIDForPlan(req.Plan, req.BillingPeriod)
+	if priceID == "" {
+		log.Printf("❌ [CHECKOUT] No se encontró Price ID para plan=%s billing=%s", req.Plan, req.BillingPeriod)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Plan inválido o no configurado"})
 		return
 	}
+	log.Printf("✅ [CHECKOUT] Price ID: %s", priceID)
 
-	log.Printf("💰 [CHECKOUT] Monto calculado: $%.2f MXN para plan %s", float64(amount)/100, req.Plan)
+	// ── Cancelar suscripción Stripe anterior si existe ───────────────────────
+	if subscription.StripeSubscriptionID != "" {
+		log.Printf("🔄 [CHECKOUT] Cancelando suscripción Stripe anterior: %s", subscription.StripeSubscriptionID)
+		if _, err := stripeService.CancelSubscription(subscription.StripeSubscriptionID); err != nil {
+			log.Printf("⚠️  [CHECKOUT] No se pudo cancelar sub anterior (continuando): %v", err)
+		}
+	}
 
-	description := "Suscripción a Attomos - Plan " + req.Plan
-	paymentIntent, err := stripeService.CreatePaymentIntent(amount, "mxn", stripeCustomerID, description)
+	// ── Crear Subscription recurrente en Stripe ──────────────────────────────
+	log.Printf("🔔 [CHECKOUT] Creando Subscription recurrente en Stripe...")
+	stripeSub, err := stripeService.CreateSubscription(stripeCustomerID, priceID)
 	if err != nil {
-		log.Printf("❌ [CHECKOUT] Error creando PaymentIntent: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al procesar el pago"})
+		log.Printf("❌ [CHECKOUT] Error creando Subscription en Stripe: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear la suscripción"})
 		return
 	}
 
-	log.Printf("✅ [CHECKOUT] PaymentIntent creado: %s | Monto: $%.2f MXN", paymentIntent.ID, float64(amount)/100)
+	log.Printf("✅ [CHECKOUT] Stripe Subscription creada: %s | Status: %s", stripeSub.ID, stripeSub.Status)
+
+	// Guardar StripeSubscriptionID y StripePriceID en BD (estado aún pending_payment)
+	subscription.StripeSubscriptionID = stripeSub.ID
+	subscription.StripePriceID = priceID
+	subscription.Plan = req.Plan
+	subscription.BillingCycle = req.BillingPeriod
+	subscription.Status = "inactive" // El webhook lo activará al confirmar pago
+	config.DB.Save(&subscription)
+
+	// ── Extraer client_secret del primer invoice ─────────────────────────────
+	if stripeSub.LatestInvoice == nil || stripeSub.LatestInvoice.PaymentIntent == nil {
+		log.Printf("❌ [CHECKOUT] No hay PaymentIntent en el invoice de la suscripción")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener datos de pago"})
+		return
+	}
+
+	clientSecret := stripeSub.LatestInvoice.PaymentIntent.ClientSecret
+	amount := stripeSub.LatestInvoice.PaymentIntent.Amount
+
+	log.Printf("✅ [CHECKOUT] ClientSecret obtenido | Monto: $%.2f MXN", float64(amount)/100)
 
 	c.JSON(http.StatusOK, CheckoutResponse{
-		ClientSecret: paymentIntent.ClientSecret,
+		ClientSecret: clientSecret,
 		CustomerID:   stripeCustomerID,
 		Amount:       amount,
 		Currency:     "mxn",
 	})
 }
 
+// ConfirmPayment — verifica el primer pago y activa la suscripción en BD
+// Los cobros RECURRENTES posteriores los maneja el webhook automáticamente.
 type ConfirmPaymentRequest struct {
 	PaymentIntentID string `json:"paymentIntentId" binding:"required"`
 	Plan            string `json:"plan" binding:"required"`
 	BillingPeriod   string `json:"billingPeriod" binding:"required"`
 }
 
-// ConfirmPayment verifica el pago con Stripe, activa la suscripción y registra el pago
 func ConfirmPayment(c *gin.Context) {
 	var req ConfirmPaymentRequest
 
@@ -146,180 +172,22 @@ func ConfirmPayment(c *gin.Context) {
 
 	userInterface, exists := c.Get("user")
 	if !exists {
-		log.Printf("❌ [CONFIRM] Usuario no autenticado")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autenticado"})
 		return
 	}
 	user := userInterface.(*models.User)
 
-	log.Printf("💳 [CONFIRM] ══════════════════════════════════")
-	log.Printf("💳 [CONFIRM] Usuario ID: %d | Email: %s", user.ID, user.Email)
-	log.Printf("💳 [CONFIRM] PaymentIntentID: %s", req.PaymentIntentID)
-	log.Printf("💳 [CONFIRM] Plan: %s | Período: %s", req.Plan, req.BillingPeriod)
-	log.Printf("💳 [CONFIRM] ══════════════════════════════════")
+	log.Printf("💳 [CONFIRM] Usuario ID: %d | PI: %s | Plan: %s", user.ID, req.PaymentIntentID, req.Plan)
 
-	// ============================================
-	// PASO 1: VERIFICAR PAGO CON STRIPE
-	// ============================================
-	log.Printf("🔍 [CONFIRM] PASO 1: Verificando pago con Stripe...")
-	stripe_lib.Key = os.Getenv("STRIPE_SECRET_KEY")
-
-	if stripe_lib.Key == "" {
-		log.Printf("❌ [CONFIRM] STRIPE_SECRET_KEY no está configurada")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Configuración de pagos incorrecta"})
-		return
-	}
-
-	pi, err := paymentintent.Get(req.PaymentIntentID, &stripe_lib.PaymentIntentParams{
-		Params: stripe_lib.Params{
-			Expand: []*string{stripe_lib.String("latest_charge")},
-		},
-	})
+	// Delegar en el helper compartido con el webhook
+	payment, subscription, err := activateSubscriptionFromPaymentIntent(req.PaymentIntentID, user.ID, req.Plan, req.BillingPeriod)
 	if err != nil {
-		log.Printf("❌ [CONFIRM] Error obteniendo PaymentIntent de Stripe: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "PaymentIntent no encontrado"})
+		log.Printf("❌ [CONFIRM] %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	log.Printf("✅ [CONFIRM] PaymentIntent obtenido: %s | Status: %s | Monto: $%.2f MXN",
-		pi.ID, pi.Status, float64(pi.Amount)/100)
-
-	if pi.Status != stripe_lib.PaymentIntentStatusSucceeded {
-		log.Printf("❌ [CONFIRM] Pago NO completado. Status actual: %s (se requiere: succeeded)", pi.Status)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":  "El pago no ha sido completado",
-			"status": string(pi.Status),
-		})
-		return
-	}
-
-	log.Printf("✅ [CONFIRM] PASO 1 OK — Pago verificado en Stripe: $%.2f MXN", float64(pi.Amount)/100)
-
-	// ============================================
-	// PASO 2: ACTUALIZAR SUSCRIPCIÓN
-	// ============================================
-	log.Printf("🔄 [CONFIRM] PASO 2: Actualizando suscripción en BD...")
-
-	var subscription models.Subscription
-	err = config.DB.Where("user_id = ?", user.ID).First(&subscription).Error
-
-	now := time.Now()
-	var periodEnd time.Time
-	if req.BillingPeriod == "annual" {
-		periodEnd = now.AddDate(1, 0, 0)
-	} else {
-		periodEnd = now.AddDate(0, 1, 0)
-	}
-
-	if err != nil {
-		log.Printf("⚠️  [CONFIRM] No existe suscripción previa para user %d — Creando nueva", user.ID)
-		subscription = models.Subscription{
-			UserID:             user.ID,
-			Plan:               req.Plan,
-			BillingCycle:       req.BillingPeriod,
-			Status:             "active",
-			CurrentPeriodStart: &now,
-			CurrentPeriodEnd:   &periodEnd,
-			Currency:           "mxn",
-		}
-		subscription.SetPlanLimits()
-		if dbErr := config.DB.Create(&subscription).Error; dbErr != nil {
-			log.Printf("❌ [CONFIRM] Error creando suscripción: %v", dbErr)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error activando suscripción"})
-			return
-		}
-		log.Printf("✅ [CONFIRM] Nueva suscripción creada con ID: %d", subscription.ID)
-	} else {
-		prevPlan := subscription.Plan
-		subscription.Plan = req.Plan
-		subscription.BillingCycle = req.BillingPeriod
-		subscription.Status = "active"
-		subscription.CurrentPeriodStart = &now
-		subscription.CurrentPeriodEnd = &periodEnd
-		if prevPlan != req.Plan {
-			subscription.PlanChangedAt = &now
-			log.Printf("📋 [CONFIRM] Cambio de plan: %s → %s", prevPlan, req.Plan)
-		}
-		subscription.SetPlanLimits()
-		if dbErr := config.DB.Save(&subscription).Error; dbErr != nil {
-			log.Printf("❌ [CONFIRM] Error actualizando suscripción: %v", dbErr)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error actualizando suscripción"})
-			return
-		}
-		log.Printf("✅ [CONFIRM] Suscripción ID %d actualizada — Plan: %s | Status: active | Expira: %s",
-			subscription.ID, req.Plan, periodEnd.Format("2006-01-02"))
-	}
-
-	log.Printf("✅ [CONFIRM] PASO 2 OK — SubscriptionID: %d", subscription.ID)
-
-	// ============================================
-	// PASO 3: REGISTRAR PAGO EN TABLA payments
-	// ============================================
-	log.Printf("💾 [CONFIRM] PASO 3: Guardando pago en tabla payments...")
-	log.Printf("💾 [CONFIRM] Datos: UserID=%d | SubID=%d | PI=%s | Amount=%d | Currency=%s | Plan=%s",
-		user.ID, subscription.ID, pi.ID, pi.Amount, pi.Currency, req.Plan)
-
-	// Extraer charge ID si existe
-	chargeID := ""
-	if pi.LatestCharge != nil {
-		chargeID = pi.LatestCharge.ID
-		log.Printf("💾 [CONFIRM] ChargeID: %s", chargeID)
-	} else {
-		log.Printf("⚠️  [CONFIRM] No hay LatestCharge en el PaymentIntent")
-	}
-
-	planDisplay := map[string]string{
-		"proton":   "Protón",
-		"neutron":  "Neutrón",
-		"electron": "Electrón",
-	}
-	displayName := planDisplay[req.Plan]
-	if displayName == "" {
-		displayName = req.Plan
-	}
-
-	payment := models.Payment{
-		UserID:                user.ID,
-		SubscriptionID:        subscription.ID,
-		StripePaymentIntentID: pi.ID,
-		StripeChargeID:        chargeID,
-		Amount:                pi.Amount,
-		Currency:              string(pi.Currency),
-		Status:                "succeeded",
-		PaymentMethod:         "card",
-		Plan:                  req.Plan,
-		BillingCycle:          req.BillingPeriod,
-		Description:           "Suscripción Attomos - Plan " + displayName,
-		PaidAt:                &now,
-	}
-
-	// Verificar si ya existe ese PaymentIntent en la BD
-	var existingPayment models.Payment
-	searchErr := config.DB.Where("stripe_payment_intent_id = ?", pi.ID).First(&existingPayment).Error
-
-	if searchErr == nil {
-		// Ya existe — no duplicar
-		log.Printf("ℹ️  [CONFIRM] Pago ya existía en BD con ID: %d — No se duplica", existingPayment.ID)
-		payment = existingPayment
-	} else {
-		// No existe — crear nuevo
-		log.Printf("💾 [CONFIRM] Pago no existe en BD, insertando nuevo registro...")
-		if createErr := config.DB.Create(&payment).Error; createErr != nil {
-			log.Printf("❌ [CONFIRM] ERROR AL GUARDAR PAGO EN BD: %v", createErr)
-			log.Printf("❌ [CONFIRM] Datos del pago fallido: %+v", payment)
-			// NO retornamos error al cliente — la suscripción ya está activa
-			// pero sí logueamos el error claramente
-		} else {
-			log.Printf("✅ [CONFIRM] PASO 3 OK — Pago guardado en BD con ID: %d", payment.ID)
-			log.Printf("✅ [CONFIRM] Resumen: User=%d | Sub=%d | Payment=%d | $%.2f MXN | Plan=%s",
-				user.ID, subscription.ID, payment.ID, float64(pi.Amount)/100, req.Plan)
-		}
-	}
-
-	log.Printf("🎉 [CONFIRM] ══ PAGO COMPLETADO ══════════════════")
-	log.Printf("🎉 [CONFIRM] Usuario %d activó plan %s hasta %s",
-		user.ID, req.Plan, periodEnd.Format("2006-01-02"))
-	log.Printf("🎉 [CONFIRM] ══════════════════════════════════════")
+	log.Printf("🎉 [CONFIRM] Usuario %d activó plan %s", user.ID, req.Plan)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Pago confirmado exitosamente",

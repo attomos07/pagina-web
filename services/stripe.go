@@ -79,10 +79,20 @@ func (s *StripeService) CreateSubscription(customerID, priceID string) (*stripe.
 	return subscription.New(params)
 }
 
-// CancelSubscription cancela una suscripción
+// CancelSubscription cancela una suscripción de forma inmediata
 func (s *StripeService) CancelSubscription(subscriptionID string) (*stripe.Subscription, error) {
 	params := &stripe.SubscriptionCancelParams{}
 	return subscription.Cancel(subscriptionID, params)
+}
+
+// CancelAtPeriodEnd marca la suscripción para cancelarse al final del período actual
+// El usuario conserva acceso hasta que venza — NO cancela de inmediato
+func (s *StripeService) CancelAtPeriodEnd(subscriptionID string) error {
+	params := &stripe.SubscriptionParams{
+		CancelAtPeriodEnd: stripe.Bool(true),
+	}
+	_, err := subscription.Update(subscriptionID, params)
+	return err
 }
 
 // UpdateSubscription actualiza una suscripción (cambiar plan)

@@ -148,6 +148,12 @@ func main() {
 	router.GET("/api/auth/google/callback", handlers.GoogleCallback)
 
 	// ============================================
+	// 💳 STRIPE WEBHOOK (PÚBLICO — sin auth)
+	// ============================================
+	router.POST("/webhook/stripe", handlers.StripeWebhookHandler)
+	log.Println("✅ Stripe Webhook configurado en: /webhook/stripe")
+
+	// ============================================
 	// 🔧 WEBHOOK PROXY - Meta WhatsApp (PÚBLICO)
 	// ============================================
 	// IMPORTANTE: Estas rutas DEBEN ser públicas porque Meta las llama directamente

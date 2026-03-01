@@ -8,6 +8,7 @@ import (
 
 	"attomos/config"
 	"attomos/models"
+	"attomos/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -223,7 +224,7 @@ func GetBillingPayments(c *gin.Context) {
 	})
 }
 
-// CancelSubscription cancela la suscripción al final del período actual
+// CancelSubscription cancela la suscripción en Stripe Y en BD
 func CancelSubscription(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
@@ -238,17 +239,39 @@ func CancelSubscription(c *gin.Context) {
 		return
 	}
 
+	// ── Cancelar en Stripe (al final del período) ────────────────────────────
+	if subscription.StripeSubscriptionID != "" {
+		stripeService, err := services.NewStripeService()
+		if err != nil {
+			log.Printf("❌ [CANCEL] Error inicializando Stripe: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al cancelar en Stripe"})
+			return
+		}
+
+		// CancelAtPeriodEnd = true → Stripe cancela al vencer el período actual,
+		// no de inmediato. El webhook customer.subscription.updated sincronizará la BD.
+		if err := stripeService.CancelAtPeriodEnd(subscription.StripeSubscriptionID); err != nil {
+			log.Printf("❌ [CANCEL] Error cancelando en Stripe: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al cancelar en Stripe"})
+			return
+		}
+
+		log.Printf("✅ [User %d] Suscripción Stripe %s marcada para cancelar al fin del período",
+			user.ID, subscription.StripeSubscriptionID)
+	} else {
+		log.Printf("⚠️  [User %d] Sin StripeSubscriptionID — cancelando solo en BD", user.ID)
+	}
+
+	// ── Actualizar BD ────────────────────────────────────────────────────────
 	now := time.Now()
 	subscription.CancelAtPeriodEnd = true
 	subscription.CanceledAt = &now
 
 	if err := config.DB.Save(&subscription).Error; err != nil {
-		log.Printf("❌ Error cancelando suscripción del usuario %d: %v", user.ID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al cancelar suscripción"})
+		log.Printf("❌ Error actualizando BD para usuario %d: %v", user.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al guardar cancelación"})
 		return
 	}
-
-	log.Printf("✅ [User %d] Suscripción marcada para cancelar al final del período", user.ID)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":           "Suscripción cancelada. Tendrás acceso hasta el final del período actual.",
