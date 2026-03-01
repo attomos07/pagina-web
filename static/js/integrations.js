@@ -959,6 +959,10 @@ function updateGoogleIntegrationUI(data) {
         // Show connect actions, hide manage actions
         if (connectActions) connectActions.style.display = 'flex';
         if (manageActions) manageActions.style.display = 'none';
+        
+        // Habilitar el botón de conectar
+        const connectButton = document.getElementById('btnConnectGoogle');
+        if (connectButton) connectButton.disabled = false;
     }
 }
 
