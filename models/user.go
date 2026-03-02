@@ -20,11 +20,11 @@ type User struct {
 	UpdatedAt time.Time      `json:"updatedAt"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
-	// Relación con GoogleCloudProject
+	// Relaciones
 	GoogleCloudProject *GoogleCloudProject `gorm:"foreignKey:UserID" json:"googleCloudProject,omitempty"`
+	MyBusinessInfo     *MyBusinessInfo     `gorm:"foreignKey:UserID" json:"myBusinessInfo,omitempty"`
 }
 
-// HashPassword genera el hash de la contraseña
 func (u *User) HashPassword(password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -34,23 +34,19 @@ func (u *User) HashPassword(password string) error {
 	return nil
 }
 
-// CheckPassword verifica si la contraseña es correcta
 func (u *User) CheckPassword(password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
 	return err == nil
 }
 
-// TableName especifica el nombre de la tabla
 func (User) TableName() string {
 	return "users"
 }
 
-// HasGoogleCloudProject verifica si el usuario tiene un proyecto GCP
 func (u *User) HasGoogleCloudProject() bool {
 	return u.GoogleCloudProject != nil && u.GoogleCloudProject.ProjectID != ""
 }
 
-// GetGCPProjectStatus retorna el estado del proyecto GCP
 func (u *User) GetGCPProjectStatus() string {
 	if u.GoogleCloudProject == nil {
 		return "pending"
@@ -58,10 +54,14 @@ func (u *User) GetGCPProjectStatus() string {
 	return u.GoogleCloudProject.ProjectStatus
 }
 
-// GetGeminiAPIKey retorna la API Key de Gemini
 func (u *User) GetGeminiAPIKey() string {
 	if u.GoogleCloudProject == nil {
 		return ""
 	}
 	return u.GoogleCloudProject.GeminiAPIKey
+}
+
+// HasBusinessInfo verifica si el usuario tiene perfil de negocio
+func (u *User) HasBusinessInfo() bool {
+	return u.MyBusinessInfo != nil && u.MyBusinessInfo.BusinessName != ""
 }

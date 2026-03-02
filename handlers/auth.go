@@ -45,7 +45,6 @@ func Register(c *gin.Context) {
 	req.BusinessType = strings.TrimSpace(req.BusinessType)
 	req.BusinessSize = strings.TrimSpace(req.BusinessSize)
 
-	// Validar que businessSize sea uno de los valores permitidos
 	validSizes := map[string]bool{
 		"microempresa": true,
 		"pequena":      true,
@@ -86,7 +85,6 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Guardar usuario en BD
 	if err := config.DB.Create(&user).Error; err != nil {
 		log.Printf("❌ Error creando usuario: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -98,7 +96,35 @@ func Register(c *gin.Context) {
 	log.Printf("✅ [User %d] Usuario creado exitosamente: %s (Tel: %s, Negocio: %s, Tamaño: %s)",
 		user.ID, user.Email, user.PhoneNumber, user.Company, user.BusinessSize)
 
-	// Generar token JWT
+	// ============================================================
+	// NUEVO: Crear perfil de negocio automáticamente al registrar
+	// ============================================================
+	businessInfo := models.MyBusinessInfo{
+		UserID:       user.ID,
+		BusinessName: req.BusinessName,
+		BusinessType: req.BusinessType,
+		BusinessSize: req.BusinessSize,
+		// Horario default: lunes-viernes 9-20, sábado 9-14, domingo cerrado
+		Schedule: models.BusinessSchedule{
+			Monday:    models.DaySchedule{Open: true, Start: "09:00", End: "20:00"},
+			Tuesday:   models.DaySchedule{Open: true, Start: "09:00", End: "20:00"},
+			Wednesday: models.DaySchedule{Open: true, Start: "09:00", End: "20:00"},
+			Thursday:  models.DaySchedule{Open: true, Start: "09:00", End: "20:00"},
+			Friday:    models.DaySchedule{Open: true, Start: "09:00", End: "20:00"},
+			Saturday:  models.DaySchedule{Open: true, Start: "09:00", End: "14:00"},
+			Sunday:    models.DaySchedule{Open: false, Start: "09:00", End: "14:00"},
+			Timezone:  "America/Hermosillo",
+		},
+	}
+
+	if err := config.DB.Create(&businessInfo).Error; err != nil {
+		// No es crítico, solo loggear — el usuario ya fue creado
+		log.Printf("⚠️  [User %d] Error creando perfil de negocio (no crítico): %v", user.ID, err)
+	} else {
+		log.Printf("✅ [User %d] Perfil de negocio creado: %s (%s)", user.ID, req.BusinessName, req.BusinessType)
+	}
+	// ============================================================
+
 	token, err := utils.GenerateToken(user.ID, user.Email)
 	if err != nil {
 		log.Printf("❌ Error generando token: %v", err)
@@ -108,7 +134,6 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Establecer cookie
 	c.SetCookie("auth_token", token, 3600*24, "/", "", false, true)
 
 	c.JSON(http.StatusCreated, gin.H{
@@ -141,7 +166,6 @@ func Login(c *gin.Context) {
 
 	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 
-	// Buscar usuario con su proyecto GCP precargado
 	var user models.User
 	if err := config.DB.Preload("GoogleCloudProject").Where("email = ?", req.Email).First(&user).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -150,7 +174,6 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Verificar contraseña
 	if !user.CheckPassword(req.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Credenciales inválidas",
@@ -158,7 +181,6 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Generar token
 	token, err := utils.GenerateToken(user.ID, user.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -186,7 +208,6 @@ func Login(c *gin.Context) {
 // Logout cierra la sesión del usuario
 func Logout(c *gin.Context) {
 	c.SetCookie("auth_token", "", -1, "/", "", false, true)
-
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Sesión cerrada exitosamente",
 	})
@@ -196,18 +217,13 @@ func Logout(c *gin.Context) {
 func GetCurrentUser(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "No autenticado",
-		})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autenticado"})
 		return
 	}
 
 	user := userInterface.(*models.User)
-
-	// Precargar proyecto GCP si existe
 	config.DB.Preload("GoogleCloudProject").First(&user, user.ID)
 
-	// Obtener plan actual desde suscripción
 	var subscription models.Subscription
 	currentPlan := "gratuito"
 	if err := config.DB.Where("user_id = ?", user.ID).First(&subscription).Error; err == nil {
@@ -234,20 +250,16 @@ func GetCurrentUser(c *gin.Context) {
 func GetProjectStatus(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "No autenticado",
-		})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autenticado"})
 		return
 	}
 
 	user := userInterface.(*models.User)
 
-	// Precargar proyecto GCP
 	var gcpProject models.GoogleCloudProject
 	err := config.DB.Where("user_id = ?", user.ID).First(&gcpProject).Error
 
 	if err != nil {
-		// No tiene proyecto GCP
 		c.JSON(http.StatusOK, gin.H{
 			"projectStatus": "pending",
 			"hasProject":    false,

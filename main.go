@@ -45,8 +45,9 @@ func main() {
 		&models.Subscription{},
 		&models.Payment{},
 		&models.GoogleCloudProject{},
-		&models.GlobalServer{}, // ← Servidor compartido global para AtomicBots
-		&models.Appointment{},  // ← Citas (manual + Google Sheets + agente)
+		&models.GlobalServer{},   // ← Servidor compartido global para AtomicBots
+		&models.Appointment{},    // ← Citas (manual + Google Sheets + agente)
+		&models.MyBusinessInfo{}, // ← Perfil de negocio del usuario
 	); err != nil {
 		log.Fatal("❌ Error en migración:", err)
 	}
@@ -188,8 +189,8 @@ func main() {
 
 		// Agente config
 
-		protected.GET("/profile", handlers.GetProfile)
-		protected.POST("/profile", handlers.SaveProfile)
+		protected.GET("/profile", handlers.GetMyBusiness)
+		protected.POST("/profile", handlers.SaveMyBusiness)
 
 		// ============================================
 		// ⭐ APPOINTMENTS - CRUD completo (BD + Sheets sync)
