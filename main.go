@@ -189,8 +189,8 @@ func main() {
 
 		// Agente config
 
-		protected.GET("/profile", handlers.GetMyBusiness)
-		protected.POST("/profile", handlers.SaveMyBusiness)
+		protected.GET("/my-business", handlers.GetMyBusiness)
+		protected.POST("/my-business", handlers.SaveMyBusiness)
 
 		// ============================================
 		// ⭐ APPOINTMENTS - CRUD completo (BD + Sheets sync)
@@ -370,8 +370,8 @@ func main() {
 		c.HTML(200, "settings.html", nil)
 	})
 
-	router.GET("/profile", middleware.AuthRequired(), func(c *gin.Context) {
-		c.HTML(200, "profile.html", nil)
+	router.GET("/my-business", middleware.AuthRequired(), func(c *gin.Context) {
+		c.HTML(200, "my-business.html", nil)
 	})
 
 	router.GET("/notifications", middleware.AuthRequired(), func(c *gin.Context) {
