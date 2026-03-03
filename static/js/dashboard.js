@@ -277,13 +277,121 @@ function initializeCreateAgentButton() {
         console.log('Botón Crear Agente encontrado');
         createBtn.addEventListener('click', function (e) {
             e.preventDefault();
-            console.log('🟢 Crear Agente (dashboard) -> abrir modal');
-            openOnboardingModal();
+            console.log('🟢 Crear Agente (dashboard) -> verificar negocio');
+            checkBusinessBeforeAgent();
         });
     } else {
         console.warn('⚠️ No se encontró el botón Crear Agente');
     }
 }
+
+// Verificar negocio antes de crear agente
+async function checkBusinessBeforeAgent() {
+    try {
+        const response = await fetch('/api/my-business');
+        if (response.ok) {
+            const data = await response.json();
+            // El endpoint devuelve { business: { name, type, ... }, ... }
+            const hasBusinessInfo =
+                data &&
+                data.business &&
+                data.business.name &&
+                data.business.name.trim() !== '' &&
+                data.business.type &&
+                data.business.type.trim() !== '';
+
+            if (hasBusinessInfo) {
+                openOnboardingModal();
+            } else {
+                showBusinessWarningModal();
+            }
+        } else {
+            showBusinessWarningModal();
+        }
+    } catch (error) {
+        console.warn('No se pudo verificar el perfil del negocio:', error);
+        showBusinessWarningModal();
+    }
+}
+
+function showBusinessWarningModal() {
+    const existing = document.getElementById('businessWarningModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'businessWarningModal';
+    modal.style.cssText = [
+        'position:fixed', 'inset:0', 'z-index:20000',
+        'display:flex', 'align-items:center', 'justify-content:center',
+        'background:rgba(0,0,0,0.45)', 'backdrop-filter:blur(4px)',
+        'animation:bwFadeIn 0.2s ease'
+    ].join(';');
+
+    modal.innerHTML = `
+        <style>
+            @keyframes bwFadeIn { from { opacity:0; } to { opacity:1; } }
+            @keyframes bwSlideUp {
+                from { opacity:0; transform:translateY(28px) scale(0.97); }
+                to   { opacity:1; transform:translateY(0) scale(1); }
+            }
+            #bwBox { animation: bwSlideUp 0.3s cubic-bezier(0.23,1,0.32,1); }
+            #bwCancelBtn:hover { background:#e5e7eb !important; }
+            #bwGoBtn:hover { transform:translateY(-2px) !important; box-shadow:0 8px 20px rgba(6,182,212,0.4) !important; }
+            #bwCloseBtn:hover { background:#e5e7eb !important; }
+        </style>
+        <div id="bwBox" style="
+            background:white; border-radius:20px; padding:2.5rem;
+            max-width:460px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2);
+            text-align:center; position:relative;
+        ">
+            <button id="bwCloseBtn" style="
+                position:absolute; top:1rem; right:1rem;
+                background:#f3f4f6; border:none; border-radius:8px;
+                width:32px; height:32px; cursor:pointer;
+                display:flex; align-items:center; justify-content:center;
+                font-size:1.1rem; color:#6b7280; transition:background 0.2s;
+            "><i class="lni lni-close"></i></button>
+
+            <div style="
+                width:72px; height:72px;
+                background:linear-gradient(135deg,#fef3c7,#fde68a);
+                border-radius:50%; display:flex; align-items:center;
+                justify-content:center; margin:0 auto 1.5rem; font-size:2rem;
+            "><i class="lni lni-warning" style="color:#f59e0b;"></i></div>
+
+            <h3 style="font-size:1.4rem; font-weight:800; color:#1a1a1a; margin-bottom:0.75rem;">
+                Completa tu perfil de negocio
+            </h3>
+            <p style="color:#6b7280; font-size:0.95rem; line-height:1.6; margin-bottom:2rem;">
+                Antes de crear un agente necesitas configurar la información
+                de tu negocio. Esto permite que el agente conozca tu empresa
+                y responda correctamente a tus clientes.
+            </p>
+
+            <div style="display:flex; gap:0.75rem; justify-content:center;">
+                <button id="bwCancelBtn" style="
+                    padding:0.75rem 1.5rem; background:#f3f4f6; border:none;
+                    border-radius:10px; font-weight:600; color:#6b7280;
+                    cursor:pointer; font-size:0.95rem; transition:background 0.2s;
+                ">Cancelar</button>
+                <a href="/my-business" id="bwGoBtn" style="
+                    padding:0.75rem 1.5rem; background:#06b6d4; border:none;
+                    border-radius:10px; font-weight:600; color:white;
+                    cursor:pointer; font-size:0.95rem; text-decoration:none;
+                    display:inline-flex; align-items:center; gap:0.5rem;
+                    box-shadow:0 4px 12px rgba(6,182,212,0.3);
+                    transition:all 0.2s;
+                "><i class="lni lni-pencil-alt"></i> Ir a Mi Negocio</a>
+            </div>
+        </div>
+    `;
+
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+    document.getElementById('bwCloseBtn').addEventListener('click', () => modal.remove());
+    document.getElementById('bwCancelBtn').addEventListener('click', () => modal.remove());
+}
+window.showBusinessWarningModal = showBusinessWarningModal;
 
 // Abrir modal
 function openOnboardingModal() {
