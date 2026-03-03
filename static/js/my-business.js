@@ -62,7 +62,7 @@ const MONTHS = [
 
 async function initProfileData() {
     try {
-        const res = await fetch('/api/profile');
+        const res = await fetch('/api/my-business');
         const profile = await res.json();
 
         setInputValue('businessNameInput', profile.business.name);
@@ -818,7 +818,7 @@ async function saveProfile() {
     };
 
     try {
-        const response = await fetch('/api/profile', {
+        const response = await fetch('/api/my-business', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(profileData)
