@@ -166,37 +166,6 @@ func getPlansData() []gin.H {
 				"Ofertas de trabajo",
 			},
 		},
-		{
-			"id":          "electron",
-			"name":        "Plan Electrón",
-			"displayName": "Electrón",
-			"description": "Agente telefónico con voz IA",
-			"subtitle":    "Para empresas grandes",
-			"comingSoon":  true,
-			"badge":       "⚡ Enterprise",
-			"badgeClass":  "enterprise",
-			"monthly": gin.H{
-				"amount":  getStripePriceAmount("STRIPE_ELECTRON_MONTHLY_PRICE_ID"),
-				"priceId": os.Getenv("STRIPE_ELECTRON_MONTHLY_PRICE_ID"),
-			},
-			"annual": gin.H{
-				"amount":  getStripePriceAmount("STRIPE_ELECTRON_ANNUAL_PRICE_ID"),
-				"priceId": os.Getenv("STRIPE_ELECTRON_ANNUAL_PRICE_ID"),
-			},
-			"features": []string{
-				"Todo del plan Neutrón",
-				"Llamadas entrantes con IA",
-				"Llamadas salientes automatizadas",
-				"Voz natural con IA",
-				"Integración telefónica",
-				"Múltiples voces disponibles",
-				"Transcripción en tiempo real",
-				"Análisis de sentimiento",
-				"IVR inteligente con IA",
-				"Grabación de llamadas",
-				"Analytics de llamadas",
-			},
-		},
 	}
 }
 

@@ -246,7 +246,7 @@ function updatePrices() {
 // ============================================
 
 async function selectPlan(plan, billingCycle) {
-    console.log(`📋 Seleccionando plan: ${plan} (${billingCycle})`);
+    console.log(`Seleccionando plan: ${plan} (${billingCycle})`);
     
     // Mostrar modal de carga
     const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
@@ -275,9 +275,9 @@ async function selectPlan(plan, billingCycle) {
         
         // Si es plan gratuito, mostrar mensaje de éxito
         if (data.trial) {
-            updateLoadingMessage('✨ ¡Plan gratuito activado! Redirigiendo al dashboard...');
+            updateLoadingMessage('¡Plan gratuito activado! Redirigiendo al dashboard...');
         } else {
-            updateLoadingMessage('🔒 Redirigiendo a checkout seguro...');
+            updateLoadingMessage('Redirigiendo a checkout seguro...');
         }
         
         // Redirigir después de 1.5 segundos

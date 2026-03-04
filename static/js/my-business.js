@@ -122,14 +122,30 @@ function updateDropdownSelection(wrapperId, value) {
 function applySchedule(schedule) {
     Object.entries(schedule).forEach(([day, data]) => {
         const checkbox = document.getElementById(`day-${day}`);
-        const open = document.getElementById(`time-${day}-open`);
-        const close = document.getElementById(`time-${day}-close`);
+        const openInput  = document.getElementById(`time-${day}-open`);
+        const closeInput = document.getElementById(`time-${day}-close`);
 
         if (!checkbox) return;
 
+        // Sincronizar toggle
         checkbox.checked = data.isOpen;
-        if (open) open.value = data.open;
-        if (close) close.value = data.close;
+        const dayDiv = checkbox.closest('.schedule-day');
+        if (dayDiv) {
+            dayDiv.classList.toggle('closed', !data.isOpen);
+        }
+
+        // Actualizar el time-picker visual si ya fue creado
+        const openWrapper  = openInput  && openInput.previousElementSibling;
+        const closeWrapper = closeInput && closeInput.previousElementSibling;
+
+        const startTime = data.start || data.open;
+        const endTime   = data.end   || data.close;
+
+        if (openWrapper  && typeof openWrapper._setTime  === 'function') openWrapper._setTime(startTime);
+        else if (openInput)  openInput.value  = startTime || '09:00';
+
+        if (closeWrapper && typeof closeWrapper._setTime === 'function') closeWrapper._setTime(endTime);
+        else if (closeInput) closeInput.value = endTime   || '20:00';
     });
 }
 
@@ -589,6 +605,26 @@ function createTimePicker(input, defaultValue = '09:00') {
             display.classList.remove('active');
         }
     });
+
+    // API pública para actualizar el picker desde fuera
+    wrapper._setTime = function(time24) {
+        if (!time24) return;
+        const t = convert24to12(time24);
+        selectedHour   = t.hours;
+        selectedMinute = t.minutes;
+        selectedPeriod = t.period;
+
+        hourScroll.querySelectorAll('.time-option').forEach(o =>
+            o.classList.toggle('selected', o.dataset.value === selectedHour));
+        minuteScroll.querySelectorAll('.time-option').forEach(o =>
+            o.classList.toggle('selected', o.dataset.value === selectedMinute));
+        periodScroll.querySelectorAll('.time-option').forEach(o =>
+            o.classList.toggle('selected', o.dataset.value === selectedPeriod));
+
+        display.querySelector('.time-display-value').textContent =
+            `${selectedHour}:${selectedMinute} ${selectedPeriod}`;
+        input.value = time24;
+    };
 }
 
 // ============================================
