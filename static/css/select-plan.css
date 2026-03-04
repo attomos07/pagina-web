@@ -1,5 +1,5 @@
 /* ============================================
-   SELECT PLAN PAGE - DISEÑO PREMIUM CON EFECTO NIEBLA
+   SELECT PLAN PAGE
    ============================================ */
 
 * {
@@ -13,42 +13,6 @@ body {
     background: #ffffff;
     min-height: 100vh;
     overflow-x: hidden;
-    position: relative;
-}
-
-/* ============================================
-   EFECTO DE NIEBLA ANIMADA
-   ============================================ */
-
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: 
-        radial-gradient(circle at 20% 30%, rgba(6, 182, 212, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 70%, rgba(16, 185, 129, 0.12) 0%, transparent 50%),
-        radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
-    animation: fogMove 20s ease-in-out infinite alternate;
-    pointer-events: none;
-    z-index: 0;
-}
-
-@keyframes fogMove {
-    0% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.6;
-    }
-    50% {
-        transform: translate(30px, -30px) scale(1.1);
-        opacity: 0.8;
-    }
-    100% {
-        transform: translate(-30px, 30px) scale(1);
-        opacity: 0.6;
-    }
 }
 
 /* ============================================
@@ -59,8 +23,6 @@ body::before {
     max-width: 1400px;
     margin: 0 auto;
     padding: 60px 20px;
-    position: relative;
-    z-index: 1;
 }
 
 /* ============================================
@@ -69,34 +31,19 @@ body::before {
 
 .header {
     text-align: center;
-    margin-bottom: 60px;
-    animation: fadeInDown 0.8s ease-out;
-}
-
-@keyframes fadeInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    margin-bottom: 3rem;
 }
 
 .header h1 {
-    font-size: 3rem;
+    font-size: 2.5rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #1a1a1a;
     margin-bottom: 1rem;
     letter-spacing: -0.02em;
 }
 
 .header p {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     color: #6b7280;
     max-width: 600px;
     margin: 0 auto;
@@ -111,29 +58,16 @@ body::before {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1.5rem;
-    margin-bottom: 60px;
-    animation: fadeIn 1s ease-out 0.2s both;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
+    gap: 1rem;
+    margin-bottom: 3rem;
 }
 
 .billing-option {
-    font-size: 1.125rem;
+    font-size: 1rem;
     font-weight: 600;
     color: #374151;
     cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
+    transition: color 0.3s ease;
 }
 
 .billing-option:hover {
@@ -147,8 +81,8 @@ body::before {
 .toggle-switch {
     position: relative;
     display: inline-block;
-    width: 64px;
-    height: 36px;
+    width: 60px;
+    height: 32px;
 }
 
 .toggle-switch input {
@@ -164,27 +98,26 @@ body::before {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #e5e7eb;
-    transition: 0.4s;
-    border-radius: 36px;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+    border-radius: 32px;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .toggle-slider:before {
     position: absolute;
     content: "";
-    height: 28px;
-    width: 28px;
+    height: 24px;
+    width: 24px;
     left: 4px;
     bottom: 4px;
-    background-color: white;
-    transition: 0.4s;
+    background: white;
     border-radius: 50%;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 input:checked + .toggle-slider {
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    background: #06b6d4;
 }
 
 input:checked + .toggle-slider:before {
@@ -192,126 +125,52 @@ input:checked + .toggle-slider:before {
 }
 
 /* ============================================
-   PLANS GRID - CON ANIMACIÓN ESCALONADA
+   PLANS GRID
    ============================================ */
 
 .plans-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-    margin-bottom: 60px;
-    margin-top: 30px;
-    max-width: 1600px;
-    margin-left: auto;
-    margin-right: auto;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 32px;
+    max-width: 1400px;
+    margin: 0 auto 4rem auto;
 }
+
+/* ============================================
+   PLAN CARDS
+   ============================================ */
 
 .plan-card {
     background: white;
     border-radius: 24px;
-    padding: 2rem 1.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
+    padding: 48px 40px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     border: 2px solid transparent;
-    opacity: 0;
-    transform: translateY(50px);
-    animation: cardFadeIn 0.8s ease-out forwards;
-    overflow: visible;
-}
-
-/* Animación escalonada para cada tarjeta */
-.plan-card:nth-child(1) {
-    animation-delay: 0.2s;
-}
-
-.plan-card:nth-child(2) {
-    animation-delay: 0.4s;
-}
-
-.plan-card:nth-child(3) {
-    animation-delay: 0.6s;
-}
-
-
-
-@keyframes cardFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(50px) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    position: relative;
 }
 
 .plan-card:hover {
-    transform: translateY(-12px);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.15);
+    transform: translateY(-8px);
+    box-shadow: 0 20px 60px rgba(6, 182, 212, 0.25);
+    border-color: rgba(6, 182, 212, 0.3);
 }
 
-/* ============================================
-   PLAN GRATUITO - DESTACADO EN VERDE BRILLANTE
-   ============================================ */
-
+/* Plan Gratuito */
 .plan-card.free-trial {
-    border-color: #10b981;
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, white 100%);
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1),
-                0 8px 32px rgba(16, 185, 129, 0.25);
-    position: relative;
-    overflow: visible;
-}
-
-.plan-card.free-trial::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(
-        45deg,
-        transparent 30%,
-        rgba(16, 185, 129, 0.1) 50%,
-        transparent 70%
-    );
-    animation: shimmer 3s infinite;
-    border-radius: 24px;
-    z-index: 1;
-    pointer-events: none;
-}
-
-@keyframes shimmer {
-    0% {
-        transform: translateX(-100%) translateY(-100%) rotate(45deg);
-    }
-    100% {
-        transform: translateX(100%) translateY(100%) rotate(45deg);
-    }
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, white 100%);
+    border-color: rgba(16, 185, 129, 0.25);
 }
 
 .plan-card.free-trial:hover {
-    transform: translateY(-12px) scale(1.02);
-    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.15),
-                0 28px 70px rgba(16, 185, 129, 0.35);
+    box-shadow: 0 20px 60px rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.4);
 }
 
-/* ============================================
-   PLAN POPULAR
-   ============================================ */
-
+/* Plan Popular */
 .plan-card.featured {
     border-color: #06b6d4;
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, white 100%);
-    transform: scale(1.05);
-}
-
-.plan-card.featured:hover {
-    transform: scale(1.05) translateY(-12px);
-    box-shadow: 0 28px 70px rgba(6, 182, 212, 0.3);
-    border-color: #0891b2;
+    box-shadow: 0 8px 30px rgba(6, 182, 212, 0.3);
 }
 
 /* ============================================
@@ -320,45 +179,34 @@ input:checked + .toggle-slider:before {
 
 .plan-badge {
     position: absolute;
-    top: -18px;
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
-    padding: 0.625rem 1.25rem;
-    border-radius: 24px;
-    font-size: 0.6875rem;
+    padding: 8px 20px;
+    border-radius: 0 0 12px 12px;
+    font-size: 13px;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    z-index: 100;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.03em;
     white-space: nowrap;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
 .plan-badge.trial {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    background: #10b981;
     color: white;
-    animation: pulseBadge 2s ease-in-out infinite;
-}
-
-@keyframes pulseBadge {
-    0%, 100% {
-        box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
-        transform: translateX(-50%) scale(1);
-    }
-    50% {
-        box-shadow: 0 6px 24px rgba(16, 185, 129, 0.6);
-        transform: translateX(-50%) scale(1.05);
-    }
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
 }
 
 .plan-badge.popular {
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    background: #06b6d4;
     color: white;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.25);
 }
 
 .plan-badge.enterprise {
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    background: #8b5cf6;
     color: white;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.25);
 }
 
 /* ============================================
@@ -366,54 +214,52 @@ input:checked + .toggle-slider:before {
    ============================================ */
 
 .plan-header {
-    text-align: center;
     margin-bottom: 1.5rem;
-    position: relative;
-    z-index: 2;
 }
 
 .plan-header h2 {
-    font-size: 1.5rem;
+    font-size: 24px;
     font-weight: 700;
     color: #1a1a1a;
-    margin-bottom: 1rem;
+    margin-bottom: 16px;
+}
+
+.plan-card.free-trial .plan-header h2 {
+    color: #10b981;
 }
 
 .plan-price {
     display: flex;
     align-items: baseline;
-    justify-content: center;
-    margin-bottom: 0.5rem;
+    gap: 4px;
+    margin-bottom: 24px;
 }
 
 .plan-price .price {
-    font-size: 2.75rem;
+    font-size: 56px;
     font-weight: 800;
-    background: linear-gradient(135deg, #1a1a1a 0%, #06b6d4 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: -0.02em;
+    color: #06b6d4;
+    line-height: 1;
+    transition: all 0.3s ease;
 }
 
 .plan-card.free-trial .plan-price .price {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #10b981;
 }
 
 .plan-price .period {
-    font-size: 1rem;
+    font-size: 14px;
     color: #6b7280;
-    margin-left: 0.5rem;
+    margin-top: 8px;
+    display: block;
     font-weight: 500;
 }
 
 .plan-subtitle {
+    font-size: 15px;
     color: #6b7280;
-    font-size: 0.875rem;
     line-height: 1.6;
+    min-height: 48px;
 }
 
 /* ============================================
@@ -422,19 +268,19 @@ input:checked + .toggle-slider:before {
 
 .plan-features {
     list-style: none;
-    margin-bottom: 1.5rem;
-    position: relative;
-    z-index: 2;
+    padding: 0;
+    margin: 0 0 32px 0;
 }
 
 .plan-features li {
     display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    padding: 0.625rem 0;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    font-size: 15px;
     color: #374151;
-    font-size: 0.8125rem;
     border-bottom: 1px solid #f3f4f6;
+    font-weight: 500;
 }
 
 .plan-features li:last-child {
@@ -442,26 +288,28 @@ input:checked + .toggle-slider:before {
 }
 
 .plan-features .icon {
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    width: 22px;
+    height: 22px;
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(6, 182, 212, 0.22));
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    font-size: 12px;
     flex-shrink: 0;
-    font-weight: bold;
+    margin-top: 2px;
+    font-size: 13px;
+    color: #06b6d4;
+    font-weight: 700;
 }
 
 .plan-card.free-trial .plan-features .icon {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.22));
+    color: #10b981;
 }
 
 .plan-features .icon.disabled {
-    background: #e5e7eb;
-    color: #9ca3af;
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
 }
 
 /* ============================================
@@ -470,42 +318,37 @@ input:checked + .toggle-slider:before {
 
 .plan-button {
     width: 100%;
-    padding: 0.875rem 1.5rem;
-    border: none;
+    padding: 16px 32px;
     border-radius: 12px;
-    font-size: 0.9375rem;
+    border: none;
+    font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    position: relative;
-    z-index: 2;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .plan-button.primary {
-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    background: #06b6d4;
     color: white;
-    box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
 }
 
 .plan-button.primary:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 30px rgba(6, 182, 212, 0.45);
-}
-
-.plan-button.primary:active {
-    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
 }
 
 .plan-card.free-trial .plan-button.primary {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
+    background: #10b981;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
 }
 
 .plan-card.free-trial .plan-button.primary:hover {
-    box-shadow: 0 8px 30px rgba(16, 185, 129, 0.5);
-    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
 }
 
 .plan-button.secondary {
@@ -515,13 +358,12 @@ input:checked + .toggle-slider:before {
 }
 
 .plan-button.secondary:hover {
-    background: #06b6d4;
-    color: white;
+    background: rgba(6, 182, 212, 0.08);
     transform: translateY(-3px);
 }
 
 /* ============================================
-   RESPONSIVE DESIGN
+   LOADING MODAL
    ============================================ */
 
 .modal {
@@ -532,39 +374,26 @@ input:checked + .toggle-slider:before {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.75);
+    background-color: rgba(0, 0, 0, 0.6);
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(8px);
-    animation: fadeIn 0.3s ease-out;
+    backdrop-filter: blur(4px);
 }
 
 .modal-content {
     background: white;
-    padding: 3.5rem 3rem;
+    padding: 3rem;
     border-radius: 24px;
     text-align: center;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-    animation: modalSlideIn 0.4s ease-out;
-}
-
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-30px) scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
 .spinner {
     border: 4px solid #f3f4f6;
     border-top: 4px solid #06b6d4;
     border-radius: 50%;
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
     animation: spin 0.8s linear infinite;
     margin: 0 auto 1.5rem;
 }
@@ -581,27 +410,12 @@ input:checked + .toggle-slider:before {
 }
 
 /* ============================================
-   RESPONSIVE DESIGN
+   RESPONSIVE
    ============================================ */
-
-@media (max-width: 1400px) {
-    .plans-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.25rem;
-    }
-}
 
 @media (max-width: 1024px) {
     .plans-grid {
         grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .plan-card.featured {
-        transform: scale(1);
-    }
-    
-    .plan-card.featured:hover {
-        transform: translateY(-12px);
     }
 }
 
@@ -620,37 +434,28 @@ input:checked + .toggle-slider:before {
 
     .plans-grid {
         grid-template-columns: 1fr;
-        gap: 2rem;
+        gap: 24px;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
     }
 
-    .plan-card {
-        padding: 2.5rem 2rem;
+    .pricing-card {
+        padding: 36px 28px;
     }
 
-    .plan-card.featured {
-        transform: scale(1);
-    }
-
-    .plan-card.featured:hover {
-        transform: translateY(-12px);
-    }
-
-    .plan-card.free-trial:hover {
-        transform: translateY(-12px) scale(1);
+    .plan-price .price {
+        font-size: 48px;
     }
 
     .billing-toggle {
         flex-direction: column;
-        gap: 1rem;
+        gap: 0.75rem;
     }
 
-    .trust-section {
-        gap: 2rem;
-        padding: 2rem 1.5rem;
-    }
-
-    .trust-badge {
-        font-size: 0.875rem;
+    .modal-content {
+        padding: 2.5rem 2rem;
+        margin: 20px;
     }
 }
 
@@ -660,20 +465,6 @@ input:checked + .toggle-slider:before {
     }
 
     .plan-price .price {
-        font-size: 2.5rem;
-    }
-
-    .plan-header h2 {
-        font-size: 1.5rem;
-    }
-
-    .modal-content {
-        padding: 2.5rem 2rem;
-        margin: 20px;
-    }
-
-    .plan-button {
-        padding: 1rem 1.5rem;
-        font-size: 0.9375rem;
+        font-size: 40px;
     }
 }

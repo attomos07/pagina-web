@@ -45,6 +45,31 @@ func GetPlansPage(c *gin.Context) {
 	})
 }
 
+// GetDashboardPage renderiza el dashboard pasando el plan actual del usuario
+func GetDashboardPage(c *gin.Context) {
+	userInterface, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "No autenticado",
+		})
+		return
+	}
+
+	user := userInterface.(*models.User)
+
+	// Obtener suscripción del usuario
+	var subscription models.Subscription
+	currentPlan := "pending"
+	if err := config.DB.Where("user_id = ?", user.ID).First(&subscription).Error; err == nil {
+		currentPlan = subscription.Plan
+	}
+
+	c.HTML(http.StatusOK, "dashboard.html", gin.H{
+		"user":        user,
+		"currentPlan": currentPlan,
+	})
+}
+
 // GetIndexPage renderiza la landing page con precios de Stripe
 func GetIndexPage(c *gin.Context) {
 	// Configurar Stripe
@@ -100,10 +125,10 @@ func getPlansData() []gin.H {
 				"Horarios personalizados de atención",
 				"Catálogo de servicios",
 				"Promociones de servicios",
-				"📜 Ofertas de trabajo",
+				"Ofertas de trabajo (Próximamente)",
 			},
 			"isFree":     true,
-			"badge":      "✨ Prueba Gratis",
+			"badge":      "Prueba Gratis",
 			"badgeClass": "trial",
 		},
 		{
@@ -112,6 +137,9 @@ func getPlansData() []gin.H {
 			"displayName": "Protón",
 			"description": "Ideal para empresas de servicios",
 			"subtitle":    "Ideal para comenzar tu negocio",
+			"popular":     true,
+			"badge":       "Más Popular",
+			"badgeClass":  "popular",
 			"monthly": gin.H{
 				"amount":  getStripePriceAmount("STRIPE_PROTON_MONTHLY_PRICE_ID"),
 				"priceId": os.Getenv("STRIPE_PROTON_MONTHLY_PRICE_ID"),
@@ -124,13 +152,13 @@ func getPlansData() []gin.H {
 				"Agentes ilimitados",
 				"Meta WhatsApp Business API",
 				"Mensajes ilimitados",
-				"IA con Gemini avanzada",
-				"Chatwoot CRM integrado",
+				"IA con Gemini",
+				"Chatwoot CRM",
 				"Google Calendar",
 				"Horarios personalizados de atención",
 				"Catálogo de servicios",
 				"Promociones de servicios",
-				"📜 Ofertas de trabajo",
+				"Ofertas de trabajo (Próximamente)",
 			},
 		},
 		{
@@ -139,10 +167,7 @@ func getPlansData() []gin.H {
 			"displayName": "Neutrón",
 			"description": "Ideal para e-commerce",
 			"subtitle":    "Para negocios en crecimiento",
-			"popular":     true,
 			"comingSoon":  true,
-			"badge":       "🔥 Más Popular",
-			"badgeClass":  "popular",
 			"monthly": gin.H{
 				"amount":  getStripePriceAmount("STRIPE_NEUTRON_MONTHLY_PRICE_ID"),
 				"priceId": os.Getenv("STRIPE_NEUTRON_MONTHLY_PRICE_ID"),
@@ -155,9 +180,9 @@ func getPlansData() []gin.H {
 				"Agentes ilimitados",
 				"Meta WhatsApp Business API",
 				"Mensajes ilimitados",
-				"Chatwoot CRM integrado",
-				"IA con Gemini avanzada",
-				"Google Sheets para ventas",
+				"Chatwoot CRM",
+				"IA con Gemini",
+				"Google Sheets",
 				"Catálogo de productos",
 				"Promociones y packs",
 				"Página web + App móvil",

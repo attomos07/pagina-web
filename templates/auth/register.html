@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="/static/css/partials/navbar.css">
     <link rel="stylesheet" href="/static/css/partials/footer.css">
     <link rel="stylesheet" href="/static/css/auth/register.css">
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
 </head>
 <body>
     {{template "partials/navbar.html" .}}
@@ -157,11 +158,13 @@
                                             <input type="text" class="select-search" id="businessSearch" placeholder="Buscar..." autocomplete="off">
                                         </div>
                                         <div class="select-options-container" id="selectOptionsContainer">
-                                            <div class="select-option" data-value="clinica-dental" data-keywords="clinica">
+                                            <div class="select-option" data-value="clinica-dental" data-keywords="clinica dental">
+                                                <i class="lni lni-hospital"></i>
                                                 <span>Clínica Dental</span>
                                             </div>
-                                            <div class="select-option" data-value="restaurante" data-keywords="restaurante">
-                                                <span>Restaurante</span>
+                                            <div class="select-option" data-value="peluqueria" data-keywords="peluqueria salon belleza">
+                                                <i class="lni lni-cut"></i>
+                                                <span>Peluquería / Salón de Belleza</span>
                                             </div>
                                         </div>
                                     </div>
@@ -184,10 +187,20 @@
                                     <div class="select-dropdown" id="businessSizeDropdown">
                                         <div class="select-options-container" id="selectSizeOptionsContainer">
                                             <div class="select-option" data-value="microempresa">
+                                                <i class="lni lni-user"></i>
                                                 <span>Microempresa (1-10)</span>
                                             </div>
                                             <div class="select-option" data-value="pequena">
+                                                <i class="lni lni-users"></i>
                                                 <span>Pequeña (11-50)</span>
+                                            </div>
+                                            <div class="select-option" data-value="mediana">
+                                                <i class="lni lni-apartment"></i>
+                                                <span>Mediana (51-200)</span>
+                                            </div>
+                                            <div class="select-option" data-value="grande">
+                                                <i class="lni lni-apartment"></i>
+                                                <span>Grande (200+)</span>
                                             </div>
                                         </div>
                                     </div>

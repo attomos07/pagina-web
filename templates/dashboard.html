@@ -12,7 +12,7 @@
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/dashboard.css">
 </head>
-<body>
+
     <!-- Decorative Rings -->
     <div class="decorative-rings">
         <div class="ring ring-1"></div>
@@ -21,8 +21,7 @@
         <div class="ring ring-4"></div>
     </div>
 
-    <div class="app-container">
-        <!-- Sidebar -->
+    <div class="app-container" data-plan="{{.currentPlan}}">
         {{template "sidebar.html" .}}
 
         <!-- Main Content -->
@@ -98,7 +97,8 @@
                         </div>
                     </div>
 
-                    <!-- AI Billing Section -->
+                    <!-- AI Billing Section (solo planes de pago) -->
+                    {{if ne .currentPlan "gratuito"}}
                     <div class="ai-billing-section">
                         <div class="billing-header">
                             <div class="billing-title-wrapper">
@@ -161,6 +161,8 @@
                             </div>
                         </div>
                     </div>
+
+                    {{end}}
 
                     <!-- Unified Services Section -->
                     <div class="services-unified-section">
