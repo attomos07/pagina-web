@@ -748,7 +748,7 @@ async function saveGeminiKey() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                api_key: apiKey
+                apiKey: apiKey
             })
         });
 

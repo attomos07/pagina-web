@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
 )
@@ -38,7 +39,7 @@ func InitCalendar() error {
 		return fmt.Errorf("error leyendo google.json: %w", err)
 	}
 
-	// Intentar parsear como OAuth token
+	// Parsear como OAuth token
 	var token oauth2.Token
 	if err := json.Unmarshal(tokenJSON, &token); err != nil {
 		calendarEnabled = false
@@ -51,19 +52,46 @@ func InitCalendar() error {
 		return fmt.Errorf("token no contiene access_token válido")
 	}
 
+	// Log del estado del token
+	if !token.Expiry.IsZero() {
+		timeUntilExpiry := time.Until(token.Expiry)
+		if timeUntilExpiry < 0 {
+			log.Printf("   ⚠️  Token de Calendar expirado hace: %v", -timeUntilExpiry)
+			if token.RefreshToken != "" {
+				log.Println("   ℹ️  Hay refresh_token - se renovará automáticamente")
+			}
+		} else {
+			log.Printf("   ✅ Token de Calendar válido por: %v", timeUntilExpiry)
+		}
+	}
+
 	ctx := context.Background()
 
-	// Crear token source que maneje el refresh automáticamente
-	tokenSource := oauth2.StaticTokenSource(&token)
+	// 🔧 CORRECCIÓN: Usar oauth2.Config.Client igual que sheets.go
+	// Esto habilita el auto-refresh del token cuando expira
+	config := &oauth2.Config{
+		Scopes:   []string{calendar.CalendarScope},
+		Endpoint: google.Endpoint,
+	}
 
-	// Crear cliente HTTP autenticado con el token
-	client := oauth2.NewClient(ctx, tokenSource)
+	client := config.Client(ctx, &token)
 
-	// Crear servicio de Calendar con el cliente HTTP
+	// Crear servicio de Calendar con el cliente HTTP que auto-refresca
 	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		calendarEnabled = false
 		return fmt.Errorf("error creando servicio Calendar: %w", err)
+	}
+
+	// Probar acceso haciendo una petición real
+	log.Println("   🧪 Probando acceso a Google Calendar...")
+	_, testErr := srv.CalendarList.Get(calendarID).Do()
+	if testErr != nil {
+		log.Printf("   ⚠️  No se pudo acceder al calendario '%s': %v", calendarID, testErr)
+		log.Println("   💡 Verifica que GOOGLE_CALENDAR_ID sea correcto")
+		log.Println("   ℹ️  Intentando continuar de todas formas...")
+	} else {
+		log.Printf("   ✅ Acceso al calendario verificado: %s", calendarID)
 	}
 
 	calendarService = srv
@@ -105,31 +133,27 @@ func CreateCalendarEvent(data map[string]string) (*calendar.Event, error) {
 	log.Println("🔄 PASO 1: Parseando fecha...")
 	fechaObj, err := ParseFecha(data["fechaExacta"])
 	if err != nil {
-		log.Println("❌ ERROR parseando fecha:")
-		log.Printf("   📅 Fecha: %s\n", data["fechaExacta"])
-		log.Printf("   ⚠️  Error: %v\n", err)
+		log.Printf("❌ ERROR parseando fecha: %v\n", err)
 		return nil, fmt.Errorf("error parseando fecha: %w", err)
 	}
-	log.Println("✅ Fecha parseada exitosamente:")
-	log.Printf("   📅 Fecha string: %s\n", data["fechaExacta"])
-	log.Printf("   📅 Fecha objeto: %s\n", fechaObj.Format("02/01/2006"))
-	log.Println("")
+	log.Printf("✅ Fecha parseada: %s\n", fechaObj.Format("02/01/2006"))
 
 	log.Println("🔄 PASO 2: Convirtiendo hora a formato 24h...")
 	horas, minutos, err := ConvertirHoraA24h(data["hora"])
 	if err != nil {
-		log.Println("❌ ERROR convirtiendo hora:")
-		log.Printf("   ⏰ Hora: %s\n", data["hora"])
-		log.Printf("   ⚠️  Error: %v\n", err)
+		log.Printf("❌ ERROR convirtiendo hora '%s': %v\n", data["hora"], err)
 		return nil, fmt.Errorf("error convirtiendo hora: %w", err)
 	}
-	log.Println("✅ Hora convertida exitosamente:")
-	log.Printf("   ⏰ Hora string: %s\n", data["hora"])
-	log.Printf("   ⏰ Horas: %d, Minutos: %d\n", horas, minutos)
-	log.Println("")
+	log.Printf("✅ Hora convertida: %d:%02d\n", horas, minutos)
 
-	// Crear fecha de inicio
-	log.Println("🔄 PASO 3: Creando fecha de inicio del evento...")
+	// Crear fecha de inicio con zona horaria correcta
+	log.Println("🔄 PASO 3: Creando fecha de inicio...")
+	location, locErr := time.LoadLocation(TIMEZONE)
+	if locErr != nil {
+		log.Printf("⚠️  No se pudo cargar timezone '%s', usando Local: %v\n", TIMEZONE, locErr)
+		location = time.Local
+	}
+
 	startDate := time.Date(
 		fechaObj.Year(),
 		fechaObj.Month(),
@@ -138,29 +162,32 @@ func CreateCalendarEvent(data map[string]string) (*calendar.Event, error) {
 		minutos,
 		0,
 		0,
-		time.Local,
+		location,
 	)
-	log.Println("✅ Fecha de inicio creada:")
-	log.Printf("   📅 Inicio: %s\n", startDate.Format("02/01/2006 15:04 MST"))
-	log.Println("")
-
-	// Crear fecha de fin (1 hora después)
 	endDate := startDate.Add(time.Hour)
-	log.Println("✅ Fecha de fin calculada:")
-	log.Printf("   📅 Fin: %s (1 hora después)\n", endDate.Format("02/01/2006 15:04 MST"))
-	log.Println("")
 
-	// Crear el evento
+	log.Printf("✅ Inicio: %s\n", startDate.Format("02/01/2006 15:04 MST"))
+	log.Printf("✅ Fin:    %s\n", endDate.Format("02/01/2006 15:04 MST"))
+
+	// Construir descripción
+	description := fmt.Sprintf(
+		"Cliente: %s\nTeléfono: %s\nServicio: %s",
+		data["nombre"],
+		data["telefono"],
+		data["servicio"],
+	)
+	if data["barbero"] != "" {
+		description += fmt.Sprintf("\nBarbero/Trabajador: %s", data["barbero"])
+	}
+	description += "\n\nAgendado mediante WhatsApp Bot (Attomos)"
+
+	// Construir título del evento
+	title := fmt.Sprintf("✂️ %s - %s", data["servicio"], data["nombre"])
+
 	log.Println("🔄 PASO 4: Construyendo objeto del evento...")
 	event := &calendar.Event{
-		Summary: fmt.Sprintf("✂️ %s - %s", data["servicio"], data["nombre"]),
-		Description: fmt.Sprintf(
-			"Cliente: %s\nTeléfono: %s\nServicio: %s\nBarbero: %s\n\nAgendado mediante WhatsApp Bot",
-			data["nombre"],
-			data["telefono"],
-			data["servicio"],
-			data["barbero"],
-		),
+		Summary:     title,
+		Description: description,
 		Start: &calendar.EventDateTime{
 			DateTime: startDate.Format(time.RFC3339),
 			TimeZone: TIMEZONE,
@@ -171,60 +198,55 @@ func CreateCalendarEvent(data map[string]string) (*calendar.Event, error) {
 		},
 		ColorId: "9", // Azul
 		Reminders: &calendar.EventReminders{
+			UseDefault: false,
 			Overrides: []*calendar.EventReminder{
 				{Method: "email", Minutes: 1440}, // 1 día antes
 				{Method: "popup", Minutes: 60},   // 1 hora antes
 				{Method: "popup", Minutes: 10},   // 10 minutos antes
 			},
+			ForceSendFields: []string{"UseDefault"},
 		},
 		Status:       "confirmed",
 		Transparency: "opaque",
 	}
 
-	log.Println("✅ Objeto del evento construido:")
-	log.Printf("   📝 Título: %s\n", event.Summary)
-	log.Printf("   📅 Inicio: %s\n", startDate.Format("02/01/2006 15:04"))
-	log.Printf("   📅 Fin: %s\n", endDate.Format("02/01/2006 15:04"))
-	log.Printf("   🌍 Zona horaria: %s\n", TIMEZONE)
-	log.Printf("   🎨 Color: %s\n", event.ColorId)
-	log.Println("")
+	// Agregar invitado (attendee) si el cliente proporcionó su email
+	if data["email"] != "" {
+		log.Printf("   📧 Agregando attendee: %s\n", data["email"])
+		event.Attendees = []*calendar.EventAttendee{
+			{
+				Email:          data["email"],
+				DisplayName:    data["nombre"],
+				ResponseStatus: "needsAction",
+			},
+		}
+		// Enviar invitación por email al attendee
+		guestsFalse := false
+		event.GuestsCanSeeOtherGuests = &guestsFalse
+	}
 
-	log.Println("🔄 PASO 5: Enviando evento a Google Calendar API...")
+	log.Printf("   📝 Título: %s\n", event.Summary)
 	log.Printf("   📍 Calendar ID: %s\n", calendarID)
 
+	log.Println("🔄 PASO 5: Enviando evento a Google Calendar API...")
 	createdEvent, err := calendarService.Events.Insert(calendarID, event).Do()
 	if err != nil {
 		log.Println("")
-		log.Println("╔════════════════════════════════════════════════════════╗")
-		log.Println("║                                                        ║")
-		log.Println("║       ❌ ERROR CREANDO EVENTO EN CALENDAR              ║")
-		log.Println("║                                                        ║")
-		log.Println("╚════════════════════════════════════════════════════════╝")
-		log.Printf("❌ ERROR: %v\n", err)
-		log.Printf("   📅 Datos del evento: %s - %s\n", data["nombre"], data["servicio"])
+		log.Printf("❌ ERROR CREANDO EVENTO: %v\n", err)
 		log.Println("")
-		return nil, fmt.Errorf("error creando evento: %w", err)
+		return nil, fmt.Errorf("error creando evento en Calendar: %w", err)
 	}
 
 	log.Println("")
 	log.Println("╔════════════════════════════════════════════════════════╗")
-	log.Println("║                                                        ║")
 	log.Println("║     ✅ EVENTO CREADO EN CALENDAR EXITOSAMENTE          ║")
-	log.Println("║                                                        ║")
 	log.Println("╚════════════════════════════════════════════════════════╝")
-	log.Println("")
-	log.Println("📊 DETALLES DEL EVENTO CREADO:")
-	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Printf("   🆔 Event ID: %s\n", createdEvent.Id)
 	log.Printf("   📝 Título: %s\n", createdEvent.Summary)
-	log.Printf("   📅 Inicio: %s\n", startDate.Format("02/01/2006 15:04 MST"))
-	log.Printf("   📅 Fin: %s\n", endDate.Format("02/01/2006 15:04 MST"))
-	log.Printf("   👤 Cliente: %s\n", data["nombre"])
-	log.Printf("   📞 Teléfono: %s\n", data["telefono"])
-	log.Printf("   ✂️  Servicio: %s\n", data["servicio"])
-	log.Printf("   💈 Barbero: %s\n", data["barbero"])
 	log.Printf("   🔗 Link: %s\n", createdEvent.HtmlLink)
-	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	if data["email"] != "" {
+		log.Printf("   📧 Invitación enviada a: %s\n", data["email"])
+	}
 	log.Println("")
 
 	return createdEvent, nil

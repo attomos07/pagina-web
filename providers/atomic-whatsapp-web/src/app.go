@@ -16,6 +16,7 @@ import (
 type UserState struct {
 	IsScheduling        bool
 	IsCancelling        bool
+	IsAskingForEmail    bool // Esperando respuesta sobre recordatorio por email
 	Step                int
 	Data                map[string]string
 	ConversationHistory []string
@@ -39,6 +40,7 @@ func GetUserState(userID string) *UserState {
 	state := &UserState{
 		IsScheduling:        false,
 		IsCancelling:        false,
+		IsAskingForEmail:    false,
 		Step:                0,
 		Data:                make(map[string]string),
 		ConversationHistory: []string{},
@@ -148,6 +150,12 @@ func ProcessMessage(message, userID, userName string) string {
 		}
 	}
 
+	// Si está en flujo de email para recordatorio, procesarlo primero
+	if state.IsAskingForEmail {
+		log.Println("📧 PROCESANDO RESPUESTA DE RECORDATORIO POR EMAIL")
+		return processEmailReminderResponse(state, message, userID)
+	}
+
 	// Si quiere cancelar y no está cancelando
 	if wantsToCancelAppointment && !state.IsCancelling {
 		log.Println("🚫 INICIANDO PROCESO DE CANCELACIÓN")
@@ -234,7 +242,7 @@ Por favor envíame los datos de la cita que deseas cancelar.`, userName)
 }
 
 // continueCancellationFlow continúa el flujo de cancelación
-func continueCancellationFlow(state *UserState, message, userID, userName string) string {
+func continueCancellationFlow(state *UserState, message string, _ string, userName string) string {
 	log.Println("╔════════════════════════════════════════╗")
 	log.Println("║  CONTINUANDO FLUJO DE CANCELACIÓN      ║")
 	log.Println("╚════════════════════════════════════════╝")
@@ -402,6 +410,9 @@ func continueAppointmentFlow(state *UserState, analysis *AppointmentAnalysis, me
 	log.Println("║  CONTINUANDO FLUJO DE AGENDAMIENTO     ║")
 	log.Println("╚════════════════════════════════════════╝")
 
+	// Guardar userID en state para usarlo después en saveAppointment
+	state.Data["userID"] = userID
+
 	// Extraer información del mensaje actual
 	if analysis.ExtractedData != nil {
 		log.Println("📋 Extrayendo datos del mensaje actual:")
@@ -437,9 +448,117 @@ func continueAppointmentFlow(state *UserState, analysis *AppointmentAnalysis, me
 		return response
 	}
 
-	// Todos los datos completos - guardar
-	log.Println("🎉 TODOS LOS DATOS COMPLETOS - PROCEDIENDO A GUARDAR")
+	// Todos los datos completos - preguntar por recordatorio email
+	log.Println("🎉 TODOS LOS DATOS COMPLETOS - PREGUNTANDO POR RECORDATORIO")
+	return askForEmailReminder(state)
+}
+
+// askForEmailReminder pregunta al cliente si desea un recordatorio por email
+func askForEmailReminder(state *UserState) string {
+	state.IsAskingForEmail = true
+	state.Data["email_step"] = "asking"
+
+	nombre := state.Data["nombre"]
+	if nombre == "" {
+		nombre = "cliente"
+	}
+
+	response := fmt.Sprintf(`📋 *Resumen de tu cita:*
+
+👤 *Nombre:* %s
+✂️ *Servicio:* %s
+📅 *Fecha:* %s
+🕐 *Hora:* %s`,
+		state.Data["nombre"],
+		state.Data["servicio"],
+		state.Data["fecha"],
+		state.Data["hora"],
+	)
+
+	if state.Data["barbero"] != "" {
+		response += fmt.Sprintf("\n💈 *Con:* %s", state.Data["barbero"])
+	}
+
+	response += `
+
+¿Te gustaría recibir un recordatorio por correo electrónico? 📧
+
+Responde *sí* para agregar tu email, o *no* para continuar sin recordatorio.`
+
+	return response
+}
+
+// processEmailReminderResponse procesa la respuesta del cliente sobre el recordatorio
+func processEmailReminderResponse(state *UserState, message string, _ string) string {
+	userID := state.Data["userID"]
+	msgLower := strings.ToLower(strings.TrimSpace(message))
+
+	emailStep := state.Data["email_step"]
+
+	// Paso 1: preguntamos si quiere recordatorio
+	if emailStep == "asking" {
+		// Respuestas afirmativas
+		quiereSi := []string{"si", "sí", "yes", "claro", "ok", "dale", "va", "quiero", "porfa", "por favor", "ándale", "andale"}
+		// Respuestas negativas
+		quiereNo := []string{"no", "nel", "nope", "sin recordatorio", "no gracias", "no quiero"}
+
+		for _, kw := range quiereSi {
+			if strings.Contains(msgLower, kw) {
+				log.Println("📧 Cliente QUIERE recordatorio por email - pidiendo correo")
+				state.Data["email_step"] = "waiting_email"
+				return "¡Perfecto! 📧 Por favor escribe tu correo electrónico:"
+			}
+		}
+
+		for _, kw := range quiereNo {
+			if strings.Contains(msgLower, kw) {
+				log.Println("📧 Cliente NO quiere recordatorio - guardando cita sin email")
+				state.IsAskingForEmail = false
+				delete(state.Data, "email_step")
+				return saveAppointment(state, userID)
+			}
+		}
+
+		// No se entendió la respuesta
+		return "No entendí tu respuesta 😅\n\n¿Quieres recibir un recordatorio por correo electrónico?\nResponde *sí* o *no*."
+	}
+
+	// Paso 2: esperamos el correo electrónico
+	if emailStep == "waiting_email" {
+		email := strings.TrimSpace(message)
+
+		// Validar formato básico de email
+		if isValidEmail(email) {
+			log.Printf("📧 Email recibido y válido: %s", email)
+			state.Data["email"] = email
+			state.IsAskingForEmail = false
+			delete(state.Data, "email_step")
+			return saveAppointment(state, userID)
+		}
+
+		// Email inválido, pedir de nuevo
+		log.Printf("⚠️  Email inválido recibido: %s", email)
+		return "Ese correo no parece válido 🤔\n\nPor favor escribe un correo electrónico válido (ejemplo: nombre@gmail.com):"
+	}
+
+	// Fallback: limpiar y guardar
+	state.IsAskingForEmail = false
+	delete(state.Data, "email_step")
 	return saveAppointment(state, userID)
+}
+
+// isValidEmail valida formato básico de email
+func isValidEmail(email string) bool {
+	atIdx := strings.Index(email, "@")
+	if atIdx < 1 {
+		return false
+	}
+	domain := email[atIdx+1:]
+	dotIdx := strings.LastIndex(domain, ".")
+	if dotIdx < 1 || dotIdx == len(domain)-1 {
+		return false
+	}
+	return true
 }
 
 func saveAppointment(state *UserState, userID string) string {
@@ -482,6 +601,7 @@ func saveAppointment(state *UserState, userID string) string {
 		"fecha":       state.Data["fecha"],
 		"fechaExacta": fechaExacta,
 		"hora":        horaNormalizada,
+		"email":       state.Data["email"], // correo para recordatorio (puede estar vacío)
 	}
 
 	log.Println("")
