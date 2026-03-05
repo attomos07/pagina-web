@@ -61,7 +61,7 @@
                                     <i class="lni lni-gemini integration-icon" style="font-size: 2rem; color: #8E44AD;"></i>
                                     <h2>Gemini AI</h2>
                                 </div>
-                                <div class="status-badge disconnected" id="geminiStatus">
+                                <div class="status-badge disconnected" id="geminiStatusBadge">
                                     <span class="status-indicator"></span>
                                     No configurado
                                 </div>
@@ -128,6 +128,20 @@
                                 </button>
                             </div>
 
+                            <!-- Connection Info (shown when configured) -->
+                            <div class="connection-info" id="geminiConnectionInfo" style="display: none;">
+                                <div class="connection-details">
+                                    <div class="connection-detail">
+                                        <span class="connection-label">API Key:</span>
+                                        <span class="connection-value" style="font-family: monospace; letter-spacing: 0.1em;">••••••••••••••••••••••••</span>
+                                    </div>
+                                    <div class="connection-detail">
+                                        <span class="connection-label">Estado:</span>
+                                        <span class="connection-value" style="color: #10b981; font-weight: 700;">✓ Configurado</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Manage Actions (hidden by default) -->
                             <div class="card-actions" id="geminiManageActions" style="display: none;">
                                 <button class="btn btn-secondary" id="btnUpdateGeminiKey">
@@ -148,7 +162,7 @@
                                     <i class="lni lni-whatsapp integration-icon" style="font-size: 2rem; color: #25D366;"></i>
                                     <h2>Meta WhatsApp Business API</h2>
                                 </div>
-                                <div class="status-badge disconnected" id="metaStatus">
+                                <div class="status-badge disconnected" id="metaStatusBadge">
                                     <span class="status-indicator"></span>
                                     No configurado
                                 </div>

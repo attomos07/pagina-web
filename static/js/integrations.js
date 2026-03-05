@@ -602,6 +602,7 @@ function copyWebhookUrl(url, button) {
 function initGeminiIntegration() {
     const saveButton = document.getElementById('btnSaveGeminiKey');
     const removeButton = document.getElementById('btnRemoveGeminiKey');
+    const updateButton = document.getElementById('btnUpdateGeminiKey');
     const toggleButton = document.getElementById('toggleGeminiKey');
     const apiKeyInput = document.getElementById('geminiApiKey');
     
@@ -630,9 +631,27 @@ function initGeminiIntegration() {
         saveButton.addEventListener('click', saveGeminiKey);
     }
     
+    if (updateButton) {
+        updateButton.addEventListener('click', enableGeminiEdit);
+    }
+    
     if (removeButton) {
         removeButton.addEventListener('click', removeGeminiKey);
     }
+}
+
+function enableGeminiEdit() {
+    const apiKeyInput = document.getElementById('geminiApiKey');
+    const toggleButton = document.getElementById('toggleGeminiKey');
+    const saveActions = document.getElementById('geminiActions');
+    const manageActions = document.getElementById('geminiManageActions');
+    const connectionInfo = document.getElementById('geminiConnectionInfo');
+    
+    if (apiKeyInput) { apiKeyInput.value = ''; apiKeyInput.disabled = false; apiKeyInput.focus(); }
+    if (toggleButton) toggleButton.disabled = false;
+    if (connectionInfo) connectionInfo.style.display = 'none';
+    if (saveActions) saveActions.style.display = 'flex';
+    if (manageActions) manageActions.style.display = 'none';
 }
 
 async function loadGeminiStatus(agentId) {
