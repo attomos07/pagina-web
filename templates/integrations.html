@@ -323,7 +323,7 @@
                                     <i class="lni lni-calendar-days integration-icon" style="font-size: 2rem; color: #4285F4;"></i>
                                     <h2>Google Calendar</h2>
                                 </div>
-                                <div class="status-badge disconnected" id="googleStatus">
+                                <div class="status-badge disconnected" id="googleStatusBadge">
                                     <span class="status-indicator"></span>
                                     No conectado
                                 </div>
@@ -363,29 +363,29 @@
                                     </div>
                                     <div class="connection-detail">
                                         <span class="connection-label">Conectado:</span>
-                                        <span class="connection-value" id="connectedAt">-</span>
+                                        <span class="connection-value" id="calendarConnectedAt">-</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Action Buttons -->
-                            <div class="card-actions" id="googleActions">
-                                <button class="btn btn-connect" id="btnConnectGoogle" disabled>
-                                    <i class="lni lni-link"></i>
-                                    Conectar Calendar
-                                </button>
-                            </div>
-
-                            <!-- Disconnect/Reconnect Buttons (hidden by default) -->
-                            <div class="card-actions" id="googleManageActions" style="display: none;">
-                                <button class="btn btn-secondary" id="btnReconnectGoogle">
-                                    <i class="lni lni-reload"></i>
-                                    Reconectar
-                                </button>
-                                <button class="btn btn-disconnect" id="btnDisconnectGoogle">
-                                    <i class="lni lni-unlink"></i>
-                                    Desconectar
-                                </button>
+                            <!-- All action buttons in a single row -->
+                            <div class="card-actions-row">
+                                <div id="googleConnectActions">
+                                    <button class="btn btn-connect" id="btnConnectGoogle" disabled>
+                                        <i class="lni lni-link"></i>
+                                        Conectar Calendar
+                                    </button>
+                                </div>
+                                <div id="googleManageActions" style="display: none; gap: 1rem;">
+                                    <button class="btn btn-secondary" id="btnReconnectGoogle">
+                                        <i class="lni lni-reload"></i>
+                                        Reconectar
+                                    </button>
+                                    <button class="btn btn-disconnect" id="btnDisconnectGoogle">
+                                        <i class="lni lni-unlink"></i>
+                                        Desconectar
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -402,7 +402,7 @@
                                     </svg>
                                     <h2>Google Sheets</h2>
                                 </div>
-                                <div class="status-badge disconnected" id="googleSheetsStatus">
+                                <div class="status-badge disconnected" id="sheetsStatusBadge">
                                     <span class="status-indicator"></span>
                                     No conectado
                                 </div>
@@ -434,7 +434,7 @@
                             </div>
 
                             <!-- Connection Info (hidden by default) -->
-                            <div class="connection-info" id="googleSheetsConnectionInfo" style="display: none;">
+                            <div class="connection-info" id="sheetsConnectionInfo" style="display: none;">
                                 <div class="connection-details">
                                     <div class="connection-detail">
                                         <span class="connection-label">Sheet:</span>

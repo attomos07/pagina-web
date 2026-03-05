@@ -653,6 +653,23 @@ body {
 .integration-card:nth-child(4) { animation-delay: 0.4s; }
 
 /* ============================================
+   CARD ACTIONS ROW - botones en fila
+   ============================================ */
+
+.card-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.card-actions-row > div {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* ============================================
    WEBHOOK URL COPY BUTTON
    ============================================ */
 
