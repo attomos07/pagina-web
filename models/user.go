@@ -22,7 +22,7 @@ type User struct {
 
 	// Relaciones
 	GoogleCloudProject *GoogleCloudProject `gorm:"foreignKey:UserID" json:"googleCloudProject,omitempty"`
-	MyBusinessInfo     *MyBusinessInfo     `gorm:"foreignKey:UserID" json:"myBusinessInfo,omitempty"`
+	MyBusinessInfo     []MyBusinessInfo    `gorm:"foreignKey:UserID" json:"myBusinessInfo,omitempty"`
 }
 
 func (u *User) HashPassword(password string) error {
@@ -61,7 +61,7 @@ func (u *User) GetGeminiAPIKey() string {
 	return u.GoogleCloudProject.GeminiAPIKey
 }
 
-// HasBusinessInfo verifica si el usuario tiene perfil de negocio
+// HasBusinessInfo verifica si el usuario tiene al menos una sucursal con nombre
 func (u *User) HasBusinessInfo() bool {
-	return u.MyBusinessInfo != nil && u.MyBusinessInfo.BusinessName != ""
+	return len(u.MyBusinessInfo) > 0 && u.MyBusinessInfo[0].BusinessName != ""
 }

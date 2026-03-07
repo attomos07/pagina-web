@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,8 +15,7 @@ import (
 )
 
 // ============================================================
-// GetMyBusiness - Lee perfil desde my_business_info
-// Si no existe aún (usuario antiguo), devuelve perfil vacío con datos del usuario
+// GetMyBusiness - Lista todas las sucursales del usuario
 // ============================================================
 func GetMyBusiness(c *gin.Context) {
 	userInterface, exists := c.Get("user")
@@ -25,24 +25,57 @@ func GetMyBusiness(c *gin.Context) {
 	}
 	user := userInterface.(*models.User)
 
-	var biz models.MyBusinessInfo
-	err := config.DB.Where("user_id = ?", user.ID).First(&biz).Error
-
+	var branches []models.MyBusinessInfo
+	err := config.DB.Where("user_id = ?", user.ID).Order("branch_number asc").Find(&branches).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			// Usuario registrado antes de esta feature: devolver datos del usuario como base
-			c.JSON(http.StatusOK, buildEmptyBusinessResponse(user))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener perfil"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener sucursales"})
 		return
 	}
 
-	c.JSON(http.StatusOK, buildBusinessResponse(&biz))
+	// Si no tiene ninguna, devolver una respuesta vacía base
+	if len(branches) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"branches":      []gin.H{},
+			"activeBranch":  nil,
+			"defaultBranch": buildEmptyBranchResponse(user, 1),
+		})
+		return
+	}
+
+	branchList := make([]gin.H, len(branches))
+	for i, b := range branches {
+		branchList[i] = gin.H{
+			"id":           b.ID,
+			"branchNumber": b.BranchNumber,
+			"branchName":   b.BranchName,
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"branches":     branchList,
+		"activeBranch": buildBranchResponse(&branches[0]),
+	})
 }
 
 // ============================================================
-// SaveMyBusiness - Guarda perfil en my_business_info y sincroniza agentes
+// GetBranch - Obtiene una sucursal específica por ID
+// ============================================================
+func GetBranch(c *gin.Context) {
+	branchID := c.Param("id")
+	userInterface, _ := c.Get("user")
+	user := userInterface.(*models.User)
+
+	var branch models.MyBusinessInfo
+	if err := config.DB.Where("id = ? AND user_id = ?", branchID, user.ID).First(&branch).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Sucursal no encontrada"})
+		return
+	}
+
+	c.JSON(http.StatusOK, buildBranchResponse(&branch))
+}
+
+// ============================================================
+// SaveMyBusiness - Guarda/actualiza una sucursal
 // ============================================================
 func SaveMyBusiness(c *gin.Context) {
 	userInterface, exists := c.Get("user")
@@ -52,32 +85,192 @@ func SaveMyBusiness(c *gin.Context) {
 	}
 	user := userInterface.(*models.User)
 
-	var req ProfileRequest
+	var req BranchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos: " + err.Error()})
 		return
 	}
 
-	// Upsert en my_business_info
-	var biz models.MyBusinessInfo
-	err := config.DB.Where("user_id = ?", user.ID).First(&biz).Error
+	var branch models.MyBusinessInfo
 
-	if err == gorm.ErrRecordNotFound {
-		// Crear nuevo registro
-		biz = models.MyBusinessInfo{UserID: user.ID}
-	} else if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al buscar perfil"})
+	// Si viene branch_id en el body, actualizar esa sucursal
+	if req.BranchID > 0 {
+		if err := config.DB.Where("id = ? AND user_id = ?", req.BranchID, user.ID).First(&branch).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Sucursal no encontrada"})
+			return
+		}
+	} else {
+		// Crear o actualizar la primera sucursal (compatibilidad)
+		err := config.DB.Where("user_id = ?", user.ID).Order("branch_number asc").First(&branch).Error
+		if err == gorm.ErrRecordNotFound {
+			var maxNum int
+			config.DB.Model(&models.MyBusinessInfo{}).Where("user_id = ?", user.ID).Select("COALESCE(MAX(branch_number), 0)").Scan(&maxNum)
+			branch = models.MyBusinessInfo{
+				UserID:       user.ID,
+				BranchNumber: maxNum + 1,
+			}
+		} else if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al buscar sucursal"})
+			return
+		}
+	}
+
+	// Mapear datos del request al modelo
+	mapRequestToBranch(&branch, req, user)
+
+	// Auto-generar nombre desde dirección
+	branch.UpdateBranchName()
+
+	if branch.ID == 0 {
+		if err := config.DB.Create(&branch).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear sucursal: " + err.Error()})
+			return
+		}
+	} else {
+		if err := config.DB.Save(&branch).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al guardar sucursal: " + err.Error()})
+			return
+		}
+	}
+
+	// Sincronizar agentes vinculados a esta sucursal
+	go syncAgentsWithBranch(user.ID, branch.ID, req)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":    true,
+		"message":    "Sucursal guardada exitosamente",
+		"branch":     buildBranchResponse(&branch),
+		"branchName": branch.BranchName,
+	})
+}
+
+// ============================================================
+// CreateBranch - Crea una nueva sucursal
+// ============================================================
+func CreateBranch(c *gin.Context) {
+	userInterface, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autenticado"})
+		return
+	}
+	user := userInterface.(*models.User)
+
+	// Contar sucursales actuales para asignar número
+	var count int64
+	config.DB.Model(&models.MyBusinessInfo{}).Where("user_id = ?", user.ID).Count(&count)
+
+	// Obtener datos del negocio de la primera sucursal para heredar nombre/tipo
+	var firstBranch models.MyBusinessInfo
+	config.DB.Where("user_id = ?", user.ID).Order("branch_number asc").First(&firstBranch)
+
+	newBranch := models.MyBusinessInfo{
+		UserID:       user.ID,
+		BranchNumber: int(count) + 1,
+		BranchName:   fmt.Sprintf("Sucursal %d", count+1),
+		BusinessName: firstBranch.BusinessName,
+		BusinessType: firstBranch.BusinessType,
+		BusinessSize: firstBranch.BusinessSize,
+		Schedule: models.BusinessSchedule{
+			Monday:    models.DaySchedule{Open: true, Start: "09:00", End: "20:00"},
+			Tuesday:   models.DaySchedule{Open: true, Start: "09:00", End: "20:00"},
+			Wednesday: models.DaySchedule{Open: true, Start: "09:00", End: "20:00"},
+			Thursday:  models.DaySchedule{Open: true, Start: "09:00", End: "20:00"},
+			Friday:    models.DaySchedule{Open: true, Start: "09:00", End: "20:00"},
+			Saturday:  models.DaySchedule{Open: true, Start: "09:00", End: "14:00"},
+			Sunday:    models.DaySchedule{Open: false, Start: "09:00", End: "14:00"},
+			Timezone:  "America/Hermosillo",
+		},
+	}
+
+	if err := config.DB.Create(&newBranch).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear sucursal"})
 		return
 	}
 
-	// Mapear request al modelo
-	biz.BusinessName = req.Business.Name
-	biz.BusinessType = req.Business.Type
-	biz.Description = req.Business.Description
-	biz.Website = req.Business.Website
-	biz.Email = req.Business.Email
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "Sucursal creada exitosamente",
+		"branch":  buildBranchResponse(&newBranch),
+	})
+}
 
-	biz.Location = models.BusinessLocation{
+// ============================================================
+// DeleteBranch - Elimina una sucursal (no la primera)
+// ============================================================
+func DeleteBranch(c *gin.Context) {
+	branchID := c.Param("id")
+	userInterface, _ := c.Get("user")
+	user := userInterface.(*models.User)
+
+	var branch models.MyBusinessInfo
+	if err := config.DB.Where("id = ? AND user_id = ?", branchID, user.ID).First(&branch).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Sucursal no encontrada"})
+		return
+	}
+
+	if branch.BranchNumber == 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No puedes eliminar la sucursal principal"})
+		return
+	}
+
+	if err := config.DB.Delete(&branch).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al eliminar sucursal"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Sucursal eliminada"})
+}
+
+// ============================================================
+// syncAgentsWithBranch - Actualiza agentes vinculados a la sucursal
+// ============================================================
+func syncAgentsWithBranch(userID uint, branchID uint, req BranchRequest) {
+	var agents []models.Agent
+	if err := config.DB.Where("user_id = ?", userID).Find(&agents).Error; err != nil || len(agents) == 0 {
+		return
+	}
+
+	profileReq := branchToProfileRequest(req)
+
+	config.DB.Transaction(func(tx *gorm.DB) error {
+		for _, agent := range agents {
+			agent.BusinessType = req.Business.Type
+			updateConfigWithProfile(&agent.Config, profileReq)
+			tx.Save(&agent)
+		}
+		return nil
+	})
+}
+
+// syncAgentsWithBusiness mantiene compatibilidad con el código existente
+func syncAgentsWithBusiness(userID uint, req ProfileRequest) {
+	var agents []models.Agent
+	if err := config.DB.Where("user_id = ?", userID).Find(&agents).Error; err != nil || len(agents) == 0 {
+		return
+	}
+	config.DB.Transaction(func(tx *gorm.DB) error {
+		for _, agent := range agents {
+			agent.BusinessType = req.Business.Type
+			updateConfigWithProfile(&agent.Config, req)
+			tx.Save(&agent)
+		}
+		return nil
+	})
+}
+
+// ============================================================
+// Helpers
+// ============================================================
+
+func mapRequestToBranch(branch *models.MyBusinessInfo, req BranchRequest, user *models.User) {
+	branch.BusinessName = req.Business.Name
+	branch.BusinessType = req.Business.Type
+	branch.Description = req.Business.Description
+	branch.Website = req.Business.Website
+	branch.Email = req.Business.Email
+	branch.PhoneNumber = req.PhoneNumber
+
+	branch.Location = models.BusinessLocation{
 		Address:        req.Location.Address,
 		BetweenStreets: req.Location.BetweenStreets,
 		Number:         req.Location.Number,
@@ -88,14 +281,14 @@ func SaveMyBusiness(c *gin.Context) {
 		PostalCode:     req.Location.PostalCode,
 	}
 
-	biz.SocialMedia = models.BusinessSocialMedia{
+	branch.SocialMedia = models.BusinessSocialMedia{
 		Facebook:  req.Social.Facebook,
 		Instagram: req.Social.Instagram,
 		Twitter:   req.Social.Twitter,
 		LinkedIn:  req.Social.LinkedIn,
 	}
 
-	biz.Schedule = models.BusinessSchedule{
+	branch.Schedule = models.BusinessSchedule{
 		Monday:    models.DaySchedule{Open: req.Schedule.Monday.IsOpen, Start: req.Schedule.Monday.Open, End: req.Schedule.Monday.Close},
 		Tuesday:   models.DaySchedule{Open: req.Schedule.Tuesday.IsOpen, Start: req.Schedule.Tuesday.Open, End: req.Schedule.Tuesday.Close},
 		Wednesday: models.DaySchedule{Open: req.Schedule.Wednesday.IsOpen, Start: req.Schedule.Wednesday.Open, End: req.Schedule.Wednesday.Close},
@@ -114,120 +307,102 @@ func SaveMyBusiness(c *gin.Context) {
 			Name: h.Name,
 		}
 	}
-	biz.Holidays = holidays
+	branch.Holidays = holidays
 
-	// Guardar (create or update)
-	if biz.ID == 0 {
-		if err := config.DB.Create(&biz).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear perfil: " + err.Error()})
-			return
-		}
-	} else {
-		if err := config.DB.Save(&biz).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al guardar perfil: " + err.Error()})
-			return
+	services := make(models.BranchServices, len(req.Services))
+	for i, s := range req.Services {
+		services[i] = models.BranchService{
+			Title:         s.Title,
+			Description:   s.Description,
+			PriceType:     s.PriceType,
+			Price:         s.Price,
+			OriginalPrice: s.OriginalPrice,
+			PromoPrice:    s.PromoPrice,
 		}
 	}
+	branch.Services = services
 
-	// Sincronizar agentes (si tiene) — no crítico, no bloquea la respuesta
-	go syncAgentsWithBusiness(user.ID, req)
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Perfil de negocio guardado exitosamente",
-		"profile": buildBusinessResponse(&biz),
-	})
-}
-
-// syncAgentsWithBusiness actualiza los agentes del usuario con los datos del perfil
-func syncAgentsWithBusiness(userID uint, req ProfileRequest) {
-	var agents []models.Agent
-	if err := config.DB.Where("user_id = ?", userID).Find(&agents).Error; err != nil || len(agents) == 0 {
-		return
-	}
-
-	config.DB.Transaction(func(tx *gorm.DB) error {
-		for _, agent := range agents {
-			agent.BusinessType = req.Business.Type
-			updateConfigWithProfile(&agent.Config, req)
-			tx.Save(&agent)
+	workers := make(models.BranchWorkers, len(req.Workers))
+	for i, w := range req.Workers {
+		workers[i] = models.BranchWorker{
+			Name:      w.Name,
+			StartTime: w.StartTime,
+			EndTime:   w.EndTime,
+			Days:      w.Days,
 		}
-		return nil
-	})
+	}
+	branch.Workers = workers
 }
 
-// ============================================================
-// buildBusinessResponse convierte MyBusinessInfo a respuesta JSON
-// ============================================================
-func buildBusinessResponse(biz *models.MyBusinessInfo) gin.H {
-	holidays := make([]gin.H, len(biz.Holidays))
-	for i, h := range biz.Holidays {
+func buildBranchResponse(b *models.MyBusinessInfo) gin.H {
+	holidays := make([]gin.H, len(b.Holidays))
+	for i, h := range b.Holidays {
 		month, day := parseDate(h.Date)
-		holidays[i] = gin.H{
-			"month": month,
-			"day":   day,
-			"name":  h.Name,
-			"date":  fmt.Sprintf("%s/%s", day, month),
+		holidays[i] = gin.H{"month": month, "day": day, "name": h.Name, "date": fmt.Sprintf("%s/%s", day, month)}
+	}
+
+	services := make([]gin.H, len(b.Services))
+	for i, s := range b.Services {
+		services[i] = gin.H{
+			"title": s.Title, "description": s.Description,
+			"priceType": s.PriceType, "price": s.Price,
+			"originalPrice": s.OriginalPrice, "promoPrice": s.PromoPrice,
 		}
+	}
+
+	workers := make([]gin.H, len(b.Workers))
+	for i, w := range b.Workers {
+		workers[i] = gin.H{"name": w.Name, "startTime": w.StartTime, "endTime": w.EndTime, "days": w.Days}
 	}
 
 	return gin.H{
+		"id":           b.ID,
+		"branchNumber": b.BranchNumber,
+		"branchName":   b.BranchName,
 		"business": gin.H{
-			"name":        biz.BusinessName,
-			"type":        biz.BusinessType,
-			"typeName":    getTypeName(biz.BusinessType),
-			"size":        biz.BusinessSize,
-			"description": biz.Description,
-			"website":     biz.Website,
-			"email":       biz.Email,
+			"name": b.BusinessName, "type": b.BusinessType,
+			"typeName": getTypeName(b.BusinessType), "size": b.BusinessSize,
+			"description": b.Description, "website": b.Website, "email": b.Email,
 		},
+		"phoneNumber": b.PhoneNumber,
 		"schedule": gin.H{
-			"monday":    dayToFrontend(biz.Schedule.Monday),
-			"tuesday":   dayToFrontend(biz.Schedule.Tuesday),
-			"wednesday": dayToFrontend(biz.Schedule.Wednesday),
-			"thursday":  dayToFrontend(biz.Schedule.Thursday),
-			"friday":    dayToFrontend(biz.Schedule.Friday),
-			"saturday":  dayToFrontend(biz.Schedule.Saturday),
-			"sunday":    dayToFrontend(biz.Schedule.Sunday),
+			"monday": dayToFrontend(b.Schedule.Monday), "tuesday": dayToFrontend(b.Schedule.Tuesday),
+			"wednesday": dayToFrontend(b.Schedule.Wednesday), "thursday": dayToFrontend(b.Schedule.Thursday),
+			"friday": dayToFrontend(b.Schedule.Friday), "saturday": dayToFrontend(b.Schedule.Saturday),
+			"sunday": dayToFrontend(b.Schedule.Sunday),
 		},
 		"holidays": holidays,
 		"location": gin.H{
-			"address":        biz.Location.Address,
-			"betweenStreets": biz.Location.BetweenStreets,
-			"number":         biz.Location.Number,
-			"neighborhood":   biz.Location.Neighborhood,
-			"city":           biz.Location.City,
-			"state":          biz.Location.State,
-			"country":        biz.Location.Country,
-			"postalCode":     biz.Location.PostalCode,
+			"address": b.Location.Address, "betweenStreets": b.Location.BetweenStreets,
+			"number": b.Location.Number, "neighborhood": b.Location.Neighborhood,
+			"city": b.Location.City, "state": b.Location.State,
+			"country": b.Location.Country, "postalCode": b.Location.PostalCode,
 		},
 		"social": gin.H{
-			"facebook":  biz.SocialMedia.Facebook,
-			"instagram": biz.SocialMedia.Instagram,
-			"twitter":   biz.SocialMedia.Twitter,
-			"linkedin":  biz.SocialMedia.LinkedIn,
+			"facebook": b.SocialMedia.Facebook, "instagram": b.SocialMedia.Instagram,
+			"twitter": b.SocialMedia.Twitter, "linkedin": b.SocialMedia.LinkedIn,
 		},
+		"services": services,
+		"workers":  workers,
 	}
 }
 
-func buildEmptyBusinessResponse(user *models.User) gin.H {
+func buildEmptyBranchResponse(user *models.User, num int) gin.H {
 	defaultDay := gin.H{"isOpen": true, "open": "09:00", "close": "20:00"}
 	return gin.H{
+		"id": 0, "branchNumber": num, "branchName": fmt.Sprintf("Sucursal %d", num),
 		"business": gin.H{
-			"name":        user.Company,
-			"type":        user.BusinessType,
-			"typeName":    getTypeName(user.BusinessType),
-			"size":        user.BusinessSize,
-			"description": "",
-			"website":     "",
-			"email":       "",
+			"name": user.Company, "type": user.BusinessType,
+			"typeName": getTypeName(user.BusinessType), "size": user.BusinessSize,
+			"description": "", "website": "", "email": "",
 		},
+		"phoneNumber": user.PhoneNumber,
 		"schedule": gin.H{
 			"monday": defaultDay, "tuesday": defaultDay, "wednesday": defaultDay,
 			"thursday": defaultDay, "friday": defaultDay, "saturday": defaultDay,
 			"sunday": gin.H{"isOpen": false, "open": "09:00", "close": "20:00"},
 		},
-		"holidays": []gin.H{},
+		"holidays": []gin.H{}, "services": []gin.H{}, "workers": []gin.H{},
 		"location": gin.H{
 			"address": "", "betweenStreets": "", "number": "", "neighborhood": "",
 			"city": "", "state": "", "country": "", "postalCode": "",
@@ -236,33 +411,37 @@ func buildEmptyBusinessResponse(user *models.User) gin.H {
 	}
 }
 
+func branchToProfileRequest(req BranchRequest) ProfileRequest {
+	return ProfileRequest{
+		Business: req.Business,
+		Schedule: req.Schedule,
+		Holidays: req.Holidays,
+		Location: req.Location,
+		Social:   req.Social,
+	}
+}
+
 // ============================================================
-// Helpers reutilizados (antes en profile.go)
+// Helpers compartidos
 // ============================================================
 
-func updateConfigWithProfile(config *models.AgentConfig, req ProfileRequest) {
-	config.BusinessInfo = models.BusinessProfileInfo{
+func updateConfigWithProfile(cfg *models.AgentConfig, req ProfileRequest) {
+	cfg.BusinessInfo = models.BusinessProfileInfo{
 		Description: req.Business.Description,
 		Website:     req.Business.Website,
 		Email:       req.Business.Email,
 	}
-	config.Location = models.LocationProfile{
-		Address:        req.Location.Address,
-		BetweenStreets: req.Location.BetweenStreets,
-		Number:         req.Location.Number,
-		Neighborhood:   req.Location.Neighborhood,
-		City:           req.Location.City,
-		State:          req.Location.State,
-		Country:        req.Location.Country,
-		PostalCode:     req.Location.PostalCode,
+	cfg.Location = models.LocationProfile{
+		Address: req.Location.Address, BetweenStreets: req.Location.BetweenStreets,
+		Number: req.Location.Number, Neighborhood: req.Location.Neighborhood,
+		City: req.Location.City, State: req.Location.State,
+		Country: req.Location.Country, PostalCode: req.Location.PostalCode,
 	}
-	config.SocialMedia = models.SocialMediaProfile{
-		Facebook:  req.Social.Facebook,
-		Instagram: req.Social.Instagram,
-		Twitter:   req.Social.Twitter,
-		LinkedIn:  req.Social.LinkedIn,
+	cfg.SocialMedia = models.SocialMediaProfile{
+		Facebook: req.Social.Facebook, Instagram: req.Social.Instagram,
+		Twitter: req.Social.Twitter, LinkedIn: req.Social.LinkedIn,
 	}
-	config.Schedule = models.Schedule{
+	cfg.Schedule = models.Schedule{
 		Monday:    convertToModelDay(req.Schedule.Monday),
 		Tuesday:   convertToModelDay(req.Schedule.Tuesday),
 		Wednesday: convertToModelDay(req.Schedule.Wednesday),
@@ -272,16 +451,15 @@ func updateConfigWithProfile(config *models.AgentConfig, req ProfileRequest) {
 		Sunday:    convertToModelDay(req.Schedule.Sunday),
 		Timezone:  "America/Hermosillo",
 	}
-	config.Holidays = make([]models.Holiday, len(req.Holidays))
+	cfg.Holidays = make([]models.Holiday, len(req.Holidays))
 	for i, h := range req.Holidays {
-		year := time.Now().Year()
-		config.Holidays[i] = models.Holiday{
-			Date: fmt.Sprintf("%d-%s-%s", year, h.Month, h.Day),
+		cfg.Holidays[i] = models.Holiday{
+			Date: fmt.Sprintf("%d-%s-%s", time.Now().Year(), h.Month, h.Day),
 			Name: h.Name,
 		}
 	}
-	config.Facilities = buildFacilities(req)
-	config.WelcomeMessage = generateWelcome(req)
+	cfg.Facilities = buildFacilities(req)
+	cfg.WelcomeMessage = generateWelcome(req)
 }
 
 func convertToModelDay(day DayScheduleInfo) models.DaySchedule {
@@ -364,19 +542,12 @@ func parseDate(date string) (month, day string) {
 
 func getTypeName(code string) string {
 	types := map[string]string{
-		"clinica-dental": "Clínica Dental",
-		"peluqueria":     "Peluquería / Salón de Belleza",
-		"restaurante":    "Restaurante",
-		"pizzeria":       "Pizzería",
-		"escuela":        "Escuela / Educación",
-		"gym":            "Gimnasio / Fitness",
-		"spa":            "Spa / Wellness",
-		"consultorio":    "Consultorio Médico",
-		"veterinaria":    "Veterinaria",
-		"hotel":          "Hotel / Hospedaje",
-		"tienda":         "Tienda / Retail",
-		"agencia":        "Agencia / Servicios",
-		"otro":           "Otro",
+		"clinica-dental": "Clínica Dental", "peluqueria": "Peluquería / Salón de Belleza",
+		"restaurante": "Restaurante", "pizzeria": "Pizzería",
+		"escuela": "Escuela / Educación", "gym": "Gimnasio / Fitness",
+		"spa": "Spa / Wellness", "consultorio": "Consultorio Médico",
+		"veterinaria": "Veterinaria", "hotel": "Hotel / Hospedaje",
+		"tienda": "Tienda / Retail", "agencia": "Agencia / Servicios", "otro": "Otro",
 	}
 	if name, ok := types[code]; ok {
 		return name
@@ -384,24 +555,21 @@ func getTypeName(code string) string {
 	return code
 }
 
-func getEmptyProfile() gin.H {
-	defaultDay := gin.H{"isOpen": true, "open": "09:00", "close": "20:00"}
-	return gin.H{
-		"business": gin.H{"name": "", "type": "", "typeName": "", "description": "", "website": "", "email": ""},
-		"schedule": gin.H{
-			"monday": defaultDay, "tuesday": defaultDay, "wednesday": defaultDay,
-			"thursday": defaultDay, "friday": defaultDay, "saturday": defaultDay,
-			"sunday": gin.H{"isOpen": false, "open": "09:00", "close": "20:00"},
-		},
-		"holidays": []gin.H{},
-		"location": gin.H{"address": "", "betweenStreets": "", "number": "", "neighborhood": "", "city": "", "state": "", "country": "", "postalCode": ""},
-		"social":   gin.H{"facebook": "", "instagram": "", "twitter": "", "linkedin": ""},
-	}
-}
+// ============================================================
+// Structs de request
+// ============================================================
 
-// ============================================================
-// Structs de request (compatibilidad con el frontend existente)
-// ============================================================
+type BranchRequest struct {
+	BranchID    uint          `json:"branchId"`
+	PhoneNumber string        `json:"phoneNumber"`
+	Business    BusinessInfo  `json:"business"`
+	Schedule    ScheduleInfo  `json:"schedule"`
+	Holidays    []HolidayInfo `json:"holidays"`
+	Location    LocationInfo  `json:"location"`
+	Social      SocialInfo    `json:"social"`
+	Services    []ServiceInfo `json:"services"`
+	Workers     []WorkerInfo  `json:"workers"`
+}
 
 type ProfileRequest struct {
 	Business BusinessInfo  `json:"business"`
@@ -459,3 +627,22 @@ type SocialInfo struct {
 	Twitter   string `json:"twitter"`
 	LinkedIn  string `json:"linkedin"`
 }
+
+type ServiceInfo struct {
+	Title         string  `json:"title"`
+	Description   string  `json:"description"`
+	PriceType     string  `json:"priceType"`
+	Price         float64 `json:"price"`
+	OriginalPrice float64 `json:"originalPrice"`
+	PromoPrice    float64 `json:"promoPrice"`
+}
+
+type WorkerInfo struct {
+	Name      string   `json:"name"`
+	StartTime string   `json:"startTime"`
+	EndTime   string   `json:"endTime"`
+	Days      []string `json:"days"`
+}
+
+// Para evitar "declared but not used"
+var _ = strconv.Itoa

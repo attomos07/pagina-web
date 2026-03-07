@@ -191,6 +191,9 @@ func main() {
 
 		protected.GET("/my-business", handlers.GetMyBusiness)
 		protected.POST("/my-business", handlers.SaveMyBusiness)
+		protected.GET("/my-business/:id", handlers.GetBranch)
+		protected.POST("/my-business/branch", handlers.CreateBranch)
+		protected.DELETE("/my-business/branch/:id", handlers.DeleteBranch)
 
 		// ============================================
 		// ⭐ APPOINTMENTS - CRUD completo (BD + Sheets sync)

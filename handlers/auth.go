@@ -101,10 +101,12 @@ func Register(c *gin.Context) {
 	// ============================================================
 	businessInfo := models.MyBusinessInfo{
 		UserID:       user.ID,
+		BranchNumber: 1,
+		BranchName:   "Sucursal 1",
 		BusinessName: req.BusinessName,
 		BusinessType: req.BusinessType,
 		BusinessSize: req.BusinessSize,
-		// Horario default: lunes-viernes 9-20, sábado 9-14, domingo cerrado
+		PhoneNumber:  req.PhoneNumber,
 		Schedule: models.BusinessSchedule{
 			Monday:    models.DaySchedule{Open: true, Start: "09:00", End: "20:00"},
 			Tuesday:   models.DaySchedule{Open: true, Start: "09:00", End: "20:00"},

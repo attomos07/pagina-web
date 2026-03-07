@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Perfil - Attomos</title>
+    <title>Mi Negocio - Attomos</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
@@ -28,11 +28,36 @@
                     <div class="page-header">
                         <div class="header-content">
                             <h1 class="page-title">
-                                <i class="lni lni-user"></i>
-                                Mi Perfil
+                                <i class="lni lni-shop"></i>
+                                Mi Negocio
                             </h1>
                             <p class="page-subtitle">Administra la información de tu negocio</p>
                         </div>
+                    </div>
+
+                    <!-- =============================================
+                         SELECTOR DE SUCURSALES
+                         ============================================= -->
+                    <div class="branch-selector-bar">
+                        <div class="branch-dropdown-wrapper" id="branchDropdownWrapper">
+                            <button type="button" class="branch-dropdown-btn" id="branchDropdownBtn">
+                                <i class="lni lni-map-marker"></i>
+                                <span id="branchDropdownLabel">Sucursal 1</span>
+                                <i class="lni lni-chevron-down branch-chevron" id="branchChevron"></i>
+                            </button>
+                            <div class="branch-dropdown-menu" id="branchDropdownMenu">
+                                <div class="branch-list" id="branchList">
+                                    <!-- Se llena dinámicamente -->
+                                </div>
+                                <div class="branch-dropdown-footer">
+                                    <button type="button" class="btn-add-branch" id="btnAddBranch">
+                                        <i class="lni lni-plus"></i>
+                                        <span>Nueva Sucursal</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="branch-badge" id="branchBadge">Sucursal activa</span>
                     </div>
 
                     <div class="profile-grid">
@@ -142,6 +167,15 @@
                                     <label class="info-label">Email de Contacto</label>
                                     <input type="email" class="info-input" id="emailInput">
                                     <div class="info-example">Ej: contacto@minegocio.com</div>
+                                </div>
+
+                                <div class="info-group">
+                                    <label class="info-label">
+                                        <i class="lni lni-phone"></i>
+                                        Teléfono de esta Sucursal
+                                    </label>
+                                    <input type="tel" class="info-input" id="phoneNumberInput" placeholder="Ej: +52 662 123 4567">
+                                    <div class="info-example">Número directo de esta sucursal</div>
                                 </div>
                             </div>
                         </div>
@@ -270,6 +304,49 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- SERVICIOS -->
+                        <div class="profile-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-package"></i>
+                                    <h2>Servicios / Productos</h2>
+                                </div>
+                                <button type="button" class="btn-card-add" id="btnAddService">
+                                    <i class="lni lni-plus"></i>
+                                    Agregar
+                                </button>
+                            </div>
+                            <div class="card-content">
+                                <div class="services-list" id="servicesList"></div>
+                                <div class="empty-list-hint" id="servicesHint">
+                                    <i class="lni lni-package"></i>
+                                    <span>No hay servicios. Haz clic en "Agregar" para añadir uno.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TRABAJADORES -->
+                        <div class="profile-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-users"></i>
+                                    <h2>Trabajadores</h2>
+                                </div>
+                                <button type="button" class="btn-card-add" id="btnAddWorker">
+                                    <i class="lni lni-plus"></i>
+                                    Agregar
+                                </button>
+                            </div>
+                            <div class="card-content">
+                                <div class="workers-list" id="workersList"></div>
+                                <div class="empty-list-hint" id="workersHint">
+                                    <i class="lni lni-users"></i>
+                                    <span>No hay trabajadores. Haz clic en "Agregar" para añadir uno.</span>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -284,8 +361,6 @@
     <!-- Sileo viewport (injected dynamically by profile.js if not present) -->
     <div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
 
-    <script src="/static/js/sidebar.js"></script>
-    <script src="/static/js/sileo.js"></script>
     <script src="/static/js/my-business.js"></script>
 </body>
 </html>

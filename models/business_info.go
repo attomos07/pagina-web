@@ -3,12 +3,13 @@ package models
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
 )
 
-// BusinessSchedule almacena el horario semanal del negocio en JSON
 type BusinessSchedule struct {
 	Monday    DaySchedule `json:"monday"`
 	Tuesday   DaySchedule `json:"tuesday"`
@@ -28,7 +29,6 @@ func (bs *BusinessSchedule) Scan(v interface{}) error {
 	return nil
 }
 
-// BusinessHolidays almacena los días festivos en JSON
 type BusinessHolidays []Holiday
 
 func (bh BusinessHolidays) Value() (driver.Value, error) { return json.Marshal(bh) }
@@ -39,7 +39,6 @@ func (bh *BusinessHolidays) Scan(v interface{}) error {
 	return nil
 }
 
-// BusinessSocialMedia almacena las redes sociales en JSON
 type BusinessSocialMedia struct {
 	Facebook  string `json:"facebook"`
 	Instagram string `json:"instagram"`
@@ -55,7 +54,6 @@ func (bsm *BusinessSocialMedia) Scan(v interface{}) error {
 	return nil
 }
 
-// BusinessLocation almacena la ubicación en JSON
 type BusinessLocation struct {
 	Address        string `json:"address"`
 	BetweenStreets string `json:"betweenStreets"`
@@ -75,37 +73,83 @@ func (bl *BusinessLocation) Scan(v interface{}) error {
 	return nil
 }
 
-// MyBusinessInfo es la tabla principal del perfil del negocio del usuario.
-// Se crea automáticamente al registrarse y es independiente de tener agentes.
-type MyBusinessInfo struct {
-	ID     uint `gorm:"primaryKey" json:"id"`
-	UserID uint `gorm:"not null;uniqueIndex" json:"userId"`
+type BranchService struct {
+	Title         string  `json:"title"`
+	Description   string  `json:"description"`
+	PriceType     string  `json:"priceType"`
+	Price         float64 `json:"price"`
+	OriginalPrice float64 `json:"originalPrice"`
+	PromoPrice    float64 `json:"promoPrice"`
+}
 
-	// Datos básicos (poblados desde el registro)
+type BranchServices []BranchService
+
+func (bs BranchServices) Value() (driver.Value, error) { return json.Marshal(bs) }
+func (bs *BranchServices) Scan(v interface{}) error {
+	if b, ok := v.([]byte); ok {
+		return json.Unmarshal(b, bs)
+	}
+	return nil
+}
+
+type BranchWorker struct {
+	Name      string   `json:"name"`
+	StartTime string   `json:"startTime"`
+	EndTime   string   `json:"endTime"`
+	Days      []string `json:"days"`
+}
+
+type BranchWorkers []BranchWorker
+
+func (bw BranchWorkers) Value() (driver.Value, error) { return json.Marshal(bw) }
+func (bw *BranchWorkers) Scan(v interface{}) error {
+	if b, ok := v.([]byte); ok {
+		return json.Unmarshal(b, bw)
+	}
+	return nil
+}
+
+// MyBusinessInfo representa una sucursal del negocio del usuario.
+// Un usuario puede tener múltiples sucursales (one-to-many).
+type MyBusinessInfo struct {
+	ID           uint   `gorm:"primaryKey" json:"id"`
+	UserID       uint   `gorm:"not null;index" json:"userId"`
+	BranchNumber int    `gorm:"default:1" json:"branchNumber"`
+	BranchName   string `gorm:"size:255" json:"branchName"`
+
 	BusinessName string `gorm:"size:255" json:"businessName"`
 	BusinessType string `gorm:"size:100" json:"businessType"`
 	BusinessSize string `gorm:"size:50" json:"businessSize"`
 
-	// Información de contacto del negocio
 	Description string `gorm:"type:text" json:"description"`
 	Website     string `gorm:"size:500" json:"website"`
 	Email       string `gorm:"size:255" json:"email"`
+	PhoneNumber string `gorm:"size:50" json:"phoneNumber"`
 
-	// Campos JSON
 	Location    BusinessLocation    `gorm:"type:json" json:"location"`
 	SocialMedia BusinessSocialMedia `gorm:"type:json" json:"socialMedia"`
 	Schedule    BusinessSchedule    `gorm:"type:json" json:"schedule"`
 	Holidays    BusinessHolidays    `gorm:"type:json" json:"holidays"`
+	Services    BranchServices      `gorm:"type:json" json:"services"`
+	Workers     BranchWorkers       `gorm:"type:json" json:"workers"`
 
-	// Timestamps
 	CreatedAt time.Time      `json:"createdAt"`
 	UpdatedAt time.Time      `json:"updatedAt"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
-	// Relación con User
 	User User `gorm:"foreignKey:UserID" json:"-"`
 }
 
-func (MyBusinessInfo) TableName() string {
-	return "my_business_info"
+func (MyBusinessInfo) TableName() string { return "my_business_info" }
+
+func (b *MyBusinessInfo) GenerateBranchName() string {
+	addr := strings.TrimSpace(b.Location.Address)
+	if addr != "" {
+		return "Sucursal " + addr
+	}
+	return fmt.Sprintf("Sucursal %d", b.BranchNumber)
+}
+
+func (b *MyBusinessInfo) UpdateBranchName() {
+	b.BranchName = b.GenerateBranchName()
 }

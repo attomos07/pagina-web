@@ -2,14 +2,20 @@
 // PROFILE JAVASCRIPT
 // ============================================
 
+// Estado global de sucursales
+let branches = [];
+let activeBranchId = null;
+
 document.addEventListener('DOMContentLoaded', function () {
     console.log('🔧 Profile JS cargado correctamente');
 
-    initProfileData();
+    initBranchSelector();
     initCustomSelect();
     initLocationDropdowns();
     initSchedule();
     initHolidays();
+    initServices();
+    initWorkers();
     initSaveButton();
 
     console.log('✅ Profile funcionalidades inicializadas');
@@ -57,53 +63,205 @@ const MONTHS = [
 ];
 
 // ============================================
-// LOAD PROFILE DATA
+// BRANCH SELECTOR
 // ============================================
 
-async function initProfileData() {
+async function initBranchSelector() {
     try {
         const res = await fetch('/api/my-business');
-        const profile = await res.json();
+        const data = await res.json();
 
-        setInputValue('businessNameInput', profile.business.name);
-        setInputValue('descriptionInput', profile.business.description);
-        setInputValue('websiteInput', profile.business.website);
-        setInputValue('emailInput', profile.business.email);
+        branches = data.branches || [];
 
-        const typeInput = document.getElementById('businessTypeInput');
-        typeInput.value = profile.business.typeName;
-        typeInput.setAttribute('data-value', profile.business.type);
+        // Renderizar lista de sucursales en el dropdown
+        renderBranchList();
 
-        setInputValue('addressInput', profile.location.address);
-        setInputValue('numberInput', profile.location.number);
-        setInputValue('neighborhoodInput', profile.location.neighborhood);
-        setInputValue('postalCodeInput', profile.location.postalCode);
-        setInputValue('betweenStreetsInput', profile.location.betweenStreets);
+        // Cargar la primera sucursal activa
+        if (data.activeBranch) {
+            activeBranchId = data.activeBranch.id;
+            loadBranchData(data.activeBranch);
+        } else if (data.defaultBranch) {
+            activeBranchId = 0;
+            loadBranchData(data.defaultBranch);
+        }
 
-        document.getElementById('countryInput').value = profile.location.country;
-        document.getElementById('stateInput').value = profile.location.state;
-        document.getElementById('cityInput').value = profile.location.city;
+        // Toggle del dropdown
+        const btn = document.getElementById('branchDropdownBtn');
+        const menu = document.getElementById('branchDropdownMenu');
+        const wrapper = document.getElementById('branchDropdownWrapper');
 
-        setInputValue('countryInputDisplay', profile.location.country);
-        setInputValue('stateInputDisplay', profile.location.state);
-        setInputValue('cityInputDisplay', profile.location.city);
-        updateDropdownSelection('countryInputWrapper', profile.location.country);
-        updateDropdownSelection('stateInputWrapper', profile.location.state);
-        updateDropdownSelection('cityInputWrapper', profile.location.city);
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            wrapper.classList.toggle('active');
+            document.getElementById('branchChevron').style.transform =
+                wrapper.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0deg)';
+        });
 
-        setInputValue('facebookInput', profile.social.facebook);
-        setInputValue('instagramInput', profile.social.instagram);
-        setInputValue('twitterInput', profile.social.twitter);
-        setInputValue('linkedinInput', profile.social.linkedin);
+        document.addEventListener('click', function(e) {
+            if (!wrapper.contains(e.target)) {
+                wrapper.classList.remove('active');
+                document.getElementById('branchChevron').style.transform = 'rotate(0deg)';
+            }
+        });
 
-        applySchedule(profile.schedule);
-        applyHolidays(profile.holidays);
+        // Botón nueva sucursal
+        document.getElementById('btnAddBranch').addEventListener('click', createNewBranch);
 
-        console.log('📊 Profile real loaded:', profile);
     } catch (e) {
-        console.error('Error loading profile', e);
+        console.error('Error cargando sucursales', e);
     }
 }
+
+function renderBranchList() {
+    const list = document.getElementById('branchList');
+    list.innerHTML = '';
+
+    if (branches.length === 0) {
+        list.innerHTML = '<div class="branch-item-empty">Sin sucursales guardadas</div>';
+        return;
+    }
+
+    branches.forEach(b => {
+        const item = document.createElement('div');
+        item.className = 'branch-item' + (b.id === activeBranchId ? ' active' : '');
+        item.dataset.branchId = b.id;
+        item.innerHTML = `
+            <i class="lni lni-map-marker"></i>
+            <span>${b.branchName || 'Sucursal ' + b.branchNumber}</span>
+            ${b.branchNumber > 1 ? `<button type="button" class="btn-delete-branch" data-id="${b.id}" title="Eliminar"><i class="lni lni-trash-can"></i></button>` : ''}
+        `;
+
+        item.addEventListener('click', async function(e) {
+            if (e.target.closest('.btn-delete-branch')) return;
+            await switchBranch(b.id);
+        });
+
+        const deleteBtn = item.querySelector('.btn-delete-branch');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                await deleteBranch(b.id);
+            });
+        }
+
+        list.appendChild(item);
+    });
+}
+
+async function switchBranch(branchId) {
+    try {
+        const res = await fetch(`/api/my-business/${branchId}`);
+        const data = await res.json();
+        activeBranchId = branchId;
+        loadBranchData(data);
+        renderBranchList();
+
+        // Cerrar dropdown
+        document.getElementById('branchDropdownWrapper').classList.remove('active');
+    } catch(e) {
+        console.error('Error cargando sucursal', e);
+    }
+}
+
+async function createNewBranch() {
+    try {
+        const res = await fetch('/api/my-business/branch', { method: 'POST', credentials: 'include' });
+        const data = await res.json();
+        if (data.success) {
+            branches.push({ id: data.branch.id, branchNumber: data.branch.branchNumber, branchName: data.branch.branchName });
+            activeBranchId = data.branch.id;
+            loadBranchData(data.branch);
+            renderBranchList();
+            showNotification('Nueva sucursal creada', 'success');
+        }
+    } catch(e) {
+        console.error('Error creando sucursal', e);
+    }
+}
+
+async function deleteBranch(branchId) {
+    if (!confirm('¿Eliminar esta sucursal?')) return;
+    try {
+        const res = await fetch(`/api/my-business/branch/${branchId}`, { method: 'DELETE', credentials: 'include' });
+        const data = await res.json();
+        if (data.success) {
+            branches = branches.filter(b => b.id !== branchId);
+            // Si era la activa, cargar la primera
+            if (activeBranchId === branchId && branches.length > 0) {
+                await switchBranch(branches[0].id);
+            }
+            renderBranchList();
+            showNotification('Sucursal eliminada', 'success');
+        }
+    } catch(e) {
+        console.error('Error eliminando sucursal', e);
+    }
+}
+
+function loadBranchData(branch) {
+    // Actualizar label del dropdown
+    const label = branch.branchName || ('Sucursal ' + branch.branchNumber);
+    document.getElementById('branchDropdownLabel').textContent = label;
+    document.getElementById('branchBadge').textContent = label;
+
+    // Información del negocio
+    setInputValue('businessNameInput', branch.business?.name);
+    setInputValue('descriptionInput', branch.business?.description);
+    setInputValue('websiteInput', branch.business?.website);
+    setInputValue('emailInput', branch.business?.email);
+    setInputValue('phoneNumberInput', branch.phoneNumber);
+
+    const typeInput = document.getElementById('businessTypeInput');
+    if (typeInput) {
+        typeInput.value = branch.business?.typeName || '';
+        typeInput.setAttribute('data-value', branch.business?.type || '');
+    }
+
+    // Ubicación
+    setInputValue('addressInput', branch.location?.address);
+    setInputValue('numberInput', branch.location?.number);
+    setInputValue('neighborhoodInput', branch.location?.neighborhood);
+    setInputValue('postalCodeInput', branch.location?.postalCode);
+    setInputValue('betweenStreetsInput', branch.location?.betweenStreets);
+
+    document.getElementById('countryInput').value = branch.location?.country || '';
+    document.getElementById('stateInput').value = branch.location?.state || '';
+    document.getElementById('cityInput').value = branch.location?.city || '';
+
+    updateDropdownSelection('countryInputWrapper', branch.location?.country);
+    updateDropdownSelection('stateInputWrapper', branch.location?.state);
+    updateDropdownSelection('cityInputWrapper', branch.location?.city);
+
+    // Redes sociales
+    setInputValue('facebookInput', branch.social?.facebook);
+    setInputValue('instagramInput', branch.social?.instagram);
+    setInputValue('twitterInput', branch.social?.twitter);
+    setInputValue('linkedinInput', branch.social?.linkedin);
+
+    // Horario y festivos
+    if (branch.schedule) applySchedule(branch.schedule);
+    if (branch.holidays) {
+        document.getElementById('holidaysList').innerHTML = '';
+        applyHolidays(branch.holidays);
+    }
+
+    // Servicios y trabajadores
+    renderServices(branch.services || []);
+    renderWorkers(branch.workers || []);
+
+    // Actualizar nombre si la dirección cambia
+    document.getElementById('addressInput').addEventListener('input', function() {
+        const addr = this.value.trim();
+        const newName = addr ? 'Sucursal ' + addr : ('Sucursal ' + (branch.branchNumber || 1));
+        document.getElementById('branchDropdownLabel').textContent = newName;
+        document.getElementById('branchBadge').textContent = newName;
+        // Actualizar en lista
+        const branchInList = branches.find(b => b.id === activeBranchId);
+        if (branchInList) branchInList.branchName = newName;
+        renderBranchList();
+    });
+}
+
 
 function updateDropdownSelection(wrapperId, value) {
     const wrapper = document.getElementById(wrapperId);
@@ -819,13 +977,12 @@ async function saveProfile() {
     const saveBtn = document.getElementById('saveProfileBtn');
     const originalText = saveBtn.innerHTML;
 
-    saveBtn.innerHTML = `
-        <div class="loading-spinner"></div>
-        <span>Guardando...</span>
-    `;
+    saveBtn.innerHTML = `<div class="loading-spinner"></div><span>Guardando...</span>`;
     saveBtn.disabled = true;
 
     const profileData = {
+        branchId: activeBranchId || 0,
+        phoneNumber: document.getElementById('phoneNumberInput')?.value || '',
         business: {
             name: document.getElementById('businessNameInput').value,
             type: document.getElementById('businessTypeInput').getAttribute('data-value'),
@@ -850,7 +1007,9 @@ async function saveProfile() {
             instagram: document.getElementById('instagramInput').value,
             twitter: document.getElementById('twitterInput').value,
             linkedin: document.getElementById('linkedinInput').value
-        }
+        },
+        services: collectServicesData(),
+        workers: collectWorkersData()
     };
 
     try {
@@ -861,19 +1020,26 @@ async function saveProfile() {
         });
 
         const result = await response.json();
-
         saveBtn.innerHTML = originalText;
         saveBtn.disabled = false;
 
         if (response.ok && result.success) {
-            showNotification('¡Cambios guardados exitosamente!', 'success');
-            console.log('✅ Perfil guardado:', result);
-        } else {
-            if (response.status === 404) {
-                showNotification('⚠️ Primero debes crear un agente', 'warning');
-            } else {
-                throw new Error(result.error || 'Error desconocido');
+            // Actualizar nombre en el dropdown si cambió
+            if (result.branchName) {
+                document.getElementById('branchDropdownLabel').textContent = result.branchName;
+                document.getElementById('branchBadge').textContent = result.branchName;
+                const b = branches.find(b => b.id === activeBranchId);
+                if (b) b.branchName = result.branchName;
+                // Si es nueva sucursal (branchId=0), agregar a la lista
+                if (!activeBranchId && result.branch) {
+                    activeBranchId = result.branch.id;
+                    branches.push({ id: result.branch.id, branchNumber: result.branch.branchNumber, branchName: result.branchName });
+                }
+                renderBranchList();
             }
+            showNotification('¡Cambios guardados exitosamente!', 'success');
+        } else {
+            throw new Error(result.error || 'Error desconocido');
         }
     } catch (error) {
         console.error('❌ Error:', error);
@@ -938,3 +1104,182 @@ function showNotification(message, type = 'info') {
 // ============================================
 
 // (fadeIn/fadeOut are handled by profile.css keyframes)
+
+// ============================================
+// SERVICES
+// ============================================
+
+function initServices() {
+    document.getElementById('btnAddService')?.addEventListener('click', addServiceItem);
+}
+
+function renderServices(services = []) {
+    const list = document.getElementById('servicesList');
+    const hint = document.getElementById('servicesHint');
+    list.innerHTML = '';
+    if (services.length === 0) {
+        hint && (hint.style.display = 'flex');
+        return;
+    }
+    hint && (hint.style.display = 'none');
+    services.forEach((s, i) => addServiceItem(null, s));
+}
+
+function addServiceItem(e, data = null) {
+    const list = document.getElementById('servicesList');
+    const hint = document.getElementById('servicesHint');
+    hint && (hint.style.display = 'none');
+
+    const id = Date.now() + Math.random();
+    const div = document.createElement('div');
+    div.className = 'service-item';
+    div.dataset.serviceId = id;
+
+    const isPromo = data?.priceType === 'promo';
+    div.innerHTML = `
+        <div class="service-item-row">
+            <input type="text" class="info-input service-title" placeholder="Nombre del servicio" value="${data?.title || ''}">
+            <button type="button" class="btn-remove-item" onclick="removeItem(this, 'servicesList', 'servicesHint')">
+                <i class="lni lni-trash-can"></i>
+            </button>
+        </div>
+        <div class="service-item-row">
+            <input type="text" class="info-input service-desc" placeholder="Descripción (opcional)" value="${data?.description || ''}">
+        </div>
+        <div class="service-price-row">
+            <div class="price-type-toggle">
+                <button type="button" class="price-type-btn ${!isPromo ? 'active' : ''}" data-type="normal">Normal</button>
+                <button type="button" class="price-type-btn ${isPromo ? 'active' : ''}" data-type="promo">Promoción</button>
+            </div>
+            <div class="price-fields price-normal-fields" style="display:${isPromo ? 'none' : 'flex'}">
+                <span class="price-symbol">$</span>
+                <input type="number" class="info-input service-price" placeholder="0.00" step="0.01" value="${data?.price || ''}">
+            </div>
+            <div class="price-fields price-promo-fields" style="display:${isPromo ? 'flex' : 'none'}">
+                <span class="price-symbol">$</span>
+                <input type="number" class="info-input service-original-price" placeholder="Precio original" step="0.01" value="${data?.originalPrice || ''}">
+                <span class="price-arrow">→</span>
+                <span class="price-symbol">$</span>
+                <input type="number" class="info-input service-promo-price" placeholder="Precio promo" step="0.01" value="${data?.promoPrice || ''}">
+            </div>
+        </div>
+    `;
+
+    div.querySelectorAll('.price-type-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            div.querySelectorAll('.price-type-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const isP = this.dataset.type === 'promo';
+            div.querySelector('.price-normal-fields').style.display = isP ? 'none' : 'flex';
+            div.querySelector('.price-promo-fields').style.display = isP ? 'flex' : 'none';
+        });
+    });
+
+    list.appendChild(div);
+}
+
+function collectServicesData() {
+    const services = [];
+    document.querySelectorAll('.service-item').forEach(item => {
+        const title = item.querySelector('.service-title')?.value;
+        if (!title) return;
+        const isPromo = item.querySelector('.price-type-btn.active')?.dataset.type === 'promo';
+        services.push({
+            title,
+            description: item.querySelector('.service-desc')?.value || '',
+            priceType: isPromo ? 'promo' : 'normal',
+            price: parseFloat(item.querySelector('.service-price')?.value) || 0,
+            originalPrice: parseFloat(item.querySelector('.service-original-price')?.value) || 0,
+            promoPrice: parseFloat(item.querySelector('.service-promo-price')?.value) || 0,
+        });
+    });
+    return services;
+}
+
+// ============================================
+// WORKERS
+// ============================================
+
+function initWorkers() {
+    document.getElementById('btnAddWorker')?.addEventListener('click', addWorkerItem);
+}
+
+function renderWorkers(workers = []) {
+    const list = document.getElementById('workersList');
+    const hint = document.getElementById('workersHint');
+    list.innerHTML = '';
+    if (workers.length === 0) {
+        hint && (hint.style.display = 'flex');
+        return;
+    }
+    hint && (hint.style.display = 'none');
+    workers.forEach(w => addWorkerItem(null, w));
+}
+
+const DAY_LABELS = { monday:'Lun', tuesday:'Mar', wednesday:'Mié', thursday:'Jue', friday:'Vie', saturday:'Sáb', sunday:'Dom' };
+
+function addWorkerItem(e, data = null) {
+    const list = document.getElementById('workersList');
+    const hint = document.getElementById('workersHint');
+    hint && (hint.style.display = 'none');
+
+    const div = document.createElement('div');
+    div.className = 'worker-item';
+
+    const checkedDays = data?.days || ['monday','tuesday','wednesday','thursday','friday'];
+    const daysHTML = Object.entries(DAY_LABELS).map(([val, label]) => `
+        <label class="day-chip ${checkedDays.includes(val) ? 'active' : ''}">
+            <input type="checkbox" value="${val}" ${checkedDays.includes(val) ? 'checked' : ''} style="display:none">
+            <span>${label}</span>
+        </label>
+    `).join('');
+
+    div.innerHTML = `
+        <div class="worker-item-row">
+            <input type="text" class="info-input worker-name" placeholder="Nombre del trabajador" value="${data?.name || ''}">
+            <button type="button" class="btn-remove-item" onclick="removeItem(this, 'workersList', 'workersHint')">
+                <i class="lni lni-trash-can"></i>
+            </button>
+        </div>
+        <div class="worker-item-row worker-times">
+            <label class="info-label">De</label>
+            <input type="time" class="info-input worker-start" value="${data?.startTime || '09:00'}">
+            <label class="info-label">a</label>
+            <input type="time" class="info-input worker-end" value="${data?.endTime || '18:00'}">
+        </div>
+        <div class="worker-days">${daysHTML}</div>
+    `;
+
+    div.querySelectorAll('.day-chip').forEach(chip => {
+        chip.addEventListener('click', function() {
+            this.classList.toggle('active');
+            this.querySelector('input').checked = this.classList.contains('active');
+        });
+    });
+
+    list.appendChild(div);
+}
+
+function collectWorkersData() {
+    const workers = [];
+    document.querySelectorAll('.worker-item').forEach(item => {
+        const name = item.querySelector('.worker-name')?.value;
+        if (!name) return;
+        const days = [];
+        item.querySelectorAll('.day-chip input:checked').forEach(cb => days.push(cb.value));
+        workers.push({
+            name,
+            startTime: item.querySelector('.worker-start')?.value || '09:00',
+            endTime: item.querySelector('.worker-end')?.value || '18:00',
+            days,
+        });
+    });
+    return workers;
+}
+
+function removeItem(btn, listId, hintId) {
+    btn.closest('[class$="-item"]').remove();
+    const list = document.getElementById(listId);
+    const hint = document.getElementById(hintId);
+    if (hint && list.children.length === 0) hint.style.display = 'flex';
+}
