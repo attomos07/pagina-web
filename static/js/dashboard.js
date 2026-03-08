@@ -1,3 +1,9 @@
+// Helper: detectar si el usuario está en plan gratuito
+function isFreePlan() {
+    const plan = document.querySelector('.app-container')?.dataset?.plan || '';
+    return plan === 'gratuito' || plan === 'free' || plan === '';
+}
+
 // Dashboard functionality (sin sección de agentes)
 let costChart = null;
 let mostRequestedPieChart = null;
@@ -247,8 +253,10 @@ function renderServiceTable(container, services, isLeast = false) {
 document.addEventListener('DOMContentLoaded', function () {
     console.log('dashboard.js listo');
     loadAgentStats();
-    initializeCostChart();
-    loadBillingData();
+    if (!isFreePlan()) {
+        initializeCostChart();
+        loadBillingData();
+    }
     loadServicesStatistics();
     initializeCreateAgentButton();
 
@@ -670,6 +678,7 @@ function initializeCostChart() {
 }
 
 async function loadBillingData(days = 28) {
+    if (isFreePlan()) return;
     try {
         const response = await fetch(`/api/billing/data?days=${days}`);
 

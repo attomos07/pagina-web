@@ -568,27 +568,48 @@ body {
    ============================================ */
 
 .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
     padding: 4rem 2rem;
-    display: none;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid #f0f0f0;
 }
 
-.empty-state.active {
-    display: block;
+.empty-icon {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(
+        135deg,
+        rgba(6, 182, 212, 0.1) 0%,
+        rgba(6, 182, 212, 0.05) 100%
+    );
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
 }
 
-.empty-state i {
-    font-size: 5rem;
-    color: #e5e7eb;
-    margin-bottom: 1.5rem;
-    display: block;
+.empty-icon i {
+    font-size: 4rem;
+    color: #06b6d4;
+}
+
+.empty-icon svg {
+    width: 4rem;
+    height: 4rem;
+    color: #06b6d4;
 }
 
 .empty-state h3 {
     font-size: 1.5rem;
     font-weight: 700;
     color: #1a1a1a;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
 }
 
 .empty-state p {
@@ -596,6 +617,58 @@ body {
     color: #6b7280;
     max-width: 500px;
     margin: 0 auto;
+    margin-bottom: 2rem;
+}
+
+/* btn-primary para empty states (igual que appointments) */
+.btn-primary {
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+    background: white;
+    color: #06b6d4;
+    border: 2px solid #06b6d4;
+    box-shadow: 0 2px 8px rgba(6, 182, 212, 0.15);
+}
+
+.btn-primary::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(6, 182, 212, 0.1);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-primary:hover {
+    background: #06b6d4;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.3);
+}
+
+.btn-primary i,
+.btn-primary span {
+    position: relative;
+    z-index: 1;
 }
 
 /* ============================================

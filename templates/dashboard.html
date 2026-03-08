@@ -98,7 +98,7 @@
                     </div>
 
                     <!-- AI Billing Section (solo planes de pago) -->
-                    {{if ne .currentPlan "gratuito"}}
+                    {{if and (ne .currentPlan "gratuito") (ne .currentPlan "Gratuito") (ne .currentPlan "free") (ne .currentPlan "Free") (ne .currentPlan "")}}
                     <div class="ai-billing-section">
                         <div class="billing-header">
                             <div class="billing-title-wrapper">
@@ -280,6 +280,18 @@
     <!-- jsPDF para PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="/static/js/sidebar.js"></script>
+    <script>
+        // Ocultar costos de IA si el plan es gratuito (fallback JS)
+        (function() {
+            const plan = (document.querySelector('.app-container')?.dataset?.plan || '').toLowerCase().trim();
+            if (plan === 'gratuito' || plan === 'free' || plan === '') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    const section = document.querySelector('.ai-billing-section');
+                    if (section) section.style.display = 'none';
+                });
+            }
+        })();
+    </script>
     <script src="/static/js/dashboard.js"></script>
 </body>
 </html>
