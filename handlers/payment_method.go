@@ -13,6 +13,7 @@ import (
 	stripe_lib "github.com/stripe/stripe-go/v78"
 	"github.com/stripe/stripe-go/v78/customer"
 	"github.com/stripe/stripe-go/v78/paymentmethod"
+	"github.com/stripe/stripe-go/v78/subscription"
 )
 
 // ============================================================
@@ -30,7 +31,14 @@ func GetPaymentMethodPage(c *gin.Context) {
 
 // ============================================================
 // GET /api/billing/payment-methods
-// Returns all saved payment methods for the user
+// Returns all saved payment methods for the user.
+//
+// Stripe's SaveDefaultPaymentMethod:"on_subscription" attaches
+// the card to the Subscription object, NOT to the customer's
+// standalone PM list. So we must check BOTH sources:
+//  1. paymentmethod.List (PMs explicitly attached to customer)
+//  2. The subscription's default_payment_method (expanded)
+//
 // ============================================================
 func GetPaymentMethods(c *gin.Context) {
 	userInterface, exists := c.Get("user")
@@ -42,33 +50,12 @@ func GetPaymentMethods(c *gin.Context) {
 
 	stripe_lib.Key = os.Getenv("STRIPE_SECRET_KEY")
 
-	// Get Stripe customer ID
+	// Get local subscription (needs StripeCustomerID + StripeSubscriptionID)
 	var sub models.Subscription
 	if err := config.DB.Where("user_id = ?", user.ID).First(&sub).Error; err != nil || sub.StripeCustomerID == "" {
 		c.JSON(http.StatusOK, gin.H{"methods": []gin.H{}, "defaultMethodId": nil})
 		return
 	}
-
-	// Fetch customer to get default payment method
-	cust, err := customer.Get(sub.StripeCustomerID, nil)
-	if err != nil {
-		log.Printf("❌ [User %d] Error obteniendo customer Stripe: %v", user.ID, err)
-		c.JSON(http.StatusOK, gin.H{"methods": []gin.H{}, "defaultMethodId": nil})
-		return
-	}
-
-	defaultPMID := ""
-	if cust.InvoiceSettings != nil && cust.InvoiceSettings.DefaultPaymentMethod != nil {
-		defaultPMID = cust.InvoiceSettings.DefaultPaymentMethod.ID
-	}
-
-	// List payment methods
-	params := &stripe_lib.PaymentMethodListParams{
-		Customer: stripe_lib.String(sub.StripeCustomerID),
-		Type:     stripe_lib.String("card"),
-	}
-
-	iter := paymentmethod.List(params)
 
 	type PMResponse struct {
 		ID         string `json:"id"`
@@ -79,26 +66,76 @@ func GetPaymentMethods(c *gin.Context) {
 		HolderName string `json:"holderName"`
 	}
 
-	methods := []PMResponse{}
+	// Use a map to deduplicate PMs from both sources
+	pmMap := map[string]PMResponse{}
+	defaultPMID := ""
+
+	// ── SOURCE 1: customer's invoice settings default PM ─────────────────────
+	cust, err := customer.Get(sub.StripeCustomerID, nil)
+	if err != nil {
+		log.Printf("⚠️  [User %d] Error obteniendo customer Stripe: %v", user.ID, err)
+	} else {
+		if cust.InvoiceSettings != nil && cust.InvoiceSettings.DefaultPaymentMethod != nil {
+			defaultPMID = cust.InvoiceSettings.DefaultPaymentMethod.ID
+		}
+	}
+
+	// ── SOURCE 2: PMs explicitly attached to the customer ────────────────────
+	listParams := &stripe_lib.PaymentMethodListParams{
+		Customer: stripe_lib.String(sub.StripeCustomerID),
+		Type:     stripe_lib.String("card"),
+	}
+	iter := paymentmethod.List(listParams)
 	for iter.Next() {
 		pm := iter.PaymentMethod()
 		if pm.Card == nil {
 			continue
 		}
-		expMonth := padMonth(int(pm.Card.ExpMonth))
-		methods = append(methods, PMResponse{
+		pmMap[pm.ID] = PMResponse{
 			ID:         pm.ID,
 			Brand:      string(pm.Card.Brand),
 			Last4:      pm.Card.Last4,
-			ExpMonth:   expMonth,
+			ExpMonth:   padMonth(int(pm.Card.ExpMonth)),
 			ExpYear:    itoa(int(pm.Card.ExpYear)),
 			HolderName: pm.BillingDetails.Name,
-		})
+		}
+	}
+	if err := iter.Err(); err != nil {
+		log.Printf("⚠️  [User %d] Error listando customer PMs: %v", user.ID, err)
 	}
 
-	if err := iter.Err(); err != nil {
-		log.Printf("⚠️  [User %d] Error listando payment methods: %v", user.ID, err)
+	// ── SOURCE 3: PM saved on the Stripe Subscription (SaveDefaultPaymentMethod:"on_subscription") ──
+	if sub.StripeSubscriptionID != "" {
+		subParams := &stripe_lib.SubscriptionParams{}
+		subParams.AddExpand("default_payment_method")
+		stripeSub, err := subscription.Get(sub.StripeSubscriptionID, subParams)
+		if err != nil {
+			log.Printf("⚠️  [User %d] Error obteniendo subscription Stripe: %v", user.ID, err)
+		} else if stripeSub.DefaultPaymentMethod != nil && stripeSub.DefaultPaymentMethod.Card != nil {
+			pm := stripeSub.DefaultPaymentMethod
+			pmMap[pm.ID] = PMResponse{
+				ID:         pm.ID,
+				Brand:      string(pm.Card.Brand),
+				Last4:      pm.Card.Last4,
+				ExpMonth:   padMonth(int(pm.Card.ExpMonth)),
+				ExpYear:    itoa(int(pm.Card.ExpYear)),
+				HolderName: pm.BillingDetails.Name,
+			}
+			// This is the authoritative default for recurring charges
+			if defaultPMID == "" {
+				defaultPMID = pm.ID
+			}
+			log.Printf("✅ [User %d] PM encontrado en suscripción: %s •••• %s", user.ID, pm.Card.Brand, pm.Card.Last4)
+		}
 	}
+
+	// Build response slice
+	methods := make([]PMResponse, 0, len(pmMap))
+	for _, pm := range pmMap {
+		methods = append(methods, pm)
+	}
+
+	log.Printf("ℹ️  [User %d] Total PMs encontrados: %d | Default: %s", user.ID, len(methods), defaultPMID)
 
 	c.JSON(http.StatusOK, gin.H{
 		"methods":         methods,
