@@ -12,6 +12,13 @@ let agentData = {
   name: '',
   phoneNumber: '',
   useDifferentPhone: false,
+  location: {
+    address: '', betweenStreets: '', number: '', neighborhood: '',
+    city: '', state: '', country: '', postalCode: ''
+  },
+  social_media: {
+    facebook: '', instagram: '', twitter: '', linkedin: ''
+  },
   config: {
     tone: 'formal',
     customTone: '',
@@ -986,7 +993,6 @@ function renderBusinessPreview(branch) {
   if (typeInput && biz.type) {
     typeInput.value = biz.typeName || biz.type;
     typeInput.dataset.value = biz.type;
-    // Deshabilitar el wrapper para que no abra el dropdown
     const wrapper = document.getElementById('businessTypeWrapper');
     if (wrapper) wrapper.style.pointerEvents = 'none';
   }
@@ -1004,6 +1010,24 @@ function renderBusinessPreview(branch) {
     if (el) { el.value = val; el.readOnly = true; }
   });
 
+  // Precargar agentData.location para el summary
+  agentData.location = {
+    address:        loc.address        || '',
+    betweenStreets: loc.betweenStreets || '',
+    number:         loc.number         || '',
+    neighborhood:   loc.neighborhood   || '',
+    city:           loc.city           || '',
+    state:          loc.state          || '',
+    country:        loc.country        || '',
+    postalCode:     loc.postalCode     || '',
+  };
+
+  // Precargar los custom dropdowns de ubicación (país, estado, ciudad)
+  // Estos tienen un displayInput visible separado del hidden input original
+  preloadLocationDropdown('countryInput', loc.country   || '');
+  preloadLocationDropdown('stateInput',   loc.state     || '');
+  preloadLocationDropdown('cityInput',    loc.city      || '');
+
   // ── Redes sociales ────────────────────────────
   const socialMap = {
     'facebookInput':  soc.facebook  || '',
@@ -1015,6 +1039,198 @@ function renderBusinessPreview(branch) {
     const el = document.getElementById(id);
     if (el) { el.value = val; el.readOnly = true; }
   });
+
+  // Precargar agentData.social_media para el summary
+  agentData.social_media = {
+    facebook:  soc.facebook  || '',
+    instagram: soc.instagram || '',
+    twitter:   soc.twitter   || '',
+    linkedin:  soc.linkedin  || '',
+  };
+
+  // ── Horario ───────────────────────────────────
+  const schedule = branch.schedule || {};
+  const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+  days.forEach(day => {
+    const dayData = schedule[day];
+    if (!dayData) return;
+
+    const toggle   = document.getElementById(`${day}Toggle`);
+    const startEl  = document.getElementById(`${day}Start`);
+    const endEl    = document.getElementById(`${day}End`);
+    const dayBlock = document.querySelector(`[data-day="${day}"]`);
+
+    const isOpen = dayData.isOpen !== undefined ? dayData.isOpen : dayData.open;
+    const openTime  = dayData.open  || dayData.start || '09:00';
+    const closeTime = dayData.close || dayData.end   || '18:00';
+
+    if (toggle) {
+      toggle.checked = !!isOpen;
+      toggle.dispatchEvent(new Event('change'));
+    }
+    if (startEl) {
+      startEl.value = openTime;
+      startEl.dispatchEvent(new Event('change'));
+      // Actualizar custom time picker si ya fue inicializado
+      _updateCustomTimePicker(startEl, openTime);
+    }
+    if (endEl) {
+      endEl.value = closeTime;
+      endEl.dispatchEvent(new Event('change'));
+      _updateCustomTimePicker(endEl, closeTime);
+    }
+    if (dayBlock) {
+      dayBlock.classList.toggle('closed', !isOpen);
+    }
+  });
+
+  // ── Días Festivos ─────────────────────────────
+  const holidays = branch.holidays || [];
+  if (holidays.length > 0) {
+    const holidaysList = document.getElementById('holidaysList');
+    if (holidaysList) holidaysList.innerHTML = '';
+    holidays.forEach(h => {
+      // h.date puede venir como "YYYY-MM-DD" o en formato "dd/mm"
+      const dateStr = h.date && h.date.includes('-') ? h.date :
+                      (h.date ? `2025-${(h.date.split('/')[1]||'01').padStart(2,'0')}-${(h.date.split('/')[0]||'01').padStart(2,'0')}` : '');
+      addHolidayWithData(dateStr, h.name || '');
+    });
+    updateHolidaysData();
+  }
+
+  // ── Servicios ─────────────────────────────────
+  const services = branch.services || [];
+  if (services.length > 0) {
+    const servicesList = document.getElementById('servicesList');
+    if (servicesList) servicesList.innerHTML = '';
+    services.forEach(s => addServiceWithData(s));
+    updateServicesData();
+  }
+
+  // ── Trabajadores ──────────────────────────────
+  const workers = branch.workers || [];
+  if (workers.length > 0) {
+    const workersList = document.getElementById('workersList');
+    if (workersList) workersList.innerHTML = '';
+    workers.forEach(w => addWorkerWithData(w));
+    updateWorkersData();
+  }
+}
+
+// Precarga el displayInput visible de un location dropdown
+function preloadLocationDropdown(inputId, value) {
+  if (!value) return;
+  const hiddenInput = document.getElementById(inputId);
+  if (!hiddenInput) return;
+  // El wrapper está justo antes del hidden input
+  const wrapper = hiddenInput.previousElementSibling;
+  if (wrapper && wrapper.classList.contains('location-dropdown-wrapper')) {
+    const displayInput = wrapper.querySelector('.location-select');
+    if (displayInput) displayInput.value = value;
+    // Marcar la opción como selected si existe
+    const option = wrapper.querySelector(`.location-option[data-value="${value.toLowerCase().replace(/\s+/g,'-')}"]`);
+    if (option) {
+      wrapper.querySelectorAll('.location-option').forEach(o => o.classList.remove('selected'));
+      option.classList.add('selected');
+    }
+  }
+  hiddenInput.value = value;
+}
+
+// Actualiza el custom time picker visual dado el input nativo
+function _updateCustomTimePicker(nativeInput, time24) {
+  if (!nativeInput || !time24) return;
+  const wrapper = nativeInput.previousElementSibling;
+  if (!wrapper || !wrapper.classList.contains('custom-time-wrapper')) return;
+  const customInput = wrapper.querySelector('.time-input-custom');
+  if (customInput) customInput.value = formatTimeDisplay(time24);
+}
+
+// Agrega un día festivo con datos precargados
+function addHolidayWithData(dateStr, name) {
+  const holidaysList = document.getElementById('holidaysList');
+  if (!holidaysList) return;
+
+  const holidayId = Date.now() + Math.random();
+  const holidayItem = document.createElement('div');
+  holidayItem.className = 'holiday-item';
+  holidayItem.dataset.holidayId = holidayId;
+  holidayItem.innerHTML = `
+    <div class="holiday-date form-group">
+      <input type="date" class="form-input holiday-date-input" value="${dateStr}" required>
+    </div>
+    <div class="holiday-name form-group">
+      <input type="text" class="form-input holiday-name-input" placeholder="Nombre del día festivo" value="${name}" required>
+    </div>
+    <button type="button" class="btn-remove-holiday" onclick="removeHoliday(${holidayId})">
+      <i class="lni lni-trash-can"></i>
+    </button>
+  `;
+  holidaysList.appendChild(holidayItem);
+  holidayItem.querySelector('.holiday-date-input').addEventListener('change', updateHolidaysData);
+  holidayItem.querySelector('.holiday-name-input').addEventListener('input', updateHolidaysData);
+}
+
+// Agrega un servicio con datos precargados
+function addServiceWithData(s) {
+  addService(); // crea el DOM vacío
+  const items = document.querySelectorAll('.service-item');
+  const item = items[items.length - 1];
+  if (!item) return;
+
+  const titleEl = item.querySelector('.service-title');
+  if (titleEl) titleEl.value = s.title || '';
+
+  const editorEl = item.querySelector('.service-editor-content');
+  if (editorEl) editorEl.innerHTML = s.description || '';
+
+  const priceType = s.priceType === 'promotion' ? 'promotion' : 'normal';
+  const priceTypeOpts = item.querySelectorAll('.price-type-option');
+  priceTypeOpts.forEach(opt => {
+    opt.classList.toggle('active', opt.dataset.type === priceType);
+  });
+  const promoSection = item.querySelector('.promotion-prices');
+  const normalSection = item.querySelector('.price-normal');
+  if (priceType === 'promotion') {
+    if (promoSection) promoSection.classList.add('show');
+    if (normalSection) normalSection.style.display = 'none';
+    const origEl = item.querySelector('.service-original-price');
+    const promoEl = item.querySelector('.service-promo-price');
+    if (origEl) origEl.value = s.originalPrice || '';
+    if (promoEl) promoEl.value = s.promoPrice || '';
+  } else {
+    const priceEl = item.querySelector('.service-price');
+    if (priceEl) priceEl.value = s.price || '';
+  }
+}
+
+// Agrega un trabajador con datos precargados
+function addWorkerWithData(w) {
+  addWorker(); // crea el DOM vacío
+  const items = document.querySelectorAll('.worker-item');
+  const item = items[items.length - 1];
+  if (!item) return;
+
+  const nameEl = item.querySelector('.worker-name');
+  if (nameEl) nameEl.value = w.name || '';
+
+  const startEl = item.querySelector('.worker-start-time');
+  const endEl   = item.querySelector('.worker-end-time');
+  if (startEl) { startEl.value = w.startTime || '09:00'; _updateWorkerTimePicker(startEl, startEl.value); }
+  if (endEl)   { endEl.value   = w.endTime   || '18:00'; _updateWorkerTimePicker(endEl,   endEl.value);   }
+
+  const days = Array.isArray(w.days) ? w.days : [];
+  item.querySelectorAll('.availability-day input[type="checkbox"]').forEach(cb => {
+    cb.checked = days.includes(cb.value);
+  });
+}
+
+function _updateWorkerTimePicker(nativeInput, time24) {
+  if (!nativeInput || !time24) return;
+  const wrapper = nativeInput.previousElementSibling;
+  if (!wrapper || !wrapper.classList.contains('worker-time-wrapper')) return;
+  const customInput = wrapper.querySelector('.worker-time-input-custom');
+  if (customInput) customInput.value = formatTimeDisplay(time24);
 }
 
 // ============================================

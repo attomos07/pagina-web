@@ -318,7 +318,10 @@ function showBusinessWarningModal() {
             #bwBox { animation: bwSlideUp 0.3s cubic-bezier(0.23,1,0.32,1); }
             #bwCancelBtn:hover { background:#e5e7eb !important; }
             #bwGoBtn:hover { transform:translateY(-2px) !important; box-shadow:0 8px 20px rgba(6,182,212,0.4) !important; }
-            #bwCloseBtn:hover { background:#e5e7eb !important; }
+            #bwCloseBtn { transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1) !important; }
+            #bwCloseBtn:hover { background:#fee2e2 !important; color:#ef4444 !important; transform:rotate(90deg) scale(1.1) !important; box-shadow:0 4px 12px rgba(239,68,68,0.2) !important; }
+            #bwCloseBtn i { transition: transform 0.3s ease; }
+            #bwCloseBtn:hover i { transform: scale(1.2); }
         </style>
         <div id="bwBox" style="
             background:white; border-radius:20px; padding:2.5rem;
@@ -327,10 +330,10 @@ function showBusinessWarningModal() {
         ">
             <button id="bwCloseBtn" style="
                 position:absolute; top:1rem; right:1rem;
-                background:#f3f4f6; border:none; border-radius:8px;
-                width:32px; height:32px; cursor:pointer;
+                background:#f3f4f6; border:none; border-radius:50%;
+                width:44px; height:44px; cursor:pointer;
                 display:flex; align-items:center; justify-content:center;
-                font-size:1.1rem; color:#6b7280; transition:background 0.2s;
+                font-size:1.25rem; color:#6b7280;
             "><i class="lni lni-close"></i></button>
 
             <div style="
@@ -457,6 +460,38 @@ async function loadOnboardingContent() {
         if (mainContainer) {
             modalBody.innerHTML = mainContainer.innerHTML;
 
+            if (!document.getElementById('onboarding-css')) {
+                const link = document.createElement('link');
+                link.id = 'onboarding-css'; link.rel = 'stylesheet';
+                link.href = '/static/css/onboarding.css';
+                document.head.appendChild(link);
+            }
+            if (!document.getElementById('onboarding-inline-styles')) {
+                const headStyles = doc.querySelectorAll('head style');
+                if (headStyles.length > 0) {
+                    const combined = document.createElement('style');
+                    combined.id = 'onboarding-inline-styles';
+                    headStyles.forEach(s => { combined.textContent += s.textContent; });
+                    document.head.appendChild(combined);
+                }
+            }
+            // Fix hover en tab completada: evitar que el hover cyan
+            // sobreescriba el verde de .completed
+            if (!document.getElementById('onboarding-modal-fixes')) {
+                const fix = document.createElement('style');
+                fix.id = 'onboarding-modal-fixes';
+                fix.textContent = `
+                    .section-nav-btn.completed:hover {
+                        background: #d1fae5 !important;
+                        color: #10b981 !important;
+                        border-color: #10b981 !important;
+                        box-shadow: 0 4px 12px rgba(16,185,129,0.2) !important;
+                    }
+                    .section-nav-btn.completed:hover i { color: #10b981 !important; }
+                `;
+                document.head.appendChild(fix);
+            }
+
             if (!onboardingScriptLoaded) {
                 const script = document.createElement('script');
                 script.src = '/static/js/onboarding.js';
@@ -524,6 +559,48 @@ function reinitializeOnboardingEvents() {
     if (typeof initializeSocialSelection === 'function') initializeSocialSelection();
     if (typeof initializeNavigationButtons === 'function') initializeNavigationButtons();
     if (typeof initializeSectionNavigation === 'function') initializeSectionNavigation();
+
+    // ── Modo modal: ocultar tabs de my-business ────────────────────────
+    // Se hace DESPUÉS de initializeSectionNavigation que las genera en el DOM
+    const TABS_MY_BUSINESS = ['Info. Negocio','Ubicación','Redes Sociales',
+                              'Horarios','Días Festivos','Servicios','Trabajadores'];
+    document.querySelectorAll('.section-nav-btn').forEach(btn => {
+        const label = btn.querySelector('span')?.textContent?.trim();
+        if (TABS_MY_BUSINESS.includes(label)) btn.style.display = 'none';
+    });
+    // Ocultar las secciones de negocio del DOM
+    ['section-business','section-location','section-social',
+     'section-schedule','section-holidays','section-services','section-workers'
+    ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    // Centrar las 2 tabs visibles
+    const sectionNav = document.getElementById('sectionNavigation');
+    if (sectionNav) sectionNav.style.justifyContent = 'center';
+    // Activar la primera tab visible (Info.Básica = sectionId 2)
+    if (typeof navigateToSection === 'function') navigateToSection(2);
+
+    // Sobreescribir updateProgressBar: 2 secciones visibles (IDs 2 y 5)
+    window.updateProgressBar = function() {
+        let fraction = 0;
+        const sectionMap = { 2: 1, 5: 2 }; // Info.Básica → pos 1, Personalidad → pos 2
+        if (window.currentStep === 2) {
+            const pos = sectionMap[window.currentSection] || 1;
+            fraction = pos / 2;
+        } else if (window.currentStep === 3) {
+            fraction = 1.0;
+        }
+        const pctEl = document.getElementById('progressPercentage');
+        if (pctEl) {
+            const target = Math.round(fraction * 100);
+            const current = parseInt(pctEl.textContent) || 0;
+            if (typeof animatePercentage === 'function') animatePercentage(current, target, pctEl);
+            else pctEl.textContent = target + '%';
+        }
+        if (typeof setDotTarget === 'function') setDotTarget(fraction);
+    };
+
     if (typeof initializeToneSelection === 'function') initializeToneSelection();
     if (typeof initializeLanguageSelection === 'function') initializeLanguageSelection();
     if (typeof initializeRichEditor === 'function') initializeRichEditor();
