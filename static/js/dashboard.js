@@ -17,46 +17,17 @@ let onboardingScriptLoaded = false;
 // Estado base del onboarding (mismo shape que en onboarding.js)
 const defaultAgentData = () => ({
     social: '',
+    branchId: 0,
     businessType: '',
     name: '',
     phoneNumber: '',
     useDifferentPhone: false,
     config: {
-        welcomeMessage: '',
-        aiPersonality: '',
         tone: 'formal',
         customTone: '',
         languages: [],
         additionalLanguages: [],
-        specialInstructions: '',
-        schedule: {
-            monday: { open: true, start: '09:00', end: '18:00' },
-            tuesday: { open: true, start: '09:00', end: '18:00' },
-            wednesday: { open: true, start: '09:00', end: '18:00' },
-            thursday: { open: true, start: '09:00', end: '18:00' },
-            friday: { open: true, start: '09:00', end: '18:00' },
-            saturday: { open: false, start: '09:00', end: '14:00' },
-            sunday: { open: false, start: '09:00', end: '14:00' }
-        },
-        holidays: [],
-        services: [],
-        workers: []
-    },
-    location: {
-        address: '',
-        postalCode: '',
-        betweenStreets: '',
-        number: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-        country: ''
-    },
-    social_media: {
-        facebook: '',
-        instagram: '',
-        twitter: '',
-        linkedin: ''
+        specialInstructions: ''
     }
 });
 
@@ -299,14 +270,16 @@ async function checkBusinessBeforeAgent() {
         const response = await fetch('/api/my-business');
         if (response.ok) {
             const data = await response.json();
-            // El endpoint devuelve { business: { name, type, ... }, ... }
+            // El endpoint devuelve { activeBranch: { business: { name, type } } }
+            // o { branches: [], defaultBranch: {...} } cuando no hay sucursales guardadas
+            const branch = data.activeBranch || data.defaultBranch;
             const hasBusinessInfo =
-                data &&
-                data.business &&
-                data.business.name &&
-                data.business.name.trim() !== '' &&
-                data.business.type &&
-                data.business.type.trim() !== '';
+                branch &&
+                branch.business &&
+                branch.business.name &&
+                branch.business.name.trim() !== '' &&
+                branch.business.type &&
+                branch.business.type.trim() !== '';
 
             if (hasBusinessInfo) {
                 openOnboardingModal();
@@ -548,7 +521,6 @@ function reinitializeOnboardingEvents() {
         modalBody.scrollTop = 0;
     }
 
-    if (typeof fetchUserData === 'function') fetchUserData();
     if (typeof initializeSocialSelection === 'function') initializeSocialSelection();
     if (typeof initializeNavigationButtons === 'function') initializeNavigationButtons();
     if (typeof initializeSectionNavigation === 'function') initializeSectionNavigation();
@@ -558,6 +530,11 @@ function reinitializeOnboardingEvents() {
     if (typeof initializePhoneToggle === 'function') initializePhoneToggle();
     if (typeof initializeSchedule === 'function') initializeSchedule();
     if (typeof initializeHolidays === 'function') initializeHolidays();
+    // fetchUserData al final — necesita que initializeSectionNavigation
+    // haya terminado de renderizar el DOM antes de precargar los inputs
+    setTimeout(() => {
+        if (typeof fetchUserData === 'function') fetchUserData();
+    }, 100);
     if (typeof initializeServices === 'function') initializeServices();
     if (typeof initializeWorkers === 'function') initializeWorkers();
     if (typeof initializeLocationDropdowns === 'function') initializeLocationDropdowns();

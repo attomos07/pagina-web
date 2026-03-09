@@ -133,9 +133,6 @@ func SaveMyBusiness(c *gin.Context) {
 		}
 	}
 
-	// Sincronizar agentes vinculados a esta sucursal
-	go syncAgentsWithBranch(user.ID, branch.ID, req)
-
 	c.JSON(http.StatusOK, gin.H{
 		"success":    true,
 		"message":    "Sucursal guardada exitosamente",
@@ -224,39 +221,14 @@ func DeleteBranch(c *gin.Context) {
 // ============================================================
 // syncAgentsWithBranch - Actualiza agentes vinculados a la sucursal
 // ============================================================
-func syncAgentsWithBranch(userID uint, branchID uint, req BranchRequest) {
-	var agents []models.Agent
-	if err := config.DB.Where("user_id = ?", userID).Find(&agents).Error; err != nil || len(agents) == 0 {
-		return
-	}
+// syncAgentsWithBranch — DEPRECADO
+// Los agentes ya no duplican datos del negocio en su config.
+// La fuente de verdad es my_business_info via agents.branch_id.
+func syncAgentsWithBranch(_ uint, _ uint, _ BranchRequest) {}
 
-	profileReq := branchToProfileRequest(req)
-
-	config.DB.Transaction(func(tx *gorm.DB) error {
-		for _, agent := range agents {
-			agent.BusinessType = req.Business.Type
-			updateConfigWithProfile(&agent.Config, profileReq)
-			tx.Save(&agent)
-		}
-		return nil
-	})
-}
-
-// syncAgentsWithBusiness mantiene compatibilidad con el código existente
-func syncAgentsWithBusiness(userID uint, req ProfileRequest) {
-	var agents []models.Agent
-	if err := config.DB.Where("user_id = ?", userID).Find(&agents).Error; err != nil || len(agents) == 0 {
-		return
-	}
-	config.DB.Transaction(func(tx *gorm.DB) error {
-		for _, agent := range agents {
-			agent.BusinessType = req.Business.Type
-			updateConfigWithProfile(&agent.Config, req)
-			tx.Save(&agent)
-		}
-		return nil
-	})
-}
+// syncAgentsWithBusiness — DEPRECADO
+// Ver syncAgentsWithBranch.
+func syncAgentsWithBusiness(_ uint, _ ProfileRequest) {}
 
 // ============================================================
 // Helpers
@@ -411,122 +383,13 @@ func buildEmptyBranchResponse(user *models.User, num int) gin.H {
 	}
 }
 
-func branchToProfileRequest(req BranchRequest) ProfileRequest {
-	return ProfileRequest{
-		Business: req.Business,
-		Schedule: req.Schedule,
-		Holidays: req.Holidays,
-		Location: req.Location,
-		Social:   req.Social,
-	}
-}
-
-// ============================================================
-// Helpers compartidos
-// ============================================================
-
-func updateConfigWithProfile(cfg *models.AgentConfig, req ProfileRequest) {
-	cfg.BusinessInfo = models.BusinessProfileInfo{
-		Description: req.Business.Description,
-		Website:     req.Business.Website,
-		Email:       req.Business.Email,
-	}
-	cfg.Location = models.LocationProfile{
-		Address: req.Location.Address, BetweenStreets: req.Location.BetweenStreets,
-		Number: req.Location.Number, Neighborhood: req.Location.Neighborhood,
-		City: req.Location.City, State: req.Location.State,
-		Country: req.Location.Country, PostalCode: req.Location.PostalCode,
-	}
-	cfg.SocialMedia = models.SocialMediaProfile{
-		Facebook: req.Social.Facebook, Instagram: req.Social.Instagram,
-		Twitter: req.Social.Twitter, LinkedIn: req.Social.LinkedIn,
-	}
-	cfg.Schedule = models.Schedule{
-		Monday:    convertToModelDay(req.Schedule.Monday),
-		Tuesday:   convertToModelDay(req.Schedule.Tuesday),
-		Wednesday: convertToModelDay(req.Schedule.Wednesday),
-		Thursday:  convertToModelDay(req.Schedule.Thursday),
-		Friday:    convertToModelDay(req.Schedule.Friday),
-		Saturday:  convertToModelDay(req.Schedule.Saturday),
-		Sunday:    convertToModelDay(req.Schedule.Sunday),
-		Timezone:  "America/Hermosillo",
-	}
-	cfg.Holidays = make([]models.Holiday, len(req.Holidays))
-	for i, h := range req.Holidays {
-		cfg.Holidays[i] = models.Holiday{
-			Date: fmt.Sprintf("%d-%s-%s", time.Now().Year(), h.Month, h.Day),
-			Name: h.Name,
-		}
-	}
-	cfg.Facilities = buildFacilities(req)
-	cfg.WelcomeMessage = generateWelcome(req)
-}
-
-func convertToModelDay(day DayScheduleInfo) models.DaySchedule {
-	return models.DaySchedule{Open: day.IsOpen, Start: day.Open, End: day.Close}
-}
-
-func buildFacilities(req ProfileRequest) []string {
-	facilities := []string{}
-	if req.Location.City != "" {
-		facilities = append(facilities, "📍 "+buildAddress(req.Location))
-	}
-	if req.Business.Email != "" {
-		facilities = append(facilities, "📧 "+req.Business.Email)
-	}
-	if req.Business.Website != "" {
-		facilities = append(facilities, "🌐 "+req.Business.Website)
-	}
-	socials := []string{}
-	if req.Social.Facebook != "" {
-		socials = append(socials, "Facebook")
-	}
-	if req.Social.Instagram != "" {
-		socials = append(socials, "Instagram")
-	}
-	if req.Social.Twitter != "" {
-		socials = append(socials, "Twitter")
-	}
-	if req.Social.LinkedIn != "" {
-		socials = append(socials, "LinkedIn")
-	}
-	if len(socials) > 0 {
-		facilities = append(facilities, "📱 "+strings.Join(socials, ", "))
-	}
-	return facilities
-}
-
-func buildAddress(loc LocationInfo) string {
-	parts := []string{}
-	if loc.Address != "" {
-		parts = append(parts, loc.Address)
-	}
-	if loc.Number != "" {
-		parts = append(parts, loc.Number)
-	}
-	if loc.Neighborhood != "" {
-		parts = append(parts, loc.Neighborhood)
-	}
-	if loc.City != "" {
-		parts = append(parts, loc.City)
-	}
-	if loc.State != "" {
-		parts = append(parts, loc.State)
-	}
-	return strings.Join(parts, ", ")
-}
-
-func generateWelcome(req ProfileRequest) string {
-	msg := fmt.Sprintf("¡Bienvenido a %s!", req.Business.Name)
-	if req.Business.Description != "" {
-		msg += " " + req.Business.Description
-	}
-	if req.Location.City != "" {
-		msg += fmt.Sprintf(" Estamos en %s.", req.Location.City)
-	}
-	msg += " ¿En qué puedo ayudarte?"
-	return msg
-}
+// ── Funciones eliminadas ──────────────────────────────────────
+// branchToProfileRequest, updateConfigWithProfile, convertToModelDay,
+// buildFacilities, buildAddress, generateWelcome
+// Estas funciones copiaban datos del negocio al config del agente.
+// Con la migración a BranchID, los agentes leen my_business_info
+// directamente en runtime — ya no se duplican datos.
+// ─────────────────────────────────────────────────────────────
 
 func dayToFrontend(day models.DaySchedule) gin.H {
 	return gin.H{"isOpen": day.Open, "open": day.Start, "close": day.End}

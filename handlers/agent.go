@@ -23,6 +23,7 @@ type CreateAgentRequest struct {
 	PhoneNumber  string             `json:"phoneNumber"`
 	BusinessType string             `json:"businessType"`
 	MetaDocument string             `json:"metaDocument"`
+	BranchID     uint               `json:"branchId"`
 	Config       models.AgentConfig `json:"config"`
 }
 
@@ -179,6 +180,7 @@ func CreateAgent(c *gin.Context) {
 		PhoneNumber:  req.PhoneNumber,
 		BusinessType: req.BusinessType,
 		MetaDocument: metaDocFilename,
+		BranchID:     req.BranchID,
 		Config:       req.Config,
 		Port:         nextPort,
 		DeployStatus: "pending",
@@ -734,6 +736,7 @@ func GetAgents(c *gin.Context) {
 			"name":          agent.Name,
 			"phoneNumber":   agent.PhoneNumber,
 			"businessType":  agent.BusinessType,
+			"branchId":      agent.BranchID,
 			"port":          agent.Port,
 			"deployStatus":  agent.DeployStatus,
 			"isActive":      agent.IsActive,

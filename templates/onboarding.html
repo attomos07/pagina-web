@@ -8,7 +8,32 @@
     <link rel="stylesheet" href="/static/css/sidebar.css" />
     <link rel="stylesheet" href="/static/css/userbar.css" />
     <link rel="stylesheet" href="/static/css/onboarding.css" />
-  </head>
+  
+    <style>
+      /* ── Read-only notice en secciones de negocio ── */
+      .readonly-notice {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 0.82rem;
+        color: #15803d;
+        margin-bottom: 16px;
+      }
+      .readonly-notice i { font-size: 1rem; flex-shrink: 0; }
+      .readonly-notice a { color: #0891b2; text-decoration: underline; }
+      /* Campos precargados */
+      .form-input[readonly]:not(.form-select) {
+        background: #f8fafc;
+        color: #64748b;
+        cursor: not-allowed;
+        border-color: #e2e8f0;
+      }
+    </style>
+</head>
   <body>
     <div class="app-container">
       <div class="main-content">
@@ -228,6 +253,13 @@
                         <i class="lni lni-briefcase"></i>
                         Información del Negocio
                       </h3>
+                        <div class="readonly-notice">
+                          <i class="lni lni-lock-alt"></i>
+                          Datos precargados desde <strong>Mi Negocio</strong>.
+                          Para editarlos ve a
+                          <a href="/my-business" target="_blank">Mi Negocio &rarr;</a>
+                        </div>
+
 
                       <div class="form-grid form-grid-2col">
                         <div class="form-group">
@@ -342,6 +374,13 @@
                         <i class="lni lni-information"></i>
                         Información Básica
                       </h3>
+                        <div class="readonly-notice">
+                          <i class="lni lni-lock-alt"></i>
+                          Datos precargados desde <strong>Mi Negocio</strong>.
+                          Para editarlos ve a
+                          <a href="/my-business" target="_blank">Mi Negocio &rarr;</a>
+                        </div>
+
 
                       <div class="form-grid">
                         <div class="form-group">
@@ -515,6 +554,13 @@
                         <i class="lni lni-map-marker"></i>
                         Ubicación del Negocio
                       </h3>
+                        <div class="readonly-notice">
+                          <i class="lni lni-lock-alt"></i>
+                          Datos precargados desde <strong>Mi Negocio</strong>.
+                          Para editarlos ve a
+                          <a href="/my-business" target="_blank">Mi Negocio &rarr;</a>
+                        </div>
+
 
                       <div class="form-grid form-grid-2col">
                         <div class="form-group">
@@ -632,6 +678,13 @@
                         <i class="lni lni-share-alt"></i>
                         Redes Sociales
                       </h3>
+                        <div class="readonly-notice">
+                          <i class="lni lni-lock-alt"></i>
+                          Datos precargados desde <strong>Mi Negocio</strong>.
+                          Para editarlos ve a
+                          <a href="/my-business" target="_blank">Mi Negocio &rarr;</a>
+                        </div>
+
 
                       <div class="form-grid">
                         <div class="form-group">
@@ -859,6 +912,13 @@
                         <i class="lni lni-calendar"></i>
                         Horarios de Atención
                       </h3>
+                        <div class="readonly-notice">
+                          <i class="lni lni-lock-alt"></i>
+                          Datos precargados desde <strong>Mi Negocio</strong>.
+                          Para editarlos ve a
+                          <a href="/my-business" target="_blank">Mi Negocio &rarr;</a>
+                        </div>
+
 
                       <div class="schedule-list">
                         <div class="schedule-day" data-day="monday">
@@ -1094,6 +1154,13 @@
                         <i class="lni lni-gift"></i>
                         Días Festivos
                       </h3>
+                        <div class="readonly-notice">
+                          <i class="lni lni-lock-alt"></i>
+                          Datos precargados desde <strong>Mi Negocio</strong>.
+                          Para editarlos ve a
+                          <a href="/my-business" target="_blank">Mi Negocio &rarr;</a>
+                        </div>
+
 
                       <span class="form-help"
                         >Agrega los días en que tu negocio estará cerrado por
@@ -1139,6 +1206,13 @@
                         <i class="lni lni-package"></i>
                         Servicios / Productos
                       </h3>
+                        <div class="readonly-notice">
+                          <i class="lni lni-lock-alt"></i>
+                          Datos precargados desde <strong>Mi Negocio</strong>.
+                          Para editarlos ve a
+                          <a href="/my-business" target="_blank">Mi Negocio &rarr;</a>
+                        </div>
+
 
                       <span class="form-help"
                         >Define los servicios o productos que ofreces</span
@@ -1183,6 +1257,13 @@
                         <i class="lni lni-users"></i>
                         Trabajadores / Personal
                       </h3>
+                        <div class="readonly-notice">
+                          <i class="lni lni-lock-alt"></i>
+                          Datos precargados desde <strong>Mi Negocio</strong>.
+                          Para editarlos ve a
+                          <a href="/my-business" target="_blank">Mi Negocio &rarr;</a>
+                        </div>
+
 
                       <span class="form-help"
                         >Agrega información sobre tu personal y su

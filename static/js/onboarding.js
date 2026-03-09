@@ -6,53 +6,23 @@ let currentSection = 1;
 let selectedSocial = '';
 let userBusinessType = '';
 let agentData = {
-  social: '',
-  businessName: '',
-  businessType: '',
-  businessDescription: '',
-  website: '',
-  emailContact: '',
+  social: '',        // plataforma: 'whatsapp' | 'meta'
+  branchId: 0,       // ID de my_business_info (fuente de verdad)
+  businessType: '',  // heredado de my-business (para validación local)
   name: '',
   phoneNumber: '',
   useDifferentPhone: false,
   config: {
-    welcomeMessage: '',
-    aiPersonality: '',
     tone: 'formal',
     customTone: '',
     languages: [],
     additionalLanguages: [],
-    specialInstructions: '',
-    schedule: {
-      monday: { open: true, start: '09:00', end: '18:00' },
-      tuesday: { open: true, start: '09:00', end: '18:00' },
-      wednesday: { open: true, start: '09:00', end: '18:00' },
-      thursday: { open: true, start: '09:00', end: '18:00' },
-      friday: { open: true, start: '09:00', end: '18:00' },
-      saturday: { open: false, start: '09:00', end: '14:00' },
-      sunday: { open: false, start: '09:00', end: '14:00' }
-    },
-    holidays: [],
-    services: [],
-    workers: []
-  },
-  location: {
-    address: '',
-    postalCode: '',
-    betweenStreets: '',
-    number: '',
-    neighborhood: '',
-    city: '',
-    state: '',
-    country: ''
-  },
-  social_media: {
-    facebook: '',
-    instagram: '',
-    twitter: '',
-    linkedin: ''
+    specialInstructions: ''
   }
 };
+
+// Datos del negocio cargados desde /api/my-business (solo lectura en onboarding)
+let businessData = null;
 
 // Section definitions
 const SECTIONS = [
@@ -960,19 +930,91 @@ function initializeBusinessTypeSelect() {
 
 async function fetchUserData() {
   try {
-    const response = await fetch('/api/me', {
-      credentials: 'include'
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
+    // Datos básicos del usuario
+    const userResp = await fetch('/api/me', { credentials: 'include' });
+    if (userResp.ok) {
+      const data = await userResp.json();
       userBusinessType = data.user.businessType;
       agentData.businessType = userBusinessType;
-      console.log('✅ Tipo de negocio del usuario:', userBusinessType);
+    }
+
+    // Datos del negocio (fuente de verdad)
+    const bizResp = await fetch('/api/my-business', { credentials: 'include' });
+    if (bizResp.ok) {
+      const bizData = await bizResp.json();
+      console.log('📦 /api/my-business response:', JSON.stringify(bizData));
+      // El endpoint devuelve { branches:[...], activeBranch:{business,location,social,...} }
+      // o { branches:[], defaultBranch:{...} } si no hay sucursales guardadas
+      const branch = bizData.activeBranch || bizData.defaultBranch;
+      if (branch) {
+        businessData = branch;
+        agentData.branchId = branch.id || 0;
+        agentData.businessType = branch.business?.type || agentData.businessType;
+        renderBusinessPreview(branch);
+        console.log('✅ Datos del negocio precargados, branchId:', agentData.branchId);
+      } else {
+        console.warn('⚠️ No se encontró activeBranch ni defaultBranch en la respuesta');
+      }
     }
   } catch (error) {
     console.error('❌ Error obteniendo datos del usuario:', error);
   }
+}
+
+// Muestra un resumen read-only del negocio en las secciones del onboarding
+function renderBusinessPreview(branch) {
+  // El endpoint devuelve { business: { name, type, description, website, email }, ... }
+  const biz = branch.business || {};
+  const loc = branch.location || {};
+  const soc = branch.social   || {};
+
+  // ── Info del negocio ──────────────────────────
+  const map = {
+    'businessNameInput': biz.name        || '',
+    'businessDescInput': biz.description || '',
+    'websiteInput':      biz.website     || '',
+    'emailContactInput': biz.email       || '',
+    'phoneNumber':       branch.phoneNumber || '',
+  };
+  Object.entries(map).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) { el.value = val; el.readOnly = true; }
+  });
+
+  // Tipo de negocio (custom select — solo llenar el input visible)
+  const typeInput = document.getElementById('businessTypeInput');
+  if (typeInput && biz.type) {
+    typeInput.value = biz.typeName || biz.type;
+    typeInput.dataset.value = biz.type;
+    // Deshabilitar el wrapper para que no abra el dropdown
+    const wrapper = document.getElementById('businessTypeWrapper');
+    if (wrapper) wrapper.style.pointerEvents = 'none';
+  }
+
+  // ── Ubicación ─────────────────────────────────
+  const locMap = {
+    'addressInput':        loc.address        || '',
+    'postalCodeInput':     loc.postalCode     || '',
+    'betweenStreetsInput':  loc.betweenStreets || '',
+    'numberInput':         loc.number         || '',
+    'neighborhoodInput':   loc.neighborhood   || '',
+  };
+  Object.entries(locMap).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) { el.value = val; el.readOnly = true; }
+  });
+
+  // ── Redes sociales ────────────────────────────
+  const socialMap = {
+    'facebookInput':  soc.facebook  || '',
+    'instagramInput': soc.instagram || '',
+    'twitterInput':   soc.twitter   || '',
+    'linkedinInput':  soc.linkedin  || '',
+  };
+  Object.entries(socialMap).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) { el.value = val; el.readOnly = true; }
+  });
 }
 
 // ============================================
@@ -1853,30 +1895,13 @@ function animatePercentage(start, end, element) {
 }
 
 function collectFormData() {
-  // Información del negocio
-  const businessNameEl = document.getElementById('businessNameInput');
-  if (businessNameEl) agentData.businessName = businessNameEl.value.trim();
-
-  const businessTypeEl = document.getElementById('businessTypeInput');
-  if (businessTypeEl && businessTypeEl.dataset.value) {
-    agentData.businessType = businessTypeEl.dataset.value;
-  }
-
-  const businessDescEl = document.getElementById('businessDescInput');
-  if (businessDescEl) agentData.businessDescription = businessDescEl.value.trim();
-
-  const websiteEl = document.getElementById('websiteInput');
-  if (websiteEl) agentData.website = websiteEl.value.trim();
-
-  const emailContactEl = document.getElementById('emailContactInput');
-  if (emailContactEl) agentData.emailContact = emailContactEl.value.trim();
-
-  agentData.name = document.getElementById('agentName').value;
+  // Solo datos propios del agente
+  agentData.name = document.getElementById('agentName').value.trim();
 
   const useDifferentPhone = document.getElementById('phoneToggle').checked;
   if (useDifferentPhone) {
-    const countryCode = document.getElementById('countryCode').value;
-    const phoneNumber = document.getElementById('phoneNumber').value;
+    const countryCode = document.getElementById('countryCode')?.value || '+52';
+    const phoneNumber = document.getElementById('phoneNumber').value.trim();
     agentData.phoneNumber = countryCode + phoneNumber;
   } else {
     agentData.phoneNumber = '';
@@ -1887,11 +1912,17 @@ function collectFormData() {
     agentData.config.tone = tone.value;
     if (tone.value === 'custom') {
       const editorContent = document.getElementById('editorContent');
-      if (editorContent) {
-        agentData.config.customTone = editorContent.innerHTML;
-      }
+      if (editorContent) agentData.config.customTone = editorContent.innerHTML;
     }
   }
+
+  // Idiomas seleccionados
+  const langs = document.querySelectorAll('input[name="language"]:checked');
+  agentData.config.languages = Array.from(langs).map(l => l.value);
+
+  // Instrucciones especiales
+  const special = document.getElementById('specialInstructionsInput');
+  if (special) agentData.config.specialInstructions = special.value.trim();
 }
 
 function generateSummary() {
@@ -2379,11 +2410,8 @@ async function createAgent() {
       body: JSON.stringify({
         name: agentData.name,
         phoneNumber: agentData.phoneNumber,
-        businessName: agentData.businessName,
         businessType: agentData.businessType,
-        businessDescription: agentData.businessDescription,
-        website: agentData.website,
-        emailContact: agentData.emailContact,
+        branchId: agentData.branchId,
         metaDocument: '',
         config: agentData.config
       }),
