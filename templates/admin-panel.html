@@ -1,0 +1,412 @@
+{{define "admin/database-admin.html"}}
+{{template "admin/layout.html" .}}
+
+{{define "head"}}
+<style>
+/* ── Page-specific styles ── */
+.page-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+.search-box {
+    position: relative;
+    flex: 1;
+    max-width: 360px;
+}
+.search-box i {
+    position: absolute;
+    left: 14px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 15px;
+    pointer-events: none;
+}
+.search-box input {
+    width: 100%;
+    padding: 10px 14px 10px 40px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    color: var(--ink);
+    background: var(--panel);
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+}
+.search-box input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(6,182,212,.1);
+}
+
+.toolbar-right { display: flex; gap: 10px; align-items: center; }
+
+.filter-select {
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--panel);
+    outline: none;
+    cursor: pointer;
+    transition: border-color .2s;
+}
+.filter-select:focus { border-color: var(--accent); }
+
+/* ── Stats row ── */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+}
+.stat-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    animation: fadeUp .5s cubic-bezier(.16,1,.3,1) both;
+}
+.stat-card:nth-child(1) { animation-delay: .05s; }
+.stat-card:nth-child(2) { animation-delay: .1s; }
+.stat-card:nth-child(3) { animation-delay: .15s; }
+.stat-card:nth-child(4) { animation-delay: .2s; }
+
+.stat-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 18px;
+}
+.stat-icon.cyan  { background: rgba(6,182,212,.1); color: var(--accent); }
+.stat-icon.green { background: rgba(16,185,129,.1); color: #10b981; }
+.stat-icon.amber { background: rgba(245,158,11,.1);  color: #f59e0b; }
+.stat-icon.red   { background: rgba(239,68,68,.1);   color: #ef4444; }
+
+.stat-body {}
+.stat-value { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--ink); line-height: 1; }
+.stat-label { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+/* ── Table card ── */
+.table-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    animation: fadeUp .5s .25s cubic-bezier(.16,1,.3,1) both;
+}
+.table-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.table-card-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px; font-weight: 700;
+    color: var(--ink);
+}
+.table-meta { font-size: 12px; color: var(--muted); }
+
+/* ── Table ── */
+.table-responsive { overflow-x: auto; }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+}
+thead th {
+    padding: 12px 20px;
+    text-align: left;
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: #fafafa;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #f9fafb; }
+tbody td { padding: 14px 20px; color: var(--ink); vertical-align: middle; }
+
+/* ── Company cell ── */
+.company-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.company-avatar {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 800;
+    color: #fff;
+    flex-shrink: 0;
+}
+.company-name { font-weight: 500; color: var(--ink); }
+.company-email { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+/* ── Plan badge ── */
+.plan-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.plan-badge.gratuito  { background: #f3f4f6; color: #6b7280; }
+.plan-badge.proton    { background: rgba(6,182,212,.1); color: var(--accent); }
+.plan-badge.neutron   { background: rgba(99,102,241,.1); color: #6366f1; }
+.plan-badge.electron  { background: rgba(245,158,11,.1); color: #f59e0b; }
+
+/* ── Status badge ── */
+.status-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+}
+.status-dot::before {
+    content: '';
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    display: block;
+    flex-shrink: 0;
+}
+.status-dot.active::before  { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.2); }
+.status-dot.pending::before { background: #f59e0b; }
+.status-dot.inactive::before{ background: #d1d5db; }
+
+/* ── Actions ── */
+.action-btn {
+    background: none; border: none; cursor: pointer;
+    width: 32px; height: 32px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 15px; color: var(--muted);
+    transition: background .15s, color .15s;
+    text-decoration: none;
+}
+.action-btn:hover { background: #f3f4f6; color: var(--ink); }
+.action-btn.danger:hover { background: #fef2f2; color: #ef4444; }
+
+/* ── Pagination ── */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--muted);
+}
+.page-btns { display: flex; gap: 4px; }
+.page-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--panel);
+    cursor: pointer;
+    font-size: 13px; color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+    font-family: 'DM Sans', sans-serif;
+}
+.page-btn:hover { border-color: var(--accent); color: var(--accent); }
+.page-btn.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+/* ── Empty state ── */
+.empty-state {
+    padding: 64px 24px;
+    text-align: center;
+    color: var(--muted);
+}
+.empty-state i { font-size: 40px; margin-bottom: 12px; display: block; opacity: .4; }
+.empty-state p { font-size: 14px; }
+
+/* ── Modal ── */
+.modal-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(10,10,15,.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center; justify-content: center;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    width: 100%; max-width: 480px;
+    animation: scaleIn .3s cubic-bezier(.16,1,.3,1);
+    box-shadow: 0 32px 64px rgba(10,10,15,.2);
+}
+@keyframes scaleIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
+.modal h3 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 6px; color: var(--ink); }
+.modal p  { font-size: 13.5px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.modal .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.modal .detail-item label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 4px; }
+.modal .detail-item span  { font-size: 14px; color: var(--ink); font-weight: 500; }
+</style>
+{{end}}
+
+{{define "content"}}
+<!-- Stats -->
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-icon cyan"><i class="lni lni-users"></i></div>
+        <div class="stat-body">
+            <div class="stat-value" id="statTotal">—</div>
+            <div class="stat-label">Total empresas</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green"><i class="lni lni-checkmark-circle"></i></div>
+        <div class="stat-body">
+            <div class="stat-value" id="statActive">—</div>
+            <div class="stat-label">Activas hoy</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon amber"><i class="lni lni-crown"></i></div>
+        <div class="stat-body">
+            <div class="stat-value" id="statPaid">—</div>
+            <div class="stat-label">Con plan de pago</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon red"><i class="lni lni-calendar"></i></div>
+        <div class="stat-body">
+            <div class="stat-value" id="statNew">—</div>
+            <div class="stat-label">Nuevas este mes</div>
+        </div>
+    </div>
+</div>
+
+<!-- Toolbar -->
+<div class="page-toolbar">
+    <div class="search-box">
+        <i class="lni lni-search-alt"></i>
+        <input type="text" id="searchInput" placeholder="Buscar empresa, email, teléfono…"/>
+    </div>
+    <div class="toolbar-right">
+        <select class="filter-select" id="planFilter">
+            <option value="">Todos los planes</option>
+            <option value="gratuito">Gratuito</option>
+            <option value="proton">Protón</option>
+            <option value="neutron">Neutrón</option>
+            <option value="electron">Electrón</option>
+        </select>
+        <select class="filter-select" id="sizeFilter">
+            <option value="">Todos los tamaños</option>
+            <option value="microempresa">Microempresa</option>
+            <option value="pequena">Pequeña</option>
+            <option value="mediana">Mediana</option>
+            <option value="grande">Grande</option>
+        </select>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="table-card">
+    <div class="table-card-header">
+        <h2>Empresas registradas</h2>
+        <span class="table-meta" id="tableCount">Cargando…</span>
+    </div>
+
+    <div class="table-responsive">
+        <table id="companiesTable">
+            <thead>
+                <tr>
+                    <th>Empresa</th>
+                    <th>Teléfono</th>
+                    <th>Tipo</th>
+                    <th>Tamaño</th>
+                    <th>Plan</th>
+                    <th>Estado</th>
+                    <th>Registro</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="companiesBody">
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <i class="lni lni-reload"></i>
+                            <p>Cargando empresas…</p>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination" id="pagination">
+        <span id="pageInfo">—</span>
+        <div class="page-btns" id="pageBtns"></div>
+    </div>
+</div>
+
+<!-- ── Modal detalle ── -->
+<div class="modal-backdrop" id="detailModal">
+    <div class="modal">
+        <h3 id="modalCompany">—</h3>
+        <p id="modalEmail">—</p>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>Plan actual</label>
+                <span id="modalPlan">—</span>
+            </div>
+            <div class="detail-item">
+                <label>Tamaño</label>
+                <span id="modalSize">—</span>
+            </div>
+            <div class="detail-item">
+                <label>Teléfono</label>
+                <span id="modalPhone">—</span>
+            </div>
+            <div class="detail-item">
+                <label>Tipo de negocio</label>
+                <span id="modalType">—</span>
+            </div>
+            <div class="detail-item">
+                <label>Registro</label>
+                <span id="modalDate">—</span>
+            </div>
+            <div class="detail-item">
+                <label>ID</label>
+                <span id="modalId">—</span>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-outline" onclick="closeModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+{{end}}
+
+{{define "scripts"}}
+<script src="/static/js/admin/database-admin.js"></script>
+{{end}}
+{{end}}
