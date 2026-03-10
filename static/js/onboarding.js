@@ -24,7 +24,16 @@ let agentData = {
     customTone: '',
     languages: [],
     additionalLanguages: [],
-    specialInstructions: ''
+    specialInstructions: '',
+    schedule: {
+      monday:    { open: true,  start: '09:00', end: '18:00' },
+      tuesday:   { open: true,  start: '09:00', end: '18:00' },
+      wednesday: { open: true,  start: '09:00', end: '18:00' },
+      thursday:  { open: true,  start: '09:00', end: '18:00' },
+      friday:    { open: true,  start: '09:00', end: '18:00' },
+      saturday:  { open: false, start: '09:00', end: '14:00' },
+      sunday:    { open: false, start: '09:00', end: '14:00' }
+    }
   }
 };
 
@@ -1374,6 +1383,8 @@ function initializeSchedule() {
     
     if (toggle) {
       toggle.addEventListener('change', function() {
+        if (!agentData.config.schedule) agentData.config.schedule = {};
+        if (!agentData.config.schedule[day]) agentData.config.schedule[day] = { open: true, start: '09:00', end: '18:00' };
         agentData.config.schedule[day].open = this.checked;
         if (scheduleDay) {
           if (this.checked) {
@@ -1391,12 +1402,16 @@ function initializeSchedule() {
     
     if (startTime) {
       startTime.addEventListener('change', function() {
+        if (!agentData.config.schedule) agentData.config.schedule = {};
+        if (!agentData.config.schedule[day]) agentData.config.schedule[day] = { open: true, start: '09:00', end: '18:00' };
         agentData.config.schedule[day].start = this.value;
       });
     }
     
     if (endTime) {
       endTime.addEventListener('change', function() {
+        if (!agentData.config.schedule) agentData.config.schedule = {};
+        if (!agentData.config.schedule[day]) agentData.config.schedule[day] = { open: true, start: '09:00', end: '18:00' };
         agentData.config.schedule[day].end = this.value;
       });
     }
@@ -2144,7 +2159,16 @@ function collectFormData() {
 function generateSummary() {
   const container = document.getElementById('summaryContainer');
   if (!container) return;
-  
+
+  // Fuente de verdad del negocio (precargado por fetchUserData)
+  const biz   = businessData?.business   || {};
+  const loc   = businessData?.location   || {};
+  const soc   = businessData?.social     || {};
+  const sched = businessData?.schedule   || {};
+  const hols  = businessData?.holidays   || [];
+  const svcs  = businessData?.services   || [];
+  const wrks  = businessData?.workers    || [];
+
   const socialNames = {
     whatsapp: 'WhatsApp',
     facebook: 'Facebook Messenger',
@@ -2220,7 +2244,62 @@ function generateSummary() {
     </div>
   `;
   
-  const openDays = Object.keys(agentData.config.schedule).filter(day => agentData.config.schedule[day].open);
+  // ── Negocio (My Business) ───────────────────
+  if (biz.name || biz.description || biz.email || biz.website) {
+    html += `
+      <div class="summary-section">
+        <h3 class="summary-section-title">
+          <i class="lni lni-briefcase"></i>
+          Mi Negocio
+        </h3>
+        ${biz.name ? `<div class="summary-item"><span class="summary-label">Nombre:</span><span class="summary-value">${biz.name}</span></div>` : ''}
+        ${biz.typeName || biz.type ? `<div class="summary-item"><span class="summary-label">Tipo:</span><span class="summary-value">${biz.typeName || biz.type}</span></div>` : ''}
+        ${biz.description ? `<div class="summary-item"><span class="summary-label">Descripción:</span><span class="summary-value">${biz.description}</span></div>` : ''}
+        ${biz.email ? `<div class="summary-item"><span class="summary-label">Email:</span><span class="summary-value">${biz.email}</span></div>` : ''}
+        ${biz.website ? `<div class="summary-item"><span class="summary-label">Sitio web:</span><span class="summary-value">${biz.website}</span></div>` : ''}
+        ${businessData?.phoneNumber ? `<div class="summary-item"><span class="summary-label">Teléfono:</span><span class="summary-value">${businessData.phoneNumber}</span></div>` : ''}
+      </div>
+    `;
+  }
+
+  // ── Ubicación ───────────────────────────────
+  if (loc.address || loc.city) {
+    html += `
+      <div class="summary-section">
+        <h3 class="summary-section-title">
+          <i class="lni lni-map-marker"></i>
+          Ubicación
+        </h3>
+        ${loc.address ? `<div class="summary-item"><span class="summary-label">Dirección:</span><span class="summary-value">${loc.address}${loc.number ? ' #'+loc.number : ''}</span></div>` : ''}
+        ${loc.neighborhood ? `<div class="summary-item"><span class="summary-label">Colonia:</span><span class="summary-value">${loc.neighborhood}</span></div>` : ''}
+        ${loc.city ? `<div class="summary-item"><span class="summary-label">Ciudad:</span><span class="summary-value">${loc.city}${loc.state ? ', '+loc.state : ''}</span></div>` : ''}
+        ${loc.postalCode ? `<div class="summary-item"><span class="summary-label">C.P.:</span><span class="summary-value">${loc.postalCode}</span></div>` : ''}
+      </div>
+    `;
+  }
+
+  // ── Redes Sociales ──────────────────────────
+  if (soc.facebook || soc.instagram || soc.twitter || soc.linkedin) {
+    html += `
+      <div class="summary-section">
+        <h3 class="summary-section-title">
+          <i class="lni lni-share-alt"></i>
+          Redes Sociales
+        </h3>
+        ${soc.facebook  ? `<div class="summary-item"><span class="summary-label">Facebook:</span><span class="summary-value">${soc.facebook}</span></div>` : ''}
+        ${soc.instagram ? `<div class="summary-item"><span class="summary-label">Instagram:</span><span class="summary-value">${soc.instagram}</span></div>` : ''}
+        ${soc.twitter   ? `<div class="summary-item"><span class="summary-label">Twitter/X:</span><span class="summary-value">${soc.twitter}</span></div>` : ''}
+        ${soc.linkedin  ? `<div class="summary-item"><span class="summary-label">LinkedIn:</span><span class="summary-value">${soc.linkedin}</span></div>` : ''}
+      </div>
+    `;
+  }
+
+  // ── Horarios ────────────────────────────────
+  const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+  const openDays = days.filter(d => {
+    const dd = sched[d];
+    return dd && (dd.isOpen || dd.open);
+  });
   if (openDays.length > 0) {
     html += `
       <div class="summary-section">
@@ -2229,16 +2308,19 @@ function generateSummary() {
           Horario de Atención
         </h3>
         <ul class="summary-list">
-          ${openDays.map(day => {
-            const dayData = agentData.config.schedule[day];
-            return `<li>${formatDay(day)}: ${dayData.start} - ${dayData.end}</li>`;
+          ${openDays.map(d => {
+            const dd = sched[d];
+            const start = dd.start || dd.openTime  || '09:00';
+            const end   = dd.end   || dd.closeTime || '18:00';
+            return `<li>${formatDay(d)}: ${start} – ${end}</li>`;
           }).join('')}
         </ul>
       </div>
     `;
   }
-  
-  if (agentData.config.holidays.length > 0) {
+
+  // ── Días Festivos ───────────────────────────
+  if (hols.length > 0) {
     html += `
       <div class="summary-section">
         <h3 class="summary-section-title">
@@ -2246,13 +2328,14 @@ function generateSummary() {
           Días Festivos
         </h3>
         <ul class="summary-list">
-          ${agentData.config.holidays.map(h => `<li>${h.date} - ${h.name}</li>`).join('')}
+          ${hols.map(h => `<li>${h.date} – ${h.name}</li>`).join('')}
         </ul>
       </div>
     `;
   }
-  
-  if (agentData.config.services.length > 0) {
+
+  // ── Servicios ───────────────────────────────
+  if (svcs.length > 0) {
     html += `
       <div class="summary-section">
         <h3 class="summary-section-title">
@@ -2260,111 +2343,22 @@ function generateSummary() {
           Servicios
         </h3>
         <ul class="summary-list">
-          ${agentData.config.services.map(s => {
+          ${svcs.map(s => {
             let priceText = '';
             if (s.priceType === 'promotion') {
-              priceText = `$${s.promoPrice} (antes $${s.originalPrice})`;
-            } else {
-              priceText = `$${s.price}`;
+              priceText = ` – $${s.promoPrice} (antes $${s.originalPrice})`;
+            } else if (s.price) {
+              priceText = ` – $${s.price}`;
             }
-            return `<li><strong>${s.title}</strong> - ${priceText}</li>`;
+            return `<li><strong>${s.title}</strong>${priceText}</li>`;
           }).join('')}
         </ul>
       </div>
     `;
   }
-  
-  // Location summary
-  if (agentData.location.address || agentData.location.city) {
-    html += `
-      <div class="summary-section">
-        <h3 class="summary-section-title">
-          <i class="lni lni-map-marker"></i>
-          Ubicación
-        </h3>
-        ${agentData.location.address ? `
-        <div class="summary-item">
-          <span class="summary-label">Dirección:</span>
-          <span class="summary-value">${agentData.location.address}</span>
-        </div>
-        ` : ''}
-        ${agentData.location.number ? `
-        <div class="summary-item">
-          <span class="summary-label">Número:</span>
-          <span class="summary-value">${agentData.location.number}</span>
-        </div>
-        ` : ''}
-        ${agentData.location.neighborhood ? `
-        <div class="summary-item">
-          <span class="summary-label">Colonia:</span>
-          <span class="summary-value">${agentData.location.neighborhood}</span>
-        </div>
-        ` : ''}
-        ${agentData.location.city ? `
-        <div class="summary-item">
-          <span class="summary-label">Ciudad:</span>
-          <span class="summary-value">${agentData.location.city}</span>
-        </div>
-        ` : ''}
-        ${agentData.location.state ? `
-        <div class="summary-item">
-          <span class="summary-label">Estado:</span>
-          <span class="summary-value">${agentData.location.state}</span>
-        </div>
-        ` : ''}
-        ${agentData.location.country ? `
-        <div class="summary-item">
-          <span class="summary-label">País:</span>
-          <span class="summary-value">${agentData.location.country}</span>
-        </div>
-        ` : ''}
-        ${agentData.location.postalCode ? `
-        <div class="summary-item">
-          <span class="summary-label">Código Postal:</span>
-          <span class="summary-value">${agentData.location.postalCode}</span>
-        </div>
-        ` : ''}
-      </div>
-    `;
-  }
-  
-  // Social media summary
-  if (agentData.social_media.facebook || agentData.social_media.instagram || agentData.social_media.twitter || agentData.social_media.linkedin) {
-    html += `
-      <div class="summary-section">
-        <h3 class="summary-section-title">
-          <i class="lni lni-share-alt"></i>
-          Redes Sociales
-        </h3>
-        ${agentData.social_media.facebook ? `
-        <div class="summary-item">
-          <span class="summary-label">Facebook:</span>
-          <span class="summary-value">${agentData.social_media.facebook}</span>
-        </div>
-        ` : ''}
-        ${agentData.social_media.instagram ? `
-        <div class="summary-item">
-          <span class="summary-label">Instagram:</span>
-          <span class="summary-value">${agentData.social_media.instagram}</span>
-        </div>
-        ` : ''}
-        ${agentData.social_media.twitter ? `
-        <div class="summary-item">
-          <span class="summary-label">Twitter / X:</span>
-          <span class="summary-value">${agentData.social_media.twitter}</span>
-        </div>
-        ` : ''}
-        ${agentData.social_media.linkedin ? `
-        <div class="summary-item">
-          <span class="summary-label">LinkedIn:</span>
-          <span class="summary-value">${agentData.social_media.linkedin}</span>
-        </div>
-        ` : ''}
-      </div>
-    `;
-  }
-  
-  if (agentData.config.workers.length > 0) {
+
+  // ── Trabajadores ────────────────────────────
+  if (wrks.length > 0) {
     html += `
       <div class="summary-section">
         <h3 class="summary-section-title">
@@ -2372,14 +2366,12 @@ function generateSummary() {
           Trabajadores
         </h3>
         <ul class="summary-list">
-          ${agentData.config.workers.map(w => {
-            return `<li><strong>${w.name}</strong> - ${w.startTime} a ${w.endTime} (${w.days.length} días)</li>`;
-          }).join('')}
+          ${wrks.map(w => `<li><strong>${w.name}</strong> – ${w.startTime} a ${w.endTime} (${(w.days||[]).length} días)</li>`).join('')}
         </ul>
       </div>
     `;
   }
-  
+
   container.innerHTML = html;
 }
 

@@ -27,7 +27,16 @@ const defaultAgentData = () => ({
         customTone: '',
         languages: [],
         additionalLanguages: [],
-        specialInstructions: ''
+        specialInstructions: '',
+        schedule: {
+            monday:    { open: true,  start: '09:00', end: '18:00' },
+            tuesday:   { open: true,  start: '09:00', end: '18:00' },
+            wednesday: { open: true,  start: '09:00', end: '18:00' },
+            thursday:  { open: true,  start: '09:00', end: '18:00' },
+            friday:    { open: true,  start: '09:00', end: '18:00' },
+            saturday:  { open: false, start: '09:00', end: '14:00' },
+            sunday:    { open: false, start: '09:00', end: '14:00' }
+        }
     }
 });
 
@@ -631,41 +640,61 @@ function reinitializeOnboardingEvents() {
         resumenBtn.className = 'section-nav-btn';
         resumenBtn.dataset.section = 'resumen';
         resumenBtn.innerHTML = '<i class="lni lni-checkmark-circle"></i><span>Resumen</span>';
-        resumenBtn.addEventListener('click', () => {
-            // Ocultar secciones del step2
-            ['section-basic','section-personality'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) { el.classList.remove('active'); el.style.display = 'none'; }
-            });
-            // Activar step3
-            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-            const step3 = document.getElementById('step3');
-            if (step3) step3.classList.add('active');
-            if (typeof generateSummary === 'function') generateSummary();
-            else if (typeof buildSummary === 'function') buildSummary();
-            // Marcar tabs
-            document.querySelectorAll('.section-nav-btn:not([style*="display: none"])').forEach(b => {
-                b.classList.remove('active');
-                b.classList.add('completed');
-            });
-            resumenBtn.classList.remove('completed');
-            resumenBtn.classList.add('active');
-            if (typeof window.updateProgressBar === 'function') window.updateProgressBar();
-        });
+        resumenBtn.addEventListener('click', () => window._modalGoToResumen());
         sectionNav.appendChild(resumenBtn);
     }
 
     // Centrar las 3 tabs visibles
     if (sectionNav) sectionNav.style.justifyContent = 'center';
 
-    // Parchar los botones "Siguiente" dentro de section-basic para ir a Personalidad
+    // Funcion central para ir al Resumen
+    window._modalGoToResumen = function() {
+        ['section-basic','section-personality'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+        });
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        const step3 = document.getElementById('step3');
+        if (step3) step3.classList.add('active');
+        document.querySelectorAll('.section-nav-btn:not([style*="display: none"])').forEach(b => {
+            b.classList.remove('active', 'completed');
+            if (b.id === 'modal-resumen-tab') b.classList.add('active');
+            else b.classList.add('completed');
+        });
+        if (typeof collectFormData === 'function') collectFormData();
+        if (typeof generateSummary === 'function') generateSummary();
+        if (typeof window.updateProgressBar === 'function') window.updateProgressBar();
+        const modalBody = document.getElementById('onboardingModalBody');
+        if (modalBody) modalBody.scrollTop = 0;
+    };
+
+    // Parchar botones Siguiente, Atras y btnBackStep3
     setTimeout(() => {
+        // Info.Basica: Siguiente -> Personality, ocultar Atras
         const basicSection = document.getElementById('section-basic');
         if (basicSection) {
-            const nextBtns = basicSection.querySelectorAll('.btn-next-section, [class*="next"]');
-            nextBtns.forEach(btn => {
+            basicSection.querySelectorAll('.btn-next-section, [class*="next"]').forEach(btn => {
                 btn.onclick = (e) => { e.stopPropagation(); window._modalGoToSection('section-personality'); };
             });
+            basicSection.querySelectorAll('.btn-prev-section').forEach(btn => {
+                btn.style.display = 'none';
+            });
+        }
+        // Personalidad: Siguiente -> Resumen, Atras -> Basic
+        const personalitySection = document.getElementById('section-personality');
+        if (personalitySection) {
+            personalitySection.querySelectorAll('.btn-next-section, [class*="next"]').forEach(btn => {
+                btn.onclick = (e) => { e.stopPropagation(); window._modalGoToResumen(); };
+            });
+            personalitySection.querySelectorAll('.btn-prev-section').forEach(btn => {
+                btn.style.display = 'flex';
+                btn.onclick = (e) => { e.stopPropagation(); window._modalGoToSection('section-basic'); };
+            });
+        }
+        // Resumen (step3): Atras -> Personalidad
+        const btnBackStep3 = document.getElementById('btnBackStep3');
+        if (btnBackStep3) {
+            btnBackStep3.onclick = (e) => { e.stopPropagation(); window._modalGoToSection('section-personality'); };
         }
     }, 150);
 

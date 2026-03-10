@@ -206,6 +206,9 @@ func main() {
 		protected.GET("/client-history", handlers.GetHistorial)
 		protected.GET("/client-history/client/:phone", handlers.GetHistorialCliente)
 
+		// Services Statistics
+		protected.GET("/services/statistics", handlers.GetServicesDashboardStats)
+
 		// Billing GCP (costos BigQuery)
 		protected.GET("/billing/data", handlers.GetBillingData)
 
