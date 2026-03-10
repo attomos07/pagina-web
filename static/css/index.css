@@ -575,20 +575,28 @@ body {
 }
 
 .platform-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 12px;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #06b6d4;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
     font-weight: bold;
-    font-size: 20px;
+    font-size: 28px;
     flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.15);
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .platform-icon-black {
-    background: #06b6d4 !important;
+    background: #ffffff !important;
+    color: #06b6d4 !important;
+}
+
+.platform-icon i {
+    color: #06b6d4;
 }
 
 .platform-description {
