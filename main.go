@@ -400,7 +400,7 @@ func main() {
 
 	// Login público del admin
 	router.GET("/admin/login", func(c *gin.Context) {
-		c.HTML(200, "lo.html", gin.H{
+		c.HTML(200, "admin/login.html", gin.H{
 			"title": "Admin — Attomos",
 		})
 	})
@@ -411,7 +411,7 @@ func main() {
 	adminGroup.Use(middleware.AdminRequired())
 	{
 		adminGroup.GET("/database-admin", func(c *gin.Context) {
-			c.HTML(200, "admin-database.html", nil)
+			c.HTML(200, "admin-database", nil)
 		})
 		adminGroup.POST("/api/logout", handlers.AdminLogout)
 		adminGroup.GET("/api/companies", handlers.AdminGetCompanies)
