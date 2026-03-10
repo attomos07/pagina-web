@@ -575,22 +575,57 @@ function reinitializeOnboardingEvents() {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
-    // Centrar las 2 tabs visibles
+
+    // ── Agregar tab de Resumen si no existe ───────────────────────────
     const sectionNav = document.getElementById('sectionNavigation');
+    if (sectionNav && !document.getElementById('modal-resumen-tab')) {
+        const resumenBtn = document.createElement('button');
+        resumenBtn.type = 'button';
+        resumenBtn.id = 'modal-resumen-tab';
+        resumenBtn.className = 'section-nav-btn';
+        resumenBtn.dataset.section = 'resumen';
+        resumenBtn.innerHTML = '<i class="lni lni-checkmark-circle"></i><span>Resumen</span>';
+        resumenBtn.addEventListener('click', () => {
+            // Avanzar al paso 3 (Resumen)
+            if (typeof showStep === 'function') showStep(3);
+            else if (typeof goToStep === 'function') goToStep(3);
+            else {
+                // Fallback manual
+                document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+                const step3 = document.getElementById('step3');
+                if (step3) step3.classList.add('active');
+                if (typeof buildSummary === 'function') buildSummary();
+                else if (typeof renderSummary === 'function') renderSummary();
+            }
+            // Marcar tab activa
+            document.querySelectorAll('.section-nav-btn').forEach(b => b.classList.remove('active'));
+            resumenBtn.classList.add('active');
+            if (typeof window.updateProgressBar === 'function') window.updateProgressBar();
+        });
+        sectionNav.appendChild(resumenBtn);
+    }
+
+    // Centrar las 3 tabs visibles
     if (sectionNav) sectionNav.style.justifyContent = 'center';
     // Activar la primera tab visible (Info.Básica = sectionId 2)
     if (typeof navigateToSection === 'function') navigateToSection(2);
 
-    // Sobreescribir updateProgressBar: 2 secciones visibles (IDs 2 y 5)
+    // Sobreescribir updateProgressBar: lee el DOM en vez de variables locales de onboarding.js
     window.updateProgressBar = function() {
         let fraction = 0;
-        const sectionMap = { 2: 1, 5: 2 }; // Info.Básica → pos 1, Personalidad → pos 2
-        if (window.currentStep === 2) {
-            const pos = sectionMap[window.currentSection] || 1;
-            fraction = pos / 2;
-        } else if (window.currentStep === 3) {
+
+        // Detectar paso activo desde el DOM (currentStep/currentSection son vars locales del módulo)
+        const step3Active = document.getElementById('step3')?.classList.contains('active');
+        const step2Active = document.getElementById('step2')?.classList.contains('active');
+
+        if (step3Active) {
             fraction = 1.0;
+        } else if (step2Active) {
+            const personalActive = document.getElementById('section-personality')?.classList.contains('active');
+            if (personalActive) fraction = 2 / 3;
+            else fraction = 1 / 3; // Info.Básica
         }
+
         const pctEl = document.getElementById('progressPercentage');
         if (pctEl) {
             const target = Math.round(fraction * 100);
