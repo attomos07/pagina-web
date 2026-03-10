@@ -278,6 +278,52 @@ body {
 }
 
 /* ============================================
+   COMING SOON CARDS
+   ============================================ */
+
+.agent-card.agent-coming-soon {
+    position: relative;
+    opacity: 0.6;
+    filter: grayscale(30%);
+    pointer-events: none;
+}
+
+.agent-card.agent-coming-soon:hover {
+    transform: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border-color: transparent;
+}
+
+.agent-card.agent-coming-soon .agent-icon {
+    border-color: #d1d5db;
+    box-shadow: none;
+}
+
+.agent-card.agent-coming-soon .agent-icon i {
+    color: #9ca3af;
+}
+
+.agent-card.agent-coming-soon .feature-tag {
+    background: rgba(156, 163, 175, 0.1);
+    color: #9ca3af;
+}
+
+.coming-soon-badge {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(109, 40, 217, 0.3);
+}
+
+/* ============================================
    CTA SECTION - CAMBIADO A FONDO BLANCO
    ============================================ */
 

@@ -27,14 +27,25 @@
 
         <div class="auth-content">
             <div class="orbital-container">
-                <svg id="animated-blob" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-labelledby="blobTitle">
+                <svg id="animated-blob" viewBox="-5 -5 210 210" xmlns="http://www.w3.org/2000/svg" aria-labelledby="blobTitle">
                     <title id="blobTitle">Animated Blob</title>
                     
-                    <!-- Imagen dentro del clip path -->
-                    <image href="https://images.unsplash.com/photo-1488161628813-04466f872be2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=764&q=80"
-                           width="200" height="200"
+                    <!-- Imágenes rotativas dentro del clip path -->
+                    <image id="blobImage1" href="https://images.pexels.com/photos/3268732/pexels-photo-3268732.jpeg?auto=compress&cs=tinysrgb&w=764"
+                           x="-5" y="-5" width="210" height="210"
                            preserveAspectRatio="xMidYMid slice"
-                           clip-path="url(#blobClip)"/>
+                           clip-path="url(#blobClip)"
+                           style="opacity:1; transition: opacity 0.8s ease;"/>
+                    <image id="blobImage2" href="https://images.pexels.com/photos/3998415/pexels-photo-3998415.jpeg?auto=compress&cs=tinysrgb&w=764"
+                           x="-5" y="-5" width="210" height="210"
+                           preserveAspectRatio="xMidYMid slice"
+                           clip-path="url(#blobClip)"
+                           style="opacity:0; transition: opacity 0.8s ease;"/>
+                    <image id="blobImage3" href="https://images.pexels.com/photos/3845765/pexels-photo-3845765.jpeg?auto=compress&cs=tinysrgb&w=764"
+                           x="-5" y="-5" width="210" height="210"
+                           preserveAspectRatio="xMidYMid slice"
+                           clip-path="url(#blobClip)"
+                           style="opacity:0; transition: opacity 0.8s ease;"/>
                     
                     <!-- Definición del clip path -->
                     <clipPath id="blobClip">
@@ -52,15 +63,32 @@
                     <!-- Texto animado -->
                     <text class="text-content">
                         <textPath href="#textPath" startOffset="0%">
-                            ❤ ÚNETE A ATTOMOS ❤ ÚNETE A ATTOMOS ❤ ÚNETE A ATTOMOS ❤ ÚNETE A ATTOMOS
+                            · ÚNETE A ATTOMOS · ÚNETE A ATTOMOS · ÚNETE A ATTOMOS · ÚNETE A ATTOMOS
                             <animate attributeName="startOffset" from="0%" to="100%" dur="15s" repeatCount="indefinite" />
                         </textPath>
                         <textPath href="#textPath" startOffset="100%">
-                            ❤ ÚNETE A ATTOMOS ❤ ÚNETE A ATTOMOS ❤ ÚNETE A ATTOMOS ❤ ÚNETE A ATTOMOS
+                            · ÚNETE A ATTOMOS · ÚNETE A ATTOMOS · ÚNETE A ATTOMOS · ÚNETE A ATTOMOS
                             <animate attributeName="startOffset" from="-100%" to="0%" dur="15s" repeatCount="indefinite" />
                         </textPath>
                     </text>
                 </svg>
+
+                <script>
+                    (function() {
+                        const images = [
+                            document.getElementById('blobImage1'),
+                            document.getElementById('blobImage2'),
+                            document.getElementById('blobImage3')
+                        ];
+                        let current = 0;
+
+                        setInterval(function() {
+                            images[current].style.opacity = '0';
+                            current = (current + 1) % images.length;
+                            images[current].style.opacity = '1';
+                        }, 4000);
+                    })();
+                </script>
             </div>
 
             <div class="auth-form-container">
