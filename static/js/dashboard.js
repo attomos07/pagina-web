@@ -560,20 +560,66 @@ function reinitializeOnboardingEvents() {
     if (typeof initializeNavigationButtons === 'function') initializeNavigationButtons();
     if (typeof initializeSectionNavigation === 'function') initializeSectionNavigation();
 
-    // ── Modo modal: ocultar tabs de my-business ────────────────────────
-    // Se hace DESPUÉS de initializeSectionNavigation que las genera en el DOM
+    // ── Modo modal: reemplazar navegación con sistema propio ──────────
+    // IDs de secciones que NO pertenecen al agente (son de my-business)
+    const SECTIONS_TO_HIDE = [
+        'section-business','section-location','section-social',
+        'section-schedule','section-holidays','section-services','section-workers'
+    ];
+    // Ocultar secciones y tabs de negocio
+    SECTIONS_TO_HIDE.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+    });
     const TABS_MY_BUSINESS = ['Info. Negocio','Ubicación','Redes Sociales',
                               'Horarios','Días Festivos','Servicios','Trabajadores'];
     document.querySelectorAll('.section-nav-btn').forEach(btn => {
         const label = btn.querySelector('span')?.textContent?.trim();
         if (TABS_MY_BUSINESS.includes(label)) btn.style.display = 'none';
     });
-    // Ocultar las secciones de negocio del DOM
-    ['section-business','section-location','section-social',
-     'section-schedule','section-holidays','section-services','section-workers'
-    ].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = 'none';
+
+    // Función central para cambiar sección en el modal
+    window._modalGoToSection = function(targetId) {
+        // Mostrar solo la sección destino, ocultar las demás del step2
+        ['section-basic','section-personality'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (id === targetId) {
+                el.style.display = '';
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+                el.style.display = 'none';
+            }
+        });
+        // Asegurar que step2 esté activo
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        const step2 = document.getElementById('step2');
+        if (step2) step2.classList.add('active');
+        // Marcar tab activa
+        document.querySelectorAll('.section-nav-btn:not([style*="display: none"])').forEach(btn => {
+            const sid = parseInt(btn.dataset.sectionId);
+            btn.classList.remove('active','completed');
+            if ((targetId === 'section-basic' && sid === 2) ||
+                (targetId === 'section-personality' && sid === 5)) {
+                btn.classList.add('active');
+            } else if (targetId === 'section-personality' && sid === 2) {
+                btn.classList.add('completed');
+            }
+        });
+        if (typeof window.updateProgressBar === 'function') window.updateProgressBar();
+        const modalBody = document.getElementById('onboardingModalBody');
+        if (modalBody) modalBody.scrollTop = 0;
+    };
+
+    // Reasignar eventos de las tabs visibles (Info.Básica y Personalidad)
+    document.querySelectorAll('.section-nav-btn').forEach(btn => {
+        const sid = parseInt(btn.dataset.sectionId);
+        if (sid === 2) {
+            btn.onclick = () => window._modalGoToSection('section-basic');
+        } else if (sid === 5) {
+            btn.onclick = () => window._modalGoToSection('section-personality');
+        }
     });
 
     // ── Agregar tab de Resumen si no existe ───────────────────────────
@@ -586,19 +632,23 @@ function reinitializeOnboardingEvents() {
         resumenBtn.dataset.section = 'resumen';
         resumenBtn.innerHTML = '<i class="lni lni-checkmark-circle"></i><span>Resumen</span>';
         resumenBtn.addEventListener('click', () => {
-            // Avanzar al paso 3 (Resumen)
-            if (typeof showStep === 'function') showStep(3);
-            else if (typeof goToStep === 'function') goToStep(3);
-            else {
-                // Fallback manual
-                document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-                const step3 = document.getElementById('step3');
-                if (step3) step3.classList.add('active');
-                if (typeof buildSummary === 'function') buildSummary();
-                else if (typeof renderSummary === 'function') renderSummary();
-            }
-            // Marcar tab activa
-            document.querySelectorAll('.section-nav-btn').forEach(b => b.classList.remove('active'));
+            // Ocultar secciones del step2
+            ['section-basic','section-personality'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+            });
+            // Activar step3
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            const step3 = document.getElementById('step3');
+            if (step3) step3.classList.add('active');
+            if (typeof generateSummary === 'function') generateSummary();
+            else if (typeof buildSummary === 'function') buildSummary();
+            // Marcar tabs
+            document.querySelectorAll('.section-nav-btn:not([style*="display: none"])').forEach(b => {
+                b.classList.remove('active');
+                b.classList.add('completed');
+            });
+            resumenBtn.classList.remove('completed');
             resumenBtn.classList.add('active');
             if (typeof window.updateProgressBar === 'function') window.updateProgressBar();
         });
@@ -607,8 +657,33 @@ function reinitializeOnboardingEvents() {
 
     // Centrar las 3 tabs visibles
     if (sectionNav) sectionNav.style.justifyContent = 'center';
-    // Activar la primera tab visible (Info.Básica = sectionId 2)
-    if (typeof navigateToSection === 'function') navigateToSection(2);
+
+    // Parchar los botones "Siguiente" dentro de section-basic para ir a Personalidad
+    setTimeout(() => {
+        const basicSection = document.getElementById('section-basic');
+        if (basicSection) {
+            const nextBtns = basicSection.querySelectorAll('.btn-next-section, [class*="next"]');
+            nextBtns.forEach(btn => {
+                btn.onclick = (e) => { e.stopPropagation(); window._modalGoToSection('section-personality'); };
+            });
+        }
+    }, 150);
+
+    // Activar Info.Básica como sección inicial del modal
+    window._modalGoToSection('section-basic');
+
+    // Parchar nextStep para que al pasar step1→step2 cargue Info.Básica
+    if (typeof nextStep === 'function') {
+        const _orig = nextStep;
+        window.nextStep = function() {
+            const before = (typeof currentStep !== 'undefined') ? currentStep : 1;
+            _orig();
+            const after = (typeof currentStep !== 'undefined') ? currentStep : before;
+            if (before === 1 && after === 2) {
+                setTimeout(() => window._modalGoToSection('section-basic'), 0);
+            }
+        };
+    }
 
     // Sobreescribir updateProgressBar: lee el DOM en vez de variables locales de onboarding.js
     window.updateProgressBar = function() {
