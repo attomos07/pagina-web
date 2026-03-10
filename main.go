@@ -116,15 +116,14 @@ func main() {
 	// Servir archivos estáticos
 	router.Static("/static", "./static")
 
-	// Cargar templates de múltiples directorios
+	// Cargar templates de múltiples directorios (incluyendo admin)
 	templates := []string{
 		"templates/*.html",
 		"templates/auth/*.html",
 		"templates/partials/*.html",
 		"templates/legal/*.html",
+		"templates/admin/*.html",
 	}
-
-	// Construir el patrón final
 	router.LoadHTMLFiles(getTemplateFiles(templates...)...)
 
 	// ============================================
@@ -394,6 +393,29 @@ func main() {
 
 	// API — el usuario no está autenticado, va fuera del grupo protected
 	router.POST("/api/user/password-reset", handlers.RequestPasswordReset)
+
+	// ============================================
+	// ADMIN PANEL
+	// ============================================
+
+	// Login público del admin
+	router.GET("/admin/login", func(c *gin.Context) {
+		c.HTML(200, "lo.html", gin.H{
+			"title": "Admin — Attomos",
+		})
+	})
+	router.POST("/admin/api/login", handlers.AdminLogin)
+
+	// Rutas protegidas del admin
+	adminGroup := router.Group("/admin")
+	adminGroup.Use(middleware.AdminRequired())
+	{
+		adminGroup.GET("/database-admin", func(c *gin.Context) {
+			c.HTML(200, "admin-database.html", nil)
+		})
+		adminGroup.POST("/api/logout", handlers.AdminLogout)
+		adminGroup.GET("/api/companies", handlers.AdminGetCompanies)
+	}
 
 	// ============================================
 	// HEALTH CHECK
