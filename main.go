@@ -202,6 +202,10 @@ func main() {
 		protected.PATCH("/appointments/:id/status", handlers.UpdateAppointmentStatus)
 		protected.DELETE("/appointments/:id", handlers.DeleteAppointment)
 
+		// Client History
+		protected.GET("/client-history", handlers.GetHistorial)
+		protected.GET("/client-history/client/:phone", handlers.GetHistorialCliente)
+
 		// Billing GCP (costos BigQuery)
 		protected.GET("/billing/data", handlers.GetBillingData)
 
@@ -287,6 +291,10 @@ func main() {
 
 	router.GET("/appointments", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "appointments.html", nil)
+	})
+
+	router.GET("/client-history", middleware.AuthRequired(), func(c *gin.Context) {
+		c.HTML(200, "client_history.html", nil)
 	})
 
 	router.GET("/integrations", middleware.AuthRequired(), func(c *gin.Context) {

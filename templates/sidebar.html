@@ -69,6 +69,17 @@
             <span class="tooltip">Mis Citas</span>
         </a>
 
+        <a href="/client-history" class="icon-button" id="clientHistoryMenuItem" style="display: none;" data-page="client-history">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span class="tooltip" id="clientHistoryTooltip">Client History</span>
+        </a>
+
         <a href="/integrations" class="icon-button" data-page="integrations">
             <svg viewBox="0 0 24 24">
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
@@ -123,8 +134,7 @@
     </nav>
 
     <script>
-        // Obtener plan del usuario y mostrar/ocultar opciones
-        async function checkUserPlan() {
+                async function checkUserPlan() {
             try {
                 const response = await fetch('/api/me', {
                     credentials: 'include'
@@ -133,6 +143,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     const plan = data.subscription?.plan || 'gratuito';
+                    const businessType = (data.user?.businessType || '').toLowerCase();
                     
                     // Mostrar u ocultar opciones según el plan
                     const portfolioItem = document.getElementById('portfolioMenuItem');
@@ -149,6 +160,27 @@
                         
                         // Cargar info de Chatwoot solo si no es gratuito
                         loadChatwootInfo();
+                    }
+
+                    // Show Client History menu item based on business type
+                    const clientHistoryItem = document.getElementById('clientHistoryMenuItem');
+                    const clientHistoryTooltip = document.getElementById('clientHistoryTooltip');
+                    const TIPOS_CLINICA = ['clinica', 'clínica', 'dental', 'medico', 'médico', 'salud', 'veterinaria', 'odontologia', 'odontología'];
+                    const TIPOS_PELUQUERIA = ['peluqueria', 'peluquería', 'salon', 'salón', 'barberia', 'barbería', 'spa', 'estetica', 'estética', 'belleza'];
+
+                    if (clientHistoryItem && clientHistoryTooltip) {
+                        const isClinic = TIPOS_CLINICA.some(t => businessType.includes(t));
+                        const isSalon  = TIPOS_PELUQUERIA.some(t => businessType.includes(t));
+
+                        if (isClinic) {
+                            clientHistoryItem.style.display = '';
+                            clientHistoryTooltip.textContent = 'Historial Clínico';
+                        } else if (isSalon) {
+                            clientHistoryItem.style.display = '';
+                            clientHistoryTooltip.textContent = 'Historial Del Cliente';
+                        } else {
+                            clientHistoryItem.style.display = 'none';
+                        }
                     }
                 }
             } catch (error) {
