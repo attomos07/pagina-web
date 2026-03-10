@@ -408,7 +408,7 @@ function initUserDropdown() {
 
     if (logoContainer) {
         logoContainer.addEventListener('click', () => {
-            window.location.href = '/dashboard';
+            window.location.href = '/';
         });
     }
 
