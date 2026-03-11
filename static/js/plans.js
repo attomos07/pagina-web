@@ -49,6 +49,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Animación de entrada para filas de la comparison table
+    const tableRows = document.querySelectorAll('.comparison-table tbody tr');
+    if (tableRows.length) {
+        const rowObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-in');
+                    rowObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        tableRows.forEach(row => rowObserver.observe(row));
+    }
+
     // Handle FAQ accordion
     const faqItems = document.querySelectorAll('.faq-item');
     faqItems.forEach(item => {

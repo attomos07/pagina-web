@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initNavbar();
     initParticles();
     initContactMethods();
+    initSectionFadeIn('.contact-methods-section, .contact-form-section, .map-section');
     initContactForm();
     initMapFunctionality();
     initConsultationCard();
@@ -585,3 +586,30 @@ function trackFormSubmission(data) {
 }
 
 console.log('📞 Contact.js loaded successfully');
+
+// ============================================
+// FADE-IN ANIMATION FOR SECTIONS (igual que index.js)
+// ============================================
+function initSectionFadeIn(selector) {
+    const sections = document.querySelectorAll(selector);
+    if (!sections.length) return;
+
+    sections.forEach(section => {
+        section.style.opacity    = '0';
+        section.style.transform  = 'translateY(40px) scale(0.97)';
+        section.style.transition = 'opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1)';
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity   = '1';
+                entry.target.style.transform = 'translateY(0) scale(1)';
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.08, rootMargin: '0px 0px -50px 0px' });
+
+    sections.forEach(s => observer.observe(s));
+    console.log('✅ Section fade-in inicializado');
+}
