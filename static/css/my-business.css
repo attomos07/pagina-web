@@ -861,22 +861,31 @@ input:checked + .toggle-slider:before {
   }
 }
 
-.profile-card {
-  animation: fadeIn 0.4s ease-out;
+/* ==========================================
+   ANIMACIONES DE ENTRADA (igual que admin)
+   ========================================== */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.profile-card:nth-child(1) {
-  animation-delay: 0.1s;
+@keyframes cardRise {
+  0%   { opacity: 0; transform: translateY(50px) scale(0.95); }
+  50%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
-.profile-card:nth-child(2) {
-  animation-delay: 0.2s;
+
+.content-wrapper {
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.profile-card:nth-child(3) {
-  animation-delay: 0.3s;
+
+.profile-card {
+  animation: cardRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.profile-card:nth-child(4) {
-  animation-delay: 0.4s;
-}
+.profile-card:nth-child(1) { animation-delay: 0.05s; }
+.profile-card:nth-child(2) { animation-delay: 0.15s; }
+.profile-card:nth-child(3) { animation-delay: 0.25s; }
+.profile-card:nth-child(4) { animation-delay: 0.35s; }
 
 /* ============================================
    UTILITIES

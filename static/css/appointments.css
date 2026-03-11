@@ -1596,3 +1596,32 @@ body {
   animation: spin 0.8s linear infinite;
   flex-shrink: 0;
 }
+/* ==========================================
+   ANIMACIONES DE ENTRADA (igual que admin)
+   ========================================== */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardRise {
+  0%   { opacity: 0; transform: translateY(50px) scale(0.95); }
+  50%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.content-wrapper {
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.stat-card {
+  animation: cardRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stat-card:nth-child(1) { animation-delay: 0.05s; }
+.stat-card:nth-child(2) { animation-delay: 0.15s; }
+.stat-card:nth-child(3) { animation-delay: 0.25s; }
+.stat-card:nth-child(4) { animation-delay: 0.35s; }
+
+.controls-section {
+  animation: cardRise 0.8s 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

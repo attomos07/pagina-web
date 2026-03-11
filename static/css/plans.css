@@ -222,20 +222,13 @@ input:checked + .toggle-slider:before {
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     border: 2px solid transparent;
     position: relative;
-    opacity: 0;
-    transform: translateY(30px);
-    animation: fadeInUp 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    animation: cardRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.pricing-card:nth-child(1) { animation-delay: 0.1s; }
-.pricing-card:nth-child(2) { animation-delay: 0.2s; }
-.pricing-card:nth-child(3) { animation-delay: 0.3s; }
-.pricing-card:nth-child(4) { animation-delay: 0.4s; }
-
-@keyframes fadeInUp {
-    0%   { opacity: 0; transform: translateY(30px); }
-    100% { opacity: 1; transform: translateY(0); }
-}
+.pricing-card:nth-child(1) { animation-delay: 0.05s; }
+.pricing-card:nth-child(2) { animation-delay: 0.15s; }
+.pricing-card:nth-child(3) { animation-delay: 0.25s; }
+.pricing-card:nth-child(4) { animation-delay: 0.35s; }
 
 .pricing-card:hover {
     transform: translateY(-8px);
@@ -761,4 +754,40 @@ input:checked + .toggle-slider:before {
         padding: 1rem 1.25rem;
         font-size: 0.85rem;
     }
+}
+/* ==========================================
+   ANIMACIONES DE ENTRADA (igual que admin)
+   ========================================== */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardRise {
+  0%   { opacity: 0; transform: translateY(50px) scale(0.95); }
+  50%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.content-wrapper {
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Banner del plan actual */
+.current-plan-banner {
+  animation: cardRise 0.8s 0.05s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Toggle mensual/anual */
+.billing-toggle {
+  animation: slideUp 0.4s 0.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Secciones inferiores */
+.comparison-table-wrapper {
+  animation: cardRise 0.8s 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.faq-section {
+  animation: cardRise 0.8s 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

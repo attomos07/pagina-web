@@ -805,3 +805,39 @@ body {
         grid-template-columns: 1fr;
     }
 }
+/* ==========================================
+   ANIMACIONES DE ENTRADA (igual que admin)
+   ========================================== */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardRise {
+  0%   { opacity: 0; transform: translateY(50px) scale(0.95); }
+  50%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.content-wrapper {
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Header del agente */
+.agent-header {
+  animation: cardRise 0.8s 0.05s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Secciones del grid de detalles */
+.details-section {
+  animation: cardRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.details-column-right > .details-section:nth-child(1) { animation-delay: 0.15s; }
+.details-column-right > .details-section:nth-child(2) { animation-delay: 0.25s; }
+.details-column-right > .details-section:nth-child(3) { animation-delay: 0.35s; }
+.details-column-right > .details-section:nth-child(4) { animation-delay: 0.45s; }
+
+/* QR section */
+.qr-section {
+  animation: cardRise 0.8s 0.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
