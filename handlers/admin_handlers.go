@@ -13,12 +13,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// getAdminSessionToken genera un token derivado de las credenciales de entorno
-// Se usa tanto en el middleware como aquí para verificar consistencia
 func getAdminSessionToken() string {
 	secret := os.Getenv("ADMIN_SESSION_SECRET")
 	if secret == "" {
-		secret = "attomos-admin-fallback-secret" // cámbialo en producción con la env var
+		secret = "attomos-admin-fallback-secret"
 	}
 	h := sha256.Sum256([]byte(secret))
 	return fmt.Sprintf("%x", h)
@@ -48,7 +46,6 @@ func AdminLogin(c *gin.Context) {
 		return
 	}
 
-	// Establecer cookie de sesión (HttpOnly, 8 horas)
 	c.SetCookie(
 		"admin_session",
 		getAdminSessionToken(),
@@ -69,34 +66,93 @@ func AdminLogout(c *gin.Context) {
 }
 
 // AdminGetCompanies — GET /admin/api/companies
-// Devuelve la lista de empresas registradas para el panel de base de datos
 func AdminGetCompanies(c *gin.Context) {
-	var users []models.User
-	result := config.DB.Order("created_at desc").Find(&users)
+
+	type CompanyRow struct {
+		BranchID      uint                    `gorm:"column:branch_id"`
+		BusinessName  string                  `gorm:"column:business_name"`
+		BusinessType  string                  `gorm:"column:business_type"`
+		BusinessSize  string                  `gorm:"column:business_size"`
+		PhoneNumber   string                  `gorm:"column:phone_number"`
+		Location      models.BusinessLocation `gorm:"column:location"`
+		UserID        uint                    `gorm:"column:user_id"`
+		Email         string                  `gorm:"column:email"`
+		Company       string                  `gorm:"column:company"`
+		UserCreatedAt time.Time               `gorm:"column:user_created_at"`
+	}
+
+	var rows []CompanyRow
+	result := config.DB.
+		Table("my_business_info b").
+		Select(`b.id AS branch_id, b.business_name, b.business_type, b.business_size,
+			b.phone_number, b.location,
+			u.id AS user_id, u.email, u.company, u.created_at AS user_created_at`).
+		Joins("JOIN users u ON u.id = b.user_id").
+		Where("b.branch_number = 1 AND b.deleted_at IS NULL AND u.deleted_at IS NULL").
+		Order("u.created_at DESC").
+		Scan(&rows)
+
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener empresas."})
 		return
 	}
 
-	// Contar activas hoy (último login en las últimas 24h)
-	yesterday := time.Now().Add(-24 * time.Hour)
-	var activeCount int64
-	config.DB.Model(&models.User{}).Where("last_login_at > ?", yesterday).Count(&activeCount)
+	// Obtener planes desde subscriptions (LEFT JOIN por si no tienen suscripción)
+	type SubRow struct {
+		UserID uint   `gorm:"column:user_id"`
+		Plan   string `gorm:"column:plan"`
+		Status string `gorm:"column:status"`
+	}
+	var subs []SubRow
+	config.DB.Table("subscriptions").
+		Select("user_id, plan, status").
+		Where("status = 'active'").
+		Scan(&subs)
 
-	// Contar con plan de pago
+	// Mapa userID → plan
+	planMap := make(map[uint]string)
+	for _, s := range subs {
+		planMap[s.UserID] = s.Plan
+	}
+
+	companies := make([]gin.H, len(rows))
+	for i, r := range rows {
+		plan := planMap[r.UserID]
+		if plan == "" {
+			plan = "gratuito"
+		}
+		companies[i] = gin.H{
+			"id":           r.UserID,
+			"branchId":     r.BranchID,
+			"businessName": r.BusinessName,
+			"businessType": r.BusinessType,
+			"businessSize": r.BusinessSize,
+			"phoneNumber":  r.PhoneNumber,
+			"city":         r.Location.City,
+			"email":        r.Email,
+			"company":      r.Company,
+			"plan":         plan,
+			"createdAt":    r.UserCreatedAt,
+			"status":       "active",
+		}
+	}
+
+	// Stats
+	var totalCount int64
+	config.DB.Model(&models.User{}).Where("deleted_at IS NULL").Count(&totalCount)
+
 	var paidCount int64
-	config.DB.Model(&models.User{}).Where("plan NOT IN ?", []string{"gratuito", ""}).Count(&paidCount)
+	config.DB.Table("subscriptions").Where("status = 'active' AND plan NOT IN ?", []string{"gratuito", ""}).Count(&paidCount)
 
-	// Contar nuevas este mes
 	firstOfMonth := time.Now().Truncate(24*time.Hour).AddDate(0, 0, -time.Now().Day()+1)
 	var newCount int64
-	config.DB.Model(&models.User{}).Where("created_at >= ?", firstOfMonth).Count(&newCount)
+	config.DB.Model(&models.User{}).Where("created_at >= ? AND deleted_at IS NULL", firstOfMonth).Count(&newCount)
 
 	c.JSON(http.StatusOK, gin.H{
-		"companies": users,
+		"companies": companies,
 		"stats": gin.H{
-			"total":  len(users),
-			"active": activeCount,
+			"total":  totalCount,
+			"active": totalCount, // sin last_login_at usamos total como fallback
 			"paid":   paidCount,
 			"new":    newCount,
 		},
