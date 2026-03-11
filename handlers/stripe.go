@@ -156,9 +156,10 @@ func CreateCheckoutSession(c *gin.Context) {
 // ConfirmPayment — verifica el primer pago y activa la suscripción en BD
 // Los cobros RECURRENTES posteriores los maneja el webhook automáticamente.
 type ConfirmPaymentRequest struct {
-	PaymentIntentID string `json:"paymentIntentId" binding:"required"`
-	Plan            string `json:"plan" binding:"required"`
-	BillingPeriod   string `json:"billingPeriod" binding:"required"`
+	PaymentIntentID string       `json:"paymentIntentId" binding:"required"`
+	Plan            string       `json:"plan" binding:"required"`
+	BillingPeriod   string       `json:"billingPeriod" binding:"required"`
+	Invoice         *InvoiceData `json:"invoice"`
 }
 
 func ConfirmPayment(c *gin.Context) {
@@ -185,6 +186,15 @@ func ConfirmPayment(c *gin.Context) {
 		log.Printf("❌ [CONFIRM] %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Guardar datos de factura si el usuario la solicitó
+	if req.Invoice != nil && req.Invoice.RequiresInvoice {
+		if err := SaveInvoiceFromCheckout(user.ID, payment.ID, *req.Invoice); err != nil {
+			log.Printf("⚠️  [CONFIRM] Error guardando factura: %v", err)
+		} else {
+			log.Printf("🧾 [CONFIRM] Factura guardada para usuario %d", user.ID)
+		}
 	}
 
 	log.Printf("🎉 [CONFIRM] Usuario %d activó plan %s", user.ID, req.Plan)

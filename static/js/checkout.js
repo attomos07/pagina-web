@@ -647,7 +647,21 @@ async function processPayment() {
             body: JSON.stringify({
                 paymentIntentId: confirmedPaymentIntentId,
                 plan,
-                billingPeriod
+                billingPeriod,
+                invoice: (() => {
+                    const cb = document.getElementById('requiresInvoice');
+                    if (!cb || !cb.checked) return null;
+                    return {
+                        requiresInvoice: true,
+                        razonSocial:     document.getElementById('razonSocial')?.value.trim()     || '',
+                        rfc:             document.getElementById('rfc')?.value.trim().toUpperCase() || '',
+                        direccionFiscal: document.getElementById('direccionFiscal')?.value.trim() || '',
+                        codigoPostal:    document.getElementById('codigoPostal')?.value.trim()    || '',
+                        emailFactura:    document.getElementById('emailFactura')?.value.trim()    || '',
+                        usoCfdi:         document.getElementById('usoCfdi')?.value                || '',
+                        regimenFiscal:   document.getElementById('regimenFiscal')?.value          || '',
+                    };
+                })()
             })
         });
         

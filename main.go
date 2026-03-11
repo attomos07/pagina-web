@@ -48,6 +48,7 @@ func main() {
 		&models.GlobalServer{},   // ← Servidor compartido global para AtomicBots
 		&models.Appointment{},    // ← Citas (manual + Google Sheets + agente)
 		&models.MyBusinessInfo{}, // ← Perfil de negocio del usuario
+		&models.Invoice{},        // ← Solicitudes de factura
 	); err != nil {
 		log.Fatal("❌ Error en migración:", err)
 	}
@@ -424,6 +425,11 @@ func main() {
 		adminGroup.GET("/database-admin", func(c *gin.Context) {
 			c.HTML(200, "admin-database", nil)
 		})
+		adminGroup.GET("/invoices", func(c *gin.Context) {
+			c.HTML(200, "admin-invoices", nil)
+		})
+		adminGroup.GET("/api/invoices", handlers.AdminGetInvoices)
+		adminGroup.PATCH("/api/invoices/:id", handlers.AdminUpdateInvoiceStatus)
 		adminGroup.POST("/api/logout", handlers.AdminLogout)
 		adminGroup.GET("/api/companies", handlers.AdminGetCompanies)
 	}
