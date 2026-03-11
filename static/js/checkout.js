@@ -788,7 +788,7 @@ function loadPlanDetails() {
     
     console.log(`📋 Plan details loaded: ${selectedPlanData.name}`);
     console.log(`💰 Subtotal: $${subtotal.toFixed(2)} ${currency}`);
-    console.log(`💵 IVA: $${tax.toFixed(2)} ${currency}`);
+    // IVA incluido en precio — removido
     console.log(`💳 Total: $${total.toFixed(2)} ${currency}`);
 }
 

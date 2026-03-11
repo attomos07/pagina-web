@@ -11,7 +11,7 @@
 
     <nav class="sidebar-container" id="sidebar">
 
-        <a href="/admin/database-admin" class="icon-button active" data-page="database-admin">
+        <a href="/admin/database-admin" class="icon-button" data-page="database-admin">
             <svg viewBox="0 0 24 24">
                 <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
                 <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
@@ -69,6 +69,17 @@
                 overlay.classList.remove('active');
                 menuBtn.classList.remove('active');
                 document.body.style.overflow = '';
+            }
+        });
+
+        // Marcar item activo según URL actual
+        const currentPath = window.location.pathname;
+        document.querySelectorAll('.icon-button[data-page]').forEach(btn => {
+            const page = btn.getAttribute('data-page');
+            if (currentPath.includes(page)) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
             }
         });
 

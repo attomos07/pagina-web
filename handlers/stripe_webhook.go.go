@@ -237,6 +237,8 @@ func handleSubscriptionDeleted(stripeSub *stripe_lib.Subscription) {
 
 // ── Helper compartido entre ConfirmPayment y el webhook ──────────────────────
 // Verifica el PaymentIntent en Stripe y activa la suscripción local.
+// FIX: Ya no hace early return al encontrar un pago existente — devuelve el
+// payment (nuevo o existente) para que ConfirmPayment pueda guardar la factura.
 func activateSubscriptionFromPaymentIntent(piID string, userID uint, plan, billingPeriod string) (*models.Payment, *models.Subscription, error) {
 	stripe_lib.Key = os.Getenv("STRIPE_SECRET_KEY")
 
@@ -283,7 +285,16 @@ func activateSubscriptionFromPaymentIntent(piID string, userID uint, plan, billi
 	log.Printf("✅ [CONFIRM] Suscripción %d activada → Plan: %s | Expira: %s",
 		sub.ID, plan, periodEnd.Format("2006-01-02"))
 
-	// Registrar pago (evitar duplicados)
+	// ── Registrar pago (evitar duplicados) ───────────────────────────────────
+	// FIX: si el webhook ya creó el pago, lo retornamos igual para que
+	// ConfirmPayment pueda guardar la factura con el payment.ID correcto.
+	var existingPayment models.Payment
+	if config.DB.Where("stripe_payment_intent_id = ?", piID).First(&existingPayment).Error == nil {
+		log.Printf("ℹ️  [CONFIRM] Pago ya existía en BD (ID=%d), usando para factura", existingPayment.ID)
+		return &existingPayment, &sub, nil
+	}
+
+	// Pago nuevo — crearlo
 	chargeID := ""
 	if pi.LatestCharge != nil {
 		chargeID = pi.LatestCharge.ID
@@ -295,11 +306,6 @@ func activateSubscriptionFromPaymentIntent(piID string, userID uint, plan, billi
 	displayName := planDisplay[plan]
 	if displayName == "" {
 		displayName = plan
-	}
-
-	var existingPayment models.Payment
-	if config.DB.Where("stripe_payment_intent_id = ?", piID).First(&existingPayment).Error == nil {
-		return &existingPayment, &sub, nil
 	}
 
 	payment := models.Payment{
@@ -319,6 +325,8 @@ func activateSubscriptionFromPaymentIntent(piID string, userID uint, plan, billi
 
 	if err := config.DB.Create(&payment).Error; err != nil {
 		log.Printf("❌ [CONFIRM] Error guardando pago: %v", err)
+	} else {
+		log.Printf("✅ [CONFIRM] Pago creado en BD: ID=%d | $%.2f", payment.ID, float64(payment.Amount)/100)
 	}
 
 	return &payment, &sub, nil

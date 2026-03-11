@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -117,9 +118,19 @@ func AdminUpdateInvoiceStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
-// SaveInvoiceFromCheckout — llamado internamente desde ConfirmPayment
-// después de confirmar el pago si requiresInvoice = true
+// SaveInvoiceFromCheckout guarda los datos fiscales del checkout.
+// Es idempotente: si ya existe una factura para ese paymentID no crea duplicado.
 func SaveInvoiceFromCheckout(userID uint, paymentID uint, data InvoiceData) error {
+	log.Printf("🧾 [INVOICE] Intentando guardar factura | UserID=%d | PaymentID=%d | RFC=%s",
+		userID, paymentID, data.RFC)
+
+	// FIX: Evitar duplicados por payment_id (puede llamarse 2 veces si el webhook llega primero)
+	var existing models.Invoice
+	if config.DB.Where("payment_id = ?", paymentID).First(&existing).Error == nil {
+		log.Printf("ℹ️  [INVOICE] Ya existe factura para PaymentID=%d (ID=%d), omitiendo", paymentID, existing.ID)
+		return nil
+	}
+
 	invoice := models.Invoice{
 		UserID:          userID,
 		PaymentID:       paymentID,
@@ -132,7 +143,15 @@ func SaveInvoiceFromCheckout(userID uint, paymentID uint, data InvoiceData) erro
 		RegimenFiscal:   data.RegimenFiscal,
 		Status:          "pendiente",
 	}
-	return config.DB.Create(&invoice).Error
+
+	if err := config.DB.Create(&invoice).Error; err != nil {
+		log.Printf("❌ [INVOICE] Error creando factura: %v", err)
+		return err
+	}
+
+	log.Printf("✅ [INVOICE] Factura creada exitosamente | ID=%d | UserID=%d | RFC=%s",
+		invoice.ID, userID, data.RFC)
+	return nil
 }
 
 type InvoiceData struct {
