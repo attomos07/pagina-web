@@ -961,6 +961,9 @@ async function fetchUserData() {
       console.log('📦 /api/my-business response:', JSON.stringify(bizData));
       // El endpoint devuelve { branches:[...], activeBranch:{business,location,social,...} }
       // o { branches:[], defaultBranch:{...} } si no hay sucursales guardadas
+      const allBranches = (window._dashboardBranches && window._dashboardBranches.length > 0)
+        ? window._dashboardBranches
+        : (bizData.branches || []);
       const branch = bizData.activeBranch || bizData.defaultBranch;
       if (branch) {
         businessData = branch;
@@ -971,9 +974,79 @@ async function fetchUserData() {
       } else {
         console.warn('⚠️ No se encontró activeBranch ni defaultBranch en la respuesta');
       }
+      // Mostrar selector de sucursal en paso 1 si hay más de una
+      if (allBranches.length > 1) {
+        renderBranchSelectorStep1(allBranches, agentData.branchId);
+      }
     }
   } catch (error) {
     console.error('❌ Error obteniendo datos del usuario:', error);
+  }
+}
+
+// ── Selector de sucursal en Paso 1 ────────────────────────────────────────────
+
+// Renderiza las cards en el paso 1 (incluye opción "Todas")
+function renderBranchSelectorStep1(branches, activeBranchId) {
+  const wrapper = document.getElementById('branchSelectorStep1');
+  const container = document.getElementById('branchStep1Cards');
+  if (!wrapper || !container) return;
+
+  container.innerHTML = '';
+
+  // Opción "Todas las sucursales"
+  const allCard = document.createElement('div');
+  allCard.className = 'branch-step1-card all-branches' + (activeBranchId === 0 ? ' active' : '');
+  allCard.dataset.branchId = '0';
+  allCard.innerHTML = `
+    <span class="branch-step1-badge"><i class="lni lni-network" style="font-size:0.65rem;"></i></span>
+    <span>Todas las sucursales</span>
+  `;
+  allCard.addEventListener('click', () => selectBranchStep1(0, branches, null));
+  container.appendChild(allCard);
+
+  // Una card por sucursal
+  branches.forEach(b => {
+    const card = document.createElement('div');
+    card.className = 'branch-step1-card' + (b.id === activeBranchId ? ' active' : '');
+    card.dataset.branchId = b.id;
+    card.innerHTML = `
+      <span class="branch-step1-badge">${b.branchNumber}</span>
+      <i class="lni lni-map-marker"></i>
+      <span>${b.branchName || ('Sucursal ' + b.branchNumber)}</span>
+    `;
+    card.addEventListener('click', () => selectBranchStep1(b.id, branches, b));
+    container.appendChild(card);
+  });
+
+  wrapper.style.display = 'block';
+}
+
+// Cambia la sucursal seleccionada en el paso 1
+async function selectBranchStep1(branchId, allBranches, branchMeta) {
+  // Actualizar estado visual de las cards
+  document.querySelectorAll('#branchStep1Cards .branch-step1-card').forEach(card => {
+    card.classList.toggle('active', parseInt(card.dataset.branchId) === branchId);
+  });
+
+  if (branchId === 0) {
+    // "Todas" — limpiar branchId, mantener datos del negocio actual
+    agentData.branchId = 0;
+    console.log('🔀 Sucursal: Todas (sin filtro)');
+    return;
+  }
+
+  try {
+    const resp = await fetch(`/api/my-business/${branchId}`, { credentials: 'include' });
+    if (!resp.ok) throw new Error('No se pudo cargar la sucursal');
+    const branch = await resp.json();
+    businessData = branch;
+    agentData.branchId = branchId;
+    agentData.businessType = branch.business?.type || agentData.businessType;
+    renderBusinessPreview(branch);
+    console.log('🔀 Sucursal cambiada a:', branchId, branch.branchName);
+  } catch (err) {
+    console.error('❌ Error cargando sucursal:', err);
   }
 }
 

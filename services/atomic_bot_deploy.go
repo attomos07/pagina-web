@@ -27,6 +27,9 @@ type BusinessConfig struct {
 	AgentName    string      `json:"agentName"`
 	BusinessType string      `json:"businessType"`
 	PhoneNumber  string      `json:"phoneNumber"`
+	Website      string      `json:"website,omitempty"`
+	Email        string      `json:"email,omitempty"`
+	Description  string      `json:"description,omitempty"`
 	Personality  Personality `json:"personality"`
 	Schedule     Schedule    `json:"schedule"`
 	Holidays     []Holiday   `json:"holidays"`
@@ -672,7 +675,7 @@ func (s *AtomicBotDeployService) transferBotFiles(userID uint, botDir string) er
 // configureEnvironment configura el entorno (.env y business_config.json)
 func (s *AtomicBotDeployService) configureEnvironment(agent *models.Agent, botDir, geminiAPIKey string, googleCredentials []byte) error {
 	// Generar business_config.json
-	businessConfig := s.generateBusinessConfig(agent)
+	businessConfig := s.generateBusinessConfig(agent, nil) // branch se carga en DeployAtomicBot
 	businessJSON, err := json.MarshalIndent(businessConfig, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error serializando business_config: %w", err)
@@ -724,7 +727,8 @@ func (s *AtomicBotDeployService) configureEnvironment(agent *models.Agent, botDi
 }
 
 // generateBusinessConfig genera la configuración del negocio
-func (s *AtomicBotDeployService) generateBusinessConfig(agent *models.Agent) *BusinessConfig {
+func (s *AtomicBotDeployService) generateBusinessConfig(agent *models.Agent, branch *models.MyBusinessInfo) *BusinessConfig {
+	// Datos base del agente
 	config := &BusinessConfig{
 		AgentName:    agent.Name,
 		BusinessType: agent.BusinessType,
@@ -734,6 +738,7 @@ func (s *AtomicBotDeployService) generateBusinessConfig(agent *models.Agent) *Bu
 			CustomTone:          agent.Config.CustomTone,
 			AdditionalLanguages: agent.Config.AdditionalLanguages,
 		},
+		// Fallback: datos legacy del AgentConfig
 		Schedule: Schedule{
 			Monday:    convertDaySchedule(agent.Config.Schedule.Monday),
 			Tuesday:   convertDaySchedule(agent.Config.Schedule.Tuesday),
@@ -751,7 +756,98 @@ func (s *AtomicBotDeployService) generateBusinessConfig(agent *models.Agent) *Bu
 		SocialMedia: SocialMedia{},
 	}
 
+	// Si hay sucursal vinculada, usar MyBusinessInfo como fuente de verdad
+	if branch != nil {
+		if branch.BusinessName != "" {
+			config.AgentName = branch.BusinessName
+		}
+		if branch.BusinessType != "" {
+			config.BusinessType = branch.BusinessType
+		}
+		if branch.PhoneNumber != "" {
+			config.PhoneNumber = branch.PhoneNumber
+		}
+		config.Website = branch.Website
+		config.Email = branch.Email
+		config.Description = branch.Description
+
+		config.Location = Location{
+			Address:        branch.Location.Address,
+			Number:         branch.Location.Number,
+			Neighborhood:   branch.Location.Neighborhood,
+			City:           branch.Location.City,
+			State:          branch.Location.State,
+			Country:        branch.Location.Country,
+			PostalCode:     branch.Location.PostalCode,
+			BetweenStreets: branch.Location.BetweenStreets,
+		}
+		config.SocialMedia = SocialMedia{
+			Facebook:  branch.SocialMedia.Facebook,
+			Instagram: branch.SocialMedia.Instagram,
+			Twitter:   branch.SocialMedia.Twitter,
+			LinkedIn:  branch.SocialMedia.LinkedIn,
+		}
+		config.Schedule = Schedule{
+			Monday:    convertDaySchedule2(branch.Schedule.Monday),
+			Tuesday:   convertDaySchedule2(branch.Schedule.Tuesday),
+			Wednesday: convertDaySchedule2(branch.Schedule.Wednesday),
+			Thursday:  convertDaySchedule2(branch.Schedule.Thursday),
+			Friday:    convertDaySchedule2(branch.Schedule.Friday),
+			Saturday:  convertDaySchedule2(branch.Schedule.Saturday),
+			Sunday:    convertDaySchedule2(branch.Schedule.Sunday),
+			Timezone:  branch.Schedule.Timezone,
+		}
+		config.Holidays = convertBranchHolidays(branch.Holidays)
+		config.Services = convertBranchServices(branch.Services)
+		config.Workers = convertBranchWorkers(branch.Workers)
+	}
+
 	return config
+}
+
+// convertDaySchedule2 convierte DaySchedule de MyBusinessInfo
+func convertDaySchedule2(day models.DaySchedule) DaySchedule {
+	return DaySchedule{
+		Open:  day.Open,
+		Start: day.Start,
+		End:   day.End,
+	}
+}
+
+func convertBranchHolidays(holidays models.BusinessHolidays) []Holiday {
+	result := make([]Holiday, len(holidays))
+	for i, h := range holidays {
+		result[i] = Holiday{Date: h.Date, Name: h.Name}
+	}
+	return result
+}
+
+func convertBranchServices(services models.BranchServices) []Service {
+	result := make([]Service, len(services))
+	for i, s := range services {
+		result[i] = Service{
+			Title:         s.Title,
+			Description:   s.Description,
+			PriceType:     s.PriceType,
+			Price:         s.Price,
+			OriginalPrice: s.OriginalPrice,
+			PromoPrice:    s.PromoPrice,
+		}
+	}
+	return result
+}
+
+func convertBranchWorkers(workers models.BranchWorkers) []Worker {
+	result := make([]Worker, len(workers))
+	for i, w := range workers {
+		result[i] = Worker{
+			Name:      w.Name,
+			StartTime: w.StartTime,
+			EndTime:   w.EndTime,
+			Days:      w.Days,
+		}
+	}
+	return result
 }
 
 func convertDaySchedule(day models.DaySchedule) DaySchedule {
@@ -1326,4 +1422,52 @@ func (s *AtomicBotDeployService) DiagnoseBotFailure(agentID uint, userID uint) s
 // GetSSHClient retorna el cliente SSH (para streaming de logs en tiempo real)
 func (s *AtomicBotDeployService) GetSSHClient() *ssh.Client {
 	return s.sshClient
+}
+
+// UpdateBusinessConfig actualiza el business_config.json en el servidor del bot
+// usando los datos más recientes de MyBusinessInfo (sucursal).
+// Llamar desde el handler POST /api/my-business después de guardar en BD.
+//
+// Ejemplo de uso en tu handler:
+//
+//	go func() {
+//	    svc := services.NewAtomicBotDeployService(agent.ServerIP, agent.ServerPassword)
+//	    if err := svc.Connect(); err == nil {
+//	        defer svc.Close()
+//	        svc.UpdateBusinessConfig(agent, branch)
+//	    }
+//	}()
+func (s *AtomicBotDeployService) UpdateBusinessConfig(agent *models.Agent, branch *models.MyBusinessInfo) error {
+	log.Printf("🔄 [Agent %d] Sincronizando business_config.json con datos de MyBusinessInfo...", agent.ID)
+
+	businessConfig := s.generateBusinessConfig(agent, branch)
+	businessJSON, err := json.MarshalIndent(businessConfig, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error serializando business_config: %w", err)
+	}
+
+	botDir := fmt.Sprintf("/home/user_%d/atomic-bot", agent.UserID)
+	configPath := fmt.Sprintf("%s/business_config.json", botDir)
+
+	configFile, err := s.sftpClient.Create(configPath)
+	if err != nil {
+		return fmt.Errorf("error creando business_config.json en servidor: %w", err)
+	}
+	defer configFile.Close()
+
+	if _, err := configFile.Write(businessJSON); err != nil {
+		return fmt.Errorf("error escribiendo business_config.json: %w", err)
+	}
+
+	log.Printf("   ✅ [Agent %d] business_config.json actualizado (%d bytes)", agent.ID, len(businessJSON))
+
+	// Reiniciar para que el bot tome los cambios inmediatamente
+	// (el bot tiene file-watcher pero restart garantiza consistencia)
+	if err := s.RestartBot(agent.ID); err != nil {
+		log.Printf("   ⚠️  [Agent %d] No se pudo reiniciar bot: %v (se recargará solo)", agent.ID, err)
+	} else {
+		log.Printf("   ✅ [Agent %d] Bot reiniciado con nueva configuración", agent.ID)
+	}
+
+	return nil
 }

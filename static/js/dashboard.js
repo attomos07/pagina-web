@@ -279,8 +279,8 @@ async function checkBusinessBeforeAgent() {
         const response = await fetch('/api/my-business');
         if (response.ok) {
             const data = await response.json();
-            // El endpoint devuelve { activeBranch: { business: { name, type } } }
-            // o { branches: [], defaultBranch: {...} } cuando no hay sucursales guardadas
+            // El endpoint devuelve { branches:[...], activeBranch:{...} }
+            // o { branches:[], defaultBranch:{...} } cuando no hay sucursales guardadas
             const branch = data.activeBranch || data.defaultBranch;
             const hasBusinessInfo =
                 branch &&
@@ -291,6 +291,8 @@ async function checkBusinessBeforeAgent() {
                 branch.business.type.trim() !== '';
 
             if (hasBusinessInfo) {
+                // Guardar branches en window para que onboarding.js las use al inicializar
+                window._dashboardBranches = data.branches || [];
                 openOnboardingModal();
             } else {
                 showBusinessWarningModal();

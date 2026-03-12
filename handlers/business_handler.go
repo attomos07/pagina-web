@@ -7,8 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"log"
+
 	"attomos/config"
 	"attomos/models"
+	"attomos/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -133,12 +136,45 @@ func SaveMyBusiness(c *gin.Context) {
 		}
 	}
 
+	// Sincronizar business_config.json en bots atómicos vinculados a esta sucursal
+	syncAtomicBots(&branch)
+
 	c.JSON(http.StatusOK, gin.H{
 		"success":    true,
 		"message":    "Sucursal guardada exitosamente",
 		"branch":     buildBranchResponse(&branch),
 		"branchName": branch.BranchName,
 	})
+}
+
+// syncAtomicBots actualiza el business_config.json de todos los AtomicBots
+// vinculados a la sucursal guardada, en goroutines para no bloquear la respuesta.
+func syncAtomicBots(branch *models.MyBusinessInfo) {
+	var agents []models.Agent
+	if err := config.DB.Where(
+		"branch_id = ? AND bot_type = ? AND server_ip != '' AND is_active = ?",
+		branch.ID, "atomic", true,
+	).Find(&agents).Error; err != nil || len(agents) == 0 {
+		return
+	}
+
+	log.Printf("🔄 [SyncBots] Sincronizando %d bot(s) atómico(s) para sucursal %d...", len(agents), branch.ID)
+
+	for _, agent := range agents {
+		go func(a models.Agent) {
+			svc := services.NewAtomicBotDeployService(a.ServerIP, a.ServerPassword)
+			if err := svc.Connect(); err != nil {
+				log.Printf("⚠️  [SyncBots] No se pudo conectar al servidor del agente %d: %v", a.ID, err)
+				return
+			}
+			defer svc.Close()
+			if err := svc.UpdateBusinessConfig(&a, branch); err != nil {
+				log.Printf("⚠️  [SyncBots] Error actualizando config del agente %d: %v", a.ID, err)
+			} else {
+				log.Printf("✅ [SyncBots] Agente %d actualizado con datos de sucursal %d", a.ID, branch.ID)
+			}
+		}(agent)
+	}
 }
 
 // ============================================================

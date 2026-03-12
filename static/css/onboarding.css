@@ -2839,3 +2839,115 @@ input:checked + .toggle-slider:before {
 .form-label i.lni-instagram      { color: #e4405f !important; }
 .form-label i.lni-twitter        { color: #1da1f2 !important; }
 .form-label i.lni-linkedin       { color: #0a66c2 !important; }
+/* ══════════════════════════════════════════════════════════
+   SELECTOR DE SUCURSAL — Paso 1 del onboarding
+   ══════════════════════════════════════════════════════════ */
+.branch-step1-wrapper {
+  margin: 2rem auto 0;
+  max-width: 1000px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.branch-step1-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+
+.branch-step1-header > i {
+  font-size: 1.25rem;
+  color: #06b6d4;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.branch-step1-label {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.branch-step1-sub {
+  display: block;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.branch-step1-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.branch-step1-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-size: 0.86rem;
+  color: #475569;
+  font-weight: 500;
+  user-select: none;
+}
+
+.branch-step1-card:hover {
+  border-color: #06b6d4;
+  background: #ecfeff;
+  color: #0e7490;
+}
+
+.branch-step1-card.active {
+  border-color: #06b6d4;
+  background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
+  color: #0e7490;
+  font-weight: 600;
+  box-shadow: 0 0 0 3px rgba(6,182,212,0.12);
+}
+
+.branch-step1-card i {
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.branch-step1-badge {
+  background: #06b6d4;
+  color: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.branch-step1-card.active .branch-step1-badge {
+  background: #0e7490;
+}
+
+.branch-step1-card.all-branches .branch-step1-badge {
+  background: #64748b;
+}
+
+.branch-step1-card.all-branches.active .branch-step1-badge {
+  background: #0e7490;
+}
+
+@media (max-width: 600px) {
+  .branch-step1-wrapper { padding: 1rem; }
+  .branch-step1-cards { gap: 8px; }
+  .branch-step1-card { font-size: 0.82rem; padding: 8px 12px; }
+}

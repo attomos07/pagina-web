@@ -16,6 +16,9 @@ type BusinessConfig struct {
 	AgentName    string      `json:"agentName"`
 	BusinessType string      `json:"businessType"`
 	PhoneNumber  string      `json:"phoneNumber"`
+	Website      string      `json:"website,omitempty"`
+	Email        string      `json:"email,omitempty"`
+	Description  string      `json:"description,omitempty"`
 	Personality  Personality `json:"personality"`
 	Schedule     Schedule    `json:"schedule"`
 	Holidays     []Holiday   `json:"holidays"`
@@ -142,6 +145,15 @@ func GetBusinessInfoPrompt() string {
 	sb.WriteString("**INFORMACIÓN DEL NEGOCIO:**\n")
 	sb.WriteString(fmt.Sprintf("- Nombre: %s\n", BusinessCfg.AgentName))
 	sb.WriteString(fmt.Sprintf("- Tipo: %s\n", BusinessCfg.BusinessType))
+	if BusinessCfg.Description != "" {
+		sb.WriteString(fmt.Sprintf("- Descripción: %s\n", BusinessCfg.Description))
+	}
+	if BusinessCfg.Website != "" {
+		sb.WriteString(fmt.Sprintf("- Sitio Web: %s\n", BusinessCfg.Website))
+	}
+	if BusinessCfg.Email != "" {
+		sb.WriteString(fmt.Sprintf("- Email de contacto: %s\n", BusinessCfg.Email))
+	}
 
 	// Ubicación
 	if BusinessCfg.Location.Address != "" {
