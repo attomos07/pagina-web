@@ -114,7 +114,7 @@ func normalizeDateFormat(dateStr string) (string, error) {
 	dateStr = strings.ToLower(strings.TrimSpace(dateStr))
 
 	// Obtener fecha actual en zona horaria de México
-	location, err := time.LoadLocation("America/Hermosillo")
+	location, err := time.LoadLocation(GetTimezone())
 	if err != nil {
 		location = time.UTC
 	}

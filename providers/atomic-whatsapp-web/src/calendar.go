@@ -148,9 +148,9 @@ func CreateCalendarEvent(data map[string]string) (*calendar.Event, error) {
 
 	// Crear fecha de inicio con zona horaria correcta
 	log.Println("🔄 PASO 3: Creando fecha de inicio...")
-	location, locErr := time.LoadLocation(TIMEZONE)
+	location, locErr := time.LoadLocation(GetTimezone())
 	if locErr != nil {
-		log.Printf("⚠️  No se pudo cargar timezone '%s', usando Local: %v\n", TIMEZONE, locErr)
+		log.Printf("⚠️  No se pudo cargar timezone '%s', usando Local: %v\n", GetTimezone(), locErr)
 		location = time.Local
 	}
 
@@ -190,11 +190,11 @@ func CreateCalendarEvent(data map[string]string) (*calendar.Event, error) {
 		Description: description,
 		Start: &calendar.EventDateTime{
 			DateTime: startDate.Format(time.RFC3339),
-			TimeZone: TIMEZONE,
+			TimeZone: GetTimezone(),
 		},
 		End: &calendar.EventDateTime{
 			DateTime: endDate.Format(time.RFC3339),
-			TimeZone: TIMEZONE,
+			TimeZone: GetTimezone(),
 		},
 		ColorId: "9", // Azul
 		Reminders: &calendar.EventReminders{

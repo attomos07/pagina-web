@@ -353,22 +353,17 @@ func configWatchdog() {
 			if err := godotenv.Load(); err == nil {
 				log.Println("✅ Configuración recargada")
 
-				if !src.IsGeminiEnabled() {
-					if err := src.InitGemini(); err == nil {
-						log.Println("✅ Gemini AI ahora está disponible")
-					}
+				// Siempre re-inicializar para aplicar nuevas keys/IDs
+				if err := src.InitGemini(); err == nil {
+					log.Println("✅ Gemini AI ahora está disponible")
 				}
 
-				if !src.IsSheetsEnabled() {
-					if err := src.InitSheets(); err == nil {
-						log.Println("✅ Google Sheets ahora está disponible")
-					}
+				if err := src.InitSheets(); err == nil {
+					log.Println("✅ Google Sheets ahora está disponible")
 				}
 
-				if !src.IsCalendarEnabled() {
-					if err := src.InitCalendar(); err == nil {
-						log.Println("✅ Google Calendar ahora está disponible")
-					}
+				if err := src.InitCalendar(); err == nil {
+					log.Println("✅ Google Calendar ahora está disponible")
 				}
 			}
 			lastEnvMod = currentEnvMod

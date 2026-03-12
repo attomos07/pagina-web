@@ -126,6 +126,10 @@ func LoadBusinessConfig() error {
 	}
 
 	BusinessCfg = &config
+
+	// Refrescar horarios disponibles con la config del negocio
+	HORARIOS = getHorarios()
+
 	return nil
 }
 
@@ -405,17 +409,90 @@ func GetAvailableServices() string {
 // CONSTANTES PARA SHEETS Y CALENDAR
 // ============================================
 
-// Zona horaria para Google Calendar
-const TIMEZONE = "America/Hermosillo"
+// GetTimezone retorna el timezone configurado en BusinessCfg, o Hermosillo como fallback
+func GetTimezone() string {
+	if BusinessCfg != nil && BusinessCfg.Schedule.Timezone != "" {
+		return BusinessCfg.Schedule.Timezone
+	}
+	return "America/Hermosillo"
+}
 
 // Días de la semana
 var DIAS_SEMANA = []string{"Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"}
 
-// Horarios disponibles (se pueden cargar desde BusinessConfig si existen)
-var HORARIOS = []string{
+// horariosFallback son los horarios por defecto si no hay config del negocio
+var horariosFallback = []string{
 	"9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM",
 	"1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM",
 	"5:00 PM", "6:00 PM", "7:00 PM",
+}
+
+// HORARIOS disponibles — se inicializa con fallback y se recarga en LoadBusinessConfig
+var HORARIOS = horariosFallback
+
+func getHorarios() []string {
+	if BusinessCfg == nil {
+		return horariosFallback
+	}
+
+	// Determinar apertura y cierre más amplios entre los días abiertos
+	earliest := 9 // hora de inicio por defecto
+	latest := 19  // hora de cierre por defecto (7 PM)
+
+	days := []DaySchedule{
+		BusinessCfg.Schedule.Monday,
+		BusinessCfg.Schedule.Tuesday,
+		BusinessCfg.Schedule.Wednesday,
+		BusinessCfg.Schedule.Thursday,
+		BusinessCfg.Schedule.Friday,
+		BusinessCfg.Schedule.Saturday,
+		BusinessCfg.Schedule.Sunday,
+	}
+
+	found := false
+	for _, day := range days {
+		if !day.Open || day.Start == "" || day.End == "" {
+			continue
+		}
+		var startH, startM, endH, endM int
+		fmt.Sscanf(day.Start, "%d:%d", &startH, &startM)
+		fmt.Sscanf(day.End, "%d:%d", &endH, &endM)
+		if !found {
+			earliest = startH
+			latest = endH
+			found = true
+		} else {
+			if startH < earliest {
+				earliest = startH
+			}
+			if endH > latest {
+				latest = endH
+			}
+		}
+	}
+
+	if !found {
+		return horariosFallback
+	}
+
+	// Generar slots cada hora dentro del rango
+	var slots []string
+	for h := earliest; h < latest; h++ {
+		if h == 0 {
+			slots = append(slots, "12:00 AM")
+		} else if h < 12 {
+			slots = append(slots, fmt.Sprintf("%d:00 AM", h))
+		} else if h == 12 {
+			slots = append(slots, "12:00 PM")
+		} else {
+			slots = append(slots, fmt.Sprintf("%d:00 PM", h-12))
+		}
+	}
+
+	if len(slots) == 0 {
+		return horariosFallback
+	}
+	return slots
 }
 
 // Mapeo de columnas en Google Sheets

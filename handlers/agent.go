@@ -362,8 +362,22 @@ func CreateAgent(c *gin.Context) {
 				log.Printf("⚠️  [Agent %d] Sin integración de Google - las citas no se guardarán en Sheets/Calendar", agent.ID)
 			}
 
+			// Cargar sucursal vinculada al agente (fuente de verdad del negocio)
+			var branch *models.MyBusinessInfo
+			if agent.BranchID > 0 {
+				var b models.MyBusinessInfo
+				if err := config.DB.First(&b, agent.BranchID).Error; err == nil {
+					branch = &b
+					log.Printf("📋 [Agent %d] Sucursal cargada: %s (ID %d)", agent.ID, b.BranchName, b.ID)
+				} else {
+					log.Printf("⚠️  [Agent %d] No se pudo cargar sucursal %d: %v", agent.ID, agent.BranchID, err)
+				}
+			} else {
+				log.Printf("⚠️  [Agent %d] Sin sucursal vinculada (BranchID=0), website/email/ubicación/redes no estarán en la config", agent.ID)
+			}
+
 			// Desplegar AtomicBot con las credenciales de Google
-			if err := atomicService.DeployAtomicBot(&agent, geminiAPIKey, googleCredentials); err != nil {
+			if err := atomicService.DeployAtomicBot(&agent, branch, geminiAPIKey, googleCredentials); err != nil {
 				log.Printf("❌ [Agent %d] Error desplegando AtomicBot: %v", agent.ID, err)
 				agent.DeployStatus = "error"
 				config.DB.Save(&agent)

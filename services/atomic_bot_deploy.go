@@ -491,7 +491,7 @@ func (s *AtomicBotDeployService) CheckGeminiAPIKey(agent *models.Agent) bool {
 }
 
 // DeployAtomicBot despliega el bot de Go con configuración dinámica
-func (s *AtomicBotDeployService) DeployAtomicBot(agent *models.Agent, geminiAPIKey string, googleCredentials []byte) error {
+func (s *AtomicBotDeployService) DeployAtomicBot(agent *models.Agent, branch *models.MyBusinessInfo, geminiAPIKey string, googleCredentials []byte) error {
 	log.Printf("🚀 [Agent %d] Iniciando despliegue de AtomicBot...", agent.ID)
 
 	botDir := fmt.Sprintf("/home/user_%d/atomic-bot", agent.UserID)
@@ -510,7 +510,7 @@ func (s *AtomicBotDeployService) DeployAtomicBot(agent *models.Agent, geminiAPIK
 
 	// PASO 3: Configurar entorno
 	log.Printf("⚙️  [Agent %d] PASO 3/6: Configurando entorno...", agent.ID)
-	if err := s.configureEnvironment(agent, botDir, geminiAPIKey, googleCredentials); err != nil {
+	if err := s.configureEnvironment(agent, branch, botDir, geminiAPIKey, googleCredentials); err != nil {
 		return fmt.Errorf("error configurando entorno: %w", err)
 	}
 
@@ -673,9 +673,9 @@ func (s *AtomicBotDeployService) transferBotFiles(userID uint, botDir string) er
 }
 
 // configureEnvironment configura el entorno (.env y business_config.json)
-func (s *AtomicBotDeployService) configureEnvironment(agent *models.Agent, botDir, geminiAPIKey string, googleCredentials []byte) error {
+func (s *AtomicBotDeployService) configureEnvironment(agent *models.Agent, branch *models.MyBusinessInfo, botDir, geminiAPIKey string, googleCredentials []byte) error {
 	// Generar business_config.json
-	businessConfig := s.generateBusinessConfig(agent, nil) // branch se carga en DeployAtomicBot
+	businessConfig := s.generateBusinessConfig(agent, branch)
 	businessJSON, err := json.MarshalIndent(businessConfig, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error serializando business_config: %w", err)
