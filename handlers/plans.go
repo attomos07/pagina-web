@@ -151,6 +151,7 @@ func getPlansData() []gin.H {
 			"features": []string{
 				"Agentes ilimitados",
 				"Meta WhatsApp Business API",
+				"Contactos ilimitados",
 				"Mensajes ilimitados",
 				"IA con Gemini",
 				"Chatwoot CRM",
@@ -180,6 +181,7 @@ func getPlansData() []gin.H {
 			"features": []string{
 				"Agentes ilimitados",
 				"Meta WhatsApp Business API",
+				"Contactos ilimitados",
 				"Mensajes ilimitados",
 				"Chatwoot CRM",
 				"IA con Gemini",

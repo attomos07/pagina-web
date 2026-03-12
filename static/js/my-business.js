@@ -224,13 +224,9 @@ function loadBranchData(branch) {
     setInputValue('postalCodeInput', branch.location?.postalCode);
     setInputValue('betweenStreetsInput', branch.location?.betweenStreets);
 
-    document.getElementById('countryInput').value = branch.location?.country || '';
-    document.getElementById('stateInput').value = branch.location?.state || '';
-    document.getElementById('cityInput').value = branch.location?.city || '';
-
-    updateDropdownSelection('countryInputWrapper', branch.location?.country);
-    updateDropdownSelection('stateInputWrapper', branch.location?.state);
-    updateDropdownSelection('cityInputWrapper', branch.location?.city);
+    setLocationDropdown('countryInput', branch.location?.country);
+    setLocationDropdown('stateInput', branch.location?.state);
+    setLocationDropdown('cityInput', branch.location?.city);
 
     // Redes sociales
     setInputValue('facebookInput', branch.social?.facebook);
@@ -316,6 +312,40 @@ function applyHolidays(holidays = []) {
         last.querySelector('[data-field="day"]').value = h.day;
         last.querySelector('[data-field="name"]').value = h.name;
     });
+}
+
+function setLocationDropdown(inputId, value) {
+    if (!value) return;
+    const hiddenInput = document.getElementById(inputId);
+    const displayInput = document.getElementById(inputId + 'Display');
+    const wrapper = document.getElementById(inputId + 'Wrapper');
+    if (!hiddenInput || !displayInput || !wrapper) return;
+
+    // Buscar la opción que coincida por value o por texto
+    const options = wrapper.querySelectorAll('.select-option');
+    let matched = null;
+    options.forEach(opt => {
+        const optVal = opt.getAttribute('data-value');
+        const optText = opt.querySelector('span')?.textContent || '';
+        if (optVal === value || optText === value ||
+            optVal === value.toLowerCase().replace(/\s+/g, '-') ||
+            optText.toLowerCase() === value.toLowerCase()) {
+            matched = opt;
+        }
+        opt.classList.remove('selected');
+    });
+
+    if (matched) {
+        matched.classList.add('selected');
+        const text = matched.querySelector('span')?.textContent || value;
+        displayInput.value = text;
+        hiddenInput.value = text;
+        hiddenInput.setAttribute('data-value', matched.getAttribute('data-value'));
+    } else {
+        // Si no hay match en el dropdown, al menos mostrar el valor en el hidden
+        displayInput.value = value;
+        hiddenInput.value = value;
+    }
 }
 
 function setInputValue(elementId, value) {

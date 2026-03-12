@@ -1139,7 +1139,7 @@ textarea:focus {
 
 .btn-remove-item {
   width: 34px; height: 34px;
-  border-radius: 8px;
+  border-radius: 50%;
   background: #fef2f2;
   color: #ef4444;
   border: none;
@@ -1218,32 +1218,14 @@ textarea:focus {
 .services-list,
 .workers-list {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   flex-wrap: nowrap;
   gap: 1rem;
   width: 100%;
-  overflow-x: auto;
-  padding-bottom: 0.5rem;
-  scrollbar-width: thin;
-  scrollbar-color: #e5e7eb transparent;
-  grid-column: 1 / -1; /* Agregado: hace que ocupe el ancho completo del grid */
+  grid-column: 1 / -1;
 }
 
-.services-list::-webkit-scrollbar,
-.workers-list::-webkit-scrollbar {
-  height: 5px;
-}
 
-.services-list::-webkit-scrollbar-track,
-.workers-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.services-list::-webkit-scrollbar-thumb,
-.workers-list::-webkit-scrollbar-thumb {
-  background: #e5e7eb;
-  border-radius: 10px;
-}
 
 /* Teléfono label icon */
 .info-label .lni-phone { color: #06b6d4; }

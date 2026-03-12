@@ -151,6 +151,10 @@ func main() {
 			log.Fatalf("❌ Error conectando: %v", err)
 		}
 
+		// ✅ FIX: Dar tiempo al WebSocket para estabilizarse antes de mostrar el QR
+		// Esto reduce la probabilidad de que el handshake falle al escanear
+		time.Sleep(500 * time.Millisecond)
+
 		fmt.Println("\n📱 Escanea este código QR con tu WhatsApp:")
 		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
@@ -429,10 +433,20 @@ func handleEvents(evt interface{}, client *whatsmeow.Client) {
 		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 		log.Println("🚪 SESIÓN CERRADA - LOGOUT DETECTADO")
 		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+		// ✅ FIX: Si Store.ID es nil, el LoggedOut viene de un fallo de pairing
+		// (no de una sesión activa desvinculada). En ese caso NO limpiar ni salir,
+		// porque el proceso de QR sigue corriendo y puede reintentar.
+		if client.Store.ID == nil {
+			log.Println("⚠️  Fallo durante pairing inicial - ignorando LoggedOut")
+			log.Println("💡 El QR se regenerará automáticamente, intenta escanear de nuevo")
+			return
+		}
+
+		// Solo para sesiones ya establecidas: limpiar DB y reiniciar
 		log.Println("⚠️  El dispositivo fue desvinculado de WhatsApp")
 		log.Println("🔄 Limpiando sesión y preparando para nueva conexión...")
 
-		// Limpiar la base de datos para forzar nueva autenticación
 		go func() {
 			time.Sleep(2 * time.Second)
 
