@@ -215,18 +215,6 @@
                     </label>
                   </div>
 
-                  <!-- Selector de Sucursal -->
-                  <div id="branchSelectorStep1" class="branch-step1-wrapper" style="display:none;">
-                    <div class="branch-step1-header">
-                      <i class="lni lni-map-marker"></i>
-                      <div>
-                        <span class="branch-step1-label">¿Para qué sucursal es este agente?</span>
-                        <span class="branch-step1-sub">Selecciona una sucursal o déjalo en "Todas" para que aplique en general</span>
-                      </div>
-                    </div>
-                    <div class="branch-step1-cards" id="branchStep1Cards"></div>
-                  </div>
-
                   <div class="action-buttons">
                     <button
                       type="button"
@@ -386,6 +374,19 @@
                         <i class="lni lni-information"></i>
                         Información Básica
                       </h3>
+
+                      <!-- Selector de Sucursal (visible solo si hay más de una) -->
+                      <div id="branchSelectorBasic" class="branch-basic-wrapper" style="display:none;">
+                        <div class="branch-basic-header">
+                          <i class="lni lni-map-marker"></i>
+                          <div>
+                            <span class="branch-basic-label">¿Para qué sucursal es este agente?</span>
+                            <span class="branch-basic-sub">Elige una sucursal o "Todas" para uso general</span>
+                          </div>
+                        </div>
+                        <div class="branch-basic-cards" id="branchBasicCards"></div>
+                      </div>
+
                       <div class="form-grid">
                         <div class="form-group">
                           <label class="form-label">
@@ -410,7 +411,7 @@
                             <div class="toggle-title">
                               ¿Usar un número de teléfono diferente?
                             </div>
-                            <div class="toggle-description">
+                            <div class="toggle-description" id="phoneToggleDesc">
                               El agente puede usar tu número registrado o uno
                               diferente
                             </div>

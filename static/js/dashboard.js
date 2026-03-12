@@ -279,8 +279,8 @@ async function checkBusinessBeforeAgent() {
         const response = await fetch('/api/my-business');
         if (response.ok) {
             const data = await response.json();
-            // El endpoint devuelve { branches:[...], activeBranch:{...} }
-            // o { branches:[], defaultBranch:{...} } cuando no hay sucursales guardadas
+            // El endpoint devuelve { activeBranch: { business: { name, type } } }
+            // o { branches: [], defaultBranch: {...} } cuando no hay sucursales guardadas
             const branch = data.activeBranch || data.defaultBranch;
             const hasBusinessInfo =
                 branch &&
@@ -291,8 +291,6 @@ async function checkBusinessBeforeAgent() {
                 branch.business.type.trim() !== '';
 
             if (hasBusinessInfo) {
-                // Guardar branches en window para que onboarding.js las use al inicializar
-                window._dashboardBranches = data.branches || [];
                 openOnboardingModal();
             } else {
                 showBusinessWarningModal();
@@ -427,6 +425,9 @@ function openOnboardingModal() {
     modal.style.opacity = '1';
     modal.style.visibility = 'visible';
 
+    // Compensar el ancho del scrollbar para evitar que el layout se mueva
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.paddingRight = scrollbarWidth + 'px';
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
 
@@ -445,6 +446,7 @@ function closeOnboardingModal() {
     }
     document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
 }
 window.closeOnboardingModal = closeOnboardingModal;
 
