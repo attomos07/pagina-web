@@ -428,6 +428,9 @@ func main() {
 		adminGroup.GET("/invoices", func(c *gin.Context) {
 			c.HTML(200, "admin-invoices", nil)
 		})
+		adminGroup.GET("/sellers", func(c *gin.Context) {
+			c.HTML(200, "admin-sellers", nil)
+		})
 		adminGroup.GET("/api/invoices", handlers.AdminGetInvoices)
 		adminGroup.PATCH("/api/invoices/:id", handlers.AdminUpdateInvoiceStatus)
 		adminGroup.POST("/api/logout", handlers.AdminLogout)
