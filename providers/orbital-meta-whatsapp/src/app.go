@@ -13,6 +13,7 @@ import (
 type UserState struct {
 	IsScheduling        bool
 	IsCancelling        bool
+	IsAskingForEmail    bool
 	Step                int
 	Data                map[string]string
 	ConversationHistory []string
@@ -36,6 +37,7 @@ func GetUserState(userID string) *UserState {
 	state := &UserState{
 		IsScheduling:        false,
 		IsCancelling:        false,
+		IsAskingForEmail:    false,
 		Step:                0,
 		Data:                make(map[string]string),
 		ConversationHistory: []string{},
@@ -64,25 +66,27 @@ func ProcessMessage(messageText, phoneNumber, senderName string) string {
 	log.Printf("📊 Estado del usuario %s:", senderName)
 	log.Printf("   🔄 isScheduling: %v", state.IsScheduling)
 	log.Printf("   🚫 isCancelling: %v", state.IsCancelling)
+	log.Printf("   📧 isAskingForEmail: %v", state.IsAskingForEmail)
 	log.Printf("   📋 Datos recopilados: %v", state.Data)
 	log.Printf("   📝 Pasos completados: %d", state.Step)
 
 	// Agregar al historial
 	state.ConversationHistory = append(state.ConversationHistory, "Usuario: "+messageText)
 
-	// Normalizar mensaje
-	normalizedMessage := strings.TrimSpace(strings.ToLower(messageText))
+	// Construir historial de conversación como string
+	historyStr := strings.Join(state.ConversationHistory, "\n")
 
-	// Detectar intención de cancelar cita
+	// --- FLUJO DE EMAIL ---
+	if state.IsAskingForEmail {
+		log.Println("📧 CONTINUANDO FLUJO DE EMAIL")
+		return processEmailReminderResponse(state, messageText, phoneNumber)
+	}
+
+	// --- FLUJO DE CANCELACIÓN ---
 	messageLower := strings.ToLower(messageText)
 	cancelKeywords := []string{
-		"cancelar cita",
-		"cancel appointment",
-		"eliminar cita",
-		"borrar cita",
-		"anular cita",
-		"quiero cancelar",
-		"necesito cancelar",
+		"cancelar cita", "cancel appointment", "eliminar cita",
+		"borrar cita", "anular cita", "quiero cancelar", "necesito cancelar",
 	}
 
 	wantsToCancelAppointment := false
@@ -94,56 +98,37 @@ func ProcessMessage(messageText, phoneNumber, senderName string) string {
 		}
 	}
 
-	// Si quiere cancelar y no está cancelando
 	if wantsToCancelAppointment && !state.IsCancelling {
 		log.Println("🚫 INICIANDO PROCESO DE CANCELACIÓN")
 		return startCancellationFlow(state, messageText, senderName)
 	}
 
-	// Si está cancelando, continuar
 	if state.IsCancelling {
 		log.Println("🚫 CONTINUANDO PROCESO DE CANCELACIÓN")
 		return continueCancellationFlow(state, messageText, phoneNumber, senderName)
 	}
 
-	// Detectar otras intenciones
-	intention := detectIntention(normalizedMessage)
-	log.Printf("🎯 Intención detectada: %s", intention)
-
-	var response string
-
-	switch intention {
-	case "greeting":
-		response = handleGreeting(senderName)
-
-	case "appointment":
-		response = handleAppointment(messageText, phoneNumber, senderName)
-
-	case "hours":
-		response = handleBusinessHours()
-
-	case "services":
-		response = handleServices()
-
-	case "location":
-		response = handleLocation()
-
-	case "price":
-		response = handlePricing()
-
-	case "help":
-		response = handleHelp()
-
-	default:
-		// Si Gemini está habilitado, usar IA
-		if IsGeminiEnabled() {
-			response = generateGeminiResponse(messageText, senderName)
-		} else {
-			response = handleUnknown(senderName)
-		}
+	// --- FLUJO DE AGENDAMIENTO ACTIVO ---
+	if state.IsScheduling {
+		log.Println("📅 CONTINUANDO FLUJO DE AGENDAMIENTO")
+		return continueAppointmentFlow(state, messageText, phoneNumber, senderName, historyStr)
 	}
 
-	return response
+	// --- ANÁLISIS CON GEMINI ---
+	log.Println("🔍 Analizando intención con Gemini...")
+	analysis, err := AnalyzeForAppointment(messageText, historyStr, false)
+	if err != nil {
+		log.Printf("⚠️  Error en análisis: %v", err)
+	}
+
+	if analysis != nil && analysis.WantsToSchedule && analysis.Confidence > 0.6 {
+		log.Printf("✅ Usuario quiere agendar (confidence: %.2f)", analysis.Confidence)
+		return startAppointmentFlow(state, messageText, phoneNumber, senderName, analysis, historyStr)
+	}
+
+	// --- CONVERSACIÓN NORMAL ---
+	log.Println("💬 Procesando como conversación normal")
+	return handleNormalConversation(state, messageText, phoneNumber, senderName, historyStr)
 }
 
 // startCancellationFlow inicia el flujo de cancelación de citas
@@ -155,7 +140,6 @@ func startCancellationFlow(state *UserState, message, userName string) string {
 	state.IsCancelling = true
 	state.Step = 1
 
-	// Intentar extraer fecha y hora del mensaje inicial
 	dateRegex := regexp.MustCompile(`(\d{1,2})/(\d{1,2})/(\d{4})`)
 	timeRegex := regexp.MustCompile(`(\d{1,2}):(\d{2})`)
 
@@ -163,14 +147,12 @@ func startCancellationFlow(state *UserState, message, userName string) string {
 	timeMatch := timeRegex.FindStringSubmatch(message)
 
 	if len(dateMatch) >= 4 && len(timeMatch) >= 3 {
-		// Ya tiene fecha y hora, procesar directamente
 		state.Data["fecha_cancelar"] = fmt.Sprintf("%s/%s/%s", dateMatch[1], dateMatch[2], dateMatch[3])
 		state.Data["hora_cancelar"] = fmt.Sprintf("%s:%s", timeMatch[1], timeMatch[2])
 		log.Printf("✅ Fecha y hora extraídas: %s %s\n", state.Data["fecha_cancelar"], state.Data["hora_cancelar"])
 		return processCancellation(state, userName)
 	}
 
-	// Si no tiene los datos, pedirlos
 	response := fmt.Sprintf(`Para cancelar tu cita, %s, necesito los siguientes datos:
 
 📅 *Fecha de tu cita:* DD/MM/YYYY
@@ -185,12 +167,11 @@ Por favor envíame los datos de la cita que deseas cancelar.`, userName)
 }
 
 // continueCancellationFlow continúa el flujo de cancelación
-func continueCancellationFlow(state *UserState, message, userID, userName string) string {
+func continueCancellationFlow(state *UserState, message, _, userName string) string {
 	log.Println("╔════════════════════════════════════════╗")
 	log.Println("║  CONTINUANDO FLUJO DE CANCELACIÓN      ║")
 	log.Println("╚════════════════════════════════════════╝")
 
-	// Extraer fecha y hora del mensaje
 	dateRegex := regexp.MustCompile(`(\d{1,2})/(\d{1,2})/(\d{4})`)
 	timeRegex := regexp.MustCompile(`(\d{1,2}):(\d{2})`)
 
@@ -207,12 +188,10 @@ func continueCancellationFlow(state *UserState, message, userID, userName string
 		log.Printf("✅ Hora extraída: %s\n", state.Data["hora_cancelar"])
 	}
 
-	// Verificar si ya tenemos fecha y hora
 	if state.Data["fecha_cancelar"] != "" && state.Data["hora_cancelar"] != "" {
 		return processCancellation(state, userName)
 	}
 
-	// Si falta algo, pedirlo
 	if state.Data["fecha_cancelar"] == "" {
 		return "Por favor, indícame la *fecha* de tu cita (DD/MM/YYYY):"
 	}
@@ -234,7 +213,6 @@ func processCancellation(state *UserState, userName string) string {
 	log.Printf("   Fecha: %s\n", fecha)
 	log.Printf("   Hora: %s\n", hora)
 
-	// Parsear fecha y hora
 	fechaHoraStr := fmt.Sprintf("%s %s", fecha, hora)
 	appointmentDateTime, err := time.Parse("02/01/2006 15:04", fechaHoraStr)
 	if err != nil {
@@ -243,7 +221,6 @@ func processCancellation(state *UserState, userName string) string {
 		return "❌ Formato de fecha/hora inválido. Por favor usa el formato: DD/MM/YYYY HH:MM"
 	}
 
-	// Cancelar en Google Sheets
 	if IsSheetsEnabled() {
 		err := CancelAppointmentInSheets(userName, appointmentDateTime)
 		if err != nil {
@@ -262,9 +239,6 @@ Por favor verifica los datos y vuelve a intentar.`,
 		}
 	}
 
-	// TODO: Cancelar en Google Calendar si está habilitado
-
-	// Limpiar estado
 	state.IsCancelling = false
 	state.Data = make(map[string]string)
 
@@ -282,134 +256,192 @@ Tu cita ha sido cancelada. Si deseas reagendar, házmelo saber.
 		appointmentDateTime.Format("15:04"))
 }
 
-// detectIntention detecta la intención del mensaje
-func detectIntention(message string) string {
-	// Saludos
-	greetings := []string{"hola", "buenos días", "buenas tardes", "buenas noches", "hey", "hi", "hello"}
-	for _, greeting := range greetings {
-		if strings.Contains(message, greeting) {
-			return "greeting"
+// startAppointmentFlow inicia el flujo de agendamiento con datos pre-extraídos
+func startAppointmentFlow(state *UserState, messageText, phoneNumber, senderName string, analysis *AppointmentAnalysis, historyStr string) string {
+	log.Println("╔════════════════════════════════════════╗")
+	log.Println("║   INICIANDO FLUJO DE AGENDAMIENTO      ║")
+	log.Println("╚════════════════════════════════════════╝")
+
+	state.IsScheduling = true
+	state.Step = 1
+
+	// Pre-cargar datos extraídos por Gemini
+	if analysis != nil && analysis.ExtractedData != nil {
+		for k, v := range analysis.ExtractedData {
+			if v != "" && v != "null" {
+				state.Data[k] = v
+				log.Printf("   📥 Dato pre-cargado: %s = %s", k, v)
+			}
 		}
 	}
 
-	// Agendar cita
-	appointments := []string{"agendar", "cita", "reservar", "turno", "hora", "appointment", "book", "schedule"}
-	for _, word := range appointments {
-		if strings.Contains(message, word) {
-			return "appointment"
-		}
-	}
+	// Asegurar que el teléfono esté guardado
+	state.Data["telefono"] = cleanPhoneNumber(phoneNumber)
 
-	// Horarios
-	hours := []string{"horario", "hora", "abren", "cierran", "hours", "open", "close"}
-	for _, word := range hours {
-		if strings.Contains(message, word) {
-			return "hours"
-		}
-	}
-
-	// Servicios
-	services := []string{"servicio", "tratamiento", "procedure", "service"}
-	for _, word := range services {
-		if strings.Contains(message, word) {
-			return "services"
-		}
-	}
-
-	// Ubicación
-	locations := []string{"ubicación", "dirección", "dónde", "location", "address", "where"}
-	for _, word := range locations {
-		if strings.Contains(message, word) {
-			return "location"
-		}
-	}
-
-	// Precios
-	prices := []string{"precio", "costo", "cuánto", "price", "cost", "how much"}
-	for _, word := range prices {
-		if strings.Contains(message, word) {
-			return "price"
-		}
-	}
-
-	// Ayuda
-	helps := []string{"ayuda", "help", "menú", "menu", "opciones", "options"}
-	for _, word := range helps {
-		if strings.Contains(message, word) {
-			return "help"
-		}
-	}
-
-	return "unknown"
+	// Preguntar por los datos que faltan
+	return continueAppointmentFlow(state, messageText, phoneNumber, senderName, historyStr)
 }
 
-// handleGreeting maneja saludos
-func handleGreeting(senderName string) string {
-	config := GetBusinessConfig()
-	if config == nil {
-		return fmt.Sprintf("¡Hola %s! 👋 ¿En qué puedo ayudarte?", senderName)
+// continueAppointmentFlow continúa el flujo de agendamiento
+func continueAppointmentFlow(state *UserState, messageText, phoneNumber, senderName, historyStr string) string {
+	log.Println("📅 CONTINUANDO FLUJO DE AGENDAMIENTO")
+	log.Printf("   Datos actuales: %v", state.Data)
+
+	// Intentar extraer datos del mensaje actual con Gemini
+	if messageText != "" && state.Step > 1 {
+		analysis, err := AnalyzeForAppointment(messageText, historyStr, true)
+		if err == nil && analysis != nil && analysis.ExtractedData != nil {
+			for k, v := range analysis.ExtractedData {
+				if v != "" && v != "null" && state.Data[k] == "" {
+					state.Data[k] = v
+					log.Printf("   📥 Dato extraído: %s = %s", k, v)
+				}
+			}
+		}
 	}
 
-	return fmt.Sprintf(`¡Hola %s! 👋
+	state.Step++
 
-Bienvenido/a a *%s*
+	// Verificar qué datos faltan
+	missing := getMissingData(state.Data)
 
-¿En qué puedo ayudarte hoy?
+	if len(missing) == 0 {
+		// Tenemos todo, guardar la cita
+		return saveAppointment(state, phoneNumber, senderName)
+	}
 
-Puedes escribir:
-• "Agendar cita" para reservar
-• "Servicios" para ver lo que ofrecemos
-• "Horarios" para conocer nuestro horario
-• "Cancelar cita" para cancelar una reserva
-• "Ayuda" para más opciones`, senderName, config.AgentName)
+	// Pedir el primer dato que falta
+	nextField := missing[0]
+	return askForField(nextField, state, senderName, historyStr)
 }
 
-// handleAppointment maneja solicitudes de citas
-func handleAppointment(messageText, phoneNumber, senderName string) string {
-	// Extraer fecha y hora del mensaje (formato: DD/MM/YYYY HH:MM)
-	dateRegex := regexp.MustCompile(`(\d{1,2})/(\d{1,2})/(\d{4})`)
-	timeRegex := regexp.MustCompile(`(\d{1,2}):(\d{2})`)
+// getMissingData retorna los campos que faltan
+func getMissingData(data map[string]string) []string {
+	var missing []string
 
-	dateMatch := dateRegex.FindStringSubmatch(messageText)
-	timeMatch := timeRegex.FindStringSubmatch(messageText)
-
-	if len(dateMatch) < 4 || len(timeMatch) < 3 {
-		return `Para agendar una cita, necesito los siguientes datos:
-
-📅 *Fecha:* DD/MM/YYYY
-🕐 *Hora:* HH:MM
-
-Ejemplo: "Agendar cita 15/01/2026 10:30"
-
-Por favor envíame tu cita con este formato.`
+	if data["nombre"] == "" {
+		missing = append(missing, "nombre")
+	}
+	if data["servicio"] == "" {
+		missing = append(missing, "servicio")
 	}
 
-	day := dateMatch[1]
-	month := dateMatch[2]
-	year := dateMatch[3]
-	hour := timeMatch[1]
-	minute := timeMatch[2]
+	// Solo pedir barbero si hay más de 1 worker configurado
+	if BusinessCfg != nil && len(BusinessCfg.Workers) > 1 {
+		if data["barbero"] == "" {
+			missing = append(missing, "barbero")
+		}
+	}
 
-	// Construir fecha
-	dateStr := fmt.Sprintf("%s-%s-%s", year, month, day)
-	timeStr := fmt.Sprintf("%s:%s", hour, minute)
+	if data["fecha"] == "" {
+		missing = append(missing, "fecha")
+	}
+	if data["hora"] == "" {
+		missing = append(missing, "hora")
+	}
 
-	appointmentDateTime, err := time.Parse("2006-01-02 15:04", fmt.Sprintf("%s %s", dateStr, timeStr))
+	return missing
+}
+
+// askForField genera el mensaje apropiado para pedir un campo
+func askForField(field string, state *UserState, _, historyStr string) string {
+	log.Printf("❓ Pidiendo campo: %s", field)
+
+	switch field {
+	case "nombre":
+		msg := "¡Con gusto! Para agendar tu cita, ¿cuál es tu nombre completo?"
+		if geminiEnabled {
+			if resp, err := Chat("El usuario quiere agendar una cita. Pide su nombre de manera amigable.", "¿cómo te llamas?", historyStr); err == nil && resp != "" {
+				msg = resp
+			}
+		}
+		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+msg)
+		return msg
+
+	case "servicio":
+		servicesList := ""
+		if BusinessCfg != nil && len(BusinessCfg.Services) > 0 {
+			for i, s := range BusinessCfg.Services {
+				if s.Price > 0 {
+					servicesList += fmt.Sprintf("\n%d. %s - $%.0f", i+1, s.Title, s.Price)
+				} else {
+					servicesList += fmt.Sprintf("\n%d. %s", i+1, s.Title)
+				}
+			}
+		}
+		msg := fmt.Sprintf("¿Qué servicio deseas?\n%s", servicesList)
+		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+msg)
+		return msg
+
+	case "barbero":
+		workersList := ""
+		if BusinessCfg != nil && len(BusinessCfg.Workers) > 0 {
+			for i, w := range BusinessCfg.Workers {
+				workersList += fmt.Sprintf("\n%d. %s", i+1, w.Name)
+			}
+		}
+		msg := fmt.Sprintf("¿Con quién deseas tu cita?%s", workersList)
+		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+msg)
+		return msg
+
+	case "fecha":
+		msg := "¿Para qué fecha deseas tu cita? (puedes decir 'mañana', 'lunes', o una fecha como 15/01/2026)"
+		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+msg)
+		return msg
+
+	case "hora":
+		horariosStr := strings.Join(HORARIOS, ", ")
+		msg := fmt.Sprintf("¿A qué hora? Horarios disponibles:\n%s", horariosStr)
+		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+msg)
+		return msg
+	}
+
+	return "¿Puedes darme más información?"
+}
+
+// saveAppointment guarda la cita con todos los datos recopilados
+func saveAppointment(state *UserState, phoneNumber, senderName string) string {
+	log.Println("💾 GUARDANDO CITA")
+	log.Printf("   Datos: %v", state.Data)
+
+	// Normalizar datos
+	diaSemana, fechaExacta, err := ConvertirFechaADia(state.Data["fecha"])
 	if err != nil {
-		return "❌ Formato de fecha/hora inválido. Por favor usa el formato: DD/MM/YYYY HH:MM"
+		log.Printf("❌ Error convirtiendo fecha: %v", err)
+		state.IsScheduling = false
+		state.Data = make(map[string]string)
+		return "❌ Hubo un problema con la fecha. ¿Puedes intentarlo de nuevo?"
 	}
 
-	// Validar que la fecha no sea en el pasado
-	if appointmentDateTime.Before(time.Now()) {
-		return "❌ La fecha no puede ser en el pasado. Por favor elige una fecha futura."
+	horaNormalizada, err := NormalizarHora(state.Data["hora"])
+	if err != nil {
+		log.Printf("❌ Error normalizando hora: %v", err)
+		// Intentar con hora tal cual
+		horaNormalizada = state.Data["hora"]
 	}
 
-	// 🔧 CORRECCIÓN: Limpiar y formatear el número de teléfono
-	cleanedPhone := cleanPhoneNumber(phoneNumber)
+	state.Data["fechaExacta"] = fechaExacta
+	state.Data["diaSemana"] = diaSemana
+	state.Data["hora"] = horaNormalizada
+	state.Data["telefono"] = cleanPhoneNumber(phoneNumber)
+
+	if state.Data["nombre"] == "" {
+		state.Data["nombre"] = senderName
+	}
+
+	log.Printf("   📅 Fecha exacta: %s (%s)", fechaExacta, diaSemana)
+	log.Printf("   ⏰ Hora normalizada: %s", horaNormalizada)
 
 	// Guardar en Google Sheets
 	if IsSheetsEnabled() {
-		err := SaveAppointment(senderName, cleanedPhone, appointmentDateTime)
+		err := SaveAppointmentToSheets(
+			state.Data["nombre"],
+			state.Data["telefono"],
+			fechaExacta,
+			horaNormalizada,
+			state.Data["servicio"],
+			state.Data["barbero"],
+		)
 		if err != nil {
 			log.Printf("❌ Error guardando en Sheets: %v", err)
 		} else {
@@ -419,202 +451,209 @@ Por favor envíame tu cita con este formato.`
 
 	// Crear evento en Google Calendar
 	if IsCalendarEnabled() {
-		config := GetBusinessConfig()
-		duration := 60 // Duración por defecto
-		if config != nil && config.DefaultAppointmentDuration > 0 {
-			duration = config.DefaultAppointmentDuration
-		}
-
-		eventTitle := fmt.Sprintf("Cita - %s", senderName)
-		eventDescription := fmt.Sprintf("Cliente: %s\nTeléfono: %s", senderName, cleanedPhone)
-
-		eventLink, err := CreateCalendarEvent(eventTitle, eventDescription, appointmentDateTime, duration)
+		_, err := CreateCalendarEvent(state.Data)
 		if err != nil {
 			log.Printf("❌ Error creando evento en Calendar: %v", err)
 		} else {
-			log.Printf("✅ Evento creado en Google Calendar: %s", eventLink)
+			log.Printf("✅ Evento creado en Google Calendar")
 		}
 	}
 
-	return fmt.Sprintf(`✅ *Cita agendada exitosamente*
+	// Preguntar por email para recordatorio
+	emailQuestion := askForEmailReminder(state, senderName)
+
+	// Construir mensaje de confirmación
+	confirmMsg := generateConfirmationMessage(state.Data, senderName)
+
+	// Limpiar estado de agendamiento (pero mantener isAskingForEmail)
+	state.IsScheduling = false
+
+	// Si preguntamos por email, enviar confirmación + pregunta
+	if emailQuestion != "" {
+		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+confirmMsg)
+		return confirmMsg + "\n\n" + emailQuestion
+	}
+
+	state.Data = make(map[string]string)
+	state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+confirmMsg)
+	return confirmMsg
+}
+
+// askForEmailReminder pregunta si quiere recordatorio por email
+func askForEmailReminder(state *UserState, _ string) string {
+	if !IsCalendarEnabled() {
+		return ""
+	}
+
+	state.IsAskingForEmail = true
+	msg := "📧 ¿Te gustaría recibir un recordatorio por email? Si es así, escribe tu correo electrónico (o escribe 'no' para omitir)."
+	return msg
+}
+
+// processEmailReminderResponse procesa la respuesta del email
+func processEmailReminderResponse(state *UserState, message, _ string) string {
+	state.IsAskingForEmail = false
+
+	messageLower := strings.ToLower(strings.TrimSpace(message))
+
+	// Si dice no o algo negativo
+	if messageLower == "no" || messageLower == "no gracias" || messageLower == "omitir" || messageLower == "skip" {
+		log.Println("📧 Usuario no quiere recordatorio por email")
+		state.Data = make(map[string]string)
+		return "¡Perfecto! Tu cita está confirmada. ¿Hay algo más en lo que pueda ayudarte?"
+	}
+
+	// Intentar extraer email
+	email := ExtractEmailFromMessage(message)
+	if email == "" || !isValidEmail(message) {
+		// Verificar si el mensaje completo es un email
+		if isValidEmail(messageLower) {
+			email = messageLower
+		}
+	}
+
+	if email != "" {
+		state.Data["email"] = email
+		log.Printf("📧 Email guardado: %s", email)
+
+		// Actualizar evento en Calendar con email si existe
+		// (El evento ya fue creado, aquí solo confirmamos)
+
+		state.Data = make(map[string]string)
+		return fmt.Sprintf("✅ ¡Listo! Te enviaremos un recordatorio a *%s*. ¿Puedo ayudarte en algo más?", email)
+	}
+
+	// No parece un email válido, ignorar y continuar
+	state.Data = make(map[string]string)
+	return "¡Perfecto! Tu cita está confirmada. ¿Hay algo más en lo que pueda ayudarte?"
+}
+
+// isValidEmail verifica si un string es un email válido
+func isValidEmail(email string) bool {
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+	return emailRegex.MatchString(strings.TrimSpace(email))
+}
+
+// generateConfirmationMessage genera el mensaje de confirmación
+func generateConfirmationMessage(data map[string]string, _ string) string {
+	// Intentar generar con Gemini
+	if geminiEnabled {
+		prompt := fmt.Sprintf("Genera un mensaje de confirmación de cita amigable y breve para %s. Fecha: %s (%s), Hora: %s, Servicio: %s",
+			data["nombre"],
+			data["fechaExacta"],
+			data["diaSemana"],
+			data["hora"],
+			data["servicio"],
+		)
+		if resp, err := Chat(prompt, "confirmar cita", ""); err == nil && resp != "" {
+			return resp
+		}
+	}
+
+	// Fallback manual
+	msg := fmt.Sprintf(`✅ *¡Cita agendada exitosamente!*
 
 👤 *Cliente:* %s
-📅 *Fecha:* %s
-🕐 *Hora:* %s
+💼 *Servicio:* %s
+📅 *Fecha:* %s (%s)
+🕐 *Hora:* %s`,
+		data["nombre"],
+		data["servicio"],
+		data["fechaExacta"],
+		data["diaSemana"],
+		data["hora"],
+	)
 
-Recibirás un recordatorio antes de tu cita.
+	if data["barbero"] != "" {
+		msg += fmt.Sprintf("\n💈 *Con:* %s", data["barbero"])
+	}
 
-¿Necesitas algo más?`, senderName, appointmentDateTime.Format("02/01/2006"), appointmentDateTime.Format("15:04"))
+	msg += "\n\n¡Te esperamos! 😊"
+	return msg
 }
 
-// handleBusinessHours maneja consultas de horario
-func handleBusinessHours() string {
-	config := GetBusinessConfig()
-	if config == nil {
-		return "Estamos disponibles de lunes a viernes de 9:00 AM a 6:00 PM"
+// handleNormalConversation maneja conversaciones normales con contexto
+func handleNormalConversation(state *UserState, messageText, _, senderName, historyStr string) string {
+	log.Println("💬 CONVERSACIÓN NORMAL")
+
+	normalizedMessage := strings.ToLower(strings.TrimSpace(messageText))
+
+	// Detectar contexto específico sin Gemini
+	if !geminiEnabled {
+		return handleWithoutGemini(normalizedMessage, senderName)
 	}
 
-	return fmt.Sprintf(`🕐 *Horarios de atención*
+	// Determinar contexto para el prompt
+	promptContext := "conversación general sobre el negocio"
 
-%s
-
-¿Deseas agendar una cita?`, config.BusinessHours)
-}
-
-// handleServices maneja consultas de servicios
-func handleServices() string {
-	config := GetBusinessConfig()
-	if config == nil {
-		return "Ofrecemos diversos servicios profesionales. ¿Te gustaría agendar una cita?"
+	if ContainsKeywords(normalizedMessage, []string{"servicio", "tratamiento", "precio", "costo", "cuánto", "cuanto"}) {
+		promptContext = "el usuario pregunta sobre servicios o precios"
+	} else if ContainsKeywords(normalizedMessage, []string{"horario", "hora", "abre", "cierra", "atienden"}) {
+		promptContext = "el usuario pregunta sobre horarios"
+	} else if ContainsKeywords(normalizedMessage, []string{"ubicación", "ubicacion", "dirección", "direccion", "donde", "dónde"}) {
+		promptContext = "el usuario pregunta sobre ubicación"
+	} else if IsGreeting(normalizedMessage) {
+		promptContext = "saludo inicial del cliente"
 	}
 
-	var servicesList strings.Builder
-	servicesList.WriteString("💼 *Nuestros servicios*\n\n")
-
-	for i, service := range config.Services {
-		servicesList.WriteString(fmt.Sprintf("%d. *%s*\n", i+1, service.Name))
-		if service.Description != "" {
-			servicesList.WriteString(fmt.Sprintf("   %s\n", service.Description))
-		}
-		if service.Duration > 0 {
-			servicesList.WriteString(fmt.Sprintf("   ⏱ Duración: %d min\n", service.Duration))
-		}
-		if service.Price > 0 {
-			servicesList.WriteString(fmt.Sprintf("   💰 Precio: $%.2f\n", service.Price))
-		}
-		servicesList.WriteString("\n")
+	response, err := Chat(promptContext, messageText, historyStr)
+	if err != nil || response == "" {
+		log.Printf("⚠️  Error con Gemini: %v, usando fallback", err)
+		return handleWithoutGemini(normalizedMessage, senderName)
 	}
 
-	servicesList.WriteString("¿Te gustaría agendar alguno de estos servicios?")
-
-	return servicesList.String()
-}
-
-// handleLocation maneja consultas de ubicación
-func handleLocation() string {
-	config := GetBusinessConfig()
-	if config == nil {
-		return "Contáctanos para conocer nuestra ubicación."
-	}
-
-	response := fmt.Sprintf(`📍 *Nuestra ubicación*
-
-%s`, config.Address)
-
-	if config.GoogleMapsLink != "" {
-		response += fmt.Sprintf("\n\n🗺 Ver en Google Maps:\n%s", config.GoogleMapsLink)
-	}
-
+	state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
 	return response
 }
 
-// handlePricing maneja consultas de precios
-func handlePricing() string {
+// handleWithoutGemini maneja mensajes sin IA disponible
+func handleWithoutGemini(normalizedMessage, senderName string) string {
 	config := GetBusinessConfig()
-	if config == nil {
-		return "Para información sobre precios, por favor contáctanos o agenda una cita."
+
+	if IsGreeting(normalizedMessage) {
+		if config != nil {
+			return fmt.Sprintf("¡Hola %s! 👋 Bienvenido a *%s*. ¿En qué puedo ayudarte?\n\n• Servicios\n• Horarios\n• Ubicación\n• Agendar cita", senderName, config.AgentName)
+		}
+		return fmt.Sprintf("¡Hola %s! 👋 ¿En qué puedo ayudarte?", senderName)
 	}
 
-	var priceList strings.Builder
-	priceList.WriteString("💰 *Lista de precios*\n\n")
-
-	hasServices := false
-	for _, service := range config.Services {
-		if service.Price > 0 {
-			hasServices = true
-			priceList.WriteString(fmt.Sprintf("• *%s:* $%.2f\n", service.Name, service.Price))
+	if ContainsKeywords(normalizedMessage, []string{"servicio", "tratamiento"}) {
+		if config != nil && len(config.Services) > 0 {
+			var sb strings.Builder
+			sb.WriteString("💼 *Nuestros servicios:*\n")
+			for _, s := range config.Services {
+				if s.Price > 0 {
+					sb.WriteString(fmt.Sprintf("• %s - $%.0f\n", s.Title, s.Price))
+				} else {
+					sb.WriteString(fmt.Sprintf("• %s\n", s.Title))
+				}
+			}
+			return sb.String()
 		}
 	}
 
-	if !hasServices {
-		return "Para información sobre precios, por favor contáctanos o agenda una cita."
+	if ContainsKeywords(normalizedMessage, []string{"horario", "hora", "abre", "cierra"}) {
+		if config != nil {
+			return fmt.Sprintf("🕐 *Horarios:*\n%s", config.BusinessHours)
+		}
 	}
 
-	priceList.WriteString("\n¿Te gustaría agendar una cita?")
-
-	return priceList.String()
-}
-
-// handleHelp maneja solicitudes de ayuda
-func handleHelp() string {
-	config := GetBusinessConfig()
-	businessName := "nosotros"
-	if config != nil {
-		businessName = config.AgentName
+	if ContainsKeywords(normalizedMessage, []string{"ubicación", "ubicacion", "dirección", "donde"}) {
+		if config != nil && config.Address != "" {
+			resp := fmt.Sprintf("📍 *Dirección:*\n%s", config.Address)
+			if config.GoogleMapsLink != "" {
+				resp += fmt.Sprintf("\n\n🗺 %s", config.GoogleMapsLink)
+			}
+			return resp
+		}
 	}
 
-	return fmt.Sprintf(`🤖 *Menú de ayuda*
-
-Puedes escribir:
-
-📅 *"Agendar cita"* - Reservar una cita
-💼 *"Servicios"* - Ver servicios disponibles
-🕐 *"Horarios"* - Conocer horario de atención
-📍 *"Ubicación"* - Ver dónde estamos
-💰 *"Precios"* - Consultar precios
-🚫 *"Cancelar cita"* - Cancelar una reserva
-
-¿En qué puedo ayudarte?
-
-_Atendido por %s_`, businessName)
+	return fmt.Sprintf("Lo siento %s, no entendí tu mensaje. Escribe *\"Ayuda\"* para ver las opciones disponibles.", senderName)
 }
 
-// handleUnknown maneja mensajes desconocidos
-func handleUnknown(senderName string) string {
-	return fmt.Sprintf(`Lo siento %s, no entendí tu mensaje. 🤔
-
-Escribe *"Ayuda"* para ver las opciones disponibles.`, senderName)
-}
-
-// generateGeminiResponse genera respuesta con IA
-func generateGeminiResponse(messageText, senderName string) string {
-	config := GetBusinessConfig()
-	businessContext := ""
-
-	if config != nil {
-		businessContext = fmt.Sprintf(`Eres el asistente virtual de %s.
-Información del negocio:
-- Servicios: %s
-- Horarios: %s
-- Ubicación: %s
-- Teléfono: %s
-
-Responde de manera amigable, profesional y útil. Si te preguntan por citas, servicios, horarios o ubicación, proporciona la información correspondiente.`,
-			config.AgentName,
-			getServicesText(config.Services),
-			config.BusinessHours,
-			config.Address,
-			config.PhoneNumber)
-	}
-
-	prompt := fmt.Sprintf(`%s
-
-Cliente: %s
-Mensaje: %s
-
-Genera una respuesta apropiada, breve (máximo 3 líneas) y en español.`, businessContext, senderName, messageText)
-
-	response, err := GenerateResponse(prompt)
-	if err != nil {
-		log.Printf("❌ Error con Gemini: %v", err)
-		return handleUnknown(senderName)
-	}
-
-	return response
-}
-
-// getServicesText convierte servicios a texto
-func getServicesText(services []Service) string {
-	var serviceNames []string
-	for _, service := range services {
-		serviceNames = append(serviceNames, service.Name)
-	}
-	return strings.Join(serviceNames, ", ")
-}
-
-// 🔧 CORRECCIÓN: cleanPhoneNumber limpia y formatea el número de teléfono de Meta WhatsApp
+// cleanPhoneNumber limpia y formatea el número de teléfono de Meta WhatsApp
 func cleanPhoneNumber(phoneNumber string) string {
-	// Los números de Meta WhatsApp vienen directamente como número
+	// Los números de Meta WhatsApp vienen directamente como número (sin @s.whatsapp.net)
 	// Ejemplo: 5216621234567
 
 	log.Printf("🔍 Limpiando número: %s", phoneNumber)
@@ -629,23 +668,35 @@ func cleanPhoneNumber(phoneNumber string) string {
 
 	log.Printf("   Solo dígitos: %s", cleaned)
 
-	// Validación: El número debe tener al menos 10 dígitos
 	if len(cleaned) < 10 {
 		log.Printf("⚠️  Número de teléfono inválido (muy corto): %s", cleaned)
 		return cleaned
 	}
 
-	// Si el número tiene código de país (empieza con 52 para México), retornarlo tal cual
-	// Números mexicanos: 52 + código de área (2-3 dígitos) + número local (6-7 dígitos) = 12-13 dígitos
-	if len(cleaned) >= 12 && strings.HasPrefix(cleaned, "52") {
-		log.Printf("✅ Número con código de país detectado: %s", cleaned)
+	// Números mexicanos con prefijo 521 (13 dígitos): quitar el "1" intermedio
+	if len(cleaned) == 13 && strings.HasPrefix(cleaned, "521") {
+		cleaned = "52" + cleaned[3:]
+		log.Printf("✅ Prefijo 521 normalizado a 52: %s", cleaned)
 		return cleaned
 	}
 
-	// Si el número tiene 10 dígitos (formato local mexicano), agregamos el código de país 52
+	// 12 dígitos con prefijo 52 → correcto
+	if len(cleaned) == 12 && strings.HasPrefix(cleaned, "52") {
+		log.Printf("✅ Número con código de país 52: %s", cleaned)
+		return cleaned
+	}
+
+	// 10 dígitos → agregar 52
 	if len(cleaned) == 10 {
 		cleaned = "52" + cleaned
-		log.Printf("✅ Código de país agregado: %s", cleaned)
+		log.Printf("✅ Código de país 52 agregado: %s", cleaned)
+		return cleaned
+	}
+
+	// Otro caso: tomar últimos 10 + agregar 52
+	if len(cleaned) > 10 {
+		cleaned = "52" + cleaned[len(cleaned)-10:]
+		log.Printf("✅ Número normalizado (últimos 10): %s", cleaned)
 	}
 
 	log.Printf("📞 Número limpio final: %s", cleaned)
