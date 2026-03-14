@@ -6,104 +6,15 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📞 Contact page loaded');
     
     // Inicializar todas las funcionalidades
-    initNavbar();
     initParticles();
     initContactMethods();
     initSectionFadeIn('.contact-methods-section, .contact-form-section, .map-section');
     initContactForm();
     initMapFunctionality();
     initConsultationCard();
-    setActiveNavLink();
     
     console.log('✅ Contact functionality initialized');
 });
-
-// ============================================
-// NAVBAR FUNCTIONALITY
-// ============================================
-function initNavbar() {
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const navMenu = document.getElementById('navMenu');
-    const navbar = document.getElementById('navbar');
-
-    if (mobileMenuBtn && navMenu) {
-        mobileMenuBtn.classList.remove('active');
-        navMenu.classList.remove('active');
-        document.body.classList.remove('menu-open');
-    }
-
-    window.addEventListener('scroll', function() {
-        if (navbar) {
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
-        }
-    });
-
-    function closeMobileMenu() {
-        if (mobileMenuBtn && navMenu) {
-            mobileMenuBtn.classList.remove('active');
-            navMenu.classList.remove('active');
-            document.body.classList.remove('menu-open');
-        }
-    }
-
-    if (mobileMenuBtn && navMenu) {
-        mobileMenuBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const isMenuActive = navMenu.classList.contains('active');
-            
-            if (isMenuActive) {
-                closeMobileMenu();
-            } else {
-                mobileMenuBtn.classList.add('active');
-                navMenu.classList.add('active');
-                document.body.classList.add('menu-open');
-            }
-        });
-    }
-
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            closeMobileMenu();
-        });
-    });
-
-    document.addEventListener('click', function(e) {
-        if (navMenu && navMenu.classList.contains('active')) {
-            const clickedInsideMenu = navMenu.contains(e.target);
-            const clickedOnButton = mobileMenuBtn && mobileMenuBtn.contains(e.target);
-            
-            if (!clickedInsideMenu && !clickedOnButton) {
-                closeMobileMenu();
-            }
-        }
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            if (navMenu && navMenu.classList.contains('active')) {
-                closeMobileMenu();
-            }
-        }
-    });
-}
-
-function setActiveNavLink() {
-    const navLinks = document.querySelectorAll('.nav-link:not(.nav-cta):not(.nav-login)');
-    
-    navLinks.forEach(link => link.classList.remove('active'));
-    
-    const contactLink = document.querySelector('.nav-link[href="/contact"]');
-    if (contactLink) {
-        contactLink.classList.add('active');
-    }
-}
 
 // ============================================
 // PARTICLES SYSTEM
