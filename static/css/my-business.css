@@ -1229,3 +1229,229 @@ textarea:focus {
 
 /* Teléfono label icon */
 .info-label .lni-phone { color: #06b6d4; }
+/* ============================================
+   SERVICE IMAGE UPLOAD
+   ============================================ */
+
+.service-image-upload {
+  width: 100%;
+}
+
+.service-image-preview {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  border-radius: 10px;
+  border: 2px dashed #e5e7eb;
+  background: #f9fafb;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.service-image-preview:hover {
+  border-color: #06b6d4;
+  background: #f0f9ff;
+}
+
+.service-image-preview img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.service-image-overlay {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  color: #9ca3af;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: color 0.2s;
+  pointer-events: none;
+}
+
+.service-image-overlay i {
+  font-size: 1.5rem;
+}
+
+.service-image-preview:hover .service-image-overlay {
+  color: #06b6d4;
+}
+
+/* Cuando ya hay imagen, el overlay es semitransparente sobre ella */
+.service-image-preview.has-image .service-image-overlay {
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  padding: 0.4rem 0.75rem;
+  border-radius: 20px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.service-image-preview.has-image:hover .service-image-overlay {
+  opacity: 1;
+}
+
+.btn-remove-image {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 10;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.service-image-preview.has-image:hover .btn-remove-image {
+  opacity: 1;
+}
+
+.btn-remove-image:hover {
+  background: #ef4444;
+}
+
+.btn-remove-image i {
+  font-size: 0.8rem;
+}
+
+.service-image-uploading {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #06b6d4;
+  font-weight: 600;
+  padding: 0.4rem 0;
+}
+
+.service-image-uploading i {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ============================================
+   PROMO PERIOD BLOCK
+   ============================================ */
+
+.promo-period-block {
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.promo-period-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.promo-period-header > i {
+  color: #f59e0b;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.promo-period-header > span {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #92400e;
+  flex: 1;
+  min-width: 120px;
+}
+
+.promo-period-type-toggle {
+  display: flex;
+  border: 1.5px solid #fde68a;
+  border-radius: 7px;
+  overflow: hidden;
+  margin-left: auto;
+}
+
+.period-tab-btn {
+  padding: 0.3rem 0.65rem;
+  border: none;
+  background: white;
+  color: #92400e;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.period-tab-btn.active {
+  background: #f59e0b;
+  color: white;
+}
+
+.promo-days-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.promo-days-panel .day-chip {
+  border-color: #fde68a;
+  color: #92400e;
+  font-size: 0.75rem;
+  padding: 0.3rem 0.55rem;
+}
+
+.promo-days-panel .day-chip.active {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: white;
+}
+
+.promo-range-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.promo-range-panel .info-label {
+  font-size: 0.8rem;
+  color: #92400e;
+  white-space: nowrap;
+}
+
+.promo-range-panel .info-input {
+  width: 145px;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  border-color: #fde68a;
+  background: white;
+}
+
+.promo-range-panel .info-input:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+}

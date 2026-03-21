@@ -1161,11 +1161,38 @@ function addServiceItem(e, data = null) {
     hint && (hint.style.display = 'none');
 
     const id = Date.now() + Math.random();
+    const uid = 'svc_' + id.toString().replace('.', '');
     const div = document.createElement('div');
     div.className = 'service-item';
     div.dataset.serviceId = id;
 
     const isPromo = data?.priceType === 'promo';
+
+    // Periodo de promoción
+    const periodType = data?.promoPeriodType || 'days';
+    const promoDays  = data?.promoDays || [];
+    const promoStart = data?.promoDateStart || '';
+    const promoEnd   = data?.promoDateEnd   || '';
+
+    const DAY_OPTS = [
+        { val: 'monday',    lbl: 'Lun' },
+        { val: 'tuesday',   lbl: 'Mar' },
+        { val: 'wednesday', lbl: 'Mié' },
+        { val: 'thursday',  lbl: 'Jue' },
+        { val: 'friday',    lbl: 'Vie' },
+        { val: 'saturday',  lbl: 'Sáb' },
+        { val: 'sunday',    lbl: 'Dom' },
+    ];
+    const daysHTML = DAY_OPTS.map(d => `
+        <label class="day-chip ${promoDays.includes(d.val) ? 'active' : ''}">
+            <input type="checkbox" value="${d.val}" ${promoDays.includes(d.val) ? 'checked' : ''} style="display:none">
+            <span>${d.lbl}</span>
+        </label>
+    `).join('');
+
+    // Imagen previa
+    const imgSrc = data?.imageUrl || '';
+
     div.innerHTML = `
         <div class="service-item-row">
             <input type="text" class="info-input service-title" placeholder="Nombre del servicio" value="${data?.title || ''}">
@@ -1176,6 +1203,25 @@ function addServiceItem(e, data = null) {
         <div class="service-item-row">
             <input type="text" class="info-input service-desc" placeholder="Descripción (opcional)" value="${data?.description || ''}">
         </div>
+
+        <!-- FOTO DEL SERVICIO -->
+        <div class="service-image-upload" data-uid="${uid}">
+            <input type="file" class="service-image-file" id="file_${uid}" accept="image/*" style="display:none">
+            <div class="service-image-preview ${imgSrc ? 'has-image' : ''}">
+                ${imgSrc ? `<img src="${imgSrc}" alt="Foto del servicio">` : ''}
+                <div class="service-image-overlay">
+                    <i class="lni lni-camera"></i>
+                    <span>${imgSrc ? 'Cambiar foto' : 'Agregar foto'}</span>
+                </div>
+                ${imgSrc ? `<button type="button" class="btn-remove-image" title="Quitar foto"><i class="lni lni-close"></i></button>` : ''}
+            </div>
+            <input type="hidden" class="service-image-url" value="${imgSrc}">
+            <div class="service-image-uploading" style="display:none">
+                <i class="lni lni-spinner-arrow"></i> Subiendo imagen...
+            </div>
+        </div>
+
+        <!-- PRECIO -->
         <div class="service-price-row">
             <div class="price-type-toggle">
                 <button type="button" class="price-type-btn ${!isPromo ? 'active' : ''}" data-type="normal">Normal</button>
@@ -1193,8 +1239,32 @@ function addServiceItem(e, data = null) {
                 <input type="number" class="info-input service-promo-price" placeholder="Precio promo" step="0.01" value="${data?.promoPrice || ''}">
             </div>
         </div>
+
+        <!-- PERIODO DE PROMOCIÓN (sólo visible en modo promo) -->
+        <div class="promo-period-block" style="display:${isPromo ? 'block' : 'none'}">
+            <div class="promo-period-header">
+                <i class="lni lni-calendar"></i>
+                <span>Disponibilidad de la promoción</span>
+                <div class="promo-period-type-toggle">
+                    <button type="button" class="period-tab-btn ${periodType === 'days' ? 'active' : ''}" data-period="days">Días de la semana</button>
+                    <button type="button" class="period-tab-btn ${periodType === 'range' ? 'active' : ''}" data-period="range">Rango de fechas</button>
+                </div>
+            </div>
+
+            <div class="promo-days-panel" style="display:${periodType === 'days' ? 'flex' : 'none'}">
+                ${daysHTML}
+            </div>
+
+            <div class="promo-range-panel" style="display:${periodType === 'range' ? 'flex' : 'none'}">
+                <label class="info-label">Desde</label>
+                <input type="date" class="info-input promo-date-start" value="${promoStart}">
+                <label class="info-label">Hasta</label>
+                <input type="date" class="info-input promo-date-end" value="${promoEnd}">
+            </div>
+        </div>
     `;
 
+    // Toggle Normal / Promo
     div.querySelectorAll('.price-type-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             div.querySelectorAll('.price-type-btn').forEach(b => b.classList.remove('active'));
@@ -1202,10 +1272,117 @@ function addServiceItem(e, data = null) {
             const isP = this.dataset.type === 'promo';
             div.querySelector('.price-normal-fields').style.display = isP ? 'none' : 'flex';
             div.querySelector('.price-promo-fields').style.display = isP ? 'flex' : 'none';
+            div.querySelector('.promo-period-block').style.display = isP ? 'block' : 'none';
         });
     });
 
+    // Toggle Días / Rango en el periodo
+    div.querySelectorAll('.period-tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            div.querySelectorAll('.period-tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const isRange = this.dataset.period === 'range';
+            div.querySelector('.promo-days-panel').style.display = isRange ? 'none' : 'flex';
+            div.querySelector('.promo-range-panel').style.display = isRange ? 'flex' : 'none';
+        });
+    });
+
+    // Day chips del periodo de promo
+    div.querySelectorAll('.promo-days-panel .day-chip').forEach(chip => {
+        chip.addEventListener('click', function(e) {
+            e.preventDefault();
+            this.classList.toggle('active');
+            this.querySelector('input').checked = this.classList.contains('active');
+        });
+    });
+
+    // Upload de imagen
+    const previewArea = div.querySelector('.service-image-preview');
+    const fileInput   = div.querySelector('.service-image-file');
+    const urlInput    = div.querySelector('.service-image-url');
+    const uploadingEl = div.querySelector('.service-image-uploading');
+
+    previewArea.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-remove-image')) return;
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async function() {
+        const file = this.files[0];
+        if (!file) return;
+
+        // Validar tamaño (máx 5 MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showNotification('La imagen no debe superar 5 MB', 'warning');
+            return;
+        }
+
+        uploadingEl.style.display = 'flex';
+        previewArea.style.pointerEvents = 'none';
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const res = await fetch('/api/upload/service-image', {
+                method: 'POST',
+                credentials: 'include',
+                body: formData,
+            });
+
+            if (!res.ok) throw new Error('Upload fallido');
+            const result = await res.json();
+            const url = result.url;
+
+            // Mostrar preview
+            previewArea.innerHTML = `
+                <img src="${url}" alt="Foto del servicio">
+                <div class="service-image-overlay">
+                    <i class="lni lni-camera"></i>
+                    <span>Cambiar foto</span>
+                </div>
+                <button type="button" class="btn-remove-image" title="Quitar foto"><i class="lni lni-close"></i></button>
+            `;
+            previewArea.classList.add('has-image');
+            urlInput.value = url;
+
+            // Reasignar botón quitar
+            previewArea.querySelector('.btn-remove-image').addEventListener('click', function(e) {
+                e.stopPropagation();
+                removeServiceImage(previewArea, urlInput);
+            });
+
+            showNotification('Imagen subida correctamente', 'success');
+        } catch (err) {
+            console.error(err);
+            showNotification('Error al subir la imagen', 'error');
+        } finally {
+            uploadingEl.style.display = 'none';
+            previewArea.style.pointerEvents = '';
+        }
+    });
+
+    // Botón quitar imagen (si ya había una al cargar)
+    const removeBtn = div.querySelector('.btn-remove-image');
+    if (removeBtn) {
+        removeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            removeServiceImage(previewArea, urlInput);
+        });
+    }
+
     list.appendChild(div);
+}
+
+function removeServiceImage(previewArea, urlInput) {
+    previewArea.innerHTML = `
+        <div class="service-image-overlay">
+            <i class="lni lni-camera"></i>
+            <span>Agregar foto</span>
+        </div>
+    `;
+    previewArea.classList.remove('has-image');
+    urlInput.value = '';
 }
 
 function collectServicesData() {
@@ -1213,14 +1390,40 @@ function collectServicesData() {
     document.querySelectorAll('.service-item').forEach(item => {
         const title = item.querySelector('.service-title')?.value;
         if (!title) return;
+
         const isPromo = item.querySelector('.price-type-btn.active')?.dataset.type === 'promo';
+
+        // Periodo de promoción
+        let promoPeriodType = 'days';
+        let promoDays = [];
+        let promoDateStart = '';
+        let promoDateEnd = '';
+
+        const activePeriodBtn = item.querySelector('.period-tab-btn.active');
+        if (activePeriodBtn) {
+            promoPeriodType = activePeriodBtn.dataset.period;
+        }
+        if (promoPeriodType === 'days') {
+            item.querySelectorAll('.promo-days-panel .day-chip input:checked').forEach(cb => {
+                promoDays.push(cb.value);
+            });
+        } else {
+            promoDateStart = item.querySelector('.promo-date-start')?.value || '';
+            promoDateEnd   = item.querySelector('.promo-date-end')?.value || '';
+        }
+
         services.push({
             title,
-            description: item.querySelector('.service-desc')?.value || '',
-            priceType: isPromo ? 'promo' : 'normal',
-            price: parseFloat(item.querySelector('.service-price')?.value) || 0,
-            originalPrice: parseFloat(item.querySelector('.service-original-price')?.value) || 0,
-            promoPrice: parseFloat(item.querySelector('.service-promo-price')?.value) || 0,
+            description:    item.querySelector('.service-desc')?.value || '',
+            imageUrl:       item.querySelector('.service-image-url')?.value || '',
+            priceType:      isPromo ? 'promo' : 'normal',
+            price:          parseFloat(item.querySelector('.service-price')?.value) || 0,
+            originalPrice:  parseFloat(item.querySelector('.service-original-price')?.value) || 0,
+            promoPrice:     parseFloat(item.querySelector('.service-promo-price')?.value) || 0,
+            promoPeriodType: isPromo ? promoPeriodType : '',
+            promoDays:       isPromo && promoPeriodType === 'days' ? promoDays : [],
+            promoDateStart:  isPromo && promoPeriodType === 'range' ? promoDateStart : '',
+            promoDateEnd:    isPromo && promoPeriodType === 'range' ? promoDateEnd   : '',
         });
     });
     return services;
@@ -1281,7 +1484,8 @@ function addWorkerItem(e, data = null) {
     `;
 
     div.querySelectorAll('.day-chip').forEach(chip => {
-        chip.addEventListener('click', function() {
+        chip.addEventListener('click', function(e) {
+            e.preventDefault();
             this.classList.toggle('active');
             this.querySelector('input').checked = this.classList.contains('active');
         });

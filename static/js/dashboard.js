@@ -1285,3 +1285,316 @@ function showNotification(message, type = 'info') {
         setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
+
+
+// ============================================
+// TUTORIAL - Estilo Acrobat / tour guiado
+// ============================================
+(function() {
+  'use strict';
+
+  const STORAGE_KEY = 'attomos_tutorial_done_v2';
+
+  const STEPS = [
+    {
+      selector: '#createAgentBtnDashboard',
+      title: 'Crea tu primer Agente',
+      body: 'Haz clic aquí para configurar un nuevo agente de IA para WhatsApp. Solo toma unos minutos.',
+      icon: 'lni lni-plus',
+      position: 'bottom',
+    },
+    {
+      selector: '.stats-grid',
+      title: 'Métricas en tiempo real',
+      body: 'Aquí verás tus agentes activos, conversaciones, citas agendadas y el tiempo de respuesta promedio.',
+      icon: 'lni lni-bar-chart',
+      position: 'bottom',
+    },
+    {
+      selector: '.services-unified-section',
+      title: 'Estadísticas de Servicios',
+      body: 'Analiza qué servicios piden más tus clientes. Exporta a Excel o PDF con un clic.',
+      icon: 'lni lni-pie-chart',
+      position: 'top',
+    },
+    {
+      selector: '.sidebar',
+      title: 'Navegación lateral',
+      body: 'Accede a Agentes, Integraciones, Historial de chats, Planes y más desde aquí.',
+      icon: 'lni lni-layout',
+      position: 'right',
+    },
+  ];
+
+  // ── Crear DOM ─────────────────────────────────
+  function createTutorialDOM() {
+    // 4 masks para oscurecer alrededor del spotlight
+    ['tut-mask-top','tut-mask-bottom','tut-mask-left','tut-mask-right'].forEach(id => {
+      const m = document.createElement('div');
+      m.className = 'tut-mask';
+      m.id = id;
+      m.style.display = 'none';
+      document.body.appendChild(m);
+    });
+
+    // Spotlight (solo borde)
+    const spotlight = document.createElement('div');
+    spotlight.className = 'tutorial-spotlight';
+    spotlight.id = 'tutSpotlight';
+    spotlight.style.display = 'none';
+    document.body.appendChild(spotlight);
+
+    // Backdrop clickeable (invisible, cubre todo por encima de masks)
+    const backdrop = document.createElement('div');
+    backdrop.className = 'tutorial-backdrop';
+    backdrop.id = 'tutBackdrop';
+    backdrop.style.display = 'none';
+    document.body.appendChild(backdrop);
+
+    // Tarjeta
+    const card = document.createElement('div');
+    card.className = 'tutorial-card';
+    card.id = 'tutCard';
+    card.style.display = 'none';
+    card.innerHTML = `
+      <div class="tutorial-card-header">
+        <div class="tut-icon"><i id="tutIcon" class="lni lni-question-circle"></i></div>
+        <span class="tut-title">Tutorial · Attomos</span>
+        <button class="tut-close" id="tutClose" title="Saltar tutorial">✕</button>
+      </div>
+      <div class="tutorial-card-body">
+        <h3 id="tutTitle"></h3>
+        <p id="tutBody"></p>
+      </div>
+      <div class="tutorial-card-footer">
+        <span class="tut-page-info" id="tutPageInfo"></span>
+        <div class="tut-dots" id="tutDots"></div>
+        <div class="tut-nav-btns">
+          <button class="tut-btn-prev" id="tutPrev" title="Anterior">‹</button>
+          <button class="tut-btn-next" id="tutNext">Siguiente ›</button>
+        </div>
+      </div>`;
+
+    // Botón relanzar
+    const launchBtn = document.createElement('button');
+    launchBtn.className = 'tutorial-launch-btn';
+    launchBtn.id = 'tutLaunch';
+    launchBtn.title = 'Ver tutorial';
+    launchBtn.innerHTML = '<i class="lni lni-question-circle"></i>';
+
+    document.body.appendChild(card);
+    document.body.appendChild(launchBtn);
+  }
+
+  // ── Posicionar los 4 masks alrededor de un rect ─
+  const MARGIN = 8; // px extra alrededor del elemento
+
+  function positionMasks(r) {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const top    = r.top    - MARGIN;
+    const left   = r.left   - MARGIN;
+    const right  = r.right  + MARGIN;
+    const bottom = r.bottom + MARGIN;
+
+    setMask('tut-mask-top',    { top:0, left:0, width:vw, height: Math.max(0,top) });
+    setMask('tut-mask-bottom', { top:bottom, left:0, width:vw, height: Math.max(0,vh-bottom) });
+    setMask('tut-mask-left',   { top:top, left:0, width: Math.max(0,left), height: bottom-top });
+    setMask('tut-mask-right',  { top:top, left:right, width: Math.max(0,vw-right), height: bottom-top });
+  }
+
+  function setMask(id, s) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.top    = s.top    + 'px';
+    el.style.left   = s.left   + 'px';
+    el.style.width  = s.width  + 'px';
+    el.style.height = s.height + 'px';
+  }
+
+  function showMasks(show) {
+    ['tut-mask-top','tut-mask-bottom','tut-mask-left','tut-mask-right'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = show ? 'block' : 'none';
+    });
+  }
+
+  // ── Posicionar tarjeta ────────────────────────
+  const PAD = 16;
+
+  function placeCard(r, position) {
+    const card = document.getElementById('tutCard');
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const cw = card.offsetWidth  || 310;
+    const ch = card.offsetHeight || 190;
+
+    let top, left;
+
+    if (position === 'bottom') {
+      top  = r.bottom + MARGIN + PAD;
+      left = r.left + r.width / 2 - cw / 2;
+    } else if (position === 'top') {
+      top  = r.top - MARGIN - ch - PAD;
+      left = r.left + r.width / 2 - cw / 2;
+    } else if (position === 'right') {
+      top  = r.top + r.height / 2 - ch / 2;
+      left = r.right + MARGIN + PAD;
+    } else { // left
+      top  = r.top + r.height / 2 - ch / 2;
+      left = r.left - MARGIN - cw - PAD;
+    }
+
+    // Clamp al viewport
+    left = Math.max(10, Math.min(left, vw - cw - 10));
+    top  = Math.max(10, Math.min(top,  vh - ch - 10));
+
+    card.style.left = left + 'px';
+    card.style.top  = top  + 'px';
+  }
+
+  // ── Highlight ─────────────────────────────────
+  let currentStep = 0;
+  let rafId = null;
+
+  function highlightElement(selector, position) {
+    const el = selector ? document.querySelector(selector) : null;
+    const spotlight = document.getElementById('tutSpotlight');
+
+    if (!el) {
+      spotlight.style.display = 'none';
+      showMasks(false);
+      return;
+    }
+
+    // Scroll suave al elemento
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Pequeña pausa para que termine el scroll
+    setTimeout(() => {
+      const r = el.getBoundingClientRect();
+
+      // Spotlight
+      spotlight.style.display = 'block';
+      spotlight.style.top     = (r.top    - MARGIN) + 'px';
+      spotlight.style.left    = (r.left   - MARGIN) + 'px';
+      spotlight.style.width   = (r.width  + MARGIN * 2) + 'px';
+      spotlight.style.height  = (r.height + MARGIN * 2) + 'px';
+
+      // Masks
+      positionMasks(r);
+      showMasks(true);
+
+      // Tarjeta
+      placeCard(r, position);
+    }, 300);
+  }
+
+  // Actualizar masks en scroll/resize
+  function updateOnScroll() {
+    if (!document.body.classList.contains('tutorial-active')) return;
+    const step = STEPS[currentStep];
+    const el = step.selector ? document.querySelector(step.selector) : null;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const spotlight = document.getElementById('tutSpotlight');
+    spotlight.style.top    = (r.top    - MARGIN) + 'px';
+    spotlight.style.left   = (r.left   - MARGIN) + 'px';
+    spotlight.style.width  = (r.width  + MARGIN * 2) + 'px';
+    spotlight.style.height = (r.height + MARGIN * 2) + 'px';
+    positionMasks(r);
+    placeCard(r, step.position);
+  }
+
+  // ── Renderizar paso ───────────────────────────
+  function renderStep(index) {
+    const step  = STEPS[index];
+    const total = STEPS.length;
+
+    document.getElementById('tutTitle').textContent    = step.title;
+    document.getElementById('tutBody').textContent     = step.body;
+    document.getElementById('tutPageInfo').textContent = (index + 1) + ' de ' + total;
+
+    const iconEl = document.getElementById('tutIcon');
+    iconEl.className = step.icon || 'lni lni-question-circle';
+
+    // Dots
+    const dotsEl = document.getElementById('tutDots');
+    dotsEl.innerHTML = '';
+    for (let i = 0; i < total; i++) {
+      const d = document.createElement('div');
+      d.className = 'tut-dot' + (i === index ? ' active' : '');
+      dotsEl.appendChild(d);
+    }
+
+    // Botones
+    document.getElementById('tutPrev').disabled = index === 0;
+    const nextBtn = document.getElementById('tutNext');
+    if (index === total - 1) {
+      nextBtn.textContent = 'Finalizar ✓';
+      nextBtn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+    } else {
+      nextBtn.textContent = 'Siguiente ›';
+      nextBtn.style.background = 'linear-gradient(135deg,#06b6d4,#0891b2)';
+    }
+
+    highlightElement(step.selector, step.position);
+  }
+
+  // ── Iniciar / cerrar ──────────────────────────
+  function startTutorial() {
+    document.body.classList.add('tutorial-active');
+    document.getElementById('tutBackdrop').style.display = 'block';
+    document.getElementById('tutCard').style.display     = 'block';
+    currentStep = 0;
+    renderStep(currentStep);
+  }
+
+  function closeTutorial() {
+    document.body.classList.remove('tutorial-active');
+    document.getElementById('tutBackdrop').style.display  = 'none';
+    document.getElementById('tutCard').style.display      = 'none';
+    document.getElementById('tutSpotlight').style.display = 'none';
+    showMasks(false);
+    localStorage.setItem(STORAGE_KEY, '1');
+  }
+
+  // ── Eventos ───────────────────────────────────
+  function bindEvents() {
+    document.getElementById('tutClose').addEventListener('click', closeTutorial);
+    document.getElementById('tutLaunch').addEventListener('click', startTutorial);
+    document.getElementById('tutBackdrop').addEventListener('click', closeTutorial);
+
+    // Clicks en masks también cierran
+    ['tut-mask-top','tut-mask-bottom','tut-mask-left','tut-mask-right'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('click', closeTutorial);
+    });
+
+    document.getElementById('tutPrev').addEventListener('click', function() {
+      if (currentStep > 0) { currentStep--; renderStep(currentStep); }
+    });
+
+    document.getElementById('tutNext').addEventListener('click', function() {
+      if (currentStep < STEPS.length - 1) {
+        currentStep++;
+        renderStep(currentStep);
+      } else {
+        closeTutorial();
+      }
+    });
+
+    window.addEventListener('resize', updateOnScroll);
+    window.addEventListener('scroll', updateOnScroll, true);
+  }
+
+  // ── Arranque ──────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function() {
+    createTutorialDOM();
+    bindEvents();
+    const done = localStorage.getItem(STORAGE_KEY);
+    if (!done) {
+      setTimeout(startTutorial, 800);
+    }
+  });
+})();

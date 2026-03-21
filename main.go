@@ -195,6 +195,9 @@ func main() {
 		protected.POST("/my-business/branch", handlers.CreateBranch)
 		protected.DELETE("/my-business/branch/:id", handlers.DeleteBranch)
 
+		// Upload de imágenes para servicios/productos
+		protected.POST("/upload/service-image", handlers.UploadServiceImage)
+
 		// ============================================
 		// ⭐ APPOINTMENTS - CRUD completo (BD + Sheets sync)
 		// ============================================
