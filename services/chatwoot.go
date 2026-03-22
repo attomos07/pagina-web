@@ -192,7 +192,8 @@ func (c *ChatwootService) diagnoseChatwootFailure() {
 
 	fmt.Println("\n═══════════════════════════════════════════════════════════════")
 	fmt.Println("FIN DEL DIAGNÓSTICO")
-	fmt.Println("═══════════════════════════════════════════════════════════════\n")
+	fmt.Println("═══════════════════════════════════════════════════════════════")
+	fmt.Println()
 }
 
 // WaitForChatwoot espera a que Chatwoot esté disponible
@@ -267,10 +268,9 @@ func (c *ChatwootService) CreateAccountAndUser(user *models.User, agent *models.
 	accountID, inboxID, _, err := c.createCompleteSetupViaConsole(
 		email,
 		password,
-		user.Company, // Usar nombre del negocio en lugar de FirstName + LastName
+		user.Company,
 		accountName,
 		inboxName,
-		agent.PhoneNumber,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creando configuración completa: %v", err)
@@ -291,7 +291,7 @@ func (c *ChatwootService) CreateAccountAndUser(user *models.User, agent *models.
 }
 
 // createCompleteSetupViaConsole crea usuario, cuenta e inbox en una sola operación
-func (c *ChatwootService) createCompleteSetupViaConsole(email, password, name, accountName, inboxName, phoneNumber string) (int, int, string, error) {
+func (c *ChatwootService) createCompleteSetupViaConsole(email, password, name, accountName, inboxName string) (int, int, string, error) {
 	fmt.Println("\n🔄 Creando setup completo en Chatwoot vía Rails console...")
 	fmt.Printf("   Email: %s\n", email)
 	fmt.Printf("   Name: %s\n", name)

@@ -628,7 +628,7 @@ func (h *HetznerService) MonitorCloudInitLogs(serverIP, password string, duratio
 		fmt.Printf("[SSH] Intento de conexión %d/%d...\n", i+1, maxRetries)
 		client, err = ssh.Dial("tcp", serverIP+":22", config)
 		if err == nil {
-			fmt.Println("✅ [SSH] Conectado exitosamente\n")
+			fmt.Println("✅ [SSH] Conectado exitosamente")
 			break
 		}
 		if i < maxRetries-1 {
@@ -668,7 +668,8 @@ func (h *HetznerService) MonitorCloudInitLogs(serverIP, password string, duratio
 	// Leer y mostrar logs en tiempo real
 	fmt.Println("═══════════════════════════════════════════════════════════════")
 	fmt.Println("📜 LOGS DE INICIALIZACIÓN (EN TIEMPO REAL):")
-	fmt.Println("═══════════════════════════════════════════════════════════════\n")
+	fmt.Println("═══════════════════════════════════════════════════════════════")
+	fmt.Println()
 
 	buf := make([]byte, 1024)
 	for {
