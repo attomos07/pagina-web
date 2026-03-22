@@ -73,13 +73,23 @@ func (bl *BusinessLocation) Scan(v interface{}) error {
 	return nil
 }
 
+// BranchService representa un servicio/producto de la sucursal.
+// ImageURL almacena la ruta relativa a /static/uploads/services/{userID}/{file}
+// PromoPeriodType: "days" | "range" — tipo de periodo de promoción
+// PromoDays: días de la semana activos, e.g. ["lunes","miércoles","viernes"]
+// PromoDateStart / PromoDateEnd: rango de fechas de la promo (ISO 8601)
 type BranchService struct {
-	Title         string  `json:"title"`
-	Description   string  `json:"description"`
-	PriceType     string  `json:"priceType"`
-	Price         float64 `json:"price"`
-	OriginalPrice float64 `json:"originalPrice"`
-	PromoPrice    float64 `json:"promoPrice"`
+	Title           string   `json:"title"`
+	Description     string   `json:"description"`
+	PriceType       string   `json:"priceType"`
+	Price           float64  `json:"price"`
+	OriginalPrice   float64  `json:"originalPrice"`
+	PromoPrice      float64  `json:"promoPrice"`
+	ImageURL        string   `json:"imageUrl"`
+	PromoPeriodType string   `json:"promoPeriodType"` // "days" | "range" | ""
+	PromoDays       []string `json:"promoDays"`       // ["lunes","martes",...] cuando type="days"
+	PromoDateStart  string   `json:"promoDateStart"`  // "2025-01-15" cuando type="range"
+	PromoDateEnd    string   `json:"promoDateEnd"`    // "2025-02-28" cuando type="range"
 }
 
 type BranchServices []BranchService

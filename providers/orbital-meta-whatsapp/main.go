@@ -92,6 +92,16 @@ func main() {
 		log.Println("✅ Google Calendar disponible")
 	}
 
+	// Cargar configuración de pagos del bot (SPEI + Stripe Connect)
+	log.Println("💳 Cargando configuración de pagos...")
+	if err := src.LoadPaymentConfig(); err != nil {
+		log.Printf("⚠️  Pagos no disponibles: %v\n", err)
+	} else if src.HasPaymentMethods() {
+		log.Println("✅ Métodos de pago configurados")
+	} else {
+		log.Println("ℹ️  No hay métodos de pago configurados en este negocio")
+	}
+
 	// Iniciar watchdog para recargar configuración
 	go configWatchdog()
 

@@ -473,6 +473,194 @@
 
                     </div>
 
+                    <!-- Pasarela de Pagos Card (visible para todos los tipos de bot) -->
+                        <div class="integration-card" id="paymentsCard" style="display: none;">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-credit-cards integration-icon" style="font-size: 2rem; color: #f59e0b;"></i>
+                                    <h2>Pasarela de Pagos</h2>
+                                </div>
+                                <div class="status-badge disconnected" id="paymentsStatusBadge">
+                                    <span class="status-indicator"></span>
+                                    Sin configurar
+                                </div>
+                            </div>
+
+                            <p class="card-description">
+                                Permite que tu bot solicite pagos por WhatsApp. Configura transferencia SPEI y/o tarjeta con Stripe.
+                            </p>
+
+                            <div class="card-features">
+                                <ul class="feature-list">
+                                    <li class="feature-item">
+                                        <i class="lni lni-bank"></i>
+                                        Transferencia SPEI / CLABE interbancaria
+                                    </li>
+                                    <li class="feature-item">
+                                        <i class="lni lni-credit-card"></i>
+                                        Tarjeta de crédito/débito con Stripe
+                                    </li>
+                                    <li class="feature-item">
+                                        <i class="lni lni-whatsapp"></i>
+                                        El bot presenta opciones al cliente automáticamente
+                                    </li>
+                                    <li class="feature-item">
+                                        <i class="lni lni-lock"></i>
+                                        Pagos directamente a tu cuenta
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- ── SECCIÓN SPEI ── -->
+                            <div class="payment-section" id="speiSection">
+                                <div class="payment-section-header">
+                                    <div class="payment-section-title">
+                                        <i class="lni lni-bank" style="color: #10b981;"></i>
+                                        <span>Transferencia SPEI</span>
+                                    </div>
+                                    <div class="status-badge disconnected" id="speiStatusBadge" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">
+                                        <span class="status-indicator"></span>
+                                        No configurado
+                                    </div>
+                                </div>
+
+                                <!-- Formulario SPEI (modo edición) -->
+                                <div id="speiForm">
+                                    <div class="input-group" style="margin-bottom: 0.75rem;">
+                                        <label class="input-label" for="clabeNumber">
+                                            <i class="lni lni-hash"></i>
+                                            CLABE Interbancaria (18 dígitos)
+                                        </label>
+                                        <div class="input-wrapper">
+                                            <input
+                                                type="text"
+                                                id="clabeNumber"
+                                                class="api-key-input"
+                                                placeholder="012345678901234567"
+                                                maxlength="18"
+                                                disabled
+                                            />
+                                        </div>
+                                    </div>
+                                    <div class="input-group" style="margin-bottom: 0.75rem;">
+                                        <label class="input-label" for="bankName">
+                                            <i class="lni lni-bank"></i>
+                                            Nombre del banco (opcional)
+                                        </label>
+                                        <input type="text" id="bankName" class="api-key-input" placeholder="BBVA, Banorte, HSBC..." disabled />
+                                    </div>
+                                    <div class="input-group">
+                                        <label class="input-label" for="accountName">
+                                            <i class="lni lni-user"></i>
+                                            Nombre del titular
+                                        </label>
+                                        <input type="text" id="accountName" class="api-key-input" placeholder="Juan García Martínez" disabled />
+                                        <small class="input-hint">Se mostrará al cliente cuando pida datos de transferencia</small>
+                                    </div>
+                                </div>
+
+                                <!-- Info cuando está configurado -->
+                                <div class="connection-info" id="speiConnectionInfo" style="display: none;">
+                                    <div class="connection-details">
+                                        <div class="connection-detail">
+                                            <span class="connection-label">CLABE:</span>
+                                            <span class="connection-value" id="speiDisplayClabe" style="font-family: monospace;">-</span>
+                                        </div>
+                                        <div class="connection-detail">
+                                            <span class="connection-label">Banco:</span>
+                                            <span class="connection-value" id="speiDisplayBank">-</span>
+                                        </div>
+                                        <div class="connection-detail">
+                                            <span class="connection-label">Titular:</span>
+                                            <span class="connection-value" id="speiDisplayName">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Acciones SPEI -->
+                                <div class="card-actions" id="speiSaveActions" style="margin-top: 0.75rem;">
+                                    <button class="btn btn-connect" id="btnSaveSPEI" disabled>
+                                        <i class="lni lni-save"></i>
+                                        Guardar CLABE
+                                    </button>
+                                </div>
+                                <div class="card-actions" id="speiManageActions" style="display: none; margin-top: 0.75rem;">
+                                    <button class="btn btn-secondary" id="btnEditSPEI">
+                                        <i class="lni lni-pencil"></i>
+                                        Editar
+                                    </button>
+                                    <button class="btn btn-disconnect" id="btnRemoveSPEI">
+                                        <i class="lni lni-trash"></i>
+                                        Eliminar
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Divider -->
+                            <div style="border-top: 1px solid rgba(255,255,255,0.08); margin: 1.25rem 0;"></div>
+
+                            <!-- ── SECCIÓN STRIPE CONNECT ── -->
+                            <div class="payment-section" id="stripeSection">
+                                <div class="payment-section-header">
+                                    <div class="payment-section-title">
+                                        <svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect width="24" height="24" rx="4" fill="#635BFF"/>
+                                            <path d="M11.5 8.5C11.5 7.67 12.17 7 13 7C13.83 7 14.5 7.67 14.5 8.5C14.5 9.33 13.83 10 13 10C12.17 10 11.5 9.33 11.5 8.5Z" fill="white"/>
+                                            <path d="M10 11H16V17H14V13H12V17H10V11Z" fill="white"/>
+                                        </svg>
+                                        <span>Tarjeta con Stripe</span>
+                                    </div>
+                                    <div class="status-badge disconnected" id="stripeConnectStatusBadge" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">
+                                        <span class="status-indicator"></span>
+                                        No conectado
+                                    </div>
+                                </div>
+
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.5rem 0 1rem;">
+                                    Conecta tu cuenta Stripe para recibir pagos con tarjeta directamente a tu banco. Los clientes recibirán un link de pago por WhatsApp.
+                                </p>
+
+                                <!-- Info cuando está conectado -->
+                                <div class="connection-info" id="stripeConnectInfo" style="display: none;">
+                                    <div class="connection-details">
+                                        <div class="connection-detail">
+                                            <span class="connection-label">Estado:</span>
+                                            <span class="connection-value" id="stripeConnectStatus">-</span>
+                                        </div>
+                                        <div class="connection-detail">
+                                            <span class="connection-label">Cobros:</span>
+                                            <span class="connection-value" id="stripeChargesStatus">-</span>
+                                        </div>
+                                        <div class="connection-detail">
+                                            <span class="connection-label">Pagos a cuenta:</span>
+                                            <span class="connection-value" id="stripePayoutsStatus">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Acciones Stripe -->
+                                <div class="card-actions" id="stripeConnectActions" style="margin-top: 0.75rem;">
+                                    <button class="btn btn-connect" id="btnConnectStripe" style="background: linear-gradient(135deg, #635BFF 0%, #5046e5 100%);" disabled>
+                                        <i class="lni lni-link"></i>
+                                        Conectar con Stripe
+                                    </button>
+                                </div>
+                                <div class="card-actions" id="stripeManageActions" style="display: none; margin-top: 0.75rem;">
+                                    <button class="btn btn-disconnect" id="btnDisconnectStripe">
+                                        <i class="lni lni-unlink"></i>
+                                        Desconectar Stripe
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Nota sobre comportamiento del bot -->
+                            <div class="card-note" style="margin-top: 1rem;">
+                                <i class="lni lni-information"></i>
+                                <span>El bot mostrará automáticamente los métodos de pago que hayas configurado cuando un cliente solicite pagar un servicio.</span>
+                            </div>
+                        </div>
+
+
                     <!-- No Agents State -->
                     <div class="empty-state" id="noAgentsState" style="display: none;">
                         <div class="empty-icon">

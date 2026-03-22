@@ -49,6 +49,7 @@ func main() {
 		&models.Appointment{},    // ← Citas (manual + Google Sheets + agente)
 		&models.MyBusinessInfo{}, // ← Perfil de negocio del usuario
 		&models.Invoice{},        // ← Solicitudes de factura
+		&models.PaymentConfig{},  // ← Config de pagos del bot (CLABE + Stripe Connect)
 	); err != nil {
 		log.Fatal("❌ Error en migración:", err)
 	}
@@ -268,6 +269,16 @@ func main() {
 		protected.DELETE("/meta/credentials/remove/:agent_id", handlers.RemoveMetaCredentials)
 
 		// ============================================
+		// 💳 PAYMENT CONFIG - Pasarela de pagos del bot (CLABE + Stripe Connect)
+		// ============================================
+		protected.GET("/payment-config/:branch_id", handlers.GetPaymentConfig)
+		protected.POST("/payment-config/spei/:branch_id", handlers.SaveSPEIConfig)
+		protected.DELETE("/payment-config/spei/:branch_id", handlers.RemoveSPEIConfig)
+		protected.POST("/payment-config/stripe/connect/:branch_id", handlers.InitiateStripeConnect)
+		protected.DELETE("/payment-config/stripe/:branch_id", handlers.DisconnectStripeConnect)
+		protected.PATCH("/payment-config/settings/:branch_id", handlers.UpdatePaymentSettings)
+
+		// ============================================
 		// META WHATSAPP BUSINESS INTEGRATION (OAuth)
 		// ============================================
 		if metaWhatsAppHandler != nil {
@@ -277,6 +288,12 @@ func main() {
 			protected.POST("/meta/disconnect/:agent_id", metaWhatsAppHandler.DisconnectWhatsApp)
 		}
 	}
+
+	// Callback de Stripe Connect (redirect desde Stripe, sin JWT)
+	router.GET("/api/payment-config/stripe/callback", handlers.HandleStripeConnectCallback)
+
+	// Bot Payment Link — autenticado con BOT_API_TOKEN (no JWT)
+	router.POST("/api/payment-config/stripe/payment-link", handlers.CreateBotPaymentLink)
 
 	// ============================================
 	// PÁGINAS WEB

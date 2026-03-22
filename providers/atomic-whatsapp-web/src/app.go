@@ -669,6 +669,17 @@ func saveAppointment(state *UserState, userID string) string {
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Println("")
 
+	// ── Agregar opciones de pago si el negocio las tiene configuradas ─────
+	if HasPaymentMethods() {
+		servicio := state.Data["servicio"]
+		precio := GetServicePrice(servicio)
+		paymentMsg := BuildPaymentMessage(servicio, precio)
+		if paymentMsg != "" {
+			log.Println("💳 [Payments] Agregando opciones de pago al mensaje de confirmación")
+			confirmation += "\n\n" + paymentMsg
+		}
+	}
+
 	// Limpiar el estado DESPUÉS de generar la confirmación
 	state.IsScheduling = false
 	state.Data = make(map[string]string)

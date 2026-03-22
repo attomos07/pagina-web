@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initGoogleIntegration();
     initGeminiIntegration();
     initMetaIntegration();
+    initPaymentsIntegration();
     
     console.log('✅ Integrations funcionalidades inicializadas');
 });
@@ -156,6 +157,10 @@ async function selectAgent(option) {
     
     // Load integration statuses
     await loadGoogleIntegrationStatus(selectedAgentId);
+
+    // Cargar config de pagos (disponible para todos los bots)
+    const branchId = selectedAgent && selectedAgent.branchId ? selectedAgent.branchId : null;
+    if (branchId) await loadPaymentConfig(branchId);
     
     if (botType === 'atomic') {
         await loadGeminiStatus(selectedAgentId);
@@ -167,6 +172,7 @@ async function selectAgent(option) {
 function showIntegrationsByBotType(botType) {
     const geminiCard = document.getElementById('geminiCard');
     const metaCard = document.getElementById('metaCard');
+    const paymentsCard = document.getElementById('paymentsCard');
     
     if (botType === 'atomic') {
         // Plan gratuito - AtomicBot
@@ -179,6 +185,8 @@ function showIntegrationsByBotType(botType) {
         if (metaCard) metaCard.style.display = 'block';
         console.log('🚀 Mostrando integraciones para OrbitalBot (plan de pago)');
     }
+    // Pagos: visible para ambos tipos de bot
+    if (paymentsCard) paymentsCard.style.display = 'block';
 }
 
 function showIntegrationsGrid() {
@@ -1184,5 +1192,400 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+
+// ============================================
+// PAYMENTS INTEGRATION
+// Agregar al final de integrations.js (antes del console.log final)
+// ============================================
+
+// ── Inicialización ──────────────────────────────────────────
+
+function initPaymentsIntegration() {
+    // SPEI
+    const clabeInput = document.getElementById('clabeNumber');
+    const btnSaveSPEI = document.getElementById('btnSaveSPEI');
+    const btnEditSPEI = document.getElementById('btnEditSPEI');
+    const btnRemoveSPEI = document.getElementById('btnRemoveSPEI');
+
+    if (clabeInput) {
+        clabeInput.addEventListener('input', function() {
+            // Solo permitir dígitos
+            this.value = this.value.replace(/\D/g, '').slice(0, 18);
+            if (btnSaveSPEI) {
+                btnSaveSPEI.disabled = this.value.length !== 18;
+            }
+        });
+    }
+
+    if (btnSaveSPEI) btnSaveSPEI.addEventListener('click', saveSPEIConfig);
+    if (btnEditSPEI) btnEditSPEI.addEventListener('click', enableSPEIEdit);
+    if (btnRemoveSPEI) btnRemoveSPEI.addEventListener('click', removeSPEIConfig);
+
+    // Stripe Connect
+    const btnConnectStripe = document.getElementById('btnConnectStripe');
+    const btnDisconnectStripe = document.getElementById('btnDisconnectStripe');
+
+    if (btnConnectStripe) btnConnectStripe.addEventListener('click', connectStripe);
+    if (btnDisconnectStripe) btnDisconnectStripe.addEventListener('click', disconnectStripe);
+
+    // Revisar si venimos de un redirect de Stripe
+    checkStripeRedirect();
+}
+
+// ── Cargar estado de pagos ──────────────────────────────────
+
+async function loadPaymentConfig(branchId) {
+    if (!branchId) return;
+    console.log(`💳 Cargando config de pagos para sucursal ${branchId}...`);
+
+    try {
+        const res = await fetch(`/api/payment-config/${branchId}`, {
+            credentials: 'include'
+        });
+        if (!res.ok) throw new Error('Error cargando config de pagos');
+        const data = await res.json();
+        console.log('✅ Config de pagos:', data);
+        updatePaymentsUI(data);
+    } catch (err) {
+        console.error('Error cargando pagos:', err);
+    }
+}
+
+function updatePaymentsUI(data) {
+    // Habilitar botones ahora que hay un agente seleccionado
+    const btnSaveSPEI = document.getElementById('btnSaveSPEI');
+    const btnConnectStripe = document.getElementById('btnConnectStripe');
+    const clabeInput = document.getElementById('clabeNumber');
+    const bankInput = document.getElementById('bankName');
+    const accountInput = document.getElementById('accountName');
+
+    if (clabeInput) clabeInput.disabled = false;
+    if (bankInput) bankInput.disabled = false;
+    if (accountInput) accountInput.disabled = false;
+    if (btnConnectStripe) btnConnectStripe.disabled = false;
+
+    // ── SPEI ──────────────────────────────────────────────────
+    const speiStatusBadge = document.getElementById('speiStatusBadge');
+    const speiConnectionInfo = document.getElementById('speiConnectionInfo');
+    const speiSaveActions = document.getElementById('speiSaveActions');
+    const speiManageActions = document.getElementById('speiManageActions');
+
+    if (data.speiEnabled && data.clabeNumber) {
+        if (speiStatusBadge) {
+            speiStatusBadge.className = 'status-badge connected';
+            speiStatusBadge.innerHTML = '<span class="status-indicator"></span>Configurado';
+        }
+        if (speiConnectionInfo) {
+            speiConnectionInfo.style.display = 'block';
+            const displayClabe = document.getElementById('speiDisplayClabe');
+            const displayBank = document.getElementById('speiDisplayBank');
+            const displayName = document.getElementById('speiDisplayName');
+            if (displayClabe) displayClabe.textContent = data.clabeNumber;
+            if (displayBank) displayBank.textContent = data.bankName || '—';
+            if (displayName) displayName.textContent = data.accountName || '—';
+        }
+        // Ocultar form, mostrar manage
+        const speiForm = document.getElementById('speiForm');
+        if (speiForm) speiForm.style.display = 'none';
+        if (speiSaveActions) speiSaveActions.style.display = 'none';
+        if (speiManageActions) speiManageActions.style.display = 'flex';
+    } else {
+        if (speiStatusBadge) {
+            speiStatusBadge.className = 'status-badge disconnected';
+            speiStatusBadge.innerHTML = '<span class="status-indicator"></span>No configurado';
+        }
+        if (speiConnectionInfo) speiConnectionInfo.style.display = 'none';
+        const speiForm = document.getElementById('speiForm');
+        if (speiForm) speiForm.style.display = 'block';
+        if (speiSaveActions) speiSaveActions.style.display = 'flex';
+        if (speiManageActions) speiManageActions.style.display = 'none';
+    }
+
+    // ── Stripe Connect ─────────────────────────────────────────
+    const stripeStatusBadge = document.getElementById('stripeConnectStatusBadge');
+    const stripeConnectInfo = document.getElementById('stripeConnectInfo');
+    const stripeConnectActions = document.getElementById('stripeConnectActions');
+    const stripeManageActions = document.getElementById('stripeManageActions');
+
+    if (data.stripeEnabled) {
+        if (stripeStatusBadge) {
+            stripeStatusBadge.className = 'status-badge connected';
+            stripeStatusBadge.innerHTML = '<span class="status-indicator"></span>Conectado';
+        }
+        if (stripeConnectInfo) {
+            stripeConnectInfo.style.display = 'block';
+            const statusEl = document.getElementById('stripeConnectStatus');
+            const chargesEl = document.getElementById('stripeChargesStatus');
+            const payoutsEl = document.getElementById('stripePayoutsStatus');
+
+            const statusMap = {
+                active: '✅ Activo',
+                pending: '⏳ Pendiente de verificación',
+                pending_verification: '⏳ En revisión',
+                restricted: '⚠️ Restringido'
+            };
+            if (statusEl) statusEl.textContent = statusMap[data.stripeAccountStatus] || data.stripeAccountStatus;
+            if (chargesEl) chargesEl.textContent = data.stripeChargesEnabled ? '✅ Habilitados' : '⏳ Pendiente';
+            if (payoutsEl) payoutsEl.textContent = data.stripePayoutsEnabled ? '✅ Habilitados' : '⏳ Pendiente';
+        }
+        if (stripeConnectActions) stripeConnectActions.style.display = 'none';
+        if (stripeManageActions) stripeManageActions.style.display = 'flex';
+    } else {
+        if (stripeStatusBadge) {
+            stripeStatusBadge.className = 'status-badge disconnected';
+            stripeStatusBadge.innerHTML = '<span class="status-indicator"></span>No conectado';
+        }
+        if (stripeConnectInfo) stripeConnectInfo.style.display = 'none';
+        if (stripeConnectActions) stripeConnectActions.style.display = 'flex';
+        if (stripeManageActions) stripeManageActions.style.display = 'none';
+    }
+
+    // ── Badge general ─────────────────────────────────────────
+    const mainBadge = document.getElementById('paymentsStatusBadge');
+    const anyConfigured = data.speiEnabled || data.stripeEnabled;
+    if (mainBadge) {
+        if (anyConfigured) {
+            mainBadge.className = 'status-badge connected';
+            mainBadge.innerHTML = '<span class="status-indicator"></span>Configurado';
+        } else {
+            mainBadge.className = 'status-badge disconnected';
+            mainBadge.innerHTML = '<span class="status-indicator"></span>Sin configurar';
+        }
+    }
+}
+
+// ── SPEI: guardar ──────────────────────────────────────────
+
+async function saveSPEIConfig() {
+    if (!selectedAgentId) {
+        showNotification('Por favor selecciona un agente primero', 'error');
+        return;
+    }
+
+    const clabe = document.getElementById('clabeNumber').value.trim();
+    const bank = document.getElementById('bankName').value.trim();
+    const accountName = document.getElementById('accountName').value.trim();
+
+    if (clabe.length !== 18) {
+        showNotification('La CLABE debe tener exactamente 18 dígitos', 'error');
+        return;
+    }
+
+    // Obtener branch_id del agente seleccionado
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnSaveSPEI');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<div class="loading-spinner"></div><span>Guardando...</span>';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/spei/${branchId}`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                clabeNumber: clabe,
+                bankName: bank,
+                accountName: accountName,
+                enabled: true
+            })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Error al guardar');
+        }
+        showNotification('CLABE guardada exitosamente', 'success');
+        await loadPaymentConfig(branchId);
+    } catch (err) {
+        showNotification(err.message, 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── SPEI: editar ───────────────────────────────────────────
+
+function enableSPEIEdit() {
+    const speiForm = document.getElementById('speiForm');
+    const speiConnectionInfo = document.getElementById('speiConnectionInfo');
+    const speiSaveActions = document.getElementById('speiSaveActions');
+    const speiManageActions = document.getElementById('speiManageActions');
+    const clabeInput = document.getElementById('clabeNumber');
+
+    if (speiForm) speiForm.style.display = 'block';
+    if (speiConnectionInfo) speiConnectionInfo.style.display = 'none';
+    if (speiSaveActions) speiSaveActions.style.display = 'flex';
+    if (speiManageActions) speiManageActions.style.display = 'none';
+
+    if (clabeInput) {
+        clabeInput.value = '';
+        clabeInput.disabled = false;
+        clabeInput.focus();
+    }
+    ['bankName', 'accountName'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.value = ''; el.disabled = false; }
+    });
+
+    const btnSaveSPEI = document.getElementById('btnSaveSPEI');
+    if (btnSaveSPEI) btnSaveSPEI.disabled = true;
+}
+
+// ── SPEI: eliminar ─────────────────────────────────────────
+
+async function removeSPEIConfig() {
+    if (!selectedAgentId) return;
+    if (!confirm('¿Eliminar la configuración SPEI? El bot ya no podrá ofrecer transferencias.')) return;
+
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnRemoveSPEI');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<div class="loading-spinner"></div><span>Eliminando...</span>';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/spei/${branchId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        if (!res.ok) throw new Error('Error al eliminar');
+        showNotification('Configuración SPEI eliminada', 'success');
+        await loadPaymentConfig(branchId);
+    } catch (err) {
+        showNotification('Error al eliminar SPEI', 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── Stripe Connect: conectar ───────────────────────────────
+
+async function connectStripe() {
+    if (!selectedAgentId) {
+        showNotification('Por favor selecciona un agente primero', 'error');
+        return;
+    }
+
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnConnectStripe');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<div class="loading-spinner"></div><span>Iniciando...</span>';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/stripe/connect/${branchId}`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Error al iniciar Stripe Connect');
+        }
+        const data = await res.json();
+
+        if (data.onboardingUrl) {
+            // Abrir en ventana nueva — Stripe tiene su propio flujo
+            const w = window.open(data.onboardingUrl, 'StripeConnect', 'width=600,height=700,resizable=yes,scrollbars=yes');
+
+            if (!w) {
+                showNotification('Permite ventanas emergentes para continuar', 'error');
+                btn.innerHTML = orig;
+                btn.disabled = false;
+                return;
+            }
+
+            // Polling hasta que cierre la ventana
+            const poll = setInterval(async () => {
+                if (w.closed) {
+                    clearInterval(poll);
+                    await new Promise(r => setTimeout(r, 1500));
+                    await loadPaymentConfig(branchId);
+                    btn.innerHTML = orig;
+                    btn.disabled = false;
+                }
+            }, 800);
+        }
+    } catch (err) {
+        showNotification(err.message, 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── Stripe Connect: desconectar ────────────────────────────
+
+async function disconnectStripe() {
+    if (!selectedAgentId) return;
+    if (!confirm('¿Desconectar Stripe? El bot ya no podrá generar links de pago con tarjeta.')) return;
+
+    const branchId = await getBranchIdForAgent(selectedAgentId);
+    if (!branchId) return;
+
+    const btn = document.getElementById('btnDisconnectStripe');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<div class="loading-spinner"></div><span>Desconectando...</span>';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/payment-config/stripe/${branchId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        if (!res.ok) throw new Error('Error al desconectar Stripe');
+        showNotification('Stripe desconectado exitosamente', 'success');
+        await loadPaymentConfig(branchId);
+    } catch (err) {
+        showNotification('Error al desconectar Stripe', 'error');
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    }
+}
+
+// ── Helper: obtener branch_id del agente seleccionado ──────
+
+async function getBranchIdForAgent(agentId) {
+    // El agente tiene branchId — lo buscamos en el array de agents ya cargado
+    const agent = agents.find(a => a.id === agentId);
+    if (agent && agent.branchId) return agent.branchId;
+
+    // Fallback: pedir al servidor
+    try {
+        const res = await fetch(`/api/agents/${agentId}`, { credentials: 'include' });
+        if (res.ok) {
+            const data = await res.json();
+            return data.branchId || data.branch_id || null;
+        }
+    } catch (e) {
+        console.error('No se pudo obtener branchId:', e);
+    }
+
+    showNotification('No se pudo determinar la sucursal del agente', 'error');
+    return null;
+}
+
+// ── Revisar redirect de Stripe al cargar la página ─────────
+
+function checkStripeRedirect() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('stripe_success')) {
+        showNotification('✅ Stripe conectado exitosamente', 'success');
+        // Limpiar params de la URL
+        window.history.replaceState({}, '', '/integrations');
+    } else if (params.get('stripe_error')) {
+        showNotification('Error al conectar con Stripe. Intenta de nuevo.', 'error');
+        window.history.replaceState({}, '', '/integrations');
+    } else if (params.get('stripe_refresh')) {
+        showNotification('El onboarding de Stripe expiró. Por favor reconecta.', 'error');
+        window.history.replaceState({}, '', '/integrations');
+    }
+}
+
 
 console.log('🎯 Integrations ready!');

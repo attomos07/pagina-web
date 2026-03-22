@@ -966,6 +966,15 @@ func (s *AtomicBotDeployService) generateEnvFile(agent *models.Agent, geminiAPIK
 		env.WriteString("\n")
 	}
 
+	// Pasarela de pagos (SPEI + Stripe Connect)
+	attomosURL := os.Getenv("BASE_URL")
+	botToken := os.Getenv("BOT_API_TOKEN")
+	env.WriteString("# Pasarela de Pagos del Bot\n")
+	env.WriteString(fmt.Sprintf("ATTOMOS_API_URL=%s\n", attomosURL))
+	env.WriteString(fmt.Sprintf("BOT_API_TOKEN=%s\n", botToken))
+	env.WriteString(fmt.Sprintf("BRANCH_ID=%d\n", agent.BranchID))
+	env.WriteString("\n")
+
 	return env.String()
 }
 
@@ -1469,5 +1478,79 @@ func (s *AtomicBotDeployService) UpdateBusinessConfig(agent *models.Agent, branc
 		log.Printf("   ✅ [Agent %d] Bot reiniciado con nueva configuración", agent.ID)
 	}
 
+	return nil
+}
+
+// UpdatePaymentConfig actualiza las variables de pago en el .env del bot
+// cuando el negocio configura SPEI o Stripe Connect en Integraciones.
+func (s *AtomicBotDeployService) UpdatePaymentConfig(agent *models.Agent) error {
+	log.Printf("🔄 [Agent %d] Actualizando variables de pago en .env...", agent.ID)
+
+	botDir := fmt.Sprintf("/home/user_%d/atomic-bot", agent.UserID)
+	envPath := fmt.Sprintf("%s/.env", botDir)
+
+	envFile, err := s.sftpClient.Open(envPath)
+	if err != nil {
+		return fmt.Errorf("error abriendo .env: %w", err)
+	}
+	defer envFile.Close()
+
+	currentContent, err := io.ReadAll(envFile)
+	if err != nil {
+		return fmt.Errorf("error leyendo .env: %w", err)
+	}
+
+	lines := strings.Split(string(currentContent), "\n")
+	updated := make([]string, 0, len(lines))
+	foundSection := false
+
+	attomosURL := os.Getenv("BASE_URL")
+	botToken := os.Getenv("BOT_API_TOKEN")
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "ATTOMOS_API_URL=") ||
+			strings.HasPrefix(trimmed, "BOT_API_TOKEN=") ||
+			strings.HasPrefix(trimmed, "BRANCH_ID=") ||
+			strings.Contains(line, "Pasarela de Pagos") {
+			foundSection = true
+			continue // eliminar líneas viejas, se reescriben abajo
+		}
+		updated = append(updated, line)
+	}
+
+	if !foundSection {
+		updated = append(updated, "")
+	}
+
+	updated = append(updated,
+		"# Pasarela de Pagos del Bot",
+		fmt.Sprintf("ATTOMOS_API_URL=%s", attomosURL),
+		fmt.Sprintf("BOT_API_TOKEN=%s", botToken),
+		fmt.Sprintf("BRANCH_ID=%d", agent.BranchID),
+		"",
+	)
+
+	newContent := strings.Join(updated, "\n")
+
+	tmpFile, err := s.sftpClient.Create(envPath + ".tmp")
+	if err != nil {
+		return fmt.Errorf("error creando tmp: %w", err)
+	}
+	if _, err := tmpFile.Write([]byte(newContent)); err != nil {
+		tmpFile.Close()
+		return fmt.Errorf("error escribiendo tmp: %w", err)
+	}
+	tmpFile.Close()
+
+	if _, err := s.executeCommand(fmt.Sprintf("mv %s.tmp %s", envPath, envPath)); err != nil {
+		return fmt.Errorf("error reemplazando .env: %w", err)
+	}
+
+	if err := s.RestartBot(agent.ID); err != nil {
+		log.Printf("⚠️  [Agent %d] No se pudo reiniciar tras actualizar pagos: %v", agent.ID, err)
+	}
+
+	log.Printf("✅ [Agent %d] Variables de pago actualizadas y bot reiniciado", agent.ID)
 	return nil
 }

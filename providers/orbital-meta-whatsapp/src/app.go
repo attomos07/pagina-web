@@ -465,6 +465,17 @@ func saveAppointment(state *UserState, phoneNumber, senderName string) string {
 	// Construir mensaje de confirmación
 	confirmMsg := generateConfirmationMessage(state.Data, senderName)
 
+	// ── Agregar opciones de pago si el negocio las tiene configuradas ─────
+	if HasPaymentMethods() {
+		servicio := state.Data["servicio"]
+		precio := GetServicePrice(servicio)
+		paymentMsg := BuildPaymentMessage(servicio, precio)
+		if paymentMsg != "" {
+			log.Println("💳 [Payments] Agregando opciones de pago al mensaje")
+			confirmMsg += "\n\n" + paymentMsg
+		}
+	}
+
 	// Limpiar estado de agendamiento (pero mantener isAskingForEmail)
 	state.IsScheduling = false
 

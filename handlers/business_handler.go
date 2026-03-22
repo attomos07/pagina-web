@@ -255,15 +255,12 @@ func DeleteBranch(c *gin.Context) {
 }
 
 // ============================================================
-// syncAgentsWithBranch - Actualiza agentes vinculados a la sucursal
-// ============================================================
 // syncAgentsWithBranch — DEPRECADO
 // Los agentes ya no duplican datos del negocio en su config.
 // La fuente de verdad es my_business_info via agents.branch_id.
 func syncAgentsWithBranch(_ uint, _ uint, _ BranchRequest) {}
 
 // syncAgentsWithBusiness — DEPRECADO
-// Ver syncAgentsWithBranch.
 func syncAgentsWithBusiness(_ uint, _ ProfileRequest) {}
 
 // ============================================================
@@ -317,18 +314,24 @@ func mapRequestToBranch(branch *models.MyBusinessInfo, req BranchRequest, user *
 	}
 	branch.Holidays = holidays
 
-	services := make(models.BranchServices, len(req.Services))
+	// ── Servicios: incluye imageUrl y promoPeriod ───────────────────────────
+	branchServices := make(models.BranchServices, len(req.Services))
 	for i, s := range req.Services {
-		services[i] = models.BranchService{
-			Title:         s.Title,
-			Description:   s.Description,
-			PriceType:     s.PriceType,
-			Price:         s.Price,
-			OriginalPrice: s.OriginalPrice,
-			PromoPrice:    s.PromoPrice,
+		branchServices[i] = models.BranchService{
+			Title:           s.Title,
+			Description:     s.Description,
+			PriceType:       s.PriceType,
+			Price:           s.Price,
+			OriginalPrice:   s.OriginalPrice,
+			PromoPrice:      s.PromoPrice,
+			ImageURL:        s.ImageURL,
+			PromoPeriodType: s.PromoPeriodType,
+			PromoDays:       s.PromoDays,
+			PromoDateStart:  s.PromoDateStart,
+			PromoDateEnd:    s.PromoDateEnd,
 		}
 	}
-	branch.Services = services
+	branch.Services = branchServices
 
 	workers := make(models.BranchWorkers, len(req.Workers))
 	for i, w := range req.Workers {
@@ -349,12 +352,21 @@ func buildBranchResponse(b *models.MyBusinessInfo) gin.H {
 		holidays[i] = gin.H{"month": month, "day": day, "name": h.Name, "date": fmt.Sprintf("%s/%s", day, month)}
 	}
 
-	services := make([]gin.H, len(b.Services))
+	// ── Servicios: incluye imageUrl y promoPeriod en la respuesta ───────────
+	svcList := make([]gin.H, len(b.Services))
 	for i, s := range b.Services {
-		services[i] = gin.H{
-			"title": s.Title, "description": s.Description,
-			"priceType": s.PriceType, "price": s.Price,
-			"originalPrice": s.OriginalPrice, "promoPrice": s.PromoPrice,
+		svcList[i] = gin.H{
+			"title":           s.Title,
+			"description":     s.Description,
+			"priceType":       s.PriceType,
+			"price":           s.Price,
+			"originalPrice":   s.OriginalPrice,
+			"promoPrice":      s.PromoPrice,
+			"imageUrl":        s.ImageURL,
+			"promoPeriodType": s.PromoPeriodType,
+			"promoDays":       s.PromoDays,
+			"promoDateStart":  s.PromoDateStart,
+			"promoDateEnd":    s.PromoDateEnd,
 		}
 	}
 
@@ -390,7 +402,7 @@ func buildBranchResponse(b *models.MyBusinessInfo) gin.H {
 			"facebook": b.SocialMedia.Facebook, "instagram": b.SocialMedia.Instagram,
 			"twitter": b.SocialMedia.Twitter, "linkedin": b.SocialMedia.LinkedIn,
 		},
-		"services": services,
+		"services": svcList,
 		"workers":  workers,
 	}
 }
@@ -418,14 +430,6 @@ func buildEmptyBranchResponse(user *models.User, num int) gin.H {
 		"social": gin.H{"facebook": "", "instagram": "", "twitter": "", "linkedin": ""},
 	}
 }
-
-// ── Funciones eliminadas ──────────────────────────────────────
-// branchToProfileRequest, updateConfigWithProfile, convertToModelDay,
-// buildFacilities, buildAddress, generateWelcome
-// Estas funciones copiaban datos del negocio al config del agente.
-// Con la migración a BranchID, los agentes leen my_business_info
-// directamente en runtime — ya no se duplican datos.
-// ─────────────────────────────────────────────────────────────
 
 func dayToFrontend(day models.DaySchedule) gin.H {
 	return gin.H{"isOpen": day.Open, "open": day.Start, "close": day.End}
@@ -527,13 +531,19 @@ type SocialInfo struct {
 	LinkedIn  string `json:"linkedin"`
 }
 
+// ServiceInfo — incluye imageUrl y campos de periodo de promoción
 type ServiceInfo struct {
-	Title         string  `json:"title"`
-	Description   string  `json:"description"`
-	PriceType     string  `json:"priceType"`
-	Price         float64 `json:"price"`
-	OriginalPrice float64 `json:"originalPrice"`
-	PromoPrice    float64 `json:"promoPrice"`
+	Title           string   `json:"title"`
+	Description     string   `json:"description"`
+	PriceType       string   `json:"priceType"`
+	Price           float64  `json:"price"`
+	OriginalPrice   float64  `json:"originalPrice"`
+	PromoPrice      float64  `json:"promoPrice"`
+	ImageURL        string   `json:"imageUrl"`
+	PromoPeriodType string   `json:"promoPeriodType"` // "days" | "range" | ""
+	PromoDays       []string `json:"promoDays"`       // ["lunes","martes",...]
+	PromoDateStart  string   `json:"promoDateStart"`  // "2025-01-15"
+	PromoDateEnd    string   `json:"promoDateEnd"`    // "2025-02-28"
 }
 
 type WorkerInfo struct {
