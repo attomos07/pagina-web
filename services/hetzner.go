@@ -183,11 +183,47 @@ runcmd:
   - chmod 755 /var/log/atomic-bots
   - echo "[$(date)] Directorios creados" >> /var/log/attomos/init.log
   
+  # === FASE 5: INSTALAR Y CONFIGURAR NGINX (para servir imágenes de servicios) ===
+  - echo "PHASE_5_NGINX" > /var/log/attomos/status
+  - echo "[$(date)] Instalando nginx..." >> /var/log/attomos/init.log
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y nginx >> /var/log/attomos/init.log 2>&1
+  - mkdir -p /var/www/uploads
+  - chmod 755 /var/www/uploads
+  - |
+    cat > /etc/nginx/sites-available/uploads << 'EOFNGINX'
+    server {
+        listen 80;
+        server_name _;
+
+        # Servir imágenes de servicios de todos los usuarios
+        location /uploads/ {
+            alias /var/www/uploads/;
+            expires 30d;
+            add_header Cache-Control "public, no-transform";
+            add_header X-Content-Type-Options nosniff;
+            autoindex off;
+        }
+
+        # Health check
+        location /health {
+            return 200 "ok";
+            add_header Content-Type text/plain;
+        }
+    }
+    EOFNGINX
+  - ln -sf /etc/nginx/sites-available/uploads /etc/nginx/sites-enabled/uploads
+  - rm -f /etc/nginx/sites-enabled/default
+  - nginx -t >> /var/log/attomos/init.log 2>&1
+  - systemctl enable nginx >> /var/log/attomos/init.log 2>&1
+  - systemctl start nginx >> /var/log/attomos/init.log 2>&1
+  - echo "[$(date)] Nginx configurado para servir uploads" >> /var/log/attomos/init.log
+
   # === FASE 6: CONFIGURAR FIREWALL ===
   - echo "PHASE_6_FIREWALL" > /var/log/attomos/status
   - echo "[$(date)] Configurando firewall..." >> /var/log/attomos/init.log
   - ufw --force enable >> /var/log/attomos/init.log 2>&1
   - ufw allow 22 >> /var/log/attomos/init.log 2>&1
+  - ufw allow 80 >> /var/log/attomos/init.log 2>&1
   - echo "[$(date)] Firewall configurado (puertos para bots se abrirán bajo demanda)" >> /var/log/attomos/init.log
   
   # === FASE 7: OPTIMIZACIONES DEL SISTEMA ===
@@ -545,9 +581,33 @@ runcmd:
     EOFNGINX
   - ln -sf /etc/nginx/sites-available/chatwoot /etc/nginx/sites-enabled/
   - rm -f /etc/nginx/sites-enabled/default
+  - |
+    cat > /etc/nginx/sites-available/uploads << 'EOFUPLOADS'
+    server {
+        listen 8080;
+        server_name _;
+
+        # Servir imágenes de sucursales
+        location /uploads/ {
+            alias /var/www/uploads/;
+            expires 30d;
+            add_header Cache-Control "public, no-transform";
+            add_header X-Content-Type-Options nosniff;
+            autoindex off;
+        }
+
+        location /health {
+            return 200 "ok";
+            add_header Content-Type text/plain;
+        }
+    }
+    EOFUPLOADS
+  - ln -sf /etc/nginx/sites-available/uploads /etc/nginx/sites-enabled/uploads
+  - mkdir -p /var/www/uploads
+  - chmod 755 /var/www/uploads
   - nginx -t >> /var/log/attomos/init.log 2>&1
   - systemctl reload nginx >> /var/log/attomos/init.log 2>&1
-  - echo "[$(date)] Nginx configurado" >> /var/log/attomos/init.log
+  - echo "[$(date)] Nginx configurado (chatwoot:80 + uploads:8080)" >> /var/log/attomos/init.log
   
   # === FASE 6: CONFIGURAR FIREWALL ===
   - echo "PHASE_6_FIREWALL" > /var/log/attomos/status
@@ -557,6 +617,7 @@ runcmd:
   - ufw allow 80 >> /var/log/attomos/init.log 2>&1
   - ufw allow 443 >> /var/log/attomos/init.log 2>&1
   - ufw allow 3000 >> /var/log/attomos/init.log 2>&1
+  - ufw allow 8080 >> /var/log/attomos/init.log 2>&1
   - echo "[$(date)] Firewall configurado (puertos para BuilderBot se abrirán bajo demanda)" >> /var/log/attomos/init.log
   
   # === FASE 7: OPTIMIZACIONES DEL SISTEMA ===

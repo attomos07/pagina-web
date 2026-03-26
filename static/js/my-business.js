@@ -1190,8 +1190,8 @@ function addServiceItem(e, data = null) {
         </label>
     `).join('');
 
-    // Imagen previa
-    const imgSrc = data?.imageUrl || '';
+    // Imágenes previas (array)
+    const imgUrls = data?.imageUrls || (data?.imageUrl ? [data.imageUrl] : []);
 
     div.innerHTML = `
         <div class="service-item-row">
@@ -1204,20 +1204,23 @@ function addServiceItem(e, data = null) {
             <input type="text" class="info-input service-desc" placeholder="Descripción (opcional)" value="${data?.description || ''}">
         </div>
 
-        <!-- FOTO DEL SERVICIO -->
+        <!-- FOTOS DEL SERVICIO (múltiples) -->
         <div class="service-image-upload" data-uid="${uid}">
-            <input type="file" class="service-image-file" id="file_${uid}" accept="image/*" style="display:none">
-            <div class="service-image-preview ${imgSrc ? 'has-image' : ''}">
-                ${imgSrc ? `<img src="${imgSrc}" alt="Foto del servicio">` : ''}
-                <div class="service-image-overlay">
+            <input type="file" class="service-image-file" id="file_${uid}" accept="image/*" style="display:none" multiple>
+            <div class="service-images-grid">
+                ${imgUrls.map((url, i) => `
+                <div class="service-img-thumb" data-url="${url}">
+                    <img src="${url}" alt="Foto ${i+1}">
+                    <button type="button" class="btn-remove-thumb" title="Quitar"><i class="lni lni-close"></i></button>
+                </div>`).join('')}
+                <div class="service-img-add-btn">
                     <i class="lni lni-camera"></i>
-                    <span>${imgSrc ? 'Cambiar foto' : 'Agregar foto'}</span>
+                    <span>Agregar foto</span>
                 </div>
-                ${imgSrc ? `<button type="button" class="btn-remove-image" title="Quitar foto"><i class="lni lni-close"></i></button>` : ''}
             </div>
-            <input type="hidden" class="service-image-url" value="${imgSrc}">
+            <input type="hidden" class="service-image-urls" value="${imgUrls.join(',')}">
             <div class="service-image-uploading" style="display:none">
-                <i class="lni lni-spinner-arrow"></i> Subiendo imagen...
+                <i class="lni lni-spinner-arrow"></i> Subiendo...
             </div>
         </div>
 
@@ -1296,93 +1299,92 @@ function addServiceItem(e, data = null) {
         });
     });
 
-    // Upload de imagen
-    const previewArea = div.querySelector('.service-image-preview');
-    const fileInput   = div.querySelector('.service-image-file');
-    const urlInput    = div.querySelector('.service-image-url');
+    // ── Upload múltiples imágenes ────────────────────────────────────────────
+    const grid      = div.querySelector('.service-images-grid');
+    const fileInput = div.querySelector('.service-image-file');
+    const urlsInput = div.querySelector('.service-image-urls');
     const uploadingEl = div.querySelector('.service-image-uploading');
+    const addBtn    = div.querySelector('.service-img-add-btn');
 
-    previewArea.addEventListener('click', function(e) {
-        if (e.target.closest('.btn-remove-image')) return;
-        fileInput.click();
+    // Sync hidden input from current thumbs
+    function syncUrls() {
+        const urls = [...grid.querySelectorAll('.service-img-thumb')].map(t => t.dataset.url);
+        urlsInput.value = urls.join(',');
+    }
+
+    // Delegate remove-thumb clicks
+    grid.addEventListener('click', function(e) {
+        const removeBtn = e.target.closest('.btn-remove-thumb');
+        if (removeBtn) {
+            e.stopPropagation();
+            removeBtn.closest('.service-img-thumb').remove();
+            syncUrls();
+            return;
+        }
+        // Click on add button or anywhere else in grid (not on a thumb) → trigger file picker
+        if (!e.target.closest('.service-img-thumb')) {
+            fileInput.click();
+        }
     });
 
     fileInput.addEventListener('change', async function() {
-        const file = this.files[0];
-        if (!file) return;
+        const files = [...this.files];
+        if (!files.length) return;
 
-        // Validar tamaño (máx 5 MB)
-        if (file.size > 5 * 1024 * 1024) {
-            showNotification('La imagen no debe superar 5 MB', 'warning');
+        // Validar tamaños
+        const oversize = files.filter(f => f.size > 5 * 1024 * 1024);
+        if (oversize.length) {
+            showNotification('Cada imagen debe ser menor a 5 MB', 'warning');
             return;
         }
 
         uploadingEl.style.display = 'flex';
-        previewArea.style.pointerEvents = 'none';
+        addBtn.style.pointerEvents = 'none';
 
         try {
-            const formData = new FormData();
-            formData.append('image', file);
-
-            const res = await fetch('/api/upload/service-image', {
-                method: 'POST',
-                credentials: 'include',
-                body: formData,
-            });
-
-            if (!res.ok) throw new Error('Upload fallido');
-            const result = await res.json();
-            const url = result.url;
-
-            // Mostrar preview
-            previewArea.innerHTML = `
-                <img src="${url}" alt="Foto del servicio">
-                <div class="service-image-overlay">
-                    <i class="lni lni-camera"></i>
-                    <span>Cambiar foto</span>
-                </div>
-                <button type="button" class="btn-remove-image" title="Quitar foto"><i class="lni lni-close"></i></button>
-            `;
-            previewArea.classList.add('has-image');
-            urlInput.value = url;
-
-            // Reasignar botón quitar
-            previewArea.querySelector('.btn-remove-image').addEventListener('click', function(e) {
-                e.stopPropagation();
-                removeServiceImage(previewArea, urlInput);
-            });
-
-            showNotification('Imagen subida correctamente', 'success');
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('image', file);
+                const res = await fetch(`/api/upload/service-image?branch_id=${activeBranchId}`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData,
+                });
+                if (!res.ok) throw new Error('Upload fallido');
+                const result = await res.json();
+                addThumb(result.url);
+            }
+            syncUrls();
+            showNotification(files.length > 1 ? `${files.length} imágenes subidas` : 'Imagen subida correctamente', 'success');
         } catch (err) {
             console.error(err);
             showNotification('Error al subir la imagen', 'error');
         } finally {
             uploadingEl.style.display = 'none';
-            previewArea.style.pointerEvents = '';
+            addBtn.style.pointerEvents = '';
+            fileInput.value = '';
         }
     });
 
-    // Botón quitar imagen (si ya había una al cargar)
-    const removeBtn = div.querySelector('.btn-remove-image');
-    if (removeBtn) {
-        removeBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            removeServiceImage(previewArea, urlInput);
-        });
+    function addThumb(url) {
+        const thumb = document.createElement('div');
+        thumb.className = 'service-img-thumb';
+        thumb.dataset.url = url;
+        thumb.innerHTML = `<img src="${url}" alt="Foto"><button type="button" class="btn-remove-thumb" title="Quitar"><i class="lni lni-close"></i></button>`;
+        // Insert before the add button
+        grid.insertBefore(thumb, addBtn);
     }
 
-    list.appendChild(div);
-}
+    // Wire existing remove buttons (loaded from data)
+    div.querySelectorAll('.btn-remove-thumb').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.closest('.service-img-thumb').remove();
+            syncUrls();
+        });
+    });
 
-function removeServiceImage(previewArea, urlInput) {
-    previewArea.innerHTML = `
-        <div class="service-image-overlay">
-            <i class="lni lni-camera"></i>
-            <span>Agregar foto</span>
-        </div>
-    `;
-    previewArea.classList.remove('has-image');
-    urlInput.value = '';
+    list.appendChild(div);
 }
 
 function collectServicesData() {
@@ -1415,7 +1417,7 @@ function collectServicesData() {
         services.push({
             title,
             description:    item.querySelector('.service-desc')?.value || '',
-            imageUrl:       item.querySelector('.service-image-url')?.value || '',
+            imageUrls:      (item.querySelector('.service-image-urls')?.value || '').split(',').filter(Boolean),
             priceType:      isPromo ? 'promo' : 'normal',
             price:          parseFloat(item.querySelector('.service-price')?.value) || 0,
             originalPrice:  parseFloat(item.querySelector('.service-original-price')?.value) || 0,

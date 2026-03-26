@@ -1237,80 +1237,51 @@ textarea:focus {
   width: 100%;
 }
 
-.service-image-preview {
-  position: relative;
-  width: 100%;
-  height: 140px;
-  border-radius: 10px;
-  border: 2px dashed #e5e7eb;
-  background: #f9fafb;
-  overflow: hidden;
-  cursor: pointer;
+/* ── Grid de fotos múltiples ─────────────────── */
+.service-images-grid {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  background: #f9fafb;
+  border: 2px dashed #e5e7eb;
+  border-radius: 10px;
+  min-height: 80px;
   transition: border-color 0.2s, background 0.2s;
 }
 
-.service-image-preview:hover {
+.service-images-grid:hover {
   border-color: #06b6d4;
   background: #f0f9ff;
 }
 
-.service-image-preview img {
-  position: absolute;
-  inset: 0;
+/* Cada thumbnail */
+.service-img-thumb {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.service-img-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 8px;
+  display: block;
 }
 
-.service-image-overlay {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
-  color: #9ca3af;
-  font-size: 0.8rem;
-  font-weight: 600;
-  transition: color 0.2s;
-  pointer-events: none;
-}
-
-.service-image-overlay i {
-  font-size: 1.5rem;
-}
-
-.service-image-preview:hover .service-image-overlay {
-  color: #06b6d4;
-}
-
-/* Cuando ya hay imagen, el overlay es semitransparente sobre ella */
-.service-image-preview.has-image .service-image-overlay {
-  background: rgba(0, 0, 0, 0.45);
-  color: white;
-  padding: 0.4rem 0.75rem;
-  border-radius: 20px;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.service-image-preview.has-image:hover .service-image-overlay {
-  opacity: 1;
-}
-
-.btn-remove-image {
+.btn-remove-thumb {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 4px;
+  right: 4px;
   z-index: 10;
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.6);
   color: white;
   border: none;
   cursor: pointer;
@@ -1318,19 +1289,47 @@ textarea:focus {
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.2s, background 0.2s;
+  transition: opacity 0.15s, background 0.15s;
+  font-size: 0.7rem;
 }
 
-.service-image-preview.has-image:hover .btn-remove-image {
+.service-img-thumb:hover .btn-remove-thumb {
   opacity: 1;
 }
 
-.btn-remove-image:hover {
+.btn-remove-thumb:hover {
   background: #ef4444;
 }
 
-.btn-remove-image i {
-  font-size: 0.8rem;
+/* Botón "Agregar foto" dentro del grid */
+.service-img-add-btn {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  border: 2px dashed #d1d5db;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 0.7rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.service-img-add-btn:hover,
+.service-images-grid:hover .service-img-add-btn {
+  border-color: #06b6d4;
+  color: #06b6d4;
+  background: #f0f9ff;
+}
+
+.service-img-add-btn i {
+  font-size: 1.2rem;
 }
 
 .service-image-uploading {
