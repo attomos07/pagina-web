@@ -239,6 +239,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     loadServicesStatistics();
     initializeCreateAgentButton();
+    checkBusinessInfoOnLoad();
 
     const timeRangeSelect = document.getElementById('billingTimeRange');
     if (timeRangeSelect) {
@@ -385,6 +386,101 @@ function showBusinessWarningModal() {
     document.getElementById('bwCancelBtn').addEventListener('click', () => modal.remove());
 }
 window.showBusinessWarningModal = showBusinessWarningModal;
+
+// Verificar info del negocio al cargar el dashboard — si está vacía, mostrar popup obligatorio
+async function checkBusinessInfoOnLoad() {
+    try {
+        const response = await fetch('/api/my-business');
+        if (!response.ok) return;
+        const data = await response.json();
+
+        const branch = data.activeBranch || data.defaultBranch;
+        const hasBusinessInfo =
+            branch &&
+            branch.business &&
+            branch.business.name &&
+            branch.business.name.trim() !== '' &&
+            branch.business.type &&
+            branch.business.type.trim() !== '';
+
+        console.log('[BusinessCheck] hasBusinessInfo:', hasBusinessInfo, '| branch:', branch?.business);
+
+        if (!hasBusinessInfo) {
+            showBusinessRequiredModal();
+        }
+    } catch (e) {
+        console.warn('No se pudo verificar info del negocio:', e);
+    }
+}
+
+// Modal obligatorio — NO se puede cerrar con Cancelar ni haciendo click fuera
+function showBusinessRequiredModal() {
+    const existing = document.getElementById('businessRequiredModal');
+    if (existing) return;
+
+    const modal = document.createElement('div');
+    modal.id = 'businessRequiredModal';
+    modal.style.cssText = [
+        'position:fixed', 'inset:0', 'z-index:20001',
+        'display:flex', 'align-items:center', 'justify-content:center',
+        'background:rgba(0,0,0,0.6)', 'backdrop-filter:blur(6px)',
+        'animation:bwFadeIn 0.25s ease'
+    ].join(';');
+
+    modal.innerHTML = `
+        <div id="brqBox" style="
+            background:white; border-radius:24px; padding:2.5rem;
+            max-width:480px; width:92%; box-shadow:0 24px 64px rgba(0,0,0,0.25);
+            text-align:center; position:relative;
+            animation:bwSlideUp 0.35s cubic-bezier(0.23,1,0.32,1);
+        ">
+            <div style="
+                width:80px; height:80px;
+                background:linear-gradient(135deg,#e0f2fe,#bae6fd);
+                border-radius:50%; display:flex; align-items:center;
+                justify-content:center; margin:0 auto 1.5rem; font-size:2.2rem;
+            "><i class="lni lni-briefcase" style="color:#0284c7;"></i></div>
+
+            <h3 style="font-size:1.5rem; font-weight:800; color:#1a1a1a; margin-bottom:0.75rem;">
+                ¡Configura tu negocio primero!
+            </h3>
+            <p style="color:#6b7280; font-size:0.95rem; line-height:1.65; margin-bottom:0.75rem;">
+                Para usar Attomos necesitas completar la información básica de tu negocio —
+                nombre y giro. Esto le permite a tu agente conocer tu empresa y responder
+                correctamente a tus clientes.
+            </p>
+            <p style="color:#9ca3af; font-size:0.82rem; margin-bottom:2rem;">
+                Solo te toma 2 minutos ⚡
+            </p>
+
+            <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                <a href="/my-business" style="
+                    padding:0.9rem 2rem; background:linear-gradient(135deg,#06b6d4,#0284c7);
+                    border-radius:12px; font-weight:700; color:white;
+                    text-decoration:none; display:flex; align-items:center;
+                    justify-content:center; gap:0.6rem; font-size:1rem;
+                    box-shadow:0 4px 16px rgba(6,182,212,0.35);
+                    transition:all 0.2s;
+                    " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(6,182,212,0.45)'"
+                       onmouseout="this.style.transform='';this.style.boxShadow='0 4px 16px rgba(6,182,212,0.35)'">
+                    <i class="lni lni-pencil-alt"></i>
+                    Completar información del negocio
+                </a>
+                <button onclick="document.getElementById('businessRequiredModal').style.display='none'" style="
+                    padding:0.75rem; background:transparent; border:none;
+                    color:#9ca3af; font-size:0.85rem; cursor:pointer;
+                    transition:color 0.2s;
+                " onmouseover="this.style.color='#6b7280'" onmouseout="this.style.color='#9ca3af'">
+                    Recordármelo después
+                </button>
+            </div>
+        </div>
+    `;
+
+    // NO cierra al hacer click en el overlay — es intencional
+    document.body.appendChild(modal);
+}
+window.showBusinessRequiredModal = showBusinessRequiredModal;
 
 // Abrir modal
 function openOnboardingModal() {
