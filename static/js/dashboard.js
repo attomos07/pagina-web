@@ -259,16 +259,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // ================== Onboarding en modal (Dashboard) ==================
 function initializeCreateAgentButton() {
-    const createBtn =
-        document.getElementById('createAgentBtnDashboard') ||
-        document.querySelector('.page-header .btn-primary[href="/onboarding"]');
+    const createBtn = document.getElementById('createAgentBtnDashboard');
     if (createBtn) {
         console.log('Botón Crear Agente encontrado');
-        createBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            console.log('🟢 Crear Agente (dashboard) -> verificar negocio');
-            checkBusinessBeforeAgent();
-        });
     } else {
         console.warn('⚠️ No se encontró el botón Crear Agente');
     }
@@ -597,6 +590,18 @@ async function loadOnboardingContent() {
                         box-shadow: 0 4px 12px rgba(16,185,129,0.2) !important;
                     }
                     .section-nav-btn.completed:hover i { color: #10b981 !important; }
+
+                    /* Ocultar barra de progreso y step-indicators en el modal */
+                    #onboardingModalBody .progress-wrapper,
+                    #onboardingModalBody .steps-progress,
+                    #onboardingModalBody .step-indicators,
+                    #onboardingModalBody #progressPercentage,
+                    #onboardingModalBody .progress-header,
+                    #onboardingModalBody .progress-dots,
+                    #onboardingModalBody #step1 { display: none !important; }
+
+                    /* Asegurar que step2 arranque visible */
+                    #onboardingModalBody #step2 { display: block !important; }
                 `;
                 document.head.appendChild(fix);
             }
@@ -643,13 +648,12 @@ async function loadOnboardingContent() {
 
 // Reinicializar usando el onboarding original
 function reinitializeOnboardingEvents() {
-    console.log('🔄 Reinicializando eventos del onboarding en modal (dashboard)');
+    console.log('🔄 Reinicializando modal del agente (dashboard)');
 
     if (typeof window.agentData !== 'undefined') window.agentData = defaultAgentData();
-    if (typeof window.currentStep !== 'undefined') window.currentStep = 1;
     if (typeof window.currentSection !== 'undefined') window.currentSection = 1;
-    if (typeof window.selectedSocial !== 'undefined') window.selectedSocial = '';
 
+    // ── Tamaño del modal ──────────────────────────────────────────────
     const modal = document.getElementById('onboardingModal');
     const modalContent = modal?.querySelector('.onboarding-modal-content');
     if (modalContent) {
@@ -665,228 +669,173 @@ function reinitializeOnboardingEvents() {
         modalBody.scrollTop = 0;
     }
 
-    if (typeof initializeSocialSelection === 'function') initializeSocialSelection();
-    if (typeof initializeNavigationButtons === 'function') initializeNavigationButtons();
-    if (typeof initializeSectionNavigation === 'function') initializeSectionNavigation();
+    // ── Ocultar step1, activar step2 ─────────────────────────────────
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
+    if (step2) { step2.classList.add('active'); step2.style.display = ''; }
 
-    // ── Modo modal: reemplazar navegación con sistema propio ──────────
-    // IDs de secciones que NO pertenecen al agente (son de my-business)
-    const SECTIONS_TO_HIDE = [
-        'section-business','section-location','section-social',
-        'section-schedule','section-holidays','section-services','section-workers'
+    // ── Secciones del agente ──────────────────────────────────────────
+    const AGENT_SECTIONS = [
+        { id: 2,  containerId: 'section-basic',       name: 'Info. Básica',   icon: 'lni-information' },
+        { id: 5,  containerId: 'section-personality',  name: 'Personalidad',   icon: 'lni-comments' },
+        { id: 6,  containerId: 'section-schedule',     name: 'Horarios',       icon: 'lni-calendar' },
+        { id: 7,  containerId: 'section-holidays',     name: 'Días Festivos',  icon: 'lni-gift' },
+        { id: 8,  containerId: 'section-services',     name: 'Servicios',      icon: 'lni-package' },
+        { id: 9,  containerId: 'section-workers',      name: 'Trabajadores',   icon: 'lni-users' },
     ];
-    // Ocultar secciones y tabs de negocio
-    SECTIONS_TO_HIDE.forEach(id => {
+    const AGENT_IDS = AGENT_SECTIONS.map(s => s.containerId);
+
+    // Ocultar secciones de negocio
+    ['section-business','section-location','section-social'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.classList.remove('active'); el.style.display = 'none'; }
     });
-    const TABS_MY_BUSINESS = ['Info. Negocio','Ubicación','Redes Sociales',
-                              'Horarios','Días Festivos','Servicios','Trabajadores'];
-    document.querySelectorAll('.section-nav-btn').forEach(btn => {
-        const label = btn.querySelector('span')?.textContent?.trim();
-        if (TABS_MY_BUSINESS.includes(label)) btn.style.display = 'none';
-    });
 
-    // Función central para cambiar sección en el modal
-    window._modalGoToSection = function(targetId) {
-        // Mostrar solo la sección destino, ocultar las demás del step2
-        ['section-basic','section-personality'].forEach(id => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            if (id === targetId) {
-                el.style.display = '';
-                el.classList.add('active');
-            } else {
-                el.classList.remove('active');
-                el.style.display = 'none';
-            }
-        });
-        // Asegurar que step2 esté activo
-        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-        const step2 = document.getElementById('step2');
-        if (step2) step2.classList.add('active');
-        // Marcar tab activa
-        document.querySelectorAll('.section-nav-btn:not([style*="display: none"])').forEach(btn => {
-            const sid = parseInt(btn.dataset.sectionId);
-            btn.classList.remove('active','completed');
-            if ((targetId === 'section-basic' && sid === 2) ||
-                (targetId === 'section-personality' && sid === 5)) {
-                btn.classList.add('active');
-            } else if (targetId === 'section-personality' && sid === 2) {
-                btn.classList.add('completed');
-            }
-        });
-        if (typeof window.updateProgressBar === 'function') window.updateProgressBar();
-        const modalBody = document.getElementById('onboardingModalBody');
-        if (modalBody) modalBody.scrollTop = 0;
-    };
-
-    // Reasignar eventos de las tabs visibles (Info.Básica y Personalidad)
-    document.querySelectorAll('.section-nav-btn').forEach(btn => {
-        const sid = parseInt(btn.dataset.sectionId);
-        if (sid === 2) {
-            btn.onclick = () => window._modalGoToSection('section-basic');
-        } else if (sid === 5) {
-            btn.onclick = () => window._modalGoToSection('section-personality');
-        }
-    });
-
-    // ── Agregar tab de Resumen si no existe ───────────────────────────
-    const sectionNav = document.getElementById('sectionNavigation');
-    if (sectionNav && !document.getElementById('modal-resumen-tab')) {
-        const resumenBtn = document.createElement('button');
-        resumenBtn.type = 'button';
-        resumenBtn.id = 'modal-resumen-tab';
-        resumenBtn.className = 'section-nav-btn';
-        resumenBtn.dataset.section = 'resumen';
-        resumenBtn.innerHTML = '<i class="lni lni-checkmark-circle"></i><span>Resumen</span>';
-        resumenBtn.addEventListener('click', () => window._modalGoToResumen());
-        sectionNav.appendChild(resumenBtn);
-    }
-
-    // Centrar las 3 tabs visibles
-    if (sectionNav) sectionNav.style.justifyContent = 'center';
-
-    // Funcion central para ir al Resumen
-    window._modalGoToResumen = function() {
-        ['section-basic','section-personality'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) { el.classList.remove('active'); el.style.display = 'none'; }
-        });
-        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-        const step3 = document.getElementById('step3');
-        if (step3) step3.classList.add('active');
-        document.querySelectorAll('.section-nav-btn:not([style*="display: none"])').forEach(b => {
-            b.classList.remove('active', 'completed');
-            if (b.id === 'modal-resumen-tab') b.classList.add('active');
-            else b.classList.add('completed');
-        });
-        if (typeof collectFormData === 'function') collectFormData();
-        if (typeof generateSummary === 'function') generateSummary();
-        if (typeof window.updateProgressBar === 'function') window.updateProgressBar();
-        const modalBody = document.getElementById('onboardingModalBody');
-        if (modalBody) modalBody.scrollTop = 0;
-    };
-
-    // Parchar botones Siguiente, Atras y btnBackStep3
-    setTimeout(() => {
-        // Info.Basica: Siguiente -> Personality, ocultar Atras
-        const basicSection = document.getElementById('section-basic');
-        if (basicSection) {
-            basicSection.querySelectorAll('.btn-next-section, [class*="next"]').forEach(btn => {
-                btn.onclick = (e) => { e.stopPropagation(); window._modalGoToSection('section-personality'); };
-            });
-            basicSection.querySelectorAll('.btn-prev-section').forEach(btn => {
-                btn.style.display = 'none';
-            });
-        }
-        // Personalidad: Siguiente -> Resumen, Atras -> Basic
-        const personalitySection = document.getElementById('section-personality');
-        if (personalitySection) {
-            personalitySection.querySelectorAll('.btn-next-section, [class*="next"]').forEach(btn => {
-                btn.onclick = (e) => { e.stopPropagation(); window._modalGoToResumen(); };
-            });
-            personalitySection.querySelectorAll('.btn-prev-section').forEach(btn => {
-                btn.style.display = 'flex';
-                btn.onclick = (e) => { e.stopPropagation(); window._modalGoToSection('section-basic'); };
-            });
-        }
-        // Resumen (step3): Atras -> Personalidad
-        const btnBackStep3 = document.getElementById('btnBackStep3');
-        if (btnBackStep3) {
-            btnBackStep3.onclick = (e) => { e.stopPropagation(); window._modalGoToSection('section-personality'); };
-        }
-    }, 150);
-
-    // Activar Info.Básica como sección inicial del modal
-    window._modalGoToSection('section-basic');
-
-    // Parchar nextStep para que al pasar step1→step2 cargue Info.Básica
-    if (typeof nextStep === 'function') {
-        const _orig = nextStep;
-        window.nextStep = function() {
-            const before = (typeof currentStep !== 'undefined') ? currentStep : 1;
-            _orig();
-            const after = (typeof currentStep !== 'undefined') ? currentStep : before;
-            if (before === 1 && after === 2) {
-                setTimeout(() => window._modalGoToSection('section-basic'), 0);
-            }
-        };
-    }
-
-    // Sobreescribir updateProgressBar: lee el DOM en vez de variables locales de onboarding.js
-    window.updateProgressBar = function() {
-        let fraction = 0;
-
-        // Detectar paso activo desde el DOM (currentStep/currentSection son vars locales del módulo)
-        const step3Active = document.getElementById('step3')?.classList.contains('active');
-        const step2Active = document.getElementById('step2')?.classList.contains('active');
-
-        if (step3Active) {
-            fraction = 1.0;
-        } else if (step2Active) {
-            const personalActive = document.getElementById('section-personality')?.classList.contains('active');
-            if (personalActive) fraction = 2 / 3;
-            else fraction = 1 / 3; // Info.Básica
-        }
-
-        const pctEl = document.getElementById('progressPercentage');
-        if (pctEl) {
-            const target = Math.round(fraction * 100);
-            const current = parseInt(pctEl.textContent) || 0;
-            if (typeof animatePercentage === 'function') animatePercentage(current, target, pctEl);
-            else pctEl.textContent = target + '%';
-        }
-        if (typeof setDotTarget === 'function') setDotTarget(fraction);
-    };
-
-    if (typeof initializeToneSelection === 'function') initializeToneSelection();
-    if (typeof initializeLanguageSelection === 'function') initializeLanguageSelection();
+    // ── Inicializar sub-funciones ANTES de tocar el nav ───────────────
+    // (no llamar initializeSectionNavigation — la reemplazamos nosotros)
     if (typeof initializeRichEditor === 'function') initializeRichEditor();
     if (typeof initializePhoneToggle === 'function') initializePhoneToggle();
     if (typeof initializeSchedule === 'function') initializeSchedule();
     if (typeof initializeHolidays === 'function') initializeHolidays();
-    // fetchUserData al final — necesita que initializeSectionNavigation
-    // haya terminado de renderizar el DOM antes de precargar los inputs
-    setTimeout(() => {
-        if (typeof fetchUserData === 'function') fetchUserData();
-    }, 100);
     if (typeof initializeServices === 'function') initializeServices();
     if (typeof initializeWorkers === 'function') initializeWorkers();
     if (typeof initializeLocationDropdowns === 'function') initializeLocationDropdowns();
     if (typeof initializeSocialMediaInputs === 'function') initializeSocialMediaInputs();
     if (typeof initializeBusinessTypeSelect === 'function') initializeBusinessTypeSelect();
-
     setTimeout(() => {
+        if (typeof fetchUserData === 'function') fetchUserData();
         if (typeof initBusinessTimePickers === 'function') initBusinessTimePickers();
         if (typeof initHolidayDatePickers === 'function') initHolidayDatePickers();
         if (typeof initWorkerTimePickers === 'function') initWorkerTimePickers();
     }, 100);
 
-    if (typeof updateStepDisplay === 'function') updateStepDisplay();
+    // ── Construir nav DESPUÉS de las inicializaciones ─────────────────
+    const sectionNav = document.getElementById('sectionNavigation');
+    if (sectionNav) {
+        sectionNav.innerHTML = '';
+        sectionNav.style.justifyContent = 'center';
+        sectionNav.style.flexWrap = 'wrap';
+        sectionNav.style.gap = '0.5rem';
+
+        AGENT_SECTIONS.forEach(sec => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'section-nav-btn';
+            btn.dataset.sectionId = sec.id;
+            btn.dataset.modalSection = sec.containerId;
+            btn.innerHTML = `<i class="lni ${sec.icon}"></i><span>${sec.name}</span>`;
+            btn.addEventListener('click', () => window._modalGoToSection(sec.containerId));
+            sectionNav.appendChild(btn);
+        });
+
+        const resumenBtn = document.createElement('button');
+        resumenBtn.type = 'button';
+        resumenBtn.id = 'modal-resumen-tab';
+        resumenBtn.className = 'section-nav-btn';
+        resumenBtn.innerHTML = '<i class="lni lni-checkmark-circle"></i><span>Resumen</span>';
+        resumenBtn.addEventListener('click', () => window._modalGoToResumen());
+        sectionNav.appendChild(resumenBtn);
+    }
+
+    // ── Función cambiar sección ───────────────────────────────────────
+    window._modalGoToSection = function(targetId) {
+        AGENT_IDS.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+        });
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        if (step1) step1.style.display = 'none';
+        if (step2) { step2.classList.add('active'); step2.style.display = ''; }
+
+        const target = document.getElementById(targetId);
+        if (target) { target.style.display = ''; target.classList.add('active'); }
+
+        const currentIdx = AGENT_SECTIONS.findIndex(s => s.containerId === targetId);
+        document.querySelectorAll('#sectionNavigation .section-nav-btn').forEach(btn => {
+            btn.classList.remove('active', 'completed');
+            const sid = parseInt(btn.dataset.sectionId);
+            const sec = AGENT_SECTIONS.find(s => s.id === sid);
+            if (!sec) return;
+            const idx = AGENT_SECTIONS.indexOf(sec);
+            if (idx === currentIdx) btn.classList.add('active');
+            else if (idx < currentIdx) btn.classList.add('completed');
+        });
+
+        const el = document.getElementById(targetId);
+        if (el) {
+            el.querySelectorAll('.btn-prev-section').forEach(b => {
+                b.style.display = currentIdx === 0 ? 'none' : 'flex';
+            });
+        }
+
+        if (typeof window.updateProgressBar === 'function') window.updateProgressBar();
+        const mb = document.getElementById('onboardingModalBody');
+        if (mb) mb.scrollTop = 0;
+    };
+
+    // ── Función ir a Resumen ──────────────────────────────────────────
+    window._modalGoToResumen = function() {
+        AGENT_IDS.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+        });
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        if (step1) step1.style.display = 'none';
+        const step3 = document.getElementById('step3');
+        if (step3) { step3.classList.add('active'); step3.style.display = ''; }
+
+        document.querySelectorAll('#sectionNavigation .section-nav-btn').forEach(b => {
+            b.classList.remove('active', 'completed');
+            if (b.id === 'modal-resumen-tab') b.classList.add('active');
+            else b.classList.add('completed');
+        });
+
+        if (typeof collectFormData === 'function') collectFormData();
+        if (typeof generateSummary === 'function') generateSummary();
+        if (typeof window.updateProgressBar === 'function') window.updateProgressBar();
+        const mb = document.getElementById('onboardingModalBody');
+        if (mb) mb.scrollTop = 0;
+    };
+
+    // ── Parchear botones Siguiente/Anterior ───────────────────────────
+    setTimeout(() => {
+        AGENT_SECTIONS.forEach((sec, idx) => {
+            const el = document.getElementById(sec.containerId);
+            if (!el) return;
+            const prevSec = AGENT_SECTIONS[idx - 1];
+            const nextSec = AGENT_SECTIONS[idx + 1];
+
+            el.querySelectorAll('.btn-prev-section').forEach(btn => {
+                btn.style.display = idx === 0 ? 'none' : 'flex';
+                if (prevSec) btn.onclick = (e) => { e.stopPropagation(); window._modalGoToSection(prevSec.containerId); };
+            });
+
+            el.querySelectorAll('.btn-next-section, [class*="next"]').forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    nextSec ? window._modalGoToSection(nextSec.containerId) : window._modalGoToResumen();
+                };
+            });
+        });
+
+        const btnBackStep3 = document.getElementById('btnBackStep3');
+        if (btnBackStep3) {
+            const lastSec = AGENT_SECTIONS[AGENT_SECTIONS.length - 1];
+            btnBackStep3.onclick = (e) => { e.stopPropagation(); window._modalGoToSection(lastSec.containerId); };
+        }
+    }, 150);
+
+    // ── Activar Info. Básica como sección inicial ─────────────────────
+    window._modalGoToSection('section-basic');
+
     if (typeof updateProgressBar === 'function') updateProgressBar();
 }
 
 // ================== Fin onboarding modal ==================
 
 
-// Cargar estadísticas de agentes
-async function loadAgentStats() {
-    try {
-        const response = await fetch('/api/agents');
-        const data = await response.json();
-
-        if (data.agents && data.agents.length > 0) {
-            const activeCount = data.agents.filter((a) => a.deployStatus === 'running').length;
-            updateStatCard('activeAgentsCount', activeCount);
-        } else {
-            updateStatCard('activeAgentsCount', 0);
-        }
-    } catch (error) {
-        console.error('Error loading agent stats:', error);
-        updateStatCard('activeAgentsCount', 0);
-    }
-}
 function updateStatCard(elementId, value) {
     const element = document.getElementById(elementId);
     if (!element) return;
