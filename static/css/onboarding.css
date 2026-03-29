@@ -2952,3 +2952,236 @@ input:checked + .toggle-slider:before {
   .branch-basic-wrapper { padding: 0.9rem 1rem; }
   .branch-basic-card { font-size: 0.8rem; padding: 7px 10px; }
 }
+
+/* ============================================
+   SERVICE IMAGE UPLOAD (ported from my-business)
+   ============================================ */
+
+.service-image-upload {
+  width: 100%;
+}
+
+.service-images-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  background: #f9fafb;
+  border: 2px dashed #e5e7eb;
+  border-radius: 10px;
+  min-height: 80px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.service-images-grid:hover {
+  border-color: #06b6d4;
+  background: #f0f9ff;
+}
+
+.service-img-thumb {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.service-img-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.btn-remove-thumb {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 10;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  font-size: 0.7rem;
+}
+
+.service-img-thumb:hover .btn-remove-thumb {
+  opacity: 1;
+}
+
+.btn-remove-thumb:hover {
+  background: #ef4444;
+}
+
+.service-img-add-btn {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  border: 2px dashed #d1d5db;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 0.7rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.service-img-add-btn:hover,
+.service-images-grid:hover .service-img-add-btn {
+  border-color: #06b6d4;
+  color: #06b6d4;
+  background: #f0f9ff;
+}
+
+.service-img-add-btn i {
+  font-size: 1.2rem;
+}
+
+.service-image-uploading {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #06b6d4;
+  font-weight: 600;
+  padding: 0.4rem 0;
+}
+
+.service-image-uploading i {
+  animation: svc-spin 0.8s linear infinite;
+}
+
+@keyframes svc-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ============================================
+   PROMO PERIOD BLOCK (ported from my-business)
+   ============================================ */
+
+.promo-period-block {
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.promo-period-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.promo-period-header > i {
+  color: #f59e0b;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.promo-period-header > span {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #92400e;
+  flex: 1;
+  min-width: 120px;
+}
+
+.promo-period-type-toggle {
+  display: flex;
+  border: 1.5px solid #fde68a;
+  border-radius: 7px;
+  overflow: hidden;
+  margin-left: auto;
+}
+
+.period-tab-btn {
+  padding: 0.3rem 0.65rem;
+  border: none;
+  background: white;
+  color: #92400e;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.period-tab-btn.active {
+  background: #f59e0b;
+  color: white;
+}
+
+.promo-days-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.promo-days-panel .day-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.55rem;
+  border-radius: 20px;
+  border: 1.5px solid #fde68a;
+  background: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #92400e;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+}
+
+.promo-days-panel .day-chip.active {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: white;
+}
+
+.promo-range-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.promo-range-panel .form-label {
+  font-size: 0.8rem;
+  color: #92400e;
+  white-space: nowrap;
+}
+
+.promo-range-panel .form-input {
+  width: 145px;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  border-color: #fde68a;
+  background: white;
+}
+
+.promo-range-panel .form-input:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+}
