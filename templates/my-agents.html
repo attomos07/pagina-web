@@ -58,6 +58,12 @@
                             </h1>
                             <p class="page-description">Administra todos tus agentes de IA por plataforma</p>
                         </div>
+                        <div class="header-right">
+                            <button type="button" id="createAgentBtnAgents" class="btn-primary" onclick="openOnboardingModal()">
+                                <i class="lni lni-plus"></i>
+                                <span>Crear Agente</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Stats Cards with Rotating Dashed Rings -->
@@ -143,6 +149,10 @@
                         </div>
                         <h3>No tienes agentes creados</h3>
                         <p>Crea tu primer agente para comenzar a automatizar tu atención al cliente</p>
+                        <button type="button" class="btn-primary" onclick="openOnboardingModal()" style="margin-top: 1.5rem;">
+                            <i class="lni lni-plus"></i>
+                            <span>Crear Agente</span>
+                        </button>
                     </div>
                 </div>
             </div>

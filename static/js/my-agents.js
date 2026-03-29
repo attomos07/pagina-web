@@ -10,15 +10,9 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeCreateAgentButton();
 });
 
-// Inicializar botón de crear agente
+// Inicializar botón de crear agente (onclick en HTML)
 function initializeCreateAgentButton() {
-    const createBtn = document.querySelector('.btn-primary[href="/onboarding"]');
-    if (createBtn) {
-        createBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            openOnboardingModal();
-        });
-    }
+    // no-op: los botones usan onclick="openOnboardingModal()" directo
 }
 
 // Abrir modal de onboarding
@@ -71,37 +65,77 @@ function closeOnboardingModal() {
     }
 }
 
-// Cargar contenido del onboarding
+// Cargar contenido del onboarding (con caché)
+let _onboardingHTMLCache = null;
+let _onboardingScriptLoaded = false;
+
 async function loadOnboardingContent() {
     const modalBody = document.getElementById('onboardingModalBody');
     if (!modalBody) return;
 
     try {
-        const response = await fetch('/onboarding');
-        if (!response.ok) throw new Error('Error al cargar onboarding');
+        let rawHtml;
+        if (_onboardingHTMLCache) {
+            rawHtml = _onboardingHTMLCache;
+        } else {
+            const response = await fetch('/onboarding');
+            if (!response.ok) throw new Error('Error al cargar onboarding');
+            rawHtml = await response.text();
+            _onboardingHTMLCache = rawHtml;
+        }
 
-        const html = await response.text();
-
-        // Extraer solo el contenido principal del onboarding
         const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
+        const doc = parser.parseFromString(rawHtml, 'text/html');
         const mainContainer = doc.querySelector('.main-container');
 
         if (mainContainer) {
             modalBody.innerHTML = mainContainer.innerHTML;
 
-            // Cargar el script de onboarding
-            const script = document.createElement('script');
-            script.src = '/static/js/onboarding.js';
-            script.onload = function () {
-                console.log('✅ Script de onboarding cargado');
+            if (!document.getElementById('onboarding-css')) {
+                const link = document.createElement('link');
+                link.id = 'onboarding-css'; link.rel = 'stylesheet';
+                link.href = '/static/css/onboarding.css';
+                document.head.appendChild(link);
+            }
+            if (!document.getElementById('onboarding-modal-fixes')) {
+                const fix = document.createElement('style');
+                fix.id = 'onboarding-modal-fixes';
+                fix.textContent = `
+                    .section-nav-btn.completed:hover {
+                        background:#d1fae5!important;color:#10b981!important;
+                        border-color:#10b981!important;
+                        box-shadow:0 4px 12px rgba(16,185,129,.2)!important;
+                    }
+                    .section-nav-btn.completed:hover i{color:#10b981!important;}
+                    #onboardingModalBody .progress-wrapper,
+                    #onboardingModalBody .progress-header,
+                    #onboardingModalBody #progressPercentage,
+                    #onboardingModalBody .progress-dots,
+                    #onboardingModalBody #step1{display:none!important;}
+                    #onboardingModalBody #step2{display:block!important;}
+                    .onboarding-modal-header{display:flex!important;align-items:center!important;justify-content:space-between!important;padding:1rem 1.5rem!important;border-bottom:1px solid #eef2f7!important;position:sticky!important;top:0!important;background:white!important;z-index:10!important;flex-direction:row!important;}
+                    .onboarding-modal-title{display:inline-flex!important;align-items:center!important;gap:0.6rem!important;font-weight:800!important;font-size:1.1rem!important;color:#0f172a!important;margin:0!important;flex:1!important;}
+                    .btn-close-onboarding{width:40px!important;height:40px!important;border-radius:50%!important;border:none!important;background:#f3f4f6!important;color:#6b7280!important;cursor:pointer!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;font-size:1.1rem!important;flex-shrink:0!important;transition:all 0.2s!important;}
+                    .btn-close-onboarding:hover{background:#fee2e2!important;color:#ef4444!important;}
+                    #onboardingModalBody .main-container,#onboardingModalBody .onboarding-container{padding-top:0!important;margin-top:0!important;}
+                    #onboardingModalBody .step2-header,#onboardingModalBody .step-header{padding-top:1rem!important;}
+                `;
+                document.head.appendChild(fix);
+            }
 
-                // Reinicializar eventos después de cargar el script
-                setTimeout(() => {
-                    reinitializeOnboardingEvents();
-                }, 100);
-            };
-            document.body.appendChild(script);
+            if (!_onboardingScriptLoaded) {
+                const script = document.createElement('script');
+                script.src = '/static/js/onboarding.js';
+                script.onload = () => {
+                    _onboardingScriptLoaded = true;
+                    setTimeout(() => reinitializeOnboardingEvents(), 50);
+                };
+                document.body.appendChild(script);
+            } else {
+                setTimeout(() => reinitializeOnboardingEvents(), 20);
+            }
+        } else {
+            throw new Error('No se encontró .main-container');
         }
     } catch (error) {
         console.error('❌ Error cargando onboarding:', error);
@@ -121,55 +155,148 @@ async function loadOnboardingContent() {
 
 // Reinicializar eventos del onboarding en el modal
 function reinitializeOnboardingEvents() {
-    console.log('🔄 Reinicializando eventos del onboarding en modal');
+    console.log('🔄 Reinicializando modal del agente (my-agents)');
 
-    // Reinicializar selección de red social
-    const socialInputs = document.querySelectorAll('input[name="social"]');
-    const btnStep1 = document.getElementById('btnStep1');
+    if (typeof window.agentData !== 'undefined') window.agentData = (typeof defaultAgentData==='function')?defaultAgentData():{};
+    if (typeof window.currentSection !== 'undefined') window.currentSection = 1;
 
-    if (socialInputs.length > 0 && btnStep1) {
-        // Limpiar eventos anteriores
-        const newBtnStep1 = btnStep1.cloneNode(true);
-        btnStep1.parentNode.replaceChild(newBtnStep1, btnStep1);
+    const modal = document.getElementById('onboardingModal');
+    const modalContent = modal?.querySelector('.onboarding-modal-content');
+    if (modalContent) {
+        modalContent.style.maxWidth = '1100px';
+        modalContent.style.width = '95vw';
+        modalContent.style.maxHeight = '90vh';
+        modalContent.style.overflow = 'hidden';
+    }
+    const modalBody = document.getElementById('onboardingModalBody');
+    if (modalBody) {
+        modalBody.style.maxHeight = '82vh';
+        modalBody.style.overflowY = 'auto';
+        modalBody.scrollTop = 0;
+    }
 
-        socialInputs.forEach(input => {
-            input.addEventListener('change', function () {
-                console.log('✅ Red social seleccionada:', this.value);
-                newBtnStep1.disabled = false;
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
+    if (step2) { step2.classList.add('active'); step2.style.display = ''; }
+
+    const AGENT_SECTIONS = [
+        { id:2, containerId:'section-basic',      name:'Info. Básica',  icon:'lni-information' },
+        { id:5, containerId:'section-personality', name:'Personalidad',  icon:'lni-comments' },
+        { id:6, containerId:'section-schedule',    name:'Horarios',      icon:'lni-calendar' },
+        { id:7, containerId:'section-holidays',    name:'Días Festivos', icon:'lni-gift' },
+        { id:8, containerId:'section-services',    name:'Servicios',     icon:'lni-package' },
+        { id:9, containerId:'section-workers',     name:'Trabajadores',  icon:'lni-users' },
+    ];
+    const AGENT_IDS = AGENT_SECTIONS.map(s => s.containerId);
+
+    ['section-business','section-location','section-social'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+    });
+
+    if (typeof initializeRichEditor==='function') initializeRichEditor();
+    if (typeof initializePhoneToggle==='function') initializePhoneToggle();
+    if (typeof initializeSchedule==='function') initializeSchedule();
+    if (typeof initializeHolidays==='function') initializeHolidays();
+    if (typeof initializeServices==='function') initializeServices();
+    if (typeof initializeWorkers==='function') initializeWorkers();
+    if (typeof initializeLocationDropdowns==='function') initializeLocationDropdowns();
+    if (typeof initializeSocialMediaInputs==='function') initializeSocialMediaInputs();
+    if (typeof initializeBusinessTypeSelect==='function') initializeBusinessTypeSelect();
+    setTimeout(() => {
+        if (typeof fetchUserData==='function') fetchUserData();
+        if (typeof initBusinessTimePickers==='function') initBusinessTimePickers();
+        if (typeof initHolidayDatePickers==='function') initHolidayDatePickers();
+        if (typeof initWorkerTimePickers==='function') initWorkerTimePickers();
+    }, 100);
+
+    const sectionNav = document.getElementById('sectionNavigation');
+    if (sectionNav) {
+        sectionNav.innerHTML = '';
+        sectionNav.style.justifyContent = 'center';
+        sectionNav.style.flexWrap = 'wrap';
+        sectionNav.style.gap = '0.5rem';
+        AGENT_SECTIONS.forEach(sec => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'section-nav-btn';
+            btn.dataset.sectionId = sec.id;
+            btn.innerHTML = `<i class="lni ${sec.icon}"></i><span>${sec.name}</span>`;
+            btn.addEventListener('click', () => window._modalGoToSection(sec.containerId));
+            sectionNav.appendChild(btn);
+        });
+        const resumenBtn = document.createElement('button');
+        resumenBtn.type = 'button';
+        resumenBtn.id = 'modal-resumen-tab';
+        resumenBtn.className = 'section-nav-btn';
+        resumenBtn.innerHTML = '<i class="lni lni-checkmark-circle"></i><span>Resumen</span>';
+        resumenBtn.addEventListener('click', () => window._modalGoToResumen());
+        sectionNav.appendChild(resumenBtn);
+    }
+
+    window._modalGoToSection = function(targetId) {
+        AGENT_IDS.forEach(id => { const el=document.getElementById(id); if(el){el.classList.remove('active');el.style.display='none';} });
+        document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+        if(step1) step1.style.display='none';
+        if(step2){step2.classList.add('active');step2.style.display='';}
+        const target=document.getElementById(targetId);
+        if(target){target.style.display='';target.classList.add('active');}
+        const currentIdx=AGENT_SECTIONS.findIndex(s=>s.containerId===targetId);
+        document.querySelectorAll('#sectionNavigation .section-nav-btn').forEach(btn=>{
+            btn.classList.remove('active','completed');
+            const sid=parseInt(btn.dataset.sectionId);
+            const sec=AGENT_SECTIONS.find(s=>s.id===sid);
+            if(!sec) return;
+            const idx=AGENT_SECTIONS.indexOf(sec);
+            if(idx===currentIdx) btn.classList.add('active');
+            else if(idx<currentIdx) btn.classList.add('completed');
+        });
+        const el=document.getElementById(targetId);
+        if(el) el.querySelectorAll('.btn-prev-section').forEach(b=>{ b.style.display=currentIdx===0?'none':'flex'; });
+        if(typeof window.updateProgressBar==='function') window.updateProgressBar();
+        if(modalBody) modalBody.scrollTop=0;
+    };
+
+    window._modalGoToResumen = function() {
+        AGENT_IDS.forEach(id=>{ const el=document.getElementById(id); if(el){el.classList.remove('active');el.style.display='none';} });
+        document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+        if(step1) step1.style.display='none';
+        const step3=document.getElementById('step3');
+        if(step3){step3.classList.add('active');step3.style.display='';}
+        document.querySelectorAll('#sectionNavigation .section-nav-btn').forEach(b=>{
+            b.classList.remove('active','completed');
+            if(b.id==='modal-resumen-tab') b.classList.add('active');
+            else b.classList.add('completed');
+        });
+        if(typeof collectFormData==='function') collectFormData();
+        if(typeof generateSummary==='function') generateSummary();
+        if(typeof window.updateProgressBar==='function') window.updateProgressBar();
+        if(modalBody) modalBody.scrollTop=0;
+    };
+
+    setTimeout(() => {
+        AGENT_SECTIONS.forEach((sec,idx)=>{
+            const el=document.getElementById(sec.containerId);
+            if(!el) return;
+            const prevSec=AGENT_SECTIONS[idx-1], nextSec=AGENT_SECTIONS[idx+1];
+            el.querySelectorAll('.btn-prev-section').forEach(btn=>{
+                btn.style.display=idx===0?'none':'flex';
+                if(prevSec) btn.onclick=(e)=>{e.stopPropagation();window._modalGoToSection(prevSec.containerId);};
+            });
+            el.querySelectorAll('.btn-next-section,[class*="next"]').forEach(btn=>{
+                btn.onclick=(e)=>{e.stopPropagation();nextSec?window._modalGoToSection(nextSec.containerId):window._modalGoToResumen();};
             });
         });
+        const b3=document.getElementById('btnBackStep3');
+        if(b3){ const last=AGENT_SECTIONS[AGENT_SECTIONS.length-1]; b3.onclick=(e)=>{e.stopPropagation();window._modalGoToSection(last.containerId);}; }
+    }, 150);
 
-        // Evento para el botón de continuar
-        newBtnStep1.addEventListener('click', function () {
-            console.log('🔘 Botón Continuar clickeado');
-
-            // Obtener red social seleccionada
-            const selectedSocial = document.querySelector('input[name="social"]:checked');
-            if (!selectedSocial) {
-                alert('Por favor selecciona una red social');
-                return;
-            }
-
-            console.log('📱 Red social confirmada:', selectedSocial.value);
-
-            // Llamar a la función nextStep del onboarding si existe
-            if (typeof window.onboardingNextStep === 'function') {
-                window.onboardingNextStep();
-            } else {
-                // Si no existe, simular el cambio de paso manualmente
-                document.getElementById('step1').classList.remove('active');
-                document.getElementById('step2').classList.add('active');
-
-                // Actualizar barra de progreso
-                updateModalProgressBar(2);
-
-                console.log('✅ Paso cambiado a Step 2');
-            }
-        });
-
-        console.log('✅ Event listeners de red social añadidos');
-    }
+    window._modalGoToSection('section-basic');
+    if(typeof updateProgressBar==='function') updateProgressBar();
 }
+
 
 // Función para actualizar la barra de progreso en el modal
 function updateModalProgressBar(currentStep) {
@@ -675,7 +802,6 @@ setInterval(async () => {
     }
 }, 30000);
 
-// Hacer la función global para que sea accesible
 window.reinitializeOnboardingEvents = reinitializeOnboardingEvents;
 
 // CSS para animaciones y spinner

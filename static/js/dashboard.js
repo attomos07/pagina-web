@@ -583,15 +583,15 @@ async function loadOnboardingContent() {
                 const fix = document.createElement('style');
                 fix.id = 'onboarding-modal-fixes';
                 fix.textContent = `
+                    /* Tab completed hover */
                     .section-nav-btn.completed:hover {
-                        background: #d1fae5 !important;
-                        color: #10b981 !important;
+                        background: #d1fae5 !important; color: #10b981 !important;
                         border-color: #10b981 !important;
                         box-shadow: 0 4px 12px rgba(16,185,129,0.2) !important;
                     }
                     .section-nav-btn.completed:hover i { color: #10b981 !important; }
 
-                    /* Ocultar barra de progreso y step-indicators en el modal */
+                    /* Ocultar elementos del step1/progreso */
                     #onboardingModalBody .progress-wrapper,
                     #onboardingModalBody .steps-progress,
                     #onboardingModalBody .step-indicators,
@@ -600,8 +600,57 @@ async function loadOnboardingContent() {
                     #onboardingModalBody .progress-dots,
                     #onboardingModalBody #step1 { display: none !important; }
 
-                    /* Asegurar que step2 arranque visible */
+                    /* step2 visible */
                     #onboardingModalBody #step2 { display: block !important; }
+
+                    /* ── Corregir header del modal ── */
+                    /* El onboarding.css puede pisar el header — forzar layout correcto */
+                    .onboarding-modal-header {
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: space-between !important;
+                        padding: 1rem 1.5rem !important;
+                        border-bottom: 1px solid #eef2f7 !important;
+                        position: sticky !important;
+                        top: 0 !important;
+                        background: white !important;
+                        z-index: 10 !important;
+                        flex-direction: row !important;
+                    }
+                    .onboarding-modal-title {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        gap: 0.6rem !important;
+                        font-weight: 800 !important;
+                        font-size: 1.1rem !important;
+                        color: #0f172a !important;
+                        margin: 0 !important;
+                        flex: 1 !important;
+                    }
+                    .btn-close-onboarding {
+                        width: 40px !important; height: 40px !important;
+                        border-radius: 50% !important; border: none !important;
+                        background: #f3f4f6 !important; color: #6b7280 !important;
+                        cursor: pointer !important;
+                        display: inline-flex !important;
+                        align-items: center !important; justify-content: center !important;
+                        font-size: 1.1rem !important;
+                        flex-shrink: 0 !important;
+                        transition: all 0.2s !important;
+                    }
+                    .btn-close-onboarding:hover {
+                        background: #fee2e2 !important; color: #ef4444 !important;
+                    }
+                    /* Quitar padding extra que agrega el onboarding dentro del modal */
+                    #onboardingModalBody .main-container,
+                    #onboardingModalBody .onboarding-container {
+                        padding-top: 0 !important;
+                        margin-top: 0 !important;
+                    }
+                    #onboardingModalBody .step2-header,
+                    #onboardingModalBody .step-header {
+                        padding-top: 1rem !important;
+                    }
                 `;
                 document.head.appendChild(fix);
             }
