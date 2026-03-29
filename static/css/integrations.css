@@ -1053,3 +1053,50 @@ body {
     padding-left: 0;
     margin-top: -0.5rem;
 }
+
+
+/* ============================================
+   CUSTOM ICONS — SVG estilizados
+   ============================================ */
+
+.custom-icon-stripe {
+    width: 22px;
+    height: 22px;
+    color: #635BFF;
+    flex-shrink: 0;
+}
+
+.custom-icon-spei {
+    width: 20px;
+    height: 20px;
+    color: #10b981;
+    flex-shrink: 0;
+}
+
+.custom-icon-gemini-svg {
+    width: 32px;
+    height: 32px;
+    color: #8E44AD;
+    flex-shrink: 0;
+}
+
+.custom-icon-calendar {
+    width: 22px;
+    height: 22px;
+    color: #4285F4;
+    flex-shrink: 0;
+}
+
+/* Tamaños dentro de logo-wrap */
+.stripe-logo-wrap .custom-icon-stripe,
+.spei-logo-wrap .custom-icon-spei {
+    width: 20px;
+    height: 20px;
+}
+
+.custom-icon-sheets {
+    width: 32px;
+    height: 32px;
+    color: #0F9D58;
+    flex-shrink: 0;
+}
