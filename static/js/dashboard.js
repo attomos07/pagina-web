@@ -696,7 +696,7 @@ async function loadOnboardingContent() {
 }
 
 // Reinicializar usando el onboarding original
-function reinitializeOnboardingEvents() {
+async function reinitializeOnboardingEvents() {
     console.log('🔄 Reinicializando modal del agente (dashboard)');
 
     if (typeof window.agentData !== 'undefined') window.agentData = defaultAgentData();
@@ -725,19 +725,44 @@ function reinitializeOnboardingEvents() {
     if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
     if (step2) { step2.classList.add('active'); step2.style.display = ''; }
 
+    // ── Detectar si ya existe al menos un agente ─────────────────────
+    let _hasExistingAgents = false;
+    try {
+        const _agentsResp = await fetch('/api/agents', { credentials: 'include' });
+        if (_agentsResp.ok) {
+            const _agentsData = await _agentsResp.json();
+            _hasExistingAgents = Array.isArray(_agentsData.agents) && _agentsData.agents.length > 0;
+        }
+    } catch (_) { /* continuar con flujo completo si falla */ }
+
     // ── Secciones del agente ──────────────────────────────────────────
-    const AGENT_SECTIONS = [
-        { id: 2,  containerId: 'section-basic',       name: 'Info. Básica',   icon: 'lni-information' },
-        { id: 5,  containerId: 'section-personality',  name: 'Personalidad',   icon: 'lni-comments' },
-        { id: 6,  containerId: 'section-schedule',     name: 'Horarios',       icon: 'lni-calendar' },
-        { id: 7,  containerId: 'section-holidays',     name: 'Días Festivos',  icon: 'lni-gift' },
-        { id: 8,  containerId: 'section-services',     name: 'Servicios',      icon: 'lni-package' },
-        { id: 9,  containerId: 'section-workers',      name: 'Trabajadores',   icon: 'lni-users' },
-    ];
+    // Con agentes existentes: solo Info. Básica + Personalidad
+    //   (horarios, servicios, etc. ya se gestionan desde Mi Negocio)
+    // Sin agentes (primer agente): flujo completo incluyendo Info. Negocio
+    const AGENT_SECTIONS = _hasExistingAgents
+        ? [
+            { id: 2,  containerId: 'section-basic',       name: 'Info. Básica',   icon: 'lni-information' },
+            { id: 5,  containerId: 'section-personality',  name: 'Personalidad',   icon: 'lni-comments' },
+          ]
+        : [
+            { id: 1,  containerId: 'section-business',    name: 'Info. Negocio',  icon: 'lni-briefcase' },
+            { id: 2,  containerId: 'section-basic',       name: 'Info. Básica',   icon: 'lni-information' },
+            { id: 5,  containerId: 'section-personality',  name: 'Personalidad',   icon: 'lni-comments' },
+            { id: 6,  containerId: 'section-schedule',     name: 'Horarios',       icon: 'lni-calendar' },
+            { id: 7,  containerId: 'section-holidays',     name: 'Días Festivos',  icon: 'lni-gift' },
+            { id: 8,  containerId: 'section-services',     name: 'Servicios',      icon: 'lni-package' },
+            { id: 9,  containerId: 'section-workers',      name: 'Trabajadores',   icon: 'lni-users' },
+          ];
+
     const AGENT_IDS = AGENT_SECTIONS.map(s => s.containerId);
 
-    // Ocultar secciones de negocio
-    ['section-business','section-location','section-social'].forEach(id => {
+    // Secciones que siempre se ocultan en el modal (ubicación y redes)
+    const _alwaysHide = ['section-location', 'section-social'];
+    // Si ya tiene agentes, también ocultar las de negocio/horarios/festivos/servicios/trabajadores
+    if (_hasExistingAgents) {
+        _alwaysHide.push('section-business','section-schedule','section-holidays','section-services','section-workers');
+    }
+    _alwaysHide.forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.classList.remove('active'); el.style.display = 'none'; }
     });
@@ -876,8 +901,8 @@ function reinitializeOnboardingEvents() {
         }
     }, 150);
 
-    // ── Activar Info. Básica como sección inicial ─────────────────────
-    window._modalGoToSection('section-basic');
+    // ── Activar sección inicial según contexto ───────────────────────
+    window._modalGoToSection(_hasExistingAgents ? 'section-basic' : 'section-business');
 
     if (typeof updateProgressBar === 'function') updateProgressBar();
 }

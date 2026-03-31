@@ -1854,7 +1854,10 @@ function addService() {
       for (const file of files) {
         const formData = new FormData();
         formData.append('image', file);
-        const res = await fetch('/api/upload/service-image', {
+        // Usar branchId de agentData si está disponible; si es 0 (onboarding sin
+        // sucursal aún), el handler hará fallback al último agente del usuario.
+        const _uploadBranchId = agentData.branchId || 0;
+        const res = await fetch(`/api/upload/service-image?branch_id=${_uploadBranchId}`, {
           method: 'POST',
           credentials: 'include',
           body: formData,

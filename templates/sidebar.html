@@ -29,7 +29,7 @@
             <span class="tooltip">Dashboard</span>
         </a>
 
-        <a href="/my-business" class="icon-button" data-page="my-business">
+        <a href="/my-business" class="icon-button" id="myBusinessMenuItem" style="display: none;" data-page="my-business">
             <svg viewBox="0 0 24 24" fill="none">
                 <path d="M2 7h20v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z"></path>
                 <path d="M2 7l2-4h16l2 4"></path>
@@ -148,6 +148,19 @@
                     // Mostrar u ocultar opciones según el plan
                     const portfolioItem = document.getElementById('portfolioMenuItem');
                     const messagesItem = document.getElementById('messagesLink');
+                    const myBusinessItem = document.getElementById('myBusinessMenuItem');
+
+                    // My Business solo se muestra cuando el usuario ya tiene al menos un agente
+                    try {
+                        const agentsResp = await fetch('/api/agents', { credentials: 'include' });
+                        if (agentsResp.ok) {
+                            const agentsData = await agentsResp.json();
+                            const hasAgents = Array.isArray(agentsData.agents) && agentsData.agents.length > 0;
+                            if (myBusinessItem) myBusinessItem.style.display = hasAgents ? '' : 'none';
+                        }
+                    } catch (_) {
+                        if (myBusinessItem) myBusinessItem.style.display = 'none';
+                    }
                     
                     if (plan === 'gratuito') {
                         // Ocultar Portfolio y Mensajes para plan gratuito

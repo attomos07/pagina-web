@@ -85,7 +85,8 @@ type BranchService struct {
 	Price           float64  `json:"price"`
 	OriginalPrice   float64  `json:"originalPrice"`
 	PromoPrice      float64  `json:"promoPrice"`
-	ImageURL        string   `json:"imageUrl"`
+	ImageURL        string   `json:"imageUrl"`        // compatibilidad legada (1 foto)
+	ImageUrls       []string `json:"imageUrls"`       // multi-foto (onboarding/my-business)
 	PromoPeriodType string   `json:"promoPeriodType"` // "days" | "range" | ""
 	PromoDays       []string `json:"promoDays"`       // ["lunes","martes",...] cuando type="days"
 	PromoDateStart  string   `json:"promoDateStart"`  // "2025-01-15" cuando type="range"

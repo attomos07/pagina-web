@@ -68,12 +68,18 @@ type Holiday struct {
 }
 
 type Service struct {
-	Title         string  `json:"title"`
-	Description   string  `json:"description"`
-	PriceType     string  `json:"priceType"`
-	Price         float64 `json:"price,omitempty"`
-	OriginalPrice float64 `json:"originalPrice,omitempty"`
-	PromoPrice    float64 `json:"promoPrice,omitempty"`
+	Title         string   `json:"title"`
+	Description   string   `json:"description"`
+	ImageUrls     []string `json:"imageUrls,omitempty"`
+	PriceType     string   `json:"priceType"`
+	Price         float64  `json:"price,omitempty"`
+	OriginalPrice float64  `json:"originalPrice,omitempty"`
+	PromoPrice    float64  `json:"promoPrice,omitempty"`
+	// Periodo de promoción (ej. pizzerías: "martes 2x1", rango de fechas, etc.)
+	PromoPeriodType string   `json:"promoPeriodType,omitempty"` // "days" | "range"
+	PromoDays       []string `json:"promoDays,omitempty"`
+	PromoDateStart  string   `json:"promoDateStart,omitempty"`
+	PromoDateEnd    string   `json:"promoDateEnd,omitempty"`
 }
 
 type Worker struct {
@@ -826,12 +832,17 @@ func convertBranchServices(services models.BranchServices) []Service {
 	result := make([]Service, len(services))
 	for i, s := range services {
 		result[i] = Service{
-			Title:         s.Title,
-			Description:   s.Description,
-			PriceType:     s.PriceType,
-			Price:         s.Price,
-			OriginalPrice: s.OriginalPrice,
-			PromoPrice:    s.PromoPrice,
+			Title:           s.Title,
+			Description:     s.Description,
+			ImageUrls:       s.ImageUrls,
+			PriceType:       s.PriceType,
+			Price:           s.Price,
+			OriginalPrice:   s.OriginalPrice,
+			PromoPrice:      s.PromoPrice,
+			PromoPeriodType: s.PromoPeriodType,
+			PromoDays:       s.PromoDays,
+			PromoDateStart:  s.PromoDateStart,
+			PromoDateEnd:    s.PromoDateEnd,
 		}
 	}
 	return result

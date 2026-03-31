@@ -630,6 +630,247 @@ func (s *GoogleSheetsService) RefreshToken(ctx context.Context, tokenJSON string
 	return string(newTokenJSON), nil
 }
 
+// =============================================================================
+// PIZZERÍA — Hoja de pedidos
+// =============================================================================
+// Por qué NO se necesita Google Calendar para pizzerías:
+// Los pedidos son INMEDIATOS (30-45 min). No hay citas que agendar en slots de
+// tiempo. Lo que el dueño necesita es un tracker de pedidos en tiempo real con
+// estados. Google Sheets cubre esto sin complejidad extra.
+// =============================================================================
+
+// CreateSpreadsheetForBusinessType es el punto de entrada unificado.
+//   - "pizzeria" → hoja de pedidos + menú  (needsCalendar = false)
+//   - resto      → calendario semanal de citas (needsCalendar = true)
+//
+// Uso en el handler de creación de agente:
+//
+//	spreadsheetID, needsCalendar, err := sheetsService.CreateSpreadsheetForBusinessType(
+//	    ctx, tokenJSON, agentName, agent.BusinessType, schedule)
+//	if needsCalendar {
+//	    calendarID, err = calendarService.CreateCalendar(ctx, tokenJSON, agentName)
+//	}
+func (s *GoogleSheetsService) CreateSpreadsheetForBusinessType(
+	ctx context.Context,
+	tokenJSON, agentName, businessType string,
+	schedule Schedule,
+) (spreadsheetID string, needsCalendar bool, err error) {
+	switch businessType {
+	case "pizzeria":
+		id, e := s.CreatePizzeriaSpreadsheet(ctx, tokenJSON, agentName)
+		return id, false, e
+	default:
+		id, e := s.CreateSpreadsheet(ctx, tokenJSON, agentName, schedule)
+		return id, true, e
+	}
+}
+
+// CreatePizzeriaSpreadsheet crea un Google Spreadsheet con dos hojas:
+//   - "Pedidos": tracker con número, cliente, productos, total y estado desplegable
+//   - "Menú":    catálogo con precio normal, precio promo y disponibilidad
+func (s *GoogleSheetsService) CreatePizzeriaSpreadsheet(ctx context.Context, tokenJSON, agentName string) (string, error) {
+	service, err := s.CreateSheetsService(ctx, tokenJSON)
+	if err != nil {
+		return "", err
+	}
+
+	created, err := service.Spreadsheets.Create(&sheets.Spreadsheet{
+		Properties: &sheets.SpreadsheetProperties{
+			Title:    fmt.Sprintf("Attomos - Pedidos de %s", agentName),
+			TimeZone: "America/Mexico_City",
+			Locale:   "es_MX",
+		},
+		Sheets: []*sheets.Sheet{
+			{Properties: &sheets.SheetProperties{
+				Title:          "Pedidos",
+				GridProperties: &sheets.GridProperties{FrozenRowCount: 1},
+			}},
+			{Properties: &sheets.SheetProperties{
+				Title:          "Menú",
+				GridProperties: &sheets.GridProperties{FrozenRowCount: 1},
+			}},
+		},
+	}).Do()
+	if err != nil {
+		return "", fmt.Errorf("error creating pizzeria spreadsheet: %w", err)
+	}
+
+	if err := s.setupPizzeriaSheets(ctx, tokenJSON, created.SpreadsheetId, created.Sheets); err != nil {
+		return "", fmt.Errorf("error setting up pizzeria sheets: %w", err)
+	}
+
+	log.Printf("✅ Hoja de pedidos para pizzería creada: %s", created.SpreadsheetId)
+	return created.SpreadsheetId, nil
+}
+
+// setupPizzeriaSheets escribe encabezados, aplica formato rojo-tomate,
+// configura validaciones desplegables y ajusta anchos de columna.
+func (s *GoogleSheetsService) setupPizzeriaSheets(
+	ctx context.Context,
+	tokenJSON, spreadsheetID string,
+	sheetList []*sheets.Sheet,
+) error {
+	service, err := s.CreateSheetsService(ctx, tokenJSON)
+	if err != nil {
+		return err
+	}
+
+	pedidosID := sheetList[0].Properties.SheetId
+	menuID := sheetList[1].Properties.SheetId
+
+	// ── Encabezados ──────────────────────────────────────────────────────────
+	if _, err = service.Spreadsheets.Values.Update(
+		spreadsheetID, "Pedidos!A1:J1",
+		&sheets.ValueRange{Values: [][]interface{}{{
+			"# Pedido", "Fecha", "Hora", "Cliente", "Teléfono",
+			"Tipo / Dirección", "Productos", "Total ($)", "Estado", "Notas",
+		}}},
+	).ValueInputOption("RAW").Do(); err != nil {
+		return fmt.Errorf("pedidos headers: %w", err)
+	}
+
+	if _, err = service.Spreadsheets.Values.Update(
+		spreadsheetID, "Menú!A1:F1",
+		&sheets.ValueRange{Values: [][]interface{}{{
+			"Categoría", "Producto", "Descripción",
+			"Precio ($)", "Precio Promo ($)", "Disponible",
+		}}},
+	).ValueInputOption("RAW").Do(); err != nil {
+		return fmt.Errorf("menu headers: %w", err)
+	}
+
+	// ── Helpers ───────────────────────────────────────────────────────────────
+	redHeader := func(sid int64, cols int64) *sheets.Request {
+		return &sheets.Request{RepeatCell: &sheets.RepeatCellRequest{
+			Range: &sheets.GridRange{
+				SheetId: sid, StartRowIndex: 0, EndRowIndex: 1,
+				StartColumnIndex: 0, EndColumnIndex: cols,
+			},
+			Cell: &sheets.CellData{UserEnteredFormat: &sheets.CellFormat{
+				BackgroundColor: &sheets.Color{Red: 0.84, Green: 0.18, Blue: 0.15},
+				TextFormat: &sheets.TextFormat{
+					Bold:            true,
+					ForegroundColor: &sheets.Color{Red: 1, Green: 1, Blue: 1},
+					FontSize:        10,
+				},
+				HorizontalAlignment: "CENTER",
+				VerticalAlignment:   "MIDDLE",
+			}},
+			Fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)",
+		}}
+	}
+
+	colW := func(sid, start, end, px int64) *sheets.Request {
+		return &sheets.Request{UpdateDimensionProperties: &sheets.UpdateDimensionPropertiesRequest{
+			Range: &sheets.DimensionRange{
+				SheetId: sid, Dimension: "COLUMNS",
+				StartIndex: start, EndIndex: end,
+			},
+			Properties: &sheets.DimensionProperties{PixelSize: px},
+			Fields:     "pixelSize",
+		}}
+	}
+
+	dropdown := func(sid, startRow, endRow, startCol, endCol int64, values ...string) *sheets.Request {
+		cvs := make([]*sheets.ConditionValue, len(values))
+		for i, v := range values {
+			cvs[i] = &sheets.ConditionValue{UserEnteredValue: v}
+		}
+		return &sheets.Request{SetDataValidation: &sheets.SetDataValidationRequest{
+			Range: &sheets.GridRange{
+				SheetId:       sid,
+				StartRowIndex: startRow, EndRowIndex: endRow,
+				StartColumnIndex: startCol, EndColumnIndex: endCol,
+			},
+			Rule: &sheets.DataValidationRule{
+				Condition:    &sheets.BooleanCondition{Type: "ONE_OF_LIST", Values: cvs},
+				ShowCustomUi: true,
+			},
+		}}
+	}
+
+	requests := []*sheets.Request{
+		// Encabezados rojo-tomate
+		redHeader(pedidosID, 10),
+		redHeader(menuID, 6),
+		// Estado desplegable — col I (índice 8)
+		dropdown(pedidosID, 1, 1000, 8, 9,
+			"🟡 Recibido", "🔵 En preparación", "🟠 En camino", "✅ Entregado", "❌ Cancelado"),
+		// Disponible desplegable — col F (índice 5)
+		dropdown(menuID, 1, 500, 5, 6, "✅ Sí", "❌ No"),
+		// Anchos Pedidos
+		colW(pedidosID, 0, 1, 80),
+		colW(pedidosID, 1, 2, 105),
+		colW(pedidosID, 2, 3, 80),
+		colW(pedidosID, 3, 4, 160),
+		colW(pedidosID, 4, 5, 130),
+		colW(pedidosID, 5, 6, 200),
+		colW(pedidosID, 6, 7, 260),
+		colW(pedidosID, 7, 8, 90),
+		colW(pedidosID, 8, 9, 150),
+		colW(pedidosID, 9, 10, 200),
+		// Anchos Menú
+		colW(menuID, 0, 1, 130),
+		colW(menuID, 1, 2, 200),
+		colW(menuID, 2, 3, 250),
+		colW(menuID, 3, 4, 100),
+		colW(menuID, 4, 5, 120),
+		colW(menuID, 5, 6, 90),
+	}
+
+	if _, err = service.Spreadsheets.BatchUpdate(
+		spreadsheetID,
+		&sheets.BatchUpdateSpreadsheetRequest{Requests: requests},
+	).Do(); err != nil {
+		return fmt.Errorf("error formatting pizzeria sheets: %w", err)
+	}
+
+	log.Printf("✅ Hojas de pizzería configuradas (Pedidos + Menú con desplegables)")
+	return nil
+}
+
+// AddOrder registra un pedido en la hoja "Pedidos" con estado inicial "🟡 Recibido".
+// Llamar desde el bot cuando el cliente confirma su pedido por WhatsApp.
+func (s *GoogleSheetsService) AddOrder(ctx context.Context, tokenJSON, spreadsheetID string, order OrderData) error {
+	service, err := s.CreateSheetsService(ctx, tokenJSON)
+	if err != nil {
+		return err
+	}
+
+	_, err = service.Spreadsheets.Values.Append(
+		spreadsheetID, "Pedidos!A:J",
+		&sheets.ValueRange{Values: [][]interface{}{{
+			order.OrderNumber,
+			order.Date,
+			order.Time,
+			order.ClientName,
+			order.ClientPhone,
+			order.DeliveryType,
+			order.Items,
+			order.Total,
+			"🟡 Recibido",
+			order.Notes,
+		}}},
+	).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Do()
+	if err != nil {
+		return fmt.Errorf("error adding order: %w", err)
+	}
+	return nil
+}
+
+// OrderData representa un pedido de pizzería capturado por el bot de WhatsApp.
+type OrderData struct {
+	OrderNumber  int
+	Date         string // "2025-06-15"
+	Time         string // "14:30"
+	ClientName   string
+	ClientPhone  string
+	DeliveryType string // "Domicilio: Blvd. X 123" | "Para llevar"
+	Items        string // "1x Pizza Hawaiana L, 2x Refresco 600ml"
+	Total        float64
+	Notes        string
+}
+
 // Helper function
 func getStringValue(row []interface{}, index int) string {
 	if index < len(row) && row[index] != nil {
