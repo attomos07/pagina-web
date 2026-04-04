@@ -73,22 +73,20 @@ func GetAgentLogs(c *gin.Context) {
 		}
 
 	} else {
-		// BuilderBot = servidor individual del agente
+		// OrbitalBot = servidor individual del agente
 		if !agent.HasOwnServer() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Agente no tiene servidor asignado"})
 			return
 		}
 
-		deployService := services.NewBotDeployService(agent.ServerIP, agent.ServerPassword)
+		deployService := services.NewOrbitalBotDeployService(agent.ServerIP, agent.ServerPassword)
 		if err := deployService.Connect(); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error conectando al servidor: " + err.Error()})
 			return
 		}
 		defer deployService.Close()
 
-		// Para BuilderBot, los logs están en PM2
-		cmd := "pm2 logs agent-" + strconv.FormatUint(uint64(agent.ID), 10) + " --lines " + strconv.Itoa(lines) + " --nostream --raw"
-		logs, err = deployService.ExecuteCommand(cmd)
+		logs, err = deployService.GetBotLogs(agent.ID, lines)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error obteniendo logs: " + err.Error()})
 			return
@@ -152,7 +150,7 @@ func StreamAgentLogs(c *gin.Context) {
 	if agent.IsAtomicBot() {
 		streamAtomicBotLogs(ctx, c, agent, flusher, clientGone)
 	} else {
-		streamBuilderBotLogs(ctx, c, agent, flusher, clientGone)
+		streamOrbitalBotLogs(ctx, c, agent, flusher, clientGone)
 	}
 }
 
@@ -176,7 +174,6 @@ func streamAtomicBotLogs(ctx context.Context, c *gin.Context, agent models.Agent
 	logFile := fmt.Sprintf("/var/log/atomic-bot-%d.log", agent.ID)
 	cmd := fmt.Sprintf("tail -f -n 100 %s", logFile)
 
-	// Ejecutar comando y obtener stdout - ACCESO CORRECTO AL CLIENTE SSH
 	session, err := deployService.GetSSHClient().NewSession()
 	if err != nil {
 		sendSSEError(c, flusher, "Error creando sesión SSH: "+err.Error())
@@ -190,16 +187,13 @@ func streamAtomicBotLogs(ctx context.Context, c *gin.Context, agent models.Agent
 		return
 	}
 
-	// Iniciar comando
 	if err := session.Start(cmd); err != nil {
 		sendSSEError(c, flusher, "Error ejecutando comando: "+err.Error())
 		return
 	}
 
-	// Enviar mensaje inicial
 	sendSSEMessage(c, flusher, "✅ Conectado - Transmitiendo logs en tiempo real...\n")
 
-	// Leer y enviar logs línea por línea
 	scanner := bufio.NewScanner(stdout)
 	for {
 		select {
@@ -211,39 +205,36 @@ func streamAtomicBotLogs(ctx context.Context, c *gin.Context, agent models.Agent
 			return
 		default:
 			if scanner.Scan() {
-				line := scanner.Text()
-				sendSSEMessage(c, flusher, line+"\n")
+				sendSSEMessage(c, flusher, scanner.Text()+"\n")
 			} else {
-				// Si hay error o fin del stream
 				if err := scanner.Err(); err != nil {
 					sendSSEError(c, flusher, "Error leyendo logs: "+err.Error())
 					return
 				}
-				// Esperar un poco antes de continuar
 				time.Sleep(100 * time.Millisecond)
 			}
 		}
 	}
 }
 
-// streamBuilderBotLogs transmite logs de BuilderBot en tiempo real
-func streamBuilderBotLogs(ctx context.Context, c *gin.Context, agent models.Agent, flusher http.Flusher, clientGone <-chan bool) {
+// streamOrbitalBotLogs transmite logs de OrbitalBot en tiempo real
+func streamOrbitalBotLogs(ctx context.Context, c *gin.Context, agent models.Agent, flusher http.Flusher, clientGone <-chan bool) {
 	if !agent.HasOwnServer() {
 		sendSSEError(c, flusher, "Agente no tiene servidor asignado")
 		return
 	}
 
-	deployService := services.NewBotDeployService(agent.ServerIP, agent.ServerPassword)
+	deployService := services.NewOrbitalBotDeployService(agent.ServerIP, agent.ServerPassword)
 	if err := deployService.Connect(); err != nil {
 		sendSSEError(c, flusher, "Error conectando al servidor: "+err.Error())
 		return
 	}
 	defer deployService.Close()
 
-	// Comando para seguir logs de PM2 en tiempo real
-	cmd := fmt.Sprintf("pm2 logs agent-%d --lines 100 --raw", agent.ID)
+	// OrbitalBot usa systemd, logs en /var/log/orbital-bot-{id}.log
+	logFile := fmt.Sprintf("/var/log/orbital-bot-%d.log", agent.ID)
+	cmd := fmt.Sprintf("tail -f -n 100 %s", logFile)
 
-	// Ejecutar comando y obtener stdout - ACCESO CORRECTO AL CLIENTE SSH
 	session, err := deployService.GetSSHClient().NewSession()
 	if err != nil {
 		sendSSEError(c, flusher, "Error creando sesión SSH: "+err.Error())
@@ -257,16 +248,13 @@ func streamBuilderBotLogs(ctx context.Context, c *gin.Context, agent models.Agen
 		return
 	}
 
-	// Iniciar comando
 	if err := session.Start(cmd); err != nil {
 		sendSSEError(c, flusher, "Error ejecutando comando: "+err.Error())
 		return
 	}
 
-	// Enviar mensaje inicial
 	sendSSEMessage(c, flusher, "✅ Conectado - Transmitiendo logs en tiempo real...\n")
 
-	// Leer y enviar logs línea por línea
 	scanner := bufio.NewScanner(stdout)
 	for {
 		select {
@@ -278,15 +266,12 @@ func streamBuilderBotLogs(ctx context.Context, c *gin.Context, agent models.Agen
 			return
 		default:
 			if scanner.Scan() {
-				line := scanner.Text()
-				sendSSEMessage(c, flusher, line+"\n")
+				sendSSEMessage(c, flusher, scanner.Text()+"\n")
 			} else {
-				// Si hay error o fin del stream
 				if err := scanner.Err(); err != nil {
 					sendSSEError(c, flusher, "Error leyendo logs: "+err.Error())
 					return
 				}
-				// Esperar un poco antes de continuar
 				time.Sleep(100 * time.Millisecond)
 			}
 		}
