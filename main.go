@@ -118,7 +118,7 @@ func main() {
 	// Servir archivos estáticos
 	router.Static("/static", "./static")
 
-	// Cargar templates de múltiples directorios (incluyendo admin)
+	// Cargar templates de múltiples directorios
 	templates := []string{
 		"templates/*.html",
 		"templates/auth/*.html",
@@ -159,10 +159,22 @@ func main() {
 	// 🔧 WEBHOOK PROXY - Meta WhatsApp (PÚBLICO)
 	// ============================================
 	// IMPORTANTE: Estas rutas DEBEN ser públicas porque Meta las llama directamente
-	// Meta no puede enviar tokens de autenticación, por lo que NO pueden estar en el grupo protected
 	router.GET("/webhook/meta/:agent_id", handlers.WebhookProxy)
 	router.POST("/webhook/meta/:agent_id", handlers.WebhookProxy)
 	log.Println("✅ Webhook Proxy configurado en: /webhook/meta/:agent_id")
+
+	// ============================================
+	// 🛒 TAKEAPP — Marketplace público (sin auth)
+	// ============================================
+	// Páginas HTML
+	router.GET("/takeapp", handlers.GetTakeAppDirectory)
+	router.GET("/takeapp/:branch_id", handlers.GetTakeAppStore)
+	// API pública
+	router.GET("/api/takeapp/stores", handlers.APIGetStores)
+	router.GET("/api/takeapp/stores/:branch_id", handlers.APIGetStore)
+	router.POST("/api/takeapp/checkout", handlers.APICreateCheckout)
+	router.POST("/api/takeapp/confirm", handlers.APIConfirmOrder)
+	log.Println("✅ TakeApp Marketplace configurado en: /takeapp")
 
 	// ============================================
 	// RUTAS PROTEGIDAS (API)
@@ -182,14 +194,13 @@ func main() {
 		protected.GET("/agents", handlers.GetAgents)
 		protected.GET("/agents/:id", handlers.GetAgent)
 		protected.GET("/agents/:id/qr", handlers.GetAgentQRCode)
-		protected.GET("/agents/:id/logs", handlers.GetAgentLogs)           // Logs estáticos
-		protected.GET("/agents/:id/logs/stream", handlers.StreamAgentLogs) // Logs en tiempo real
+		protected.GET("/agents/:id/logs", handlers.GetAgentLogs)
+		protected.GET("/agents/:id/logs/stream", handlers.StreamAgentLogs)
 		protected.PUT("/agents/:id", handlers.UpdateAgent)
 		protected.DELETE("/agents/:id", handlers.DeleteAgent)
 		protected.PATCH("/agents/:id/toggle", handlers.ToggleAgentStatus)
 
-		// Agente config
-
+		// Mi Negocio / Sucursales
 		protected.GET("/my-business", handlers.GetMyBusiness)
 		protected.POST("/my-business", handlers.SaveMyBusiness)
 		protected.GET("/my-business/:id", handlers.GetBranch)
@@ -232,7 +243,7 @@ func main() {
 		// Chatwoot
 		protected.GET("/chatwoot/info", handlers.GetChatwootInfo)
 
-		// Stripe - Pagos
+		// Stripe - Pagos de suscripción Attomos
 		protected.POST("/stripe/checkout", handlers.CreateCheckoutSession)
 		protected.POST("/stripe/confirm", handlers.ConfirmPayment)
 		protected.GET("/stripe/public-key", handlers.GetStripePublicKey)
@@ -415,8 +426,6 @@ func main() {
 	// ============================================
 	// RECOVER PASSWORD (PÚBLICAS — sin autenticación)
 	// ============================================
-
-	// Página
 	router.GET("/recover-password", func(c *gin.Context) {
 		c.HTML(200, "recover-password.html", gin.H{
 			"title": "Recuperar Contraseña - Attomos",
@@ -495,6 +504,7 @@ func main() {
 	log.Println("║    • Auto-actualización cada 30 segundos                ║")
 	log.Println("║    • Webhook Proxy para Meta WhatsApp (OrbitalBot)      ║")
 	log.Println("║    • Páginas legales: Términos y Privacidad             ║")
+	log.Println("║    • 🛒 TakeApp Marketplace en: /takeapp                ║")
 	log.Println("╚══════════════════════════════════════════════════════════╝")
 
 	if err := router.Run(":" + port); err != nil {

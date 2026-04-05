@@ -618,6 +618,14 @@ body {
   text-align: center;
 }
 
+.select-option svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  color: var(--primary-cyan);
+  fill: var(--primary-cyan);
+}
+
 .select-option span {
   font-size: 0.95rem;
   color: var(--gray-text);

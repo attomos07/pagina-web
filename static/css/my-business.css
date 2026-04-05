@@ -411,6 +411,14 @@ body {
   text-align: center;
 }
 
+.select-option svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  color: #06b6d4;
+  fill: #06b6d4;
+}
+
 .select-option span {
   font-size: 0.95rem;
   color: #1a1a1a;
