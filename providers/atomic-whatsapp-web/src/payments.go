@@ -1,12 +1,12 @@
 package src
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 )
@@ -41,8 +41,8 @@ func LoadPaymentConfig() error {
 		return nil
 	}
 
-	url := fmt.Sprintf("%s/api/payment-config/%s", attomosURL, branchID)
-	req, err := http.NewRequest("GET", url, nil)
+	reqURL := fmt.Sprintf("%s/api/payment-config/%s", attomosURL, branchID)
+	req, err := http.NewRequest("GET", reqURL, nil)
 	if err != nil {
 		return fmt.Errorf("error creando request: %w", err)
 	}
@@ -93,15 +93,22 @@ func HasPaymentMethods() bool {
 
 // BuildPaymentMessage construye el mensaje de opciones de pago para el cliente.
 // Se llama cuando se confirma la cita, antes de despedirse.
+//
+// Para tarjeta: genera una URL de TakeApp con el servicio pre-seleccionado
+// (?item=Nombre+del+servicio) en lugar de crear un Stripe Payment Link directo.
+// Esto unifica el flujo de pago del bot con el marketplace de TakeApp.
 func BuildPaymentMessage(servicio string, precio float64) string {
 	cfg := GetPaymentConfig()
 
 	hasSPEI := cfg.SPEIEnabled && cfg.CLABENumber != ""
-	hasStripe := cfg.StripeEnabled && cfg.StripeChargesEnabled
+	hasTakeApp := cfg.StripeEnabled && cfg.StripeChargesEnabled
 
-	if !hasSPEI && !hasStripe {
+	if !hasSPEI && !hasTakeApp {
 		return ""
 	}
+
+	attomosURL := os.Getenv("ATTOMOS_API_URL")
+	branchID := os.Getenv("BRANCH_ID")
 
 	var sb strings.Builder
 
@@ -112,6 +119,7 @@ func BuildPaymentMessage(servicio string, precio float64) string {
 		sb.WriteString(fmt.Sprintf("💰 *Total:* $%.0f MXN\n\n", precio))
 	}
 
+	// ── SPEI ──────────────────────────────────────────────────────────────────
 	if hasSPEI {
 		sb.WriteString("🏦 *Transferencia SPEI*\n")
 		sb.WriteString(fmt.Sprintf("   CLABE: `%s`\n", cfg.CLABENumber))
@@ -123,96 +131,28 @@ func BuildPaymentMessage(servicio string, precio float64) string {
 		}
 	}
 
-	if hasSPEI && hasStripe {
+	if hasSPEI && hasTakeApp {
 		sb.WriteString("\n")
 	}
 
-	if hasStripe {
-		// Generar Payment Link de Stripe
-		link, err := CreateStripePaymentLink(servicio, precio)
-		if err != nil {
-			log.Printf("⚠️  [Payments] Error generando link Stripe: %v", err)
-		} else if link != "" {
-			sb.WriteString("💳 *Tarjeta de crédito/débito*\n")
-			sb.WriteString(fmt.Sprintf("   👉 %s\n", link))
-		}
+	// ── Tarjeta vía TakeApp ────────────────────────────────────────────────────
+	if hasTakeApp && attomosURL != "" && branchID != "" {
+		// Construir URL de TakeApp con el servicio pre-seleccionado.
+		// El cliente llega a la tienda con el producto ya en el carrito.
+		takeURL := fmt.Sprintf(
+			"%s/takeapp/%s?item=%s",
+			attomosURL,
+			branchID,
+			url.QueryEscape(servicio),
+		)
+		sb.WriteString("💳 *Pagar con tarjeta*\n")
+		sb.WriteString(fmt.Sprintf("   👉 %s\n", takeURL))
 	}
 
 	sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━\n")
 	sb.WriteString("_Puedes pagar antes o después de tu cita_ 😊")
 
 	return sb.String()
-}
-
-// ─── Stripe Payment Link ───────────────────────────────────────────────────
-
-// stripePaymentLinkRequest cuerpo de la petición a la API de Attomos
-// para crear un Stripe Payment Link.
-type stripePaymentLinkRequest struct {
-	ServiceName string  `json:"serviceName"`
-	Amount      float64 `json:"amount"` // en MXN
-	BranchID    string  `json:"branchId"`
-}
-
-type stripePaymentLinkResponse struct {
-	URL   string `json:"url"`
-	Error string `json:"error"`
-}
-
-// CreateStripePaymentLink crea un Payment Link de Stripe vía la API de Attomos.
-// Retorna la URL del link o "" si falla.
-func CreateStripePaymentLink(serviceName string, amount float64) (string, error) {
-	attomosURL := os.Getenv("ATTOMOS_API_URL")
-	botToken := os.Getenv("BOT_API_TOKEN")
-	branchID := os.Getenv("BRANCH_ID")
-
-	if attomosURL == "" || botToken == "" || branchID == "" {
-		return "", fmt.Errorf("variables de entorno no configuradas")
-	}
-
-	if amount <= 0 {
-		// Sin precio definido, crear link genérico sin monto fijo
-		amount = 0
-	}
-
-	payload := stripePaymentLinkRequest{
-		ServiceName: serviceName,
-		Amount:      amount,
-		BranchID:    branchID,
-	}
-
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return "", fmt.Errorf("error serializando payload: %w", err)
-	}
-
-	url := fmt.Sprintf("%s/api/payment-config/stripe/payment-link", attomosURL)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
-	if err != nil {
-		return "", fmt.Errorf("error creando request: %w", err)
-	}
-	req.Header.Set("Authorization", "Bearer "+botToken)
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("error llamando API: %w", err)
-	}
-	defer resp.Body.Close()
-
-	respBody, _ := io.ReadAll(resp.Body)
-	var linkResp stripePaymentLinkResponse
-	if err := json.Unmarshal(respBody, &linkResp); err != nil {
-		return "", fmt.Errorf("error parseando respuesta: %w", err)
-	}
-
-	if linkResp.Error != "" {
-		return "", fmt.Errorf("error del servidor: %s", linkResp.Error)
-	}
-
-	log.Printf("✅ [Payments] Stripe Payment Link generado: %s", linkResp.URL)
-	return linkResp.URL, nil
 }
 
 // GetServicePrice busca el precio de un servicio en BusinessCfg.

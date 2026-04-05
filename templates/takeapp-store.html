@@ -474,6 +474,9 @@
   let cart = {}; // { serviceIndex: qty }
   let payMethod = 'stripe'; // 'stripe' | 'spei'
 
+  // Servicio pre-seleccionado desde el bot (?item=Corte+de+cabello)
+  const PRESELECTED_ITEM = new URLSearchParams(location.search).get('item') || '';
+
   // ── Init ───────────────────────────────────────────────────────────────────
   (async () => {
     await loadStore();
@@ -488,7 +491,84 @@
       store = data.store;
       renderStore();
       renderProducts();
+      // Pre-seleccionar servicio si viene del bot vía ?item=
+      preSelectFromBot();
     } catch (e) { showError(); }
+  }
+
+  // Busca el servicio que mandó el bot y lo agrega al carrito automáticamente
+  function preSelectFromBot() {
+    if (!PRESELECTED_ITEM || !store?.services) return;
+
+    const needle = PRESELECTED_ITEM.toLowerCase().trim();
+    const idx = store.services.findIndex(s =>
+      s.title.toLowerCase().trim() === needle
+    );
+
+    if (idx === -1) {
+      // Intento de coincidencia parcial si no hay exacta
+      const partial = store.services.findIndex(s =>
+        s.title.toLowerCase().includes(needle) || needle.includes(s.title.toLowerCase())
+      );
+      if (partial === -1) return;
+      cart[partial] = 1;
+      updateCtrl(partial);
+    } else {
+      cart[idx] = 1;
+      updateCtrl(idx);
+    }
+
+    renderCart();
+
+    // Mostrar banner informativo de que viene del bot
+    showBotBanner(PRESELECTED_ITEM);
+
+    // En desktop: scroll suave al panel del carrito
+    setTimeout(() => {
+      const sidebar = document.querySelector('.sidebar');
+      if (sidebar) sidebar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
+
+    // En móvil: abrir el drawer del carrito automáticamente
+    if (window.innerWidth <= 900) {
+      setTimeout(() => openDrawer(), 600);
+    }
+  }
+
+  // Banner que aparece cuando el cliente llega desde el bot
+  function showBotBanner(serviceName) {
+    const existing = document.getElementById('botBanner');
+    if (existing) return;
+
+    const banner = document.createElement('div');
+    banner.id = 'botBanner';
+    banner.style.cssText = `
+      background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+      color: #fff;
+      padding: .75rem 1.25rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      font-size: .875rem;
+      animation: fadeUp .4s ease both;
+    `;
+    banner.innerHTML = `
+      <span style="font-size:1.3rem">🤖</span>
+      <div>
+        <strong style="font-family:'Syne',sans-serif">Tu agente de WhatsApp te redirigió aquí</strong><br>
+        <span style="color:#aaa;font-size:.8rem">
+          Hemos pre-seleccionado <em style="color:#fff">${serviceName}</em> en tu carrito.
+          Completa tu nombre y teléfono para pagar.
+        </span>
+      </div>
+      <button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;color:#666;cursor:pointer;font-size:1.2rem;line-height:1">✕</button>
+    `;
+
+    // Insertar justo antes del grid de productos
+    const grid = document.getElementById('productsGrid');
+    if (grid) grid.parentElement.insertBefore(banner, grid);
   }
 
   function showError() {
@@ -769,6 +849,9 @@
           customerPhone: phone,
           customerEmail: email,
           notes: notes,
+          // Indicar origen: bot (viene de WhatsApp) o takeapp (directo)
+          source: PRESELECTED_ITEM ? 'bot' : 'takeapp',
+          botItem: PRESELECTED_ITEM || '',
         })
       });
       const data = await res.json();

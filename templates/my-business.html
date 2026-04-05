@@ -36,6 +36,64 @@
                     </div>
 
                     <!-- =============================================
+                         BANNER TAKEAPP — estado de visibilidad
+                         ============================================= -->
+                    <div id="takeappBanner" style="display:none; margin-bottom:1.25rem;">
+
+                        <!-- Sin pagos → amarillo/advertencia -->
+                        <div id="takeappBannerNoPay" style="display:none;
+                            background:linear-gradient(135deg,#fefce8,#fef9c3);
+                            border:1.5px solid #fde047; border-radius:14px;
+                            padding:1rem 1.25rem; align-items:flex-start; gap:1rem;">
+                            <span style="font-size:1.5rem;flex-shrink:0">⚠️</span>
+                            <div style="flex:1">
+                                <strong style="font-size:.95rem;color:#713f12;display:block;margin-bottom:.25rem">
+                                    Esta sucursal no aparece en TakeApp
+                                </strong>
+                                <span style="font-size:.85rem;color:#92400e;line-height:1.55">
+                                    Para que tus clientes puedan encontrarte y pagar en línea,
+                                    configura al menos un método de pago (SPEI o Stripe).
+                                </span>
+                                <div style="margin-top:.75rem">
+                                    <a href="/integrations" style="
+                                        display:inline-flex;align-items:center;gap:.4rem;
+                                        background:#0f0f0f;color:#fff;text-decoration:none;
+                                        border-radius:8px;padding:.5rem 1rem;
+                                        font-size:.82rem;font-weight:600;">
+                                        <i class="lni lni-plug"></i>
+                                        Configurar pagos en Integraciones
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Con pagos → verde/activo -->
+                        <div id="takeappBannerActive" style="display:none;
+                            background:linear-gradient(135deg,#f0fdf4,#dcfce7);
+                            border:1.5px solid #86efac; border-radius:14px;
+                            padding:1rem 1.25rem; align-items:center; gap:1rem;">
+                            <span style="font-size:1.5rem;flex-shrink:0">🛒</span>
+                            <div style="flex:1">
+                                <strong style="font-size:.95rem;color:#14532d;display:block;margin-bottom:.25rem">
+                                    Esta sucursal está visible en TakeApp
+                                </strong>
+                                <span style="font-size:.85rem;color:#166534;line-height:1.55">
+                                    Tus clientes pueden encontrar tu negocio y pagar en línea.
+                                </span>
+                            </div>
+                            <a id="takeappStoreLink" href="/takeapp" target="_blank" style="
+                                flex-shrink:0;display:inline-flex;align-items:center;gap:.4rem;
+                                background:#16a34a;color:#fff;text-decoration:none;
+                                border-radius:8px;padding:.5rem 1rem;
+                                font-size:.82rem;font-weight:600;white-space:nowrap;">
+                                <i class="lni lni-arrow-right"></i>
+                                Ver mi tienda
+                            </a>
+                        </div>
+
+                    </div>
+
+                    <!-- =============================================
                          SELECTOR DE SUCURSALES
                          ============================================= -->
                     <div class="branch-selector-bar">

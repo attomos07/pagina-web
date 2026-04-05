@@ -80,9 +80,11 @@ async function initBranchSelector() {
         if (data.activeBranch) {
             activeBranchId = data.activeBranch.id;
             loadBranchData(data.activeBranch);
+            updateTakeAppBanner(activeBranchId);
         } else if (data.defaultBranch) {
             activeBranchId = 0;
             loadBranchData(data.defaultBranch);
+            // Sin ID real todavía, el banner permanece oculto
         }
 
         // Toggle del dropdown
@@ -155,6 +157,7 @@ async function switchBranch(branchId) {
         activeBranchId = branchId;
         loadBranchData(data);
         renderBranchList();
+        updateTakeAppBanner(branchId);
 
         // Cerrar dropdown
         document.getElementById('branchDropdownWrapper').classList.remove('active');
@@ -1518,4 +1521,52 @@ function removeItem(btn, listId, hintId) {
     const list = document.getElementById(listId);
     const hint = document.getElementById(hintId);
     if (hint && list.children.length === 0) hint.style.display = 'flex';
+}
+
+// ============================================
+// TAKEAPP BANNER — estado de visibilidad
+// ============================================
+
+// Verifica si la sucursal activa tiene pagos configurados
+// y actualiza el banner correspondiente.
+async function updateTakeAppBanner(branchId) {
+    const banner      = document.getElementById('takeappBanner');
+    const noPay       = document.getElementById('takeappBannerNoPay');
+    const active      = document.getElementById('takeappBannerActive');
+    const storeLink   = document.getElementById('takeappStoreLink');
+
+    if (!banner || !branchId) return;
+
+    try {
+        const res = await fetch(`/api/payment-config/${branchId}`, {
+            credentials: 'include'
+        });
+
+        if (!res.ok) throw new Error('Error obteniendo config de pagos');
+
+        const data = await res.json();
+
+        const hasPayments = data.speiEnabled || (data.stripeEnabled && data.stripeChargesEnabled);
+
+        // Mostrar el banner correcto
+        banner.style.display = 'block';
+
+        if (hasPayments) {
+            noPay.style.display  = 'none';
+            active.style.display = 'flex';
+            if (storeLink) {
+                storeLink.href = `/takeapp/${branchId}`;
+            }
+        } else {
+            noPay.style.display  = 'flex';
+            active.style.display = 'none';
+        }
+
+    } catch (e) {
+        // Si no hay config aún (404/error) → mostrar banner de advertencia
+        banner.style.display = 'block';
+        noPay.style.display  = 'flex';
+        active.style.display = 'none';
+        console.warn('[TakeApp] No se pudo cargar config de pagos:', e.message);
+    }
 }

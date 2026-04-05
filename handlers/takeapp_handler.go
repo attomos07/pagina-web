@@ -215,6 +215,9 @@ type TakeAppCheckoutRequest struct {
 	CustomerPhone string            `json:"customerPhone" binding:"required"`
 	CustomerEmail string            `json:"customerEmail"`
 	Notes         string            `json:"notes"`
+	// Source: "takeapp" = directo, "bot" = viene desde WhatsApp via ?item=
+	Source  string `json:"source"`
+	BotItem string `json:"botItem"`
 }
 
 type TakeAppCartItem struct {
@@ -298,6 +301,13 @@ func APICreateCheckout(c *gin.Context) {
 
 	// Metadata para el webhook
 	itemsSummary := buildItemsSummary(req.Items)
+
+	// Determinar source: bot (viene de WhatsApp via ?item=) o takeapp (directo)
+	source := req.Source
+	if source == "" {
+		source = "takeapp"
+	}
+
 	metadata := map[string]string{
 		"branch_id":      fmt.Sprintf("%d", req.BranchID),
 		"branch_name":    branch.BusinessName,
@@ -305,10 +315,14 @@ func APICreateCheckout(c *gin.Context) {
 		"customer_phone": req.CustomerPhone,
 		"items_summary":  itemsSummary,
 		"notes":          req.Notes,
-		"source":         "takeapp",
+		"source":         source,
 	}
 	if req.CustomerEmail != "" {
 		metadata["customer_email"] = req.CustomerEmail
+	}
+	// Si viene del bot, guardar el nombre del servicio original para el resumen
+	if req.BotItem != "" {
+		metadata["bot_item"] = req.BotItem
 	}
 
 	// Crear Checkout Session en la cuenta conectada del negocio
@@ -388,11 +402,12 @@ func APIConfirmOrder(c *gin.Context) {
 	branchName := sess.Metadata["branch_name"]
 	itemsSummary := sess.Metadata["items_summary"]
 	notes := sess.Metadata["notes"]
+	source := sess.Metadata["source"]
 
 	total := float64(sess.AmountTotal) / 100
 
-	// Construir mensaje de WhatsApp
-	waMsg := buildWhatsAppMessage(branchName, customerName, itemsSummary, total, notes, sess.ID)
+	// Construir mensaje de WhatsApp (con contexto de bot si aplica)
+	waMsg := buildWhatsAppMessage(branchName, customerName, itemsSummary, total, notes, sess.ID, source)
 
 	// Obtener número de WhatsApp del agente activo
 	var agent models.Agent
@@ -429,21 +444,33 @@ func buildItemsSummary(items []TakeAppCartItem) string {
 	return strings.Join(parts, ", ")
 }
 
-func buildWhatsAppMessage(branchName, customerName, items string, total float64, notes, sessionID string) string {
+// buildWhatsAppMessage construye el mensaje pre-llenado para WhatsApp.
+// source: "bot" = viene del agente de WhatsApp, "takeapp" = pedido directo
+func buildWhatsAppMessage(branchName, customerName, items string, total float64, notes, sessionID, source string) string {
 	now := time.Now().Format("02/01/2006 15:04")
+
+	header := "✅ *Pedido confirmado - " + branchName + "*"
+	if source == "bot" {
+		header = "✅ *Pago de cita recibido - " + branchName + "*"
+	}
+
 	msg := fmt.Sprintf(
-		"✅ *Pedido confirmado - %s*%%0A%%0A"+
+		"%s%%0A%%0A"+
 			"👤 *Cliente:* %s%%0A"+
-			"🛒 *Productos:* %s%%0A"+
+			"🛒 *Concepto:* %s%%0A"+
 			"💰 *Total pagado:* $%.0f MXN%%0A"+
 			"📅 *Fecha:* %s%%0A"+
 			"🔖 *Referencia:* %s",
-		branchName, customerName, items, total, now, sessionID[len(sessionID)-8:],
+		header, customerName, items, total, now, sessionID[len(sessionID)-8:],
 	)
 	if notes != "" {
 		msg += fmt.Sprintf("%%0A📝 *Notas:* %s", notes)
 	}
-	msg += "%%0A%%0A_Pago procesado a través de TakeApp_"
+	if source == "bot" {
+		msg += "%%0A%%0A_Pago procesado vía TakeApp · Originado desde el agente WhatsApp_"
+	} else {
+		msg += "%%0A%%0A_Pago procesado a través de TakeApp_"
+	}
 	return msg
 }
 
