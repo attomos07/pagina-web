@@ -144,6 +144,10 @@ type MyBusinessInfo struct {
 	Services    BranchServices      `gorm:"type:json" json:"services"`
 	Workers     BranchWorkers       `gorm:"type:json" json:"workers"`
 
+	// Imágenes de marca (subidas vía /api/upload/service-image)
+	LogoURL   string `gorm:"size:500" json:"logoUrl"`   // Logotipo cuadrado
+	BannerURL string `gorm:"size:500" json:"bannerUrl"` // Banner/portada horizontal
+
 	CreatedAt time.Time      `json:"createdAt"`
 	UpdatedAt time.Time      `json:"updatedAt"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`

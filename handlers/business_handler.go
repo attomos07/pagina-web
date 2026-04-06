@@ -274,6 +274,12 @@ func mapRequestToBranch(branch *models.MyBusinessInfo, req BranchRequest, user *
 	branch.Website = req.Business.Website
 	branch.Email = req.Business.Email
 	branch.PhoneNumber = req.PhoneNumber
+	if req.Business.LogoURL != "" {
+		branch.LogoURL = req.Business.LogoURL
+	}
+	if req.Business.BannerURL != "" {
+		branch.BannerURL = req.Business.BannerURL
+	}
 
 	branch.Location = models.BusinessLocation{
 		Address:        req.Location.Address,
@@ -383,6 +389,7 @@ func buildBranchResponse(b *models.MyBusinessInfo) gin.H {
 			"name": b.BusinessName, "type": b.BusinessType,
 			"typeName": getTypeName(b.BusinessType), "size": b.BusinessSize,
 			"description": b.Description, "website": b.Website, "email": b.Email,
+			"logoUrl": b.LogoURL, "bannerUrl": b.BannerURL,
 		},
 		"phoneNumber": b.PhoneNumber,
 		"schedule": gin.H{
@@ -488,6 +495,8 @@ type BusinessInfo struct {
 	Description string `json:"description"`
 	Website     string `json:"website"`
 	Email       string `json:"email"`
+	LogoURL     string `json:"logoUrl"`
+	BannerURL   string `json:"bannerUrl"`
 }
 
 type ScheduleInfo struct {
