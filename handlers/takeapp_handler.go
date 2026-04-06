@@ -15,8 +15,6 @@ import (
 	stripe "github.com/stripe/stripe-go/v78"
 	"github.com/stripe/stripe-go/v78/checkout/session"
 	"github.com/stripe/stripe-go/v78/paymentintent"
-	stripeprice "github.com/stripe/stripe-go/v78/price"
-	stripeproduct "github.com/stripe/stripe-go/v78/product"
 )
 
 // ─── Public store listing ────────────────────────────────────────────────────
@@ -267,29 +265,16 @@ func APICreateCheckout(c *gin.Context) {
 		amountCents := int64(item.Price * 100)
 		totalAmount += amountCents * int64(item.Quantity)
 
-		// Crear producto y precio en Stripe (efímero, para este checkout)
-		prod, err := stripeproduct.New(&stripe.ProductParams{
-			Name: stripe.String(item.Title),
-		})
-		if err != nil {
-			log.Printf("❌ [TakeApp] Error creando producto Stripe: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error procesando el pedido"})
-			return
-		}
-
-		pr, err := stripeprice.New(&stripe.PriceParams{
-			Product:    stripe.String(prod.ID),
-			UnitAmount: stripe.Int64(amountCents),
-			Currency:   stripe.String("mxn"),
-		})
-		if err != nil {
-			log.Printf("❌ [TakeApp] Error creando precio Stripe: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error procesando el pedido"})
-			return
-		}
-
+		// Usar price_data inline — no requiere crear producto/precio previos
+		// y funciona directamente en la cuenta conectada del negocio
 		lineItems = append(lineItems, &stripe.CheckoutSessionLineItemParams{
-			Price:    stripe.String(pr.ID),
+			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
+				Currency:   stripe.String("mxn"),
+				UnitAmount: stripe.Int64(amountCents),
+				ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+					Name: stripe.String(item.Title),
+				},
+			},
 			Quantity: stripe.Int64(int64(item.Quantity)),
 		})
 	}

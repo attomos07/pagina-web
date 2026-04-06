@@ -4,16 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TakeApp — Tienda</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --ink: #0f0f0f;
-      --paper: #faf9f6;
-      --cream: #f2ede4;
-      --accent: #ff4d00;
-      --accent2: #00c896;
+      --paper: #ffffff;
+      --cream: #f5f5f5;
+      --accent: #C62828;
+      --accent2: #7B1E2B;
       --muted: #888;
       --border: #e0dbd2;
       --card-bg: #fff;
@@ -21,25 +20,25 @@
       --sidebar-w: 360px;
     }
     html { scroll-behavior: smooth; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; }
 
     /* ── NAV ── */
     .nav {
       position: sticky; top: 0; z-index: 200;
-      background: rgba(250,249,246,.94); backdrop-filter: blur(12px);
+      background: rgba(255,255,255,.95); backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
       padding: 0 2rem; height: 60px;
       display: flex; align-items: center; justify-content: space-between;
     }
     .nav-back { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink); font-size: .9rem; font-weight: 500; }
     .nav-back svg { color: var(--muted); }
-    .nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; text-decoration: none; color: var(--ink); }
+    .nav-logo { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-weight: 800; font-size: 1.2rem; text-decoration: none; color: var(--ink); }
     .nav-logo span { color: var(--accent); }
     .nav-cart-btn {
       position: relative;
       background: var(--ink); color: #fff;
       border: none; border-radius: 999px;
-      padding: 8px 18px; font-family: 'DM Sans', sans-serif;
+      padding: 8px 18px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       font-size: .875rem; font-weight: 600; cursor: pointer;
       display: flex; align-items: center; gap: 7px;
       transition: background .2s;
@@ -72,16 +71,32 @@
     .store-header { margin-bottom: 2rem; animation: fadeUp .4s ease both; }
     .store-cover {
       height: 220px; border-radius: var(--radius);
-      background: var(--cream); overflow: hidden; margin-bottom: 1.25rem;
+      background: var(--cream); overflow: hidden;
+      position: relative; margin-bottom: 0;
     }
     .store-cover img { width: 100%; height: 100%; object-fit: cover; }
     .store-cover-placeholder {
       width: 100%; height: 100%;
       display: flex; align-items: center; justify-content: center;
       font-size: 5rem;
-      background: linear-gradient(135deg, var(--cream), #e8e2d7);
+      background: linear-gradient(135deg, #f0f0f0, #e8e8e8);
     }
-    .store-meta { display: flex; gap: 1rem; align-items: flex-start; }
+
+    /* Logo circular flotante */
+    .store-logo {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      border: 3px solid var(--border);
+      background: #fff;
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      box-shadow: 0 4px 14px rgba(0,0,0,.10);
+      flex-shrink: 0;
+    }
+    .store-logo img { width: 100%; height: 100%; object-fit: cover; }
+
+    .store-meta { display: flex; gap: 1.25rem; align-items: flex-start; margin-top: 1.25rem; }
     .store-info { flex: 1; }
     .store-type-badge {
       display: inline-block;
@@ -91,7 +106,7 @@
       font-size: .72rem; font-weight: 600; text-transform: capitalize;
       padding: 3px 10px; color: var(--muted); margin-bottom: 6px;
     }
-    .store-name { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; line-height: 1.1; margin-bottom: .5rem; }
+    .store-name { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-size: 1.8rem; font-weight: 800; line-height: 1.1; margin-bottom: .5rem; }
     .store-desc { font-size: .9rem; color: #555; line-height: 1.6; max-width: 560px; }
     .store-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .store-chip { display: flex; align-items: center; gap: 5px; font-size: .78rem; color: var(--muted); }
@@ -102,7 +117,7 @@
 
     /* ── SECTION TITLE ── */
     .section-label {
-      font-family: 'Syne', sans-serif; font-weight: 700; font-size: .85rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-weight: 700; font-size: .85rem;
       text-transform: uppercase; letter-spacing: .07em; color: var(--muted);
       margin-bottom: 1rem;
     }
@@ -134,14 +149,14 @@
       font-size: .65rem; font-weight: 700; padding: 3px 8px; border-radius: 999px;
     }
     .product-body { padding: 1rem; }
-    .product-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .95rem; margin-bottom: 5px; }
+    .product-title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-weight: 700; font-size: .95rem; margin-bottom: 5px; }
     .product-desc {
       font-size: .8rem; color: #666; line-height: 1.5; margin-bottom: 10px;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
     .product-footer { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
     .price-wrap { display: flex; align-items: baseline; gap: 6px; }
-    .price-main { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.05rem; }
+    .price-main { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-weight: 700; font-size: 1.05rem; }
     .price-original { font-size: .78rem; color: var(--muted); text-decoration: line-through; }
     .add-btn {
       background: var(--ink); color: #fff;
@@ -164,7 +179,7 @@
       transition: background .15s;
     }
     .qty-btn:hover { background: var(--border); }
-    .qty-val { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; min-width: 18px; text-align: center; }
+    .qty-val { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-weight: 700; font-size: .9rem; min-width: 18px; text-align: center; }
 
     /* ── SIDEBAR / CART ── */
     .sidebar { position: sticky; top: 80px; }
@@ -180,7 +195,7 @@
       border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
     }
-    .cart-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+    .cart-title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-weight: 700; font-size: 1rem; }
     .cart-clear { background: none; border: none; font-size: .78rem; color: var(--muted); cursor: pointer; }
     .cart-clear:hover { color: var(--accent); }
     .cart-empty {
@@ -196,7 +211,7 @@
     .cart-item:last-child { border-bottom: none; }
     .ci-name { flex: 1; font-size: .875rem; font-weight: 500; }
     .ci-qty { font-size: .78rem; color: var(--muted); }
-    .ci-price { font-family: 'Syne', sans-serif; font-size: .88rem; font-weight: 700; }
+    .ci-price { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-size: .88rem; font-weight: 700; }
     .ci-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; line-height: 1; }
     .ci-remove:hover { color: var(--accent); }
     .cart-total-box {
@@ -205,7 +220,7 @@
     }
     .total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; }
     .total-label { font-size: .9rem; color: var(--muted); }
-    .total-amount { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; }
+    .total-amount { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-weight: 800; font-size: 1.4rem; }
 
     /* ── CUSTOMER FORM ── */
     .customer-form { padding: 0 1.25rem 1.25rem; }
@@ -214,7 +229,7 @@
     .form-input {
       width: 100%; padding: 9px 12px;
       border: 1.5px solid var(--border); border-radius: 8px;
-      font-family: 'DM Sans', sans-serif; font-size: .9rem; color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-size: .9rem; color: var(--ink);
       background: var(--card-bg); outline: none;
       transition: border-color .2s;
     }
@@ -242,7 +257,7 @@
       margin: 0 1.25rem 1rem; font-size: .83rem; line-height: 1.6;
       display: none;
     }
-    .spei-info strong { font-weight: 700; font-family: 'Syne', sans-serif; }
+    .spei-info strong { font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
     .spei-clabe {
       font-family: monospace; font-size: 1rem; font-weight: 700;
       letter-spacing: .1em; margin: .4rem 0;
@@ -251,7 +266,7 @@
     .spei-copy-btn {
       background: none; border: 1.5px solid var(--border);
       border-radius: 6px; padding: 3px 8px; font-size: .7rem;
-      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      cursor: pointer; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       transition: all .2s;
     }
     .spei-copy-btn:hover { border-color: var(--accent); color: var(--accent); }
@@ -262,7 +277,7 @@
       display: block; padding: 14px;
       background: var(--ink); color: #fff;
       border: none; border-radius: 10px;
-      font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-size: 1rem; font-weight: 700;
       cursor: pointer; text-align: center;
       transition: background .2s, transform .1s;
     }
@@ -293,19 +308,19 @@
       animation: popIn .35s cubic-bezier(.34,1.56,.64,1) both;
     }
     .modal-icon { font-size: 3.5rem; margin-bottom: 1rem; }
-    .modal-title { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; margin-bottom: .5rem; }
+    .modal-title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-size: 1.5rem; font-weight: 800; margin-bottom: .5rem; }
     .modal-sub { color: var(--muted); font-size: .9rem; line-height: 1.6; margin-bottom: 1.5rem; }
     .modal-order-box {
       background: var(--cream); border-radius: 10px; padding: 1rem;
       margin-bottom: 1.5rem; text-align: left; font-size: .85rem; line-height: 1.7;
     }
-    .modal-order-box strong { font-family: 'Syne', sans-serif; }
+    .modal-order-box strong { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
     .wa-btn {
       display: flex; align-items: center; justify-content: center; gap: 8px;
       width: 100%; padding: 14px;
       background: #25D366; color: #fff;
       border: none; border-radius: 10px;
-      font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-size: 1rem; font-weight: 700;
       text-decoration: none; cursor: pointer;
       transition: background .2s;
     }
@@ -320,7 +335,7 @@
       background: var(--ink); color: #fff;
       border: none; border-radius: 14px;
       padding: 14px 1.5rem;
-      font-family: 'Syne', sans-serif; font-size: .95rem; font-weight: 700;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-size: .95rem; font-weight: 700;
       cursor: pointer; text-align: left;
       display: flex; align-items: center; justify-content: space-between;
       box-shadow: 0 8px 24px rgba(0,0,0,.18);
@@ -387,6 +402,10 @@
         <img id="storeCoverImg" style="display:none" alt="" />
       </div>
       <div class="store-meta">
+        <!-- Logo a la izquierda -->
+        <div class="store-logo" id="storeLogoCircle">
+          <span id="storeLogoEmoji">🏪</span>
+        </div>
         <div class="store-info">
           <span class="store-type-badge" id="storeType">Cargando...</span>
           <div class="store-name" id="storeName">―</div>
@@ -402,14 +421,14 @@
     <div class="products-grid" id="productsGrid">
       <!-- Skeletons -->
       <div class="product-card" style="pointer-events:none">
-        <div class="product-img" style="background:linear-gradient(90deg,#f2ede4 25%,#e8e2d7 50%,#f2ede4 75%);background-size:200% 100%;animation:shimmer 1.4s ease infinite"></div>
+        <div class="product-img" style="background:linear-gradient(90deg,#f0f0f0 25%,#e4e4e4 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.4s ease infinite"></div>
         <div class="product-body">
           <div style="height:14px;background:#e8e2d7;border-radius:4px;width:70%;margin-bottom:8px;animation:shimmer 1.4s ease infinite;background-size:200% 100%"></div>
           <div style="height:11px;background:#e8e2d7;border-radius:4px;width:90%;margin-bottom:5px;animation:shimmer 1.4s ease infinite;background-size:200% 100%"></div>
         </div>
       </div>
       <div class="product-card" style="pointer-events:none">
-        <div class="product-img" style="background:linear-gradient(90deg,#f2ede4 25%,#e8e2d7 50%,#f2ede4 75%);background-size:200% 100%;animation:shimmer 1.4s ease infinite"></div>
+        <div class="product-img" style="background:linear-gradient(90deg,#f0f0f0 25%,#e4e4e4 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.4s ease infinite"></div>
         <div class="product-body">
           <div style="height:14px;background:#e8e2d7;border-radius:4px;width:60%;margin-bottom:8px;animation:shimmer 1.4s ease infinite;background-size:200% 100%"></div>
           <div style="height:11px;background:#e8e2d7;border-radius:4px;width:80%;animation:shimmer 1.4s ease infinite;background-size:200% 100%"></div>
@@ -557,7 +576,7 @@
     banner.innerHTML = `
       <span style="font-size:1.3rem">🤖</span>
       <div>
-        <strong style="font-family:'Syne',sans-serif">Tu agente de WhatsApp te redirigió aquí</strong><br>
+        <strong style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">Tu agente de WhatsApp te redirigió aquí</strong><br>
         <span style="color:#aaa;font-size:.8rem">
           Hemos pre-seleccionado <em style="color:#fff">${serviceName}</em> en tu carrito.
           Completa tu nombre y teléfono para pagar.
@@ -575,7 +594,7 @@
     document.getElementById('productsGrid').innerHTML =
       `<div style="grid-column:1/-1;padding:4rem;text-align:center;color:var(--muted)">
         <div style="font-size:2.5rem;margin-bottom:1rem">😕</div>
-        <strong style="font-family:'Syne',sans-serif;font-size:1.1rem">Negocio no encontrado</strong><br>
+        <strong style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:1.1rem">Negocio no encontrado</strong><br>
         <span style="font-size:.9rem">Verifica la URL o vuelve al directorio</span>
       </div>`;
   }
@@ -587,16 +606,30 @@
     document.getElementById('storeName').textContent = store.name;
     document.getElementById('storeDesc').textContent = store.description || '';
 
-    // Cover image
-    if (store.services) {
+    // Cover image: priorizar bannerUrl, fallback primera imagen de servicio
+    const coverImg = document.getElementById('storeCoverImg');
+    if (store.bannerUrl) {
+      coverImg.src = store.bannerUrl; coverImg.style.display = 'block';
+      document.getElementById('storeCoverPlaceholder').style.display = 'none';
+    } else if (store.services) {
       for (const s of store.services) {
         if (s.images && s.images[0]) {
-          const img = document.getElementById('storeCoverImg');
-          img.src = s.images[0]; img.style.display = 'block';
+          coverImg.src = s.images[0]; coverImg.style.display = 'block';
           document.getElementById('storeCoverPlaceholder').style.display = 'none';
           break;
         }
       }
+    }
+
+    // Logo circular
+    const logoCircle = document.getElementById('storeLogoCircle');
+    const logoEmoji  = document.getElementById('storeLogoEmoji');
+    const EMOJIS = { 'peluqueria':'💇', 'salon':'💇', 'pizzeria':'🍕', 'clinica':'🏥', 'restaurante':'🍽️', 'spa':'🧘', 'tienda':'🛍️' };
+    const emoji = EMOJIS[(store.businessType||'').toLowerCase()] || '🏪';
+    if (store.logoUrl) {
+      logoCircle.innerHTML = `<img src="${store.logoUrl}" alt="${store.name}" />`;
+    } else {
+      logoEmoji.textContent = emoji;
     }
 
     // Chips: location, phone
