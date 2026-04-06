@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TakeApp — Descubre negocios locales</title>
+  <title>Ninda — Descubre negocios locales</title>
   <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
   <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
   <style>
@@ -391,8 +391,8 @@
 
 <!-- NAV -->
 <nav class="nav">
-  <a href="/takeapp" class="nav-logo">
-    Take<span>App</span>
+  <a href="/ninda" class="nav-logo">
+    Nin<span>da</span>
     <span class="nav-badge">Beta</span>
   </a>
   <div class="nav-right">
@@ -535,13 +535,13 @@
         const a    = data[0].address || {};
         const city = a.city || a.town || a.village || a.county || val;
         setLocation(val, city);
-        try { localStorage.setItem('takeapp_address', val);
-              localStorage.setItem('takeapp_city', city); } catch {}
+        try { localStorage.setItem('ninda_address', val);
+              localStorage.setItem('ninda_city', city); } catch {}
       } else {
         // Si no encuentra nada, usar el texto como ciudad directamente
         setLocation(val, val);
-        try { localStorage.setItem('takeapp_address', val);
-              localStorage.setItem('takeapp_city', val); } catch {}
+        try { localStorage.setItem('ninda_address', val);
+              localStorage.setItem('ninda_city', val); } catch {}
       }
     } catch {
       setLocation(val, val);
@@ -608,8 +608,8 @@
         const result = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
         if (result?.city) {
           setLocation(result.address || result.city, result.city);
-          try { localStorage.setItem('takeapp_address', result.address || result.city);
-                localStorage.setItem('takeapp_city', result.city); } catch {}
+          try { localStorage.setItem('ninda_address', result.address || result.city);
+                localStorage.setItem('ninda_city', result.city); } catch {}
         } else { clearLocation(); }
       },
       () => { clearLocation(); },
@@ -620,8 +620,8 @@
   // Al cargar: intentar dirección guardada primero, luego geoloc
   (function initLocation() {
     try {
-      const savedAddr = localStorage.getItem('takeapp_address');
-      const savedCity = localStorage.getItem('takeapp_city');
+      const savedAddr = localStorage.getItem('ninda_address');
+      const savedCity = localStorage.getItem('ninda_city');
       if (savedAddr && savedCity) { setLocation(savedAddr, savedCity); return; }
     } catch {}
     requestLocation();
@@ -649,7 +649,7 @@
 
   async function fetchStores() {
     try {
-      const res = await fetch('/api/takeapp/stores');
+      const res = await fetch('/api/ninda/stores');
       const data = await res.json();
       allStores = data.stores || [];
       renderStores();
@@ -715,7 +715,7 @@
         : `<span>${emoji}</span>`;
 
       return `
-        <a class="store-card" href="/takeapp/${s.id}" style="animation-delay:${i * 0.04}s">
+        <a class="store-card" href="/ninda/${s.id}" style="animation-delay:${i * 0.04}s">
           ${bgHTML}
           <div class="card-gradient"></div>
           <div class="card-logo">${logoInner}</div>

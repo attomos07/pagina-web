@@ -80,7 +80,7 @@ async function initBranchSelector() {
         if (data.activeBranch) {
             activeBranchId = data.activeBranch.id;
             loadBranchData(data.activeBranch);
-            updateTakeAppBanner(activeBranchId);
+            updateNindaBanner(activeBranchId);
         } else if (data.defaultBranch) {
             activeBranchId = 0;
             loadBranchData(data.defaultBranch);
@@ -157,7 +157,7 @@ async function switchBranch(branchId) {
         activeBranchId = branchId;
         loadBranchData(data);
         renderBranchList();
-        updateTakeAppBanner(branchId);
+        updateNindaBanner(branchId);
 
         // Cerrar dropdown
         document.getElementById('branchDropdownWrapper').classList.remove('active');
@@ -1524,16 +1524,16 @@ function removeItem(btn, listId, hintId) {
 }
 
 // ============================================
-// TAKEAPP BANNER — estado de visibilidad
+// NINDA BANNER — estado de visibilidad
 // ============================================
 
 // Verifica si la sucursal activa tiene pagos configurados
 // y actualiza el banner correspondiente.
-async function updateTakeAppBanner(branchId) {
-    const banner      = document.getElementById('takeappBanner');
-    const noPay       = document.getElementById('takeappBannerNoPay');
-    const active      = document.getElementById('takeappBannerActive');
-    const storeLink   = document.getElementById('takeappStoreLink');
+async function updateNindaBanner(branchId) {
+    const banner      = document.getElementById('nindaBanner');
+    const noPay       = document.getElementById('nindaBannerNoPay');
+    const active      = document.getElementById('nindaBannerActive');
+    const storeLink   = document.getElementById('nindaStoreLink');
 
     if (!banner || !branchId) return;
 
@@ -1555,7 +1555,7 @@ async function updateTakeAppBanner(branchId) {
             noPay.style.display  = 'none';
             active.style.display = 'flex';
             if (storeLink) {
-                storeLink.href = `/takeapp/${branchId}`;
+                storeLink.href = `/ninda/${branchId}`;
             }
         } else {
             noPay.style.display  = 'flex';
@@ -1567,6 +1567,6 @@ async function updateTakeAppBanner(branchId) {
         banner.style.display = 'block';
         noPay.style.display  = 'flex';
         active.style.display = 'none';
-        console.warn('[TakeApp] No se pudo cargar config de pagos:', e.message);
+        console.warn('[Ninda] No se pudo cargar config de pagos:', e.message);
     }
 }

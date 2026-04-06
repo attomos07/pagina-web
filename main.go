@@ -164,17 +164,17 @@ func main() {
 	log.Println("✅ Webhook Proxy configurado en: /webhook/meta/:agent_id")
 
 	// ============================================
-	// 🛒 TAKEAPP — Marketplace público (sin auth)
+	// 🛒 NINDA — Marketplace público (sin auth)
 	// ============================================
 	// Páginas HTML
-	router.GET("/takeapp", handlers.GetTakeAppDirectory)
-	router.GET("/takeapp/:branch_id", handlers.GetTakeAppStore)
+	router.GET("/ninda", handlers.GetNindaDirectory)
+	router.GET("/ninda/:branch_id", handlers.GetNindaStore)
 	// API pública
-	router.GET("/api/takeapp/stores", handlers.APIGetStores)
-	router.GET("/api/takeapp/stores/:branch_id", handlers.APIGetStore)
-	router.POST("/api/takeapp/checkout", handlers.APICreateCheckout)
-	router.POST("/api/takeapp/confirm", handlers.APIConfirmOrder)
-	log.Println("✅ TakeApp Marketplace configurado en: /takeapp")
+	router.GET("/api/ninda/stores", handlers.APIGetStores)
+	router.GET("/api/ninda/stores/:branch_id", handlers.APIGetStore)
+	router.POST("/api/ninda/checkout", handlers.APICreateCheckout)
+	router.POST("/api/ninda/confirm", handlers.APIConfirmOrder)
+	log.Println("✅ Ninda Marketplace configurado en: /ninda")
 
 	// ============================================
 	// RUTAS PROTEGIDAS (API)
@@ -504,7 +504,7 @@ func main() {
 	log.Println("║    • Auto-actualización cada 30 segundos                ║")
 	log.Println("║    • Webhook Proxy para Meta WhatsApp (OrbitalBot)      ║")
 	log.Println("║    • Páginas legales: Términos y Privacidad             ║")
-	log.Println("║    • 🛒 TakeApp Marketplace en: /takeapp                ║")
+	log.Println("║    • 🛒 Ninda Marketplace en: /ninda                ║")
 	log.Println("╚══════════════════════════════════════════════════════════╝")
 
 	if err := router.Run(":" + port); err != nil {

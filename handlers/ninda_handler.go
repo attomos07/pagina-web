@@ -19,21 +19,21 @@ import (
 
 // ─── Public store listing ────────────────────────────────────────────────────
 
-// GetTakeAppDirectory - GET /takeapp
+// GetNindaDirectory - GET /ninda
 // Página pública del directorio de negocios
-func GetTakeAppDirectory(c *gin.Context) {
-	c.HTML(http.StatusOK, "takeapp-directory.html", gin.H{})
+func GetNindaDirectory(c *gin.Context) {
+	c.HTML(http.StatusOK, "ninda-directory.html", gin.H{})
 }
 
-// GetTakeAppStore - GET /takeapp/:branch_id
+// GetNindaStore - GET /ninda/:branch_id
 // Página pública del negocio con sus productos
-func GetTakeAppStore(c *gin.Context) {
-	c.HTML(http.StatusOK, "takeapp-store.html", gin.H{})
+func GetNindaStore(c *gin.Context) {
+	c.HTML(http.StatusOK, "ninda-store.html", gin.H{})
 }
 
 // ─── API: Directory ──────────────────────────────────────────────────────────
 
-// APIGetStores - GET /api/takeapp/stores
+// APIGetStores - GET /api/ninda/stores
 // Lista todos los negocios con Stripe Connect activo o SPEI configurado
 func APIGetStores(c *gin.Context) {
 	businessType := c.Query("type")
@@ -113,7 +113,7 @@ func APIGetStores(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"stores": stores})
 }
 
-// APIGetStore - GET /api/takeapp/stores/:branch_id
+// APIGetStore - GET /api/ninda/stores/:branch_id
 // Detalle público de un negocio con sus productos y métodos de pago
 func APIGetStore(c *gin.Context) {
 	branchIDStr := c.Param("branch_id")
@@ -205,30 +205,30 @@ func APIGetStore(c *gin.Context) {
 
 // ─── API: Checkout ───────────────────────────────────────────────────────────
 
-// TakeAppCheckoutRequest estructura del pedido
-type TakeAppCheckoutRequest struct {
-	BranchID      uint              `json:"branchId" binding:"required"`
-	Items         []TakeAppCartItem `json:"items" binding:"required"`
-	CustomerName  string            `json:"customerName" binding:"required"`
-	CustomerPhone string            `json:"customerPhone" binding:"required"`
-	CustomerEmail string            `json:"customerEmail"`
-	Notes         string            `json:"notes"`
-	// Source: "takeapp" = directo, "bot" = viene desde WhatsApp via ?item=
+// NindaCheckoutRequest estructura del pedido
+type NindaCheckoutRequest struct {
+	BranchID      uint            `json:"branchId" binding:"required"`
+	Items         []NindaCartItem `json:"items" binding:"required"`
+	CustomerName  string          `json:"customerName" binding:"required"`
+	CustomerPhone string          `json:"customerPhone" binding:"required"`
+	CustomerEmail string          `json:"customerEmail"`
+	Notes         string          `json:"notes"`
+	// Source: "ninda" = directo, "bot" = viene desde WhatsApp via ?item=
 	Source  string `json:"source"`
 	BotItem string `json:"botItem"`
 }
 
-type TakeAppCartItem struct {
+type NindaCartItem struct {
 	ServiceIndex int     `json:"serviceIndex"`
 	Title        string  `json:"title"`
 	Price        float64 `json:"price"`
 	Quantity     int     `json:"quantity"`
 }
 
-// APICreateCheckout - POST /api/takeapp/checkout
+// APICreateCheckout - POST /api/ninda/checkout
 // Crea un Stripe Checkout Session para el pago de productos del negocio
 func APICreateCheckout(c *gin.Context) {
-	var req TakeAppCheckoutRequest
+	var req NindaCheckoutRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos: " + err.Error()})
 		return
@@ -287,10 +287,10 @@ func APICreateCheckout(c *gin.Context) {
 	// Metadata para el webhook
 	itemsSummary := buildItemsSummary(req.Items)
 
-	// Determinar source: bot (viene de WhatsApp via ?item=) o takeapp (directo)
+	// Determinar source: bot (viene de WhatsApp via ?item=) o ninda (directo)
 	source := req.Source
 	if source == "" {
-		source = "takeapp"
+		source = "ninda"
 	}
 
 	metadata := map[string]string{
@@ -315,8 +315,8 @@ func APICreateCheckout(c *gin.Context) {
 		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
 		LineItems:          lineItems,
 		Mode:               stripe.String(string(stripe.CheckoutSessionModePayment)),
-		SuccessURL:         stripe.String(fmt.Sprintf("%s/takeapp/%d?payment=success&session_id={CHECKOUT_SESSION_ID}", baseURL, req.BranchID)),
-		CancelURL:          stripe.String(fmt.Sprintf("%s/takeapp/%d?payment=cancelled", baseURL, req.BranchID)),
+		SuccessURL:         stripe.String(fmt.Sprintf("%s/ninda/%d?payment=success&session_id={CHECKOUT_SESSION_ID}", baseURL, req.BranchID)),
+		CancelURL:          stripe.String(fmt.Sprintf("%s/ninda/%d?payment=cancelled", baseURL, req.BranchID)),
 		Metadata:           metadata,
 	}
 
@@ -330,12 +330,12 @@ func APICreateCheckout(c *gin.Context) {
 
 	sess, err := session.New(params)
 	if err != nil {
-		log.Printf("❌ [TakeApp] Error creando Checkout Session: %v", err)
+		log.Printf("❌ [Ninda] Error creando Checkout Session: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al iniciar el pago: " + err.Error()})
 		return
 	}
 
-	log.Printf("✅ [TakeApp] Checkout Session creado: %s | Negocio: %s | Total: $%.2f MXN",
+	log.Printf("✅ [Ninda] Checkout Session creado: %s | Negocio: %s | Total: $%.2f MXN",
 		sess.ID, branch.BusinessName, float64(totalAmount)/100)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -345,7 +345,7 @@ func APICreateCheckout(c *gin.Context) {
 	})
 }
 
-// APIConfirmOrder - POST /api/takeapp/confirm
+// APIConfirmOrder - POST /api/ninda/confirm
 // Verifica el pago completado y envía resumen por WhatsApp
 func APIConfirmOrder(c *gin.Context) {
 	var req struct {
@@ -371,7 +371,7 @@ func APIConfirmOrder(c *gin.Context) {
 	params.SetStripeAccount(cfg.StripeAccountID)
 	sess, err := session.Get(req.SessionID, params)
 	if err != nil {
-		log.Printf("❌ [TakeApp] Error obteniendo sesión: %v", err)
+		log.Printf("❌ [Ninda] Error obteniendo sesión: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Sesión no encontrada"})
 		return
 	}
@@ -421,7 +421,7 @@ func APIConfirmOrder(c *gin.Context) {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-func buildItemsSummary(items []TakeAppCartItem) string {
+func buildItemsSummary(items []NindaCartItem) string {
 	parts := make([]string, 0, len(items))
 	for _, item := range items {
 		parts = append(parts, fmt.Sprintf("%dx %s ($%.0f)", item.Quantity, item.Title, item.Price))
@@ -430,7 +430,7 @@ func buildItemsSummary(items []TakeAppCartItem) string {
 }
 
 // buildWhatsAppMessage construye el mensaje pre-llenado para WhatsApp.
-// source: "bot" = viene del agente de WhatsApp, "takeapp" = pedido directo
+// source: "bot" = viene del agente de WhatsApp, "ninda" = pedido directo
 func buildWhatsAppMessage(branchName, customerName, items string, total float64, notes, sessionID, source string) string {
 	now := time.Now().Format("02/01/2006 15:04")
 
@@ -452,9 +452,9 @@ func buildWhatsAppMessage(branchName, customerName, items string, total float64,
 		msg += fmt.Sprintf("%%0A📝 *Notas:* %s", notes)
 	}
 	if source == "bot" {
-		msg += "%%0A%%0A_Pago procesado vía TakeApp · Originado desde el agente WhatsApp_"
+		msg += "%%0A%%0A_Pago procesado vía Ninda · Originado desde el agente WhatsApp_"
 	} else {
-		msg += "%%0A%%0A_Pago procesado a través de TakeApp_"
+		msg += "%%0A%%0A_Pago procesado a través de Ninda_"
 	}
 	return msg
 }
@@ -482,7 +482,7 @@ func maskCLABEPublic(clabe string) string {
 }
 
 // Obtener PaymentIntent para verificación adicional
-func getTakeAppPaymentIntent(piID, connectedAccountID string) (*stripe.PaymentIntent, error) {
+func getNindaPaymentIntent(piID, connectedAccountID string) (*stripe.PaymentIntent, error) {
 	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
 	params := &stripe.PaymentIntentParams{}
 	params.SetStripeAccount(connectedAccountID)
