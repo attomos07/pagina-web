@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initServices();
     initWorkers();
     initSaveButton();
+    initBrandImages();
 
     console.log('✅ Profile funcionalidades inicializadas');
 });
@@ -243,6 +244,9 @@ function loadBranchData(branch) {
         document.getElementById('holidaysList').innerHTML = '';
         applyHolidays(branch.holidays);
     }
+
+    // Imágenes de marca
+    loadBrandImages(branch.business?.logoUrl || '', branch.business?.bannerUrl || '');
 
     // Servicios y trabajadores
     renderServices(branch.services || []);
@@ -1021,7 +1025,9 @@ async function saveProfile() {
             type: document.getElementById('businessTypeInput').getAttribute('data-value'),
             description: document.getElementById('descriptionInput').value,
             website: document.getElementById('websiteInput').value,
-            email: document.getElementById('emailInput').value
+            email: document.getElementById('emailInput').value,
+            logoUrl:   document.getElementById('logoUrlInput')?.value   || '',
+            bannerUrl: document.getElementById('bannerUrlInput')?.value || '',
         },
         schedule: collectScheduleData(),
         holidays: collectHolidaysData(),
@@ -1568,5 +1574,132 @@ async function updateNindaBanner(branchId) {
         noPay.style.display  = 'flex';
         active.style.display = 'none';
         console.warn('[Ninda] No se pudo cargar config de pagos:', e.message);
+    }
+}
+
+// ============================================================
+// BRAND IMAGES — Logo y Banner para Ninda
+// ============================================================
+
+function initBrandImages() {
+    // ── Banner ────────────────────────────────────────────────
+    const bannerFile    = document.getElementById('bannerFileInput');
+    const bannerUpBtn   = document.getElementById('bannerUploadBtn');
+    const bannerRemBtn  = document.getElementById('bannerRemoveBtn');
+    const bannerPreview = document.getElementById('bannerPreview');
+    const bannerPrevImg = document.getElementById('bannerPreviewImg');
+    const bannerPh      = document.getElementById('bannerPlaceholder');
+    const bannerLoad    = document.getElementById('bannerUploading');
+    const bannerUrl     = document.getElementById('bannerUrlInput');
+
+    bannerUpBtn?.addEventListener('click', () => bannerFile?.click());
+
+    bannerFile?.addEventListener('change', async function() {
+        const file = this.files[0];
+        if (!file) return;
+        await uploadBrandFile(file, 'banner', {
+            urlInput: bannerUrl, preview: bannerPreview,
+            previewImg: bannerPrevImg, placeholder: bannerPh, loader: bannerLoad,
+        });
+        this.value = '';
+    });
+
+    bannerRemBtn?.addEventListener('click', () => {
+        bannerUrl.value = '';
+        bannerPreview.style.display = 'none';
+        bannerPh.style.display = 'flex';
+    });
+
+    // ── Logo ──────────────────────────────────────────────────
+    const logoFile    = document.getElementById('logoFileInput');
+    const logoUpBtn   = document.getElementById('logoUploadBtn');
+    const logoRemBtn  = document.getElementById('logoRemoveBtn');
+    const logoArea    = document.getElementById('logoArea');
+    const logoPreview = document.getElementById('logoPreview');
+    const logoPrevImg = document.getElementById('logoPreviewImg');
+    const logoPh      = document.getElementById('logoPlaceholder');
+    const logoLoad    = document.getElementById('logoUploading');
+    const logoUrl     = document.getElementById('logoUrlInput');
+
+    logoArea?.addEventListener('click', e => {
+        if (e.target.closest('.brand-remove-logo')) return;
+        logoFile?.click();
+    });
+    logoUpBtn?.addEventListener('click', () => logoFile?.click());
+
+    logoFile?.addEventListener('change', async function() {
+        const file = this.files[0];
+        if (!file) return;
+        await uploadBrandFile(file, 'logo', {
+            urlInput: logoUrl, preview: logoPreview,
+            previewImg: logoPrevImg, placeholder: logoPh, loader: logoLoad,
+        });
+        this.value = '';
+    });
+
+    logoRemBtn?.addEventListener('click', e => {
+        e.stopPropagation();
+        logoUrl.value = '';
+        logoPreview.style.display = 'none';
+        logoPh.style.display = 'flex';
+    });
+}
+
+async function uploadBrandFile(file, type, els) {
+    const { urlInput, preview, previewImg, placeholder, loader } = els;
+    if (placeholder) placeholder.style.display = 'none';
+    if (preview)     preview.style.display = 'none';
+    if (loader)      loader.style.display = 'flex';
+    try {
+        const fd = new FormData();
+        fd.append('image', file);
+        const res = await fetch(
+            `/api/upload/service-image?branch_id=${activeBranchId}&type=${type}`,
+            { method: 'POST', credentials: 'include', body: fd }
+        );
+        if (!res.ok) throw new Error('Upload fallido');
+        const { url } = await res.json();
+        urlInput.value = url;
+        if (previewImg) previewImg.src = url;
+        if (preview)    preview.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+        showNotification(type === 'logo' ? 'Logo subido' : 'Banner subido', 'success');
+    } catch (err) {
+        console.error(err);
+        showNotification('Error al subir imagen', 'error');
+        if (placeholder) placeholder.style.display = 'flex';
+    } finally {
+        if (loader) loader.style.display = 'none';
+    }
+}
+
+function loadBrandImages(logoUrl, bannerUrl) {
+    const logoUrlEl     = document.getElementById('logoUrlInput');
+    const logoPreview   = document.getElementById('logoPreview');
+    const logoPrevImg   = document.getElementById('logoPreviewImg');
+    const logoPh        = document.getElementById('logoPlaceholder');
+    const bannerUrlEl   = document.getElementById('bannerUrlInput');
+    const bannerPreview = document.getElementById('bannerPreview');
+    const bannerPrevImg = document.getElementById('bannerPreviewImg');
+    const bannerPh      = document.getElementById('bannerPlaceholder');
+
+    if (logoUrlEl) logoUrlEl.value = logoUrl || '';
+    if (logoUrl) {
+        if (logoPrevImg) logoPrevImg.src = logoUrl;
+        if (logoPreview) logoPreview.style.display = 'block';
+        if (logoPh)      logoPh.style.display = 'none';
+    } else {
+        if (logoPreview) logoPreview.style.display = 'none';
+        if (logoPh)      logoPh.style.display = 'flex';
+    }
+
+    if (bannerUrlEl) bannerUrlEl.value = bannerUrl || '';
+    if (bannerUrl) {
+        if (bannerPrevImg) bannerPrevImg.src = bannerUrl;
+        if (bannerPreview) bannerPreview.style.display = 'block';
+        if (bannerPh)      bannerPh.style.display = 'none';
+    } else {
+        if (bannerPreview) bannerPreview.style.display = 'none';
+        if (bannerPh)      bannerPh.style.display = 'flex';
     }
 }

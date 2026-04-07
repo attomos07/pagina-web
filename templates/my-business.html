@@ -15,6 +15,81 @@
     <!-- Sileo toast system -->
     <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
     <link rel="stylesheet" href="/static/css/sileo.css">
+    <style>
+    /* ── Brand Images ── */
+    .brand-upload-wrap {
+        position: relative;
+        border: 2px dashed #e5e7eb;
+        border-radius: 12px;
+        background: #f9fafb;
+        min-height: 130px;
+        overflow: hidden;
+        transition: border-color .2s;
+    }
+    .brand-upload-wrap:hover { border-color: #06b6d4; }
+
+    .brand-banner-preview { position: relative; width: 100%; }
+    .brand-banner-preview img { width: 100%; height: 160px; object-fit: cover; display: block; border-radius: 10px; }
+
+    .brand-placeholder {
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: .5rem; padding: 1.75rem 1rem;
+        text-align: center; color: #9ca3af; font-size: .875rem;
+        min-height: 130px;
+    }
+    .brand-placeholder small { font-size: .75rem; color: #d1d5db; }
+
+    .brand-remove-btn {
+        position: absolute; top: 8px; right: 8px;
+        background: rgba(0,0,0,.5); color: #fff;
+        border: none; border-radius: 50%;
+        width: 28px; height: 28px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; font-size: .7rem; transition: background .2s; z-index: 2;
+    }
+    .brand-remove-btn:hover { background: rgba(6,182,212,.85); }
+
+    .btn-brand-upload {
+        display: inline-flex; align-items: center; gap: .4rem;
+        padding: .45rem 1rem; margin-top: .4rem;
+        border: 1.5px solid #06b6d4; border-radius: 8px;
+        background: white; color: #06b6d4;
+        font-size: .82rem; font-weight: 600;
+        cursor: pointer; transition: all .2s;
+    }
+    .btn-brand-upload:hover { background: #06b6d4; color: #fff; }
+
+    /* Logo cuadrado */
+    .brand-logo-area {
+        position: relative;
+        width: 100px; height: 100px;
+        border: 2px dashed #e5e7eb;
+        border-radius: 12px;
+        background: #f9fafb;
+        flex-shrink: 0; cursor: pointer;
+        overflow: hidden; transition: border-color .2s;
+    }
+    .brand-logo-area:hover { border-color: #06b6d4; }
+    .brand-logo-preview { width: 100%; height: 100%; position: relative; }
+    .brand-logo-preview img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .brand-logo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+    .brand-remove-logo { top: 4px; right: 4px; width: 22px; height: 22px; font-size: .6rem; }
+
+    /* Spinner */
+    .brand-uploading {
+        position: absolute; inset: 0; background: rgba(255,255,255,.82);
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: .4rem; font-size: .78rem; color: #6b7280;
+    }
+    .brand-spinner {
+        width: 22px; height: 22px;
+        border: 3px solid rgba(6,182,212,.2);
+        border-top-color: #06b6d4;
+        border-radius: 50%;
+        animation: brandSpin .7s linear infinite;
+    }
+    @keyframes brandSpin { to { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -119,6 +194,78 @@
                     </div>
 
                     <div class="profile-grid">
+
+                        <!-- Card: Imágenes de marca -->
+                        <div class="profile-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-image"></i>
+                                    <h2>Imágenes del Negocio</h2>
+                                </div>
+                            </div>
+                            <div class="card-content">
+
+                                <!-- BANNER -->
+                                <div class="info-group">
+                                    <label class="info-label">Banner de portada</label>
+                                    <div class="brand-upload-wrap" id="bannerWrap">
+                                        <!-- Preview -->
+                                        <div class="brand-banner-preview" id="bannerPreview" style="display:none">
+                                            <img id="bannerPreviewImg" src="" alt="Banner">
+                                            <button type="button" class="brand-remove-btn" id="bannerRemoveBtn" title="Quitar">
+                                                <i class="lni lni-close"></i>
+                                            </button>
+                                        </div>
+                                        <!-- Placeholder -->
+                                        <div class="brand-placeholder" id="bannerPlaceholder">
+                                            <i class="lni lni-image" style="font-size:2rem;color:#aaa"></i>
+                                            <span>Imagen de portada para Ninda</span>
+                                            <small>Recomendado: 1200×400 px · JPG o PNG</small>
+                                            <button type="button" class="btn-brand-upload" id="bannerUploadBtn">
+                                                <i class="lni lni-upload"></i> Subir banner
+                                            </button>
+                                        </div>
+                                        <input type="file" id="bannerFileInput" accept="image/*" style="display:none">
+                                        <input type="hidden" id="bannerUrlInput">
+                                        <div class="brand-uploading" id="bannerUploading" style="display:none">
+                                            <div class="brand-spinner"></div><span>Subiendo...</span>
+                                        </div>
+                                    </div>
+                                    <div class="info-example">Se muestra como fondo de tu card en el directorio de Ninda</div>
+                                </div>
+
+                                <!-- LOGO -->
+                                <div class="info-group" style="margin-top:1.5rem">
+                                    <label class="info-label">Logo del negocio</label>
+                                    <div style="display:flex;align-items:flex-start;gap:1.25rem;flex-wrap:wrap">
+                                        <div class="brand-logo-area" id="logoArea">
+                                            <div class="brand-logo-preview" id="logoPreview" style="display:none">
+                                                <img id="logoPreviewImg" src="" alt="Logo">
+                                                <button type="button" class="brand-remove-btn brand-remove-logo" id="logoRemoveBtn" title="Quitar">
+                                                    <i class="lni lni-close"></i>
+                                                </button>
+                                            </div>
+                                            <div class="brand-logo-placeholder" id="logoPlaceholder">
+                                                <i class="lni lni-image" style="font-size:1.4rem;color:#aaa"></i>
+                                            </div>
+                                            <input type="file" id="logoFileInput" accept="image/*" style="display:none">
+                                            <input type="hidden" id="logoUrlInput">
+                                            <div class="brand-uploading brand-uploading-logo" id="logoUploading" style="display:none">
+                                                <div class="brand-spinner"></div>
+                                            </div>
+                                        </div>
+                                        <div style="flex:1;min-width:160px">
+                                            <button type="button" class="btn-brand-upload" id="logoUploadBtn">
+                                                <i class="lni lni-upload"></i> Subir logo
+                                            </button>
+                                            <div class="info-example" style="margin-top:.5rem">Se muestra como foto de perfil circular en Ninda · PNG cuadrado recomendado</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
                         <div class="profile-card">
                             <div class="card-header">
                                 <div class="card-title">
