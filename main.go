@@ -125,6 +125,7 @@ func main() {
 		"templates/partials/*.html",
 		"templates/legal/*.html",
 		"templates/admin/*.html",
+		"templates/ninda/*.html",
 	}
 	router.LoadHTMLFiles(getTemplateFiles(templates...)...)
 
@@ -168,8 +169,10 @@ func main() {
 	// ============================================
 	// Páginas HTML
 	router.GET("/ninda", handlers.GetNindaDirectory)
-	router.GET("/ninda/:branch_id", handlers.GetNindaStore)
 	router.GET("/ninda/map", handlers.GetNindaMap)
+	router.GET("/ninda/login", handlers.GetNindaLogin)
+	router.GET("/ninda/register", handlers.GetNindaRegister)
+	router.GET("/ninda/:branch_id", handlers.GetNindaStore)
 	// API pública
 	router.GET("/api/ninda/stores", handlers.APIGetStores)
 	router.GET("/api/ninda/stores/:branch_id", handlers.APIGetStore)

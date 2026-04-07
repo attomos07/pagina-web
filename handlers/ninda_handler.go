@@ -37,6 +37,16 @@ func GetNindaMap(c *gin.Context) {
 	c.HTML(http.StatusOK, "ninda-map.html", gin.H{})
 }
 
+// GetNindaLogin - GET /ninda/login
+func GetNindaLogin(c *gin.Context) {
+	c.HTML(http.StatusOK, "ninda/login-ninda.html", gin.H{})
+}
+
+// GetNindaRegister - GET /ninda/register
+func GetNindaRegister(c *gin.Context) {
+	c.HTML(http.StatusOK, "ninda/register-ninda.html", gin.H{})
+}
+
 // ─── API: Directory ──────────────────────────────────────────────────────────
 
 // APIGetStores - GET /api/ninda/stores

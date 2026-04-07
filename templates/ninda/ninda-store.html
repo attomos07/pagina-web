@@ -23,36 +23,6 @@
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; }
 
     /* ── NAV ── */
-    .nav {
-      position: sticky; top: 0; z-index: 200;
-      background: rgba(255,255,255,.95); backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      padding: 0 2rem; height: 60px;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .nav-back { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink); font-size: .9rem; font-weight: 500; }
-    .nav-back svg { color: var(--muted); }
-    .nav-logo { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-weight: 800; font-size: 1.2rem; text-decoration: none; color: var(--ink); }
-    .nav-logo span { color: var(--accent); }
-    .nav-cart-btn {
-      position: relative;
-      background: var(--ink); color: #fff;
-      border: none; border-radius: 999px;
-      padding: 8px 18px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      font-size: .875rem; font-weight: 600; cursor: pointer;
-      display: flex; align-items: center; gap: 7px;
-      transition: background .2s;
-    }
-    .nav-cart-btn:hover { background: #333; }
-    .cart-badge {
-      position: absolute; top: -6px; right: -6px;
-      background: var(--accent); color: #fff;
-      font-size: .65rem; font-weight: 700;
-      width: 18px; height: 18px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      display: none;
-    }
-
     /* ── LAYOUT ── */
     .layout {
       max-width: 1280px; margin: 0 auto; padding: 0 2rem;
@@ -182,7 +152,7 @@
     .qty-val { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-weight: 700; font-size: .9rem; min-width: 18px; text-align: center; }
 
     /* ── SIDEBAR / CART ── */
-    .sidebar { position: sticky; top: 80px; }
+    .sidebar { position: sticky; top: 70px; }
     .cart-panel {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -373,21 +343,14 @@
 <body>
 
 <!-- NAV -->
-<nav class="nav">
-  <a href="/ninda" class="nav-back">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
-    Directorio
-  </a>
-  <a href="/ninda" class="nav-logo">Take<span>App</span></a>
-  <button class="nav-cart-btn" id="navCartBtn" onclick="openDrawer()">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-    </svg>
-    Carrito
-    <span class="cart-badge" id="cartBadge">0</span>
+{{template "ninda/navbar-ninda.html" .}}
+
+<!-- Botón flotante de carrito (visible en móvil y como acceso rápido) -->
+<div style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:300;display:none" id="cartFab">
+  <button onclick="openDrawer()" style="background:#C62828;color:#fff;border:none;border-radius:999px;padding:.65rem 1.25rem;font-size:.85rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:.4rem;box-shadow:0 4px 14px rgba(198,40,40,.35)">
+    <i class="lni lni-cart"></i> Carrito <span id="cartBadge" style="background:#fff;color:#C62828;border-radius:999px;font-size:.72rem;font-weight:800;min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;padding:0 4px">0</span>
   </button>
-</nav>
+</div>
 
 <!-- MAIN LAYOUT -->
 <div class="layout" id="layout">
@@ -398,13 +361,13 @@
     <!-- Store header skeleton -->
     <div class="store-header" id="storeHeader">
       <div class="store-cover">
-        <div class="store-cover-placeholder" id="storeCoverPlaceholder" style="font-size:4rem">🏪</div>
+        <div class="store-cover-placeholder" id="storeCoverPlaceholder"><i class="lni lni-store" style="font-size:3.5rem;color:#ccc"></i></div>
         <img id="storeCoverImg" style="display:none" alt="" />
       </div>
       <div class="store-meta">
         <!-- Logo a la izquierda -->
         <div class="store-logo" id="storeLogoCircle">
-          <span id="storeLogoEmoji">🏪</span>
+          <i class="lni lni-store" id="storeLogoEmoji" style="font-size:1.8rem;color:#ccc"></i>
         </div>
         <div class="store-info">
           <span class="store-type-badge" id="storeType">Cargando...</span>
@@ -447,7 +410,7 @@
       </div>
       <div id="cartContent">
         <div class="cart-empty">
-          <div class="cart-empty-icon">🛒</div>
+          <div class="cart-empty-icon"><i class="lni lni-cart"></i></div>
           Agrega productos para comenzar
         </div>
       </div>
@@ -474,7 +437,7 @@
 <!-- SUCCESS MODAL -->
 <div class="modal-overlay" id="successModal">
   <div class="modal">
-    <div class="modal-icon">🎉</div>
+    <div class="modal-icon"><i class="lni lni-checkmark-circle"></i></div>
     <div class="modal-title">¡Pago completado!</div>
     <p class="modal-sub">Tu pedido fue procesado exitosamente. Envía el resumen al negocio por WhatsApp.</p>
     <div class="modal-order-box" id="modalOrderBox"></div>
@@ -624,12 +587,20 @@
     // Logo circular
     const logoCircle = document.getElementById('storeLogoCircle');
     const logoEmoji  = document.getElementById('storeLogoEmoji');
-    const EMOJIS = { 'peluqueria':'💇', 'salon':'💇', 'pizzeria':'🍕', 'clinica':'🏥', 'restaurante':'🍽️', 'spa':'🧘', 'tienda':'🛍️' };
+    const EMOJIS = {
+      'peluqueria': '<i class="lni lni-cut"></i>',
+      'salon':      '<i class="lni lni-cut"></i>',
+      'pizzeria':   '<i class="lni lni-pizza"></i>',
+      'clinica':    '<i class="lni lni-hospital"></i>',
+      'restaurante':'<i class="lni lni-restaurant"></i>',
+      'spa':        '<i class="lni lni-leaf"></i>',
+      'tienda':     '<i class="lni lni-shop"></i>',
+    };
     const emoji = EMOJIS[(store.businessType||'').toLowerCase()] || '🏪';
     if (store.logoUrl) {
       logoCircle.innerHTML = `<img src="${store.logoUrl}" alt="${store.name}" />`;
     } else {
-      logoEmoji.textContent = emoji;
+      logoEmoji.innerHTML = emoji;
     }
 
     // Chips: location, phone
@@ -657,7 +628,7 @@
       const imgs = svc.images || [];
       const imgHTML = imgs[0]
         ? `<img src="${imgs[0]}" alt="${svc.title}" loading="lazy" />`
-        : `<div class="product-img-placeholder">🛍️</div>`;
+        : `<div class="product-img-placeholder"><i class="lni lni-shopping-basket"></i></div>`;
       const isPromo = svc.priceType === 'promotion' && svc.promoPrice > 0;
 
       return `
@@ -773,7 +744,7 @@
 
   function buildCartHTML(items, total) {
     if (items.length === 0) {
-      return `<div class="cart-empty"><div class="cart-empty-icon">🛒</div>Agrega productos para comenzar</div>`;
+      return `<div class="cart-empty"><div class="cart-empty-icon"><i class="lni lni-cart"></i></div>Agrega productos para comenzar</div>`;
     }
 
     const hasSPEI = store?.payments?.hasSPEI;
