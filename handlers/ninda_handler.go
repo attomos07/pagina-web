@@ -31,6 +31,12 @@ func GetNindaStore(c *gin.Context) {
 	c.HTML(http.StatusOK, "ninda-store.html", gin.H{})
 }
 
+// GetNindaMap - GET /ninda/map
+// Demo de rastreo de pedido en tiempo real
+func GetNindaMap(c *gin.Context) {
+	c.HTML(http.StatusOK, "ninda-map.html", gin.H{})
+}
+
 // ─── API: Directory ──────────────────────────────────────────────────────────
 
 // APIGetStores - GET /api/ninda/stores

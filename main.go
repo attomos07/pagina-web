@@ -169,6 +169,7 @@ func main() {
 	// Páginas HTML
 	router.GET("/ninda", handlers.GetNindaDirectory)
 	router.GET("/ninda/:branch_id", handlers.GetNindaStore)
+	router.GET("/ninda/map", handlers.GetNindaMap)
 	// API pública
 	router.GET("/api/ninda/stores", handlers.APIGetStores)
 	router.GET("/api/ninda/stores/:branch_id", handlers.APIGetStore)
