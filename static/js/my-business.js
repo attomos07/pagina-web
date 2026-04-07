@@ -1076,6 +1076,13 @@ async function saveProfile() {
                 }
                 renderBranchList();
             }
+
+            // Reflejar el giro en el userbar inmediatamente
+            const newBusinessType = document.getElementById('businessTypeInput')?.getAttribute('data-value');
+            if (newBusinessType && window.userbarUtils?.updateUserData) {
+                window.userbarUtils.updateUserData('businessType', newBusinessType);
+            }
+
             showNotification('¡Cambios guardados exitosamente!', 'success');
         } else {
             throw new Error(result.error || 'Error desconocido');
