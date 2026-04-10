@@ -23,7 +23,7 @@ type OrderResponse struct {
 	OrderType       string            `json:"orderType"`
 	Status          string            `json:"status"`
 	Source          string            `json:"source"`
-	AgentID         uint              `json:"agentId"`
+	AgentID         *uint             `json:"agentId"` // puntero: null cuando es manual
 	AgentName       string            `json:"agentName"`
 	DeliveryAddress string            `json:"deliveryAddress"`
 	EstimatedTime   int               `json:"estimatedTime"`
@@ -90,8 +90,8 @@ func CreateOrder(c *gin.Context) {
 		EstimatedTime   int         `json:"estimatedTime"`
 		AgentID         uint        `json:"agentId"`
 		Status          string      `json:"status"`
-		PaymentMethod   string      `json:"paymentMethod"` // cash | card | transfer
-		CashReceived    float64     `json:"cashReceived"`  // solo para efectivo
+		PaymentMethod   string      `json:"paymentMethod"`
+		CashReceived    float64     `json:"cashReceived"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -105,8 +105,6 @@ func CreateOrder(c *gin.Context) {
 		b, _ := json.Marshal(req.Items)
 		itemsJSON = string(b)
 	}
-
-	// Parsear items de vuelta al tipo correcto
 	var items models.OrderItems
 	json.Unmarshal([]byte(itemsJSON), &items)
 
@@ -125,9 +123,16 @@ func CreateOrder(c *gin.Context) {
 		estimatedTime = req.EstimatedTime
 	}
 
+	// AgentID: si el frontend envía 0 (pedido manual sin agente),
+	// usar nil para que GORM inserte NULL y no viole el FK fk_orders_agent.
+	var agentID *uint
+	if req.AgentID > 0 {
+		agentID = &req.AgentID
+	}
+
 	order := models.Order{
 		UserID:          user.ID,
-		AgentID:         req.AgentID,
+		AgentID:         agentID, // nil = sin agente (pedido manual)
 		ClientName:      req.ClientName,
 		ClientPhone:     req.ClientPhone,
 		Items:           items,
@@ -220,6 +225,11 @@ func DeleteOrder(c *gin.Context) {
 // ── Helper interno ──────────────────────────────────────────
 
 func orderToResponse(o models.Order, agentNames map[uint]string) OrderResponse {
+	agentName := ""
+	if o.AgentID != nil {
+		agentName = agentNames[*o.AgentID]
+	}
+
 	return OrderResponse{
 		ID:              fmt.Sprintf("%d", o.ID),
 		ClientName:      o.ClientName,
@@ -231,7 +241,7 @@ func orderToResponse(o models.Order, agentNames map[uint]string) OrderResponse {
 		Status:          string(o.Status),
 		Source:          string(o.Source),
 		AgentID:         o.AgentID,
-		AgentName:       agentNames[o.AgentID],
+		AgentName:       agentName,
 		DeliveryAddress: o.DeliveryAddress,
 		EstimatedTime:   o.EstimatedTime,
 		PaymentMethod:   o.PaymentMethod,

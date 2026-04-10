@@ -29,7 +29,7 @@ const (
 	OrderTypeDelivery    OrderType = "delivery"     // A domicilio
 	OrderTypePickup      OrderType = "pickup"       // Para llevar
 	OrderTypeDineIn      OrderType = "dine_in"      // Consumo en el local
-	OrderTypeLocalPickup OrderType = "local_pickup" // Recoger en local (cliente viene a recoger)
+	OrderTypeLocalPickup OrderType = "local_pickup" // Recoger en local
 )
 
 type OrderSource string
@@ -76,9 +76,12 @@ func (oi *OrderItems) Scan(v interface{}) error {
 // ============================================
 
 type Order struct {
-	ID      uint `gorm:"primaryKey" json:"id"`
-	UserID  uint `gorm:"not null;index" json:"userId"`
-	AgentID uint `gorm:"index" json:"agentId"`
+	ID     uint `gorm:"primaryKey" json:"id"`
+	UserID uint `gorm:"not null;index" json:"userId"`
+
+	// *uint nullable: pedidos manuales no tienen agente → GORM inserta NULL
+	// en lugar de 0, evitando violar el FK fk_orders_agent → agents.id
+	AgentID *uint `gorm:"index" json:"agentId"`
 
 	// ── Cliente ──────────────────────────────
 	ClientName  string `gorm:"size:255;not null" json:"clientName"`

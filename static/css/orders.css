@@ -384,3 +384,101 @@ body {
 .cambio-amount { font-size:1.5rem; font-weight:800; line-height:1; }
 .cambio-positive { color:#059669; }
 .cambio-negative { color:#dc2626; }
+
+/* ── Product dropdown en item-row ──────────────────────────── */
+.product-dropdown-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.product-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  min-width: 240px;
+  background: white;
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.12);
+  z-index: 3000;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: all .2s cubic-bezier(.23,1,.32,1);
+  pointer-events: none;
+}
+
+.product-dropdown-wrapper.open .product-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Buscador interno */
+.product-dropdown-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .6rem .75rem;
+  border-bottom: 1.5px solid #f0f0f0;
+  background: #fafafa;
+}
+.product-dropdown-search-wrap i { color: #9ca3af; font-size: .95rem; flex-shrink:0; }
+.product-dropdown-search {
+  border: none; outline: none; font-size: .875rem;
+  color: #1a1a1a; background: transparent; width: 100%;
+}
+
+/* Lista de opciones */
+.product-options-list {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: .35rem 0;
+}
+.product-options-list::-webkit-scrollbar { width: 5px; }
+.product-options-list::-webkit-scrollbar-track { background: #f9fafb; }
+.product-options-list::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 3px; }
+.product-options-list::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+.product-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .65rem 1rem;
+  cursor: pointer;
+  transition: background .15s;
+  gap: .75rem;
+}
+.product-option:hover { background: var(--accent-light); }
+
+.product-opt-name {
+  font-size: .9rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.product-opt-price {
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.product-option-empty {
+  padding: 1.25rem 1rem;
+  text-align: center;
+  color: #9ca3af;
+  font-size: .85rem;
+}
+
+/* Item row ajuste: name ahora es wrapper */
+.item-row .product-dropdown-wrapper .product-dropdown-input {
+  width: 100%;
+}

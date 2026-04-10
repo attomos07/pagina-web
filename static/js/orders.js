@@ -2,10 +2,11 @@
 // ORDERS.JS — gestión de pedidos (food verticals)
 // ==========================================
 
-let orders  = [];
-let agents  = [];
+let orders        = [];
+let agents        = [];
+let menuProducts  = [];   // productos cargados desde /api/my-business
 let currentFilters = { status: 'all', agent: 'all', type: 'all', search: '' };
-let openDropdown = null;
+let openDropdown  = null;
 
 // ==========================================
 // INIT
@@ -20,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initOrders() {
-    await loadAgents();
+    await Promise.all([loadAgents(), loadMenuProducts()]);
     await loadOrders();
     updateStats();
     renderOrders();
@@ -69,6 +70,29 @@ async function loadOrders() {
     }
     if (orders.length === 0) showEmptyState();
     else hideEmptyState();
+}
+
+// Carga los productos/servicios desde la sucursal activa de Mi Negocio
+async function loadMenuProducts() {
+    try {
+        const res = await fetch('/api/my-business', { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const branch = data.activeBranch || data.defaultBranch;
+        if (!branch) return;
+        const raw = branch.services || [];
+        // Normalizar precio: si es promo usar promoPrice, si no price
+        menuProducts = raw
+            .filter(s => s.title)
+            .map(s => ({
+                title: s.title,
+                price: s.priceType === 'promo' ? (s.promoPrice || s.price || 0) : (s.price || 0),
+                description: s.description || '',
+                imageUrl: (s.imageUrls && s.imageUrls[0]) || s.imageUrl || '',
+            }));
+    } catch (e) {
+        menuProducts = [];
+    }
 }
 
 // ==========================================
@@ -373,25 +397,121 @@ function closeOrderModal() {
 }
 
 // ==========================================
-// ITEM ROWS
+// ITEM ROWS — con dropdown de productos del menú
 // ==========================================
 
 function addItemRow(data = {}) {
     const list = document.getElementById('itemsList');
     if (!list) return;
+
     const row = document.createElement('div');
     row.className = 'item-row';
+
+    // Construir opciones del dropdown
+    const hasMenu = menuProducts.length > 0;
+    const optionsHTML = hasMenu
+        ? menuProducts.map(p =>
+            `<div class="product-option" data-title="${escHtml(p.title)}" data-price="${p.price}">
+                <span class="product-opt-name">${escHtml(p.title)}</span>
+                <span class="product-opt-price">$${p.price.toFixed(2)}</span>
+             </div>`
+          ).join('')
+        : `<div class="product-option-empty">Sin productos en Mi Negocio</div>`;
+
+    const selectedName  = data.name  || '';
+    const selectedPrice = data.price || '';
+
     row.innerHTML = `
-      <input type="number" class="form-input item-qty"   placeholder="Cant." min="1" value="${data.quantity||1}">
-      <input type="text"   class="form-input item-name"  placeholder="Producto" value="${data.name||''}">
-      <input type="number" class="form-input item-price" placeholder="Precio" step="0.01" min="0" value="${data.price||''}">
-      <input type="text"   class="form-input item-notes" placeholder="Notas" value="${data.notes||''}">
+      <input type="number" class="form-input item-qty" placeholder="Cant." min="1" value="${data.quantity || 1}">
+
+      <div class="product-dropdown-wrapper">
+        <input type="text" class="form-input item-name product-dropdown-input"
+               placeholder="${hasMenu ? 'Seleccionar producto…' : 'Nombre del producto'}"
+               value="${escHtml(selectedName)}" autocomplete="off">
+        ${hasMenu ? `<div class="product-dropdown-menu">
+          <div class="product-dropdown-search-wrap">
+            <i class="lni lni-search-alt"></i>
+            <input type="text" class="product-dropdown-search" placeholder="Buscar…">
+          </div>
+          <div class="product-options-list">${optionsHTML}</div>
+        </div>` : ''}
+      </div>
+
+      <input type="number" class="form-input item-price" placeholder="Precio" step="0.01" min="0" value="${selectedPrice}">
+      <input type="text"   class="form-input item-notes" placeholder="Notas" value="${data.notes || ''}">
       <button type="button" class="btn-remove-item-row" onclick="this.closest('.item-row').remove(); recalcTotal()">
         <i class="lni lni-close"></i>
       </button>`;
-    row.querySelectorAll('input').forEach(i => i.addEventListener('input', recalcTotal));
+
+    // ── Lógica del dropdown ───────────────────────────────────
+    if (hasMenu) {
+        const nameInput    = row.querySelector('.product-dropdown-input');
+        const menu         = row.querySelector('.product-dropdown-menu');
+        const searchInput  = row.querySelector('.product-dropdown-search');
+        const optionsList  = row.querySelector('.product-options-list');
+        const priceInput   = row.querySelector('.item-price');
+        const wrapper      = row.querySelector('.product-dropdown-wrapper');
+
+        // Abrir al hacer focus o click
+        nameInput.addEventListener('focus', () => openProductMenu(wrapper));
+        nameInput.addEventListener('click', () => openProductMenu(wrapper));
+
+        // Filtrar opciones con búsqueda
+        searchInput.addEventListener('input', function () {
+            const term = this.value.toLowerCase();
+            optionsList.querySelectorAll('.product-option').forEach(opt => {
+                opt.style.display = opt.dataset.title.toLowerCase().includes(term) ? '' : 'none';
+            });
+        });
+        searchInput.addEventListener('click', e => e.stopPropagation());
+
+        // Seleccionar opción
+        optionsList.addEventListener('click', function (e) {
+            const opt = e.target.closest('.product-option');
+            if (!opt) return;
+            nameInput.value  = opt.dataset.title;
+            priceInput.value = opt.dataset.price;
+            closeProductMenu(wrapper);
+            recalcTotal();
+        });
+
+        // Permitir también escritura libre (nombre personalizado)
+        nameInput.addEventListener('input', function () {
+            openProductMenu(wrapper);
+            const term = this.value.toLowerCase();
+            optionsList.querySelectorAll('.product-option').forEach(opt => {
+                opt.style.display = opt.dataset.title.toLowerCase().includes(term) ? '' : 'none';
+            });
+        });
+    }
+
+    row.querySelectorAll('.item-qty, .item-price').forEach(i =>
+        i.addEventListener('input', recalcTotal));
     list.appendChild(row);
 }
+
+function openProductMenu(wrapper) {
+    // Cerrar otros menús abiertos primero
+    document.querySelectorAll('.product-dropdown-wrapper.open').forEach(w => {
+        if (w !== wrapper) closeProductMenu(w);
+    });
+    wrapper.classList.add('open');
+    const search = wrapper.querySelector('.product-dropdown-search');
+    if (search) { search.value = ''; search.focus(); }
+    // Mostrar todas las opciones al abrir
+    wrapper.querySelectorAll('.product-option').forEach(o => o.style.display = '');
+}
+
+function closeProductMenu(wrapper) {
+    wrapper.classList.remove('open');
+}
+
+// Cerrar menús al click fuera
+document.addEventListener('click', e => {
+    if (!e.target.closest('.product-dropdown-wrapper')) {
+        document.querySelectorAll('.product-dropdown-wrapper.open').forEach(w => closeProductMenu(w));
+    }
+});
 
 function recalcTotal() {
     let sum = 0;
