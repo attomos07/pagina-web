@@ -28,13 +28,11 @@
                 <span class="notification-title">Notificaciones</span>
                 <button class="mark-all-btn" id="markAllBtn">Marcar como leídas</button>
             </div>
-
             <div class="notification-list" id="notificationList">
                 <div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px;">
                     Cargando notificaciones...
                 </div>
             </div>
-
             <div class="notification-footer">
                 <button class="view-all-btn" onclick="window.location.href='/notifications'">Ver todas</button>
             </div>
@@ -96,7 +94,8 @@
                 </a>
             </li>
 
-            <li class="dropdown-menu-item">
+            <!-- Mis Citas: visible para giros NO de comida -->
+            <li class="dropdown-menu-item" id="dropdownCitasItem">
                 <a href="/appointments" class="dropdown-menu-button">
                     <div class="dropdown-icon">
                         <svg viewBox="0 0 24 24">
@@ -107,6 +106,20 @@
                         </svg>
                     </div>
                     <span class="dropdown-text">Mis Citas</span>
+                </a>
+            </li>
+
+            <!-- Mis Pedidos: visible para giros de comida (oculto por defecto) -->
+            <li class="dropdown-menu-item" id="dropdownPedidosItem" style="display:none">
+                <a href="/orders" class="dropdown-menu-button">
+                    <div class="dropdown-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                            <line x1="3" x2="21" y1="6" y2="6"/>
+                            <path d="M16 10a4 4 0 0 1-8 0"/>
+                        </svg>
+                    </div>
+                    <span class="dropdown-text">Mis Pedidos</span>
                 </a>
             </li>
 

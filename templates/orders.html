@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Pedidos - Attomos</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/attomos-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/attomos-favicon.png">
+    <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/orders.css">
+    <link rel="stylesheet" href="/static/css/sileo.css">
+</head>
+<body>
+    <div class="decorative-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring ring-4"></div>
+    </div>
+
+    <div class="app-container">
+        {{template "sidebar.html" .}}
+
+        <div class="main-content">
+            {{template "userbar.html" .}}
+
+            <div class="content-wrapper">
+                <div class="orders-layout">
+
+                    <!-- ── Header ── -->
+                    <div class="page-header">
+                        <div class="header-title">
+                            <h1><i class="lni lni-cart"></i>Mis Pedidos</h1>
+                            <p>Gestiona todos los pedidos de tu negocio</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn-primary" onclick="openOrderModal()">
+                                <i class="lni lni-plus"></i>
+                                <span>Nuevo Pedido</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ── Stats ── -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon orange"><i class="lni lni-timer"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="statPending">0</div>
+                                <div class="stat-label">Pendientes</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple"><i class="lni lni-alarm-clock"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="statPreparing">0</div>
+                                <div class="stat-label">En preparación</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon green"><i class="lni lni-checkmark-circle"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="statReady">0</div>
+                                <div class="stat-label">Listos para entregar</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon blue"><i class="lni lni-calendar"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="statToday">0</div>
+                                <div class="stat-label">Pedidos hoy</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon orange"><i class="lni lni-coin"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="statTotal">$0.00</div>
+                                <div class="stat-label">Venta acumulada</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Controls ── -->
+                    <div class="controls-section">
+                        <div class="filters">
+
+                            <!-- Filtro estado -->
+                            <div class="custom-dropdown-wrapper filter-wrapper" style="width:200px;min-width:180px;">
+                                <div class="form-input form-dropdown filter-trigger" onclick="this.closest('.custom-dropdown-wrapper').classList.toggle('active')">
+                                    <span id="selectedStatus">Todos los estados</span>
+                                    <i class="lni lni-chevron-down dropdown-arrow"></i>
+                                </div>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-options">
+                                        <div class="dropdown-option selected" onclick="selectFilterOption(this,'selectedStatus','status','all')"><span>Todos los estados</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','pending')"><span class="status-dot pending"></span><span>Pendientes</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','confirmed')"><span class="status-dot confirmed"></span><span>Confirmados</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','preparing')"><span class="status-dot preparing"></span><span>En preparación</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','ready')"><span class="status-dot ready"></span><span>Listos</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','delivered')"><span class="status-dot delivered"></span><span>Entregados</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedStatus','status','cancelled')"><span class="status-dot cancelled"></span><span>Cancelados</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Filtro tipo -->
+                            <div class="custom-dropdown-wrapper filter-wrapper" style="width:190px;min-width:170px;">
+                                <div class="form-input form-dropdown filter-trigger" onclick="this.closest('.custom-dropdown-wrapper').classList.toggle('active')">
+                                    <span id="selectedType">Tipo de pedido</span>
+                                    <i class="lni lni-chevron-down dropdown-arrow"></i>
+                                </div>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-options">
+                                        <div class="dropdown-option selected" onclick="selectFilterOption(this,'selectedType','type','all')"><span>Todos los tipos</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedType','type','delivery')"><span>🛵 A domicilio</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedType','type','pickup')"><span>🏪 Para llevar</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedType','type','dine_in')"><span>🍽️ En el local</span></div>
+                                        <div class="dropdown-option" onclick="selectFilterOption(this,'selectedType','type','local_pickup')"><span>📦 Recoger en local</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Filtro agente -->
+                            <div class="custom-dropdown-wrapper filter-wrapper" style="width:200px;min-width:180px;">
+                                <div class="form-input form-dropdown filter-trigger" onclick="this.closest('.custom-dropdown-wrapper').classList.toggle('active')">
+                                    <span id="selectedAgent">Todos los agentes</span>
+                                    <i class="lni lni-chevron-down dropdown-arrow"></i>
+                                </div>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-options" id="agentFilterOptions">
+                                        <div class="dropdown-option selected" onclick="selectFilterOption(this,'selectedAgent','agent','all')"><span>Todos los agentes</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Búsqueda -->
+                            <div class="search-box">
+                                <i class="lni lni-search-alt"></i>
+                                <input type="text" id="searchInput" placeholder="Buscar cliente o producto...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Table ── -->
+                    <div class="orders-container" id="ordersTableView">
+                        <div class="table-wrapper">
+                            <table class="orders-table">
+                                <thead>
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Productos</th>
+                                        <th>Total</th>
+                                        <th>Tipo</th>
+                                        <th>Fuente</th>
+                                        <th>Estado</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ordersList"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ── Empty ── -->
+                    <div class="empty-state" id="emptyState" style="display:none">
+                        <div class="empty-icon"><i class="lni lni-cart"></i></div>
+                        <h3>Sin pedidos registrados</h3>
+                        <p>Los pedidos de tus clientes aparecerán aquí. También puedes crearlos manualmente.</p>
+                        <button class="btn-primary" onclick="openOrderModal()">
+                            <i class="lni lni-plus"></i><span>Crear Primer Pedido</span>
+                        </button>
+                    </div>
+
+                </div><!-- /orders-layout -->
+            </div><!-- /content-wrapper -->
+        </div><!-- /main-content -->
+    </div><!-- /app-container -->
+
+    <!-- ── Modal nuevo pedido ── -->
+    <div class="modal" id="orderModal">
+        <div class="modal-overlay" onclick="closeOrderModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle"><i class="lni lni-cart"></i> Nuevo Pedido</h3>
+                <button class="modal-close" onclick="closeOrderModal()"><i class="lni lni-close"></i></button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Sileo viewport -->
+    <div id="sileo-vp" role="region" aria-live="polite" data-position="top-center"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/motion@12.6.5/dist/motion.js"></script>
+    <script src="/static/js/sileo.js"></script>
+    <script src="/static/js/orders.js"></script>
+</body>
+</html>

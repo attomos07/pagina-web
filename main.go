@@ -50,6 +50,7 @@ func main() {
 		&models.MyBusinessInfo{}, // ← Perfil de negocio del usuario
 		&models.Invoice{},        // ← Solicitudes de factura
 		&models.PaymentConfig{},  // ← Config de pagos del bot (CLABE + Stripe Connect)
+		&models.Order{},          // ← Pedidos (giros de comida: pizzería, mariscos, etc.)
 	); err != nil {
 		log.Fatal("❌ Error en migración:", err)
 	}
@@ -222,6 +223,14 @@ func main() {
 		protected.PATCH("/appointments/:id/status", handlers.UpdateAppointmentStatus)
 		protected.DELETE("/appointments/:id", handlers.DeleteAppointment)
 
+		// ============================================
+		// 🍕 ORDERS — Pedidos (giros de comida)
+		// ============================================
+		protected.GET("/orders", handlers.GetOrders)
+		protected.POST("/orders", handlers.CreateOrder)
+		protected.PATCH("/orders/:id/status", handlers.UpdateOrderStatus)
+		protected.DELETE("/orders/:id", handlers.DeleteOrder)
+
 		// Client History
 		protected.GET("/client-history", handlers.GetHistorial)
 		protected.GET("/client-history/client/:phone", handlers.GetHistorialCliente)
@@ -330,6 +339,10 @@ func main() {
 
 	router.GET("/appointments", middleware.AuthRequired(), func(c *gin.Context) {
 		c.HTML(200, "appointments.html", nil)
+	})
+
+	router.GET("/orders", middleware.AuthRequired(), func(c *gin.Context) {
+		c.HTML(200, "orders.html", nil)
 	})
 
 	router.GET("/client-history", middleware.AuthRequired(), func(c *gin.Context) {
@@ -508,7 +521,8 @@ func main() {
 	log.Println("║    • Auto-actualización cada 30 segundos                ║")
 	log.Println("║    • Webhook Proxy para Meta WhatsApp (OrbitalBot)      ║")
 	log.Println("║    • Páginas legales: Términos y Privacidad             ║")
-	log.Println("║    • 🛒 Ninda Marketplace en: /ninda                ║")
+	log.Println("║    • 🛒 Ninda Marketplace en: /ninda                    ║")
+	log.Println("║    • 🍕 Orders en: /orders (giros de comida)            ║")
 	log.Println("╚══════════════════════════════════════════════════════════╝")
 
 	if err := router.Run(":" + port); err != nil {

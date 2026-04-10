@@ -20,7 +20,12 @@ async function initUserbar() {
     // Render from cache immediately to avoid flash of placeholder text
     const cached = localStorage.getItem('userData');
     if (cached) {
-        try { updateUserbarUI(JSON.parse(cached)); } catch(e) {}
+        try {
+            const cachedData = JSON.parse(cached);
+            updateUserbarUI(cachedData);
+            // Aplicar lógica de menú con businessType cacheado
+            applyBusinessTypeMenu(cachedData.businessType);
+        } catch(e) {}
     }
 
     try {
@@ -31,7 +36,42 @@ async function initUserbar() {
 
         if (response.ok) {
             const data = await response.json();
-            updateUserbarUI(data.user);
+            const user = { ...data.user };
+            updateUserbarUI(user);
+
+            // ── Segunda llamada: obtener giro real de MyBusinessInfo ──────────
+            // User.businessType (tabla users) es el del registro y nunca se
+            // actualiza cuando el usuario cambia el giro en "Mi Negocio".
+            // MyBusinessInfo.businessType es la fuente de verdad real.
+            try {
+                const bizRes = await fetch('/api/my-business', { credentials: 'include' });
+                if (bizRes.ok) {
+                    const bizData   = await bizRes.json();
+                    const branch    = bizData.activeBranch || bizData.defaultBranch;
+                    // El handler devuelve business.type = el value del select ("gorditas", etc.)
+                    const realType  = branch?.business?.type
+                                   || branch?.business?.typeName
+                                   || branch?.businessType
+                                   || '';
+                    if (realType) {
+                        user.businessType = realType;
+                        // Actualizar el rol mostrado en el dropdown
+                        const roleEl = document.getElementById('userRole');
+                        if (roleEl) {
+                            roleEl.textContent    = getBusinessTypeLabel(realType);
+                            roleEl.style.visibility = 'visible';
+                        }
+                    }
+                }
+            } catch (_) {
+                // Falla silenciosamente; usa User.businessType como fallback
+            }
+
+            // Guardar en cache con el giro actualizado
+            localStorage.setItem('userData', JSON.stringify(user));
+            // Aplicar lógica de menú con el giro definitivo
+            applyBusinessTypeMenu(user.businessType);
+
         } else {
             if (response.status === 401) {
                 window.location.href = '/login';
@@ -41,6 +81,28 @@ async function initUserbar() {
         console.error('❌ Error cargando datos de usuario:', error);
     }
 }
+
+// ============================================
+// LÓGICA DE MENÚ SEGÚN GIRO (Citas vs Pedidos)
+// ============================================
+
+const GIROS_COMIDA = ['pizzeria','pizza','mariscos','gorditas','restaurante',
+                      'taqueria','tacos','hamburguesas','sushi','comida'];
+
+function applyBusinessTypeMenu(businessType) {
+    const bt     = (businessType || '').toLowerCase();
+    const isFood = GIROS_COMIDA.some(g => bt.includes(g));
+
+    const citasItem   = document.getElementById('dropdownCitasItem');
+    const pedidosItem = document.getElementById('dropdownPedidosItem');
+
+    if (citasItem)   citasItem.style.display   = isFood ? 'none' : '';
+    if (pedidosItem) pedidosItem.style.display  = isFood ? ''     : 'none';
+}
+
+// ============================================
+// ACTUALIZAR UI DEL USERBAR
+// ============================================
 
 function updateUserbarUI(user) {
     const userNameElement = document.getElementById('userName');
@@ -59,7 +121,6 @@ function updateUserbarUI(user) {
 
     const userPlanElement = document.getElementById('userPlan');
     if (userPlanElement && user.currentPlan) {
-        // Siempre usar el plan que viene de /api/me (fuente de verdad)
         userPlanElement.textContent = getPlanName(user.currentPlan);
     }
 
@@ -69,10 +130,7 @@ function updateUserbarUI(user) {
     if (user.profileImage && userAvatarImg) {
         userAvatarImg.src = user.profileImage;
         userAvatarImg.style.display = 'block';
-        if (userInitialsElement) {
-            userInitialsElement.style.display = 'none';
-        }
-        // Ensure avatar area is visible
+        if (userInitialsElement) userInitialsElement.style.display = 'none';
         userAvatarImg.style.visibility = 'visible';
     } else if (userInitialsElement) {
         const name = user.firstName || user.company || 'Usuario';
@@ -109,19 +167,32 @@ function getPlanName(planId) {
 
 function getBusinessTypeLabel(businessType) {
     const businessTypes = {
+        // Salud
         'clinica-dental': 'Clínica Dental',
-        'peluqueria': 'Peluquería',
-        'restaurante': 'Restaurante',
-        'pizzeria': 'Pizzería',
-        'escuela': 'Educación',
-        'gym': 'Gimnasio',
-        'spa': 'Spa & Wellness',
-        'consultorio': 'Consultorio Médico',
-        'veterinaria': 'Veterinaria',
-        'hotel': 'Hotel',
-        'tienda': 'Tienda',
-        'agencia': 'Agencia',
-        'otro': 'Otro'
+        'consultorio':    'Consultorio Médico',
+        'veterinaria':    'Veterinaria',
+        // Belleza
+        'peluqueria':     'Peluquería',
+        'spa':            'Spa & Wellness',
+        'estetica':       'Estética',
+        // Comida
+        'restaurante':    'Restaurante',
+        'pizzeria':       'Pizzería',
+        'pizza':          'Pizzería',
+        'mariscos':       'Mariscos',
+        'gorditas':       'Gorditas',
+        'taqueria':       'Taquería',
+        'tacos':          'Taquería',
+        'hamburguesas':   'Hamburguesas',
+        'sushi':          'Sushi',
+        'comida':         'Restaurante',
+        // Otros
+        'escuela':        'Educación',
+        'gym':            'Gimnasio',
+        'hotel':          'Hotel',
+        'tienda':         'Tienda',
+        'agencia':        'Agencia',
+        'otro':           'Otro',
     };
     return businessTypes[businessType] || businessType || 'Negocio';
 }
@@ -246,7 +317,6 @@ function renderNotifications(notifications) {
             </div>
         </div>`).join('');
 
-    // Wire up dismiss buttons
     list.querySelectorAll('.notif-dismiss-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -354,8 +424,8 @@ function initNotifications() {
 // ============================================
 
 function initUserDropdown() {
-    const userAvatar   = document.getElementById('userAvatar');
-    const userDropdown = document.getElementById('userDropdown');
+    const userAvatar    = document.getElementById('userAvatar');
+    const userDropdown  = document.getElementById('userDropdown');
     const logoContainer = document.getElementById('logoContainer');
 
     if (!userAvatar || !userDropdown) return;
@@ -381,12 +451,6 @@ function initUserDropdown() {
         });
 
     } else {
-        // ── FIX: usar clase .is-open en lugar de estilos inline ──────────
-        // El bug original: al cerrar se aplicaba element.style.maxHeight='0'
-        // (estilo inline). Los estilos inline tienen mayor especificidad que
-        // cualquier regla CSS, así que el selector :hover ya no podía
-        // sobrescribirlo en visitas posteriores. Con .is-open el CSS mantiene
-        // el control completo y el dropdown funciona siempre.
         let isHoveringAvatar   = false;
         let isHoveringDropdown = false;
 
@@ -401,7 +465,6 @@ function initUserDropdown() {
 
         userAvatar.addEventListener('mouseenter', () => { isHoveringAvatar = true;  openDropdown(); });
         userAvatar.addEventListener('mouseleave', () => { isHoveringAvatar = false; closeDropdown(); });
-
         userDropdown.addEventListener('mouseenter', () => { isHoveringDropdown = true;  openDropdown(); });
         userDropdown.addEventListener('mouseleave', () => { isHoveringDropdown = false; closeDropdown(); });
     }
@@ -488,10 +551,12 @@ function updateUserData(key, value) {
         userData[key] = value;
         localStorage.setItem('userData', JSON.stringify(userData));
         updateUserbarUI(userData);
+        applyBusinessTypeMenu(userData.businessType);
     }
 }
 
 window.userbarUtils = {
     getUserData, updateUserData, updateUserbarUI,
-    getBusinessTypeLabel, getPlanName, showToast
+    getBusinessTypeLabel, getPlanName, showToast,
+    applyBusinessTypeMenu
 };
