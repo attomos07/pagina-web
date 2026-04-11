@@ -481,6 +481,8 @@ func main() {
 		adminGroup.PATCH("/api/invoices/:id", handlers.AdminUpdateInvoiceStatus)
 		adminGroup.POST("/api/logout", handlers.AdminLogout)
 		adminGroup.GET("/api/companies", handlers.AdminGetCompanies)
+		adminGroup.POST("/api/companies", handlers.AdminCreateCompany)
+		adminGroup.PUT("/api/companies/:id/plan", handlers.AdminUpdateCompanyPlan)
 	}
 
 	// ============================================

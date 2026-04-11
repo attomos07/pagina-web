@@ -18,20 +18,15 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// UploadServiceImage recibe una imagen de servicio/producto,
-// la sube vía SFTP al servidor Hetzner correcto y devuelve la URL pública.
+// UploadServiceImage recibe una imagen, la sube vía SFTP al servidor Hetzner
+// correcto y devuelve la URL pública. No guarda nada en disco local (Railway).
 //
 // POST /api/upload/service-image?branch_id={id}
 //
-// Rutas en Hetzner:
-//
-//	AtomicBot (servidor compartido): /var/www/uploads/user_{userID}/branch_{branchID}/{file}
-//	OrbitalBot (servidor individual): /var/www/uploads/branch_{branchID}/{file}
-//
-// URLs públicas:
-//
-//	AtomicBot: http://{globalServerIP}/uploads/user_{userID}/branch_{branchID}/{file}
-//	OrbitalBot: http://{serverIP}:8080/uploads/branch_{branchID}/{file}
+// Lógica de selección de servidor:
+//  1. Si el usuario tiene un agente con ese branch_id → usar su servidor
+//  2. Si tiene cualquier agente → usar el servidor de ese agente
+//  3. Si NO tiene agentes aún (onboarding) → usar el servidor global AtomicBot
 func UploadServiceImage(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
@@ -41,10 +36,7 @@ func UploadServiceImage(c *gin.Context) {
 	user := userInterface.(*models.User)
 
 	branchIDStr := c.Query("branch_id")
-	if branchIDStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "branch_id es requerido"})
-		return
-	}
+	imageType := c.Query("type") // "logo", "banner" o vacío para servicio
 
 	file, header, err := c.Request.FormFile("image")
 	if err != nil {
@@ -70,64 +62,87 @@ func UploadServiceImage(c *gin.Context) {
 		return
 	}
 
-	filename := fmt.Sprintf("%s_%d%s", uuid.New().String(), time.Now().Unix(), ext)
+	// Nombre único para el archivo
+	prefix := "svc"
+	if imageType == "logo" {
+		prefix = "logo"
+	} else if imageType == "banner" {
+		prefix = "banner"
+	}
+	filename := fmt.Sprintf("%s_%s_%d%s", prefix, uuid.New().String()[:8], time.Now().Unix(), ext)
 
-	// Buscar agente del usuario — primero por branch_id, luego cualquiera
-	var agent models.Agent
-	err = config.DB.Where("user_id = ? AND branch_id = ?", user.ID, branchIDStr).First(&agent).Error
-	if err != nil {
-		err = config.DB.Where("user_id = ?", user.ID).Order("created_at desc").First(&agent).Error
-		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "No se encontró agente para este usuario"})
-			return
+	// ── Buscar agente del usuario ────────────────────────────────────
+	// Prioridad: branch_id exacto → cualquier agente → nil (onboarding)
+	var agent *models.Agent
+
+	if branchIDStr != "" {
+		var a models.Agent
+		if config.DB.Where("user_id = ? AND branch_id = ?", user.ID, branchIDStr).
+			First(&a).Error == nil {
+			agent = &a
 		}
 	}
 
+	if agent == nil {
+		var a models.Agent
+		if config.DB.Where("user_id = ?", user.ID).
+			Order("created_at desc").First(&a).Error == nil {
+			agent = &a
+		}
+	}
+
+	// ── Subir imagen ─────────────────────────────────────────────────
 	var publicURL string
 
-	switch agent.BotType {
-	case "atomic":
-		// AtomicBot: servidor compartido — buscamos el servidor global activo
+	if agent == nil || agent.BotType == "atomic" {
+		// Sin agente (onboarding) o AtomicBot → servidor global compartido
 		var globalServer models.GlobalServer
-		if err := config.DB.Where("purpose = ? AND status = ?", "atomic-bots", "ready").
-			Order("current_agents ASC").First(&globalServer).Error; err != nil {
-			log.Printf("⚠️  [Upload] No se encontró servidor global activo: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Servidor compartido no disponible"})
+		if err := config.DB.
+			Where("purpose = ? AND status = ?", "atomic-bots", "ready").
+			Order("current_agents ASC").
+			First(&globalServer).Error; err != nil {
+			log.Printf("❌ [Upload] No hay servidor global activo: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Servidor de imágenes no disponible. Verifica que el servidor global esté activo.",
+			})
 			return
 		}
+
 		remotePath := fmt.Sprintf("/var/www/uploads/user_%d/branch_%s", user.ID, branchIDStr)
 		remoteFile := remotePath + "/" + filename
-		if err := uploadViaSSFTP(globalServer.IPAddress, globalServer.RootPassword, remotePath, remoteFile, fileBytes); err != nil {
-			log.Printf("❌ [Upload] Error SFTP AtomicBot: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error subiendo imagen"})
+
+		if err := uploadViaSFTP(globalServer.IPAddress, globalServer.RootPassword,
+			remotePath, remoteFile, fileBytes); err != nil {
+			log.Printf("❌ [Upload] SFTP AtomicBot global: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error subiendo imagen al servidor"})
 			return
 		}
+
 		publicURL = fmt.Sprintf("http://%s/uploads/user_%d/branch_%s/%s",
 			globalServer.IPAddress, user.ID, branchIDStr, filename)
 
-	case "orbital":
-		// OrbitalBot: servidor individual — IP del propio agente
+	} else {
+		// OrbitalBot → servidor individual del agente
 		remotePath := fmt.Sprintf("/var/www/uploads/branch_%s", branchIDStr)
 		remoteFile := remotePath + "/" + filename
-		if err := uploadViaSSFTP(agent.ServerIP, agent.ServerPassword, remotePath, remoteFile, fileBytes); err != nil {
-			log.Printf("❌ [Upload] Error SFTP OrbitalBot: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error subiendo imagen"})
+
+		if err := uploadViaSFTP(agent.ServerIP, agent.ServerPassword,
+			remotePath, remoteFile, fileBytes); err != nil {
+			log.Printf("❌ [Upload] SFTP OrbitalBot: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error subiendo imagen al servidor"})
 			return
 		}
+
 		publicURL = fmt.Sprintf("http://%s:8080/uploads/branch_%s/%s",
 			agent.ServerIP, branchIDStr, filename)
-
-	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Tipo de bot no soportado"})
-		return
 	}
 
-	log.Printf("✅ [Upload] Imagen subida: %s", publicURL)
+	log.Printf("✅ [Upload] user=%d branch=%s → %s", user.ID, branchIDStr, publicURL)
 	c.JSON(http.StatusOK, gin.H{"url": publicURL})
 }
 
-// uploadViaSSFTP conecta por SSH/SFTP, crea el directorio y sube el archivo.
-func uploadViaSSFTP(serverIP, password, remotePath, remoteFile string, data []byte) error {
+// uploadViaSFTP conecta por SSH/SFTP, crea el directorio y sube el archivo en memoria.
+func uploadViaSFTP(serverIP, password, remotePath, remoteFile string, data []byte) error {
 	sshConfig := &ssh.ClientConfig{
 		User:            "root",
 		Auth:            []ssh.AuthMethod{ssh.Password(password)},
@@ -137,28 +152,28 @@ func uploadViaSSFTP(serverIP, password, remotePath, remoteFile string, data []by
 
 	sshClient, err := ssh.Dial("tcp", serverIP+":22", sshConfig)
 	if err != nil {
-		return fmt.Errorf("error conectando SSH a %s: %w", serverIP, err)
+		return fmt.Errorf("SSH %s: %w", serverIP, err)
 	}
 	defer sshClient.Close()
 
 	sftpClient, err := sftp.NewClient(sshClient)
 	if err != nil {
-		return fmt.Errorf("error iniciando SFTP: %w", err)
+		return fmt.Errorf("SFTP init: %w", err)
 	}
 	defer sftpClient.Close()
 
 	if err := sftpClient.MkdirAll(remotePath); err != nil {
-		return fmt.Errorf("error creando directorio %s: %w", remotePath, err)
+		return fmt.Errorf("mkdir %s: %w", remotePath, err)
 	}
 
 	f, err := sftpClient.Create(remoteFile)
 	if err != nil {
-		return fmt.Errorf("error creando archivo remoto: %w", err)
+		return fmt.Errorf("create %s: %w", remoteFile, err)
 	}
 	defer f.Close()
 
 	if _, err := f.Write(data); err != nil {
-		return fmt.Errorf("error escribiendo archivo remoto: %w", err)
+		return fmt.Errorf("write: %w", err)
 	}
 
 	return nil
