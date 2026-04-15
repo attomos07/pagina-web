@@ -1277,7 +1277,6 @@ function addServiceWithData(s) {
   const editorEl = item.querySelector('.service-editor-content');
   if (editorEl) editorEl.innerHTML = s.description || '';
 
-  // ── Imágenes ──────────────────────────────────────────────────────────────
   const imgUrls = s.imageUrls || (s.imageUrl ? [s.imageUrl] : []);
   if (imgUrls.length > 0) {
     const grid    = item.querySelector('.service-images-grid');
@@ -1286,7 +1285,7 @@ function addServiceWithData(s) {
     imgUrls.forEach(url => {
       const thumb = document.createElement('div');
       thumb.className = 'service-img-thumb';
-      thumb.dataset.url = url;
+      thumb.dataset.url = url; // URL real, no pendiente
       thumb.innerHTML = `<img src="${url}" alt="Foto"><button type="button" class="btn-remove-thumb" title="Quitar"><i class="lni lni-close"></i></button>`;
       grid.insertBefore(thumb, addBtn);
     });
@@ -1823,7 +1822,10 @@ function addService() {
   const _addBtn    = serviceItem.querySelector('.service-img-add-btn');
 
   function _syncUrls() {
-    const urls = [..._grid.querySelectorAll('.service-img-thumb')].map(t => t.dataset.url);
+    // Solo incluir URLs confirmadas (no las pendientes de upload)
+    const urls = [..._grid.querySelectorAll('.service-img-thumb')]
+      .filter(t => !t.dataset.pending && t.dataset.url)
+      .map(t => t.dataset.url);
     _urlsInput.value = urls.join(',');
   }
 
@@ -1848,39 +1850,36 @@ function addService() {
       alert('Cada imagen debe ser menor a 5 MB');
       return;
     }
-    _uploadingEl.style.display = 'flex';
-    _addBtn.style.pointerEvents = 'none';
-    try {
-      for (const file of files) {
-        const formData = new FormData();
-        formData.append('image', file);
-        // Usar branchId de agentData si está disponible; si es 0 (onboarding sin
-        // sucursal aún), el handler hará fallback al último agente del usuario.
-        const _uploadBranchId = agentData.branchId || 0;
-        const res = await fetch(`/api/upload/service-image?branch_id=${_uploadBranchId}`, {
-          method: 'POST',
-          credentials: 'include',
-          body: formData,
-        });
-        if (!res.ok) throw new Error('Upload fallido');
-        const result = await res.json();
-        _addThumb(result.url);
-      }
-      _syncUrls();
-    } catch (err) {
-      console.error(err);
-      alert('Error al subir la imagen');
-    } finally {
-      _uploadingEl.style.display = 'none';
-      _addBtn.style.pointerEvents = '';
-      _fileInput.value = '';
+
+    // ── Guardar en memoria como base64; el upload real ocurre al crear el agente ──
+    for (const file of files) {
+      await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          // Crear preview local inmediato
+          const previewUrl = e.target.result; // data URL para mostrar
+          _addThumb(previewUrl, file);         // almacena el File en el thumb
+          resolve();
+        };
+        reader.readAsDataURL(file);
+      });
     }
+    _syncUrls();
+    _fileInput.value = '';
   });
 
-  function _addThumb(url) {
+  // url puede ser un data-URL (pendiente) o una URL real (ya subida / precargada)
+  function _addThumb(url, pendingFile) {
     const thumb = document.createElement('div');
     thumb.className = 'service-img-thumb';
-    thumb.dataset.url = url;
+    // Si viene de precarga (URL real) la marcamos directamente; si es local, queda pendiente
+    if (pendingFile) {
+      thumb.dataset.pending = 'true';
+      thumb._pendingFile = pendingFile; // referencia al File original
+      thumb.dataset.url = '';           // se llenará tras el upload
+    } else {
+      thumb.dataset.url = url;
+    }
     thumb.innerHTML = `<img src="${url}" alt="Foto"><button type="button" class="btn-remove-thumb" title="Quitar"><i class="lni lni-close"></i></button>`;
     _grid.insertBefore(thumb, _addBtn);
   }
@@ -2860,6 +2859,70 @@ function ensureModalsExist() {
 }
 
 // ============================================
+// UPLOAD PENDING SERVICE IMAGES
+// Recorre todos los thumbs marcados como pending=true y los sube al servidor.
+// Actualiza el thumb con la URL real y sincroniza el hidden input de cada servicio.
+// ============================================
+async function uploadPendingServiceImages() {
+  const pendingThumbs = [...document.querySelectorAll('.service-img-thumb[data-pending="true"]')];
+  if (!pendingThumbs.length) return;
+
+  console.log(`📸 Subiendo ${pendingThumbs.length} imagen(es) pendiente(s)...`);
+
+  const uploadBranchId = agentData.branchId || 0;
+
+  for (const thumb of pendingThumbs) {
+    const file = thumb._pendingFile;
+    if (!file) { thumb.removeAttribute('data-pending'); continue; }
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const res = await fetch(`/api/upload/service-image?branch_id=${uploadBranchId}`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const result = await res.json();
+
+      // Actualizar thumb con la URL real
+      thumb.dataset.url = result.url;
+      thumb.removeAttribute('data-pending');
+      delete thumb._pendingFile;
+
+      // Actualizar la imagen visible (reemplazar data-URL con URL real)
+      const img = thumb.querySelector('img');
+      if (img) img.src = result.url;
+
+      console.log(`✅ Imagen subida: ${result.url}`);
+    } catch (err) {
+      console.error('❌ Error subiendo imagen pendiente:', err);
+      // No bloquear la creación del agente; la imagen simplemente no se incluirá
+      thumb.remove();
+    }
+
+    // Sincronizar el hidden input de su servicio
+    const serviceItem = thumb.closest('.service-item');
+    if (serviceItem) {
+      const urlsInput = serviceItem.querySelector('.service-image-urls');
+      if (urlsInput) {
+        const urls = [...serviceItem.querySelectorAll('.service-img-thumb')]
+          .filter(t => !t.dataset.pending && t.dataset.url)
+          .map(t => t.dataset.url);
+        urlsInput.value = urls.join(',');
+      }
+    }
+  }
+
+  // Refrescar agentData.config.services con las URLs ya subidas
+  updateServicesData();
+  console.log('✅ Todas las imágenes pendientes procesadas');
+}
+
+// ============================================
 // CREATE AGENT
 // ============================================
 async function createAgent() {
@@ -2900,7 +2963,11 @@ async function createAgent() {
       phoneNumber: agentData.phoneNumber,
       businessType: agentData.businessType
     });
-    
+
+    // ── Subir imágenes pendientes ANTES de crear el agente ──────────────────
+    await uploadPendingServiceImages();
+    // ────────────────────────────────────────────────────────────────────────
+
     const response = await fetch('/api/agents', {
       method: 'POST',
       headers: {

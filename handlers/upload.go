@@ -11,6 +11,7 @@ import (
 
 	"attomos/config"
 	"attomos/models"
+	"attomos/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -24,9 +25,11 @@ import (
 // POST /api/upload/service-image?branch_id={id}
 //
 // Lógica de selección de servidor:
-//  1. Si el usuario tiene un agente con ese branch_id → usar su servidor
-//  2. Si tiene cualquier agente → usar el servidor de ese agente
-//  3. Si NO tiene agentes aún (onboarding) → usar el servidor global AtomicBot
+//  1. Si el usuario tiene un agente OrbitalBot con ese branch_id → usar su servidor
+//  2. Si tiene cualquier agente OrbitalBot → usar el servidor de ese agente
+//  3. Si NO tiene agentes aún (onboarding) o tiene AtomicBot → servidor global AtomicBot
+//     3a. Si el servidor global existe y está listo → subir directo
+//     3b. Si NO existe o está inicializando → crearlo y esperar (bloqueante, máx 35 min)
 func UploadServiceImage(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
@@ -71,39 +74,52 @@ func UploadServiceImage(c *gin.Context) {
 	}
 	filename := fmt.Sprintf("%s_%s_%d%s", prefix, uuid.New().String()[:8], time.Now().Unix(), ext)
 
-	// ── Buscar agente del usuario ────────────────────────────────────
-	// Prioridad: branch_id exacto → cualquier agente → nil (onboarding)
-	var agent *models.Agent
+	// ── Buscar agente OrbitalBot del usuario ─────────────────────────
+	// Solo usamos OrbitalBot para subir imágenes a su servidor individual.
+	// AtomicBot y onboarding usan siempre el servidor global.
+	var orbitalAgent *models.Agent
 
 	if branchIDStr != "" {
 		var a models.Agent
-		if config.DB.Where("user_id = ? AND branch_id = ?", user.ID, branchIDStr).
+		if config.DB.Where("user_id = ? AND branch_id = ? AND bot_type = ?", user.ID, branchIDStr, "orbital").
 			First(&a).Error == nil {
-			agent = &a
+			orbitalAgent = &a
 		}
 	}
 
-	if agent == nil {
+	if orbitalAgent == nil {
 		var a models.Agent
-		if config.DB.Where("user_id = ?", user.ID).
+		if config.DB.Where("user_id = ? AND bot_type = ?", user.ID, "orbital").
 			Order("created_at desc").First(&a).Error == nil {
-			agent = &a
+			orbitalAgent = &a
 		}
 	}
 
 	// ── Subir imagen ─────────────────────────────────────────────────
 	var publicURL string
 
-	if agent == nil || agent.BotType == "atomic" {
-		// Sin agente (onboarding) o AtomicBot → servidor global compartido
-		var globalServer models.GlobalServer
-		if err := config.DB.
-			Where("purpose = ? AND status = ?", "atomic-bots", "ready").
-			Order("current_agents ASC").
-			First(&globalServer).Error; err != nil {
-			log.Printf("❌ [Upload] No hay servidor global activo: %v", err)
+	if orbitalAgent != nil && orbitalAgent.ServerIP != "" {
+		// ── Ruta OrbitalBot: servidor individual del agente ──────────
+		remotePath := fmt.Sprintf("/var/www/uploads/branch_%s", branchIDStr)
+		remoteFile := remotePath + "/" + filename
+
+		if err := uploadViaSFTP(orbitalAgent.ServerIP, orbitalAgent.ServerPassword,
+			remotePath, remoteFile, fileBytes); err != nil {
+			log.Printf("❌ [Upload] SFTP OrbitalBot user=%d: %v", user.ID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error subiendo imagen al servidor"})
+			return
+		}
+
+		publicURL = fmt.Sprintf("http://%s:8080/uploads/branch_%s/%s",
+			orbitalAgent.ServerIP, branchIDStr, filename)
+
+	} else {
+		// ── Ruta AtomicBot / onboarding: servidor global compartido ──
+		globalServer, err := resolveGlobalServer()
+		if err != nil {
+			log.Printf("❌ [Upload] No se pudo obtener servidor global para user=%d: %v", user.ID, err)
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Servidor de imágenes no disponible. Verifica que el servidor global esté activo.",
+				"error": "El servidor de imágenes está iniciando. Intenta de nuevo en unos minutos.",
 			})
 			return
 		}
@@ -113,32 +129,36 @@ func UploadServiceImage(c *gin.Context) {
 
 		if err := uploadViaSFTP(globalServer.IPAddress, globalServer.RootPassword,
 			remotePath, remoteFile, fileBytes); err != nil {
-			log.Printf("❌ [Upload] SFTP AtomicBot global: %v", err)
+			log.Printf("❌ [Upload] SFTP global server user=%d: %v", user.ID, err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error subiendo imagen al servidor"})
 			return
 		}
 
 		publicURL = fmt.Sprintf("http://%s/uploads/user_%d/branch_%s/%s",
 			globalServer.IPAddress, user.ID, branchIDStr, filename)
-
-	} else {
-		// OrbitalBot → servidor individual del agente
-		remotePath := fmt.Sprintf("/var/www/uploads/branch_%s", branchIDStr)
-		remoteFile := remotePath + "/" + filename
-
-		if err := uploadViaSFTP(agent.ServerIP, agent.ServerPassword,
-			remotePath, remoteFile, fileBytes); err != nil {
-			log.Printf("❌ [Upload] SFTP OrbitalBot: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error subiendo imagen al servidor"})
-			return
-		}
-
-		publicURL = fmt.Sprintf("http://%s:8080/uploads/branch_%s/%s",
-			agent.ServerIP, branchIDStr, filename)
 	}
 
 	log.Printf("✅ [Upload] user=%d branch=%s → %s", user.ID, branchIDStr, publicURL)
 	c.JSON(http.StatusOK, gin.H{"url": publicURL})
+}
+
+// resolveGlobalServer devuelve el servidor global listo para subir imágenes.
+// Si existe y está ready → lo devuelve de inmediato.
+// Si no existe o está inicializando → lo crea (o espera) de forma bloqueante.
+// Timeout máximo: 35 minutos (el cloud-init del servidor tarda ~25-30 min).
+func resolveGlobalServer() (*models.GlobalServer, error) {
+	// Intento rápido: ¿ya hay uno listo?
+	var existing models.GlobalServer
+	if err := config.DB.
+		Where("purpose = ? AND status = ?", "atomic-bots", "ready").
+		Order("current_agents ASC").
+		First(&existing).Error; err == nil {
+		return &existing, nil
+	}
+
+	// No hay ninguno listo → delegar al manager (crea si hace falta) y esperar
+	log.Printf("⏳ [Upload] Servidor global no disponible — iniciando creación y espera bloqueante...")
+	return services.GetGlobalServerManager().GetOrCreateReadyServer(35 * time.Minute)
 }
 
 // uploadViaSFTP conecta por SSH/SFTP, crea el directorio y sube el archivo en memoria.

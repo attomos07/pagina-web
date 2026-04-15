@@ -78,7 +78,7 @@ async function loadOnboardingContent() {
         if (_onboardingHTMLCache) {
             rawHtml = _onboardingHTMLCache;
         } else {
-            const response = await fetch('/onboarding');
+            const response = await fetch('/onboarding', { credentials: 'include' });
             if (!response.ok) throw new Error('Error al cargar onboarding');
             rawHtml = await response.text();
             _onboardingHTMLCache = rawHtml;
@@ -125,7 +125,7 @@ async function loadOnboardingContent() {
 
             if (!_onboardingScriptLoaded) {
                 const script = document.createElement('script');
-                script.src = '/static/js/onboarding.js';
+                script.src = '/static/js/onboarding.js?v=' + Date.now();
                 script.onload = () => {
                     _onboardingScriptLoaded = true;
                     setTimeout(() => reinitializeOnboardingEvents(), 50);
@@ -291,6 +291,27 @@ function reinitializeOnboardingEvents() {
         });
         const b3=document.getElementById('btnBackStep3');
         if(b3){ const last=AGENT_SECTIONS[AGENT_SECTIONS.length-1]; b3.onclick=(e)=>{e.stopPropagation();window._modalGoToSection(last.containerId);}; }
+
+        // Interceptar btnCreateAgent para loguear desde el contexto de my-agents
+        const btnSubmit = document.getElementById('btnCreateAgent');
+        if (btnSubmit) {
+            // Clonar el nodo para limpiar listeners previos de onboarding.js
+            const btnClone = btnSubmit.cloneNode(true);
+            btnSubmit.parentNode.replaceChild(btnClone, btnSubmit);
+
+            btnClone.addEventListener('click', () => {
+                const snapshot = (typeof agentData !== 'undefined')
+                    ? JSON.parse(JSON.stringify(agentData))
+                    : {};
+                console.log('🤖 [my-agents] Crear Agente — click registrado');
+                console.log('📋 [my-agents] agentData snapshot:', snapshot);
+                // Delegar a createAgent() de onboarding.js
+                if (typeof createAgent === 'function') createAgent();
+            });
+            console.log('✅ [my-agents] Listener de btnCreateAgent registrado');
+        } else {
+            console.warn('⚠️ [my-agents] #btnCreateAgent no encontrado en step3');
+        }
     }, 150);
 
     window._modalGoToSection('section-basic');

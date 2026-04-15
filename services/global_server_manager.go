@@ -28,7 +28,8 @@ func GetGlobalServerManager() *GlobalServerManager {
 	return serverManager
 }
 
-// GetOrCreateAtomicBotsServer obtiene o crea el servidor compartido para AtomicBots
+// GetOrCreateAtomicBotsServer obtiene o crea el servidor compartido para AtomicBots.
+// Devuelve inmediatamente (el servidor puede estar aún en estado "initializing").
 func (gsm *GlobalServerManager) GetOrCreateAtomicBotsServer() (*models.GlobalServer, error) {
 	gsm.mu.Lock()
 	defer gsm.mu.Unlock()
@@ -42,13 +43,12 @@ func (gsm *GlobalServerManager) GetOrCreateAtomicBotsServer() (*models.GlobalSer
 	).Order("current_agents ASC").First(&server).Error
 
 	if err == nil {
-		// Servidor encontrado con capacidad
 		log.Printf("✅ [GlobalServer] Reutilizando servidor compartido: ID=%d, IP=%s, Status=%s, Agentes=%d/%d",
 			server.ID, server.IPAddress, server.Status, server.CurrentAgents, server.MaxAgents)
 		return &server, nil
 	}
 
-	// PASO 2: Buscar servidor INITIALIZING (esperando a que esté listo)
+	// PASO 2: Buscar servidor INITIALIZING
 	err = config.DB.Where(
 		"purpose = ? AND status = ?",
 		"atomic-bots",
@@ -56,16 +56,14 @@ func (gsm *GlobalServerManager) GetOrCreateAtomicBotsServer() (*models.GlobalSer
 	).Order("created_at DESC").First(&server).Error
 
 	if err == nil {
-		// Hay un servidor inicializándose, reutilizarlo
 		log.Printf("⏳ [GlobalServer] Servidor en inicialización encontrado: ID=%d, IP=%s, Status=%s",
 			server.ID, server.IPAddress, server.Status)
 		return &server, nil
 	}
 
-	// PASO 3: No existe servidor disponible, crear uno nuevo
+	// PASO 3: Crear nuevo servidor
 	log.Println("🆕 [GlobalServer] No hay servidores disponibles - Creando nuevo servidor compartido...")
 
-	// Crear servidor en Hetzner
 	hetznerService, err := NewHetznerService()
 	if err != nil {
 		return nil, fmt.Errorf("error inicializando Hetzner: %w", err)
@@ -77,7 +75,6 @@ func (gsm *GlobalServerManager) GetOrCreateAtomicBotsServer() (*models.GlobalSer
 		return nil, fmt.Errorf("error creando servidor en Hetzner: %w", err)
 	}
 
-	// Crear registro en BD
 	server = models.GlobalServer{
 		Name:            serverName,
 		Purpose:         "atomic-bots",
@@ -93,7 +90,6 @@ func (gsm *GlobalServerManager) GetOrCreateAtomicBotsServer() (*models.GlobalSer
 	}
 
 	if err := config.DB.Create(&server).Error; err != nil {
-		// Intentar eliminar servidor de Hetzner si falla BD
 		hetznerService.DeleteServer(hetznerResp.Server.ID)
 		return nil, fmt.Errorf("error guardando servidor en BD: %w", err)
 	}
@@ -101,17 +97,71 @@ func (gsm *GlobalServerManager) GetOrCreateAtomicBotsServer() (*models.GlobalSer
 	log.Printf("✅ [GlobalServer] Servidor compartido creado: ID=%d, Hetzner ID=%d, IP=%s",
 		server.ID, server.HetznerServerID, server.IPAddress)
 
-	// Esperar a que el servidor esté ready (en goroutine para no bloquear)
+	// Marcar como ready en goroutine (flujo normal de despliegue de bots)
 	go gsm.waitAndMarkServerReady(&server, hetznerService)
 
 	return &server, nil
+}
+
+// GetOrCreateReadyServer es la versión BLOQUEANTE para el flujo de onboarding/upload.
+// Espera hasta que el servidor esté completamente listo (nginx corriendo) antes de
+// devolver, con un timeout máximo de maxWait.
+func (gsm *GlobalServerManager) GetOrCreateReadyServer(maxWait time.Duration) (*models.GlobalServer, error) {
+	// Primero intentar encontrar uno ya listo
+	var server models.GlobalServer
+	if err := config.DB.
+		Where("purpose = ? AND status = ? AND current_agents < max_agents", "atomic-bots", "ready").
+		Order("current_agents ASC").
+		First(&server).Error; err == nil {
+		return &server, nil
+	}
+
+	// No hay ninguno listo — obtener o crear (puede quedar en "initializing")
+	srv, err := gsm.GetOrCreateAtomicBotsServer()
+	if err != nil {
+		return nil, err
+	}
+
+	// Si ya está listo, devolver directamente
+	if srv.IsReady() {
+		return srv, nil
+	}
+
+	// Esperar a que esté listo, recargando desde BD
+	log.Printf("⏳ [Upload] Servidor %d aún inicializando — esperando hasta %v...", srv.ID, maxWait)
+
+	deadline := time.Now().Add(maxWait)
+	ticker := time.NewTicker(15 * time.Second)
+	defer ticker.Stop()
+
+	for time.Now().Before(deadline) {
+		<-ticker.C
+
+		var fresh models.GlobalServer
+		if err := config.DB.First(&fresh, srv.ID).Error; err != nil {
+			log.Printf("⚠️  [Upload] Error recargando servidor %d: %v", srv.ID, err)
+			continue
+		}
+
+		if fresh.IsReady() {
+			log.Printf("✅ [Upload] Servidor %d listo para subir imágenes", fresh.ID)
+			return &fresh, nil
+		}
+
+		if fresh.Status == "error" {
+			return nil, fmt.Errorf("servidor %d falló durante inicialización", fresh.ID)
+		}
+
+		log.Printf("⏳ [Upload] Servidor %d status=%s — seguimos esperando...", fresh.ID, fresh.Status)
+	}
+
+	return nil, fmt.Errorf("timeout esperando que el servidor esté listo (máx %v)", maxWait)
 }
 
 // waitAndMarkServerReady espera a que el servidor esté listo y actualiza su estado
 func (gsm *GlobalServerManager) waitAndMarkServerReady(server *models.GlobalServer, hetznerService *HetznerService) {
 	log.Printf("⏳ [GlobalServer %d] Esperando que el servidor esté en estado 'running'...", server.ID)
 
-	// Esperar a que Hetzner reporte el servidor como running (máximo 5 minutos)
 	if err := hetznerService.WaitForServer(server.HetznerServerID, 5*time.Minute); err != nil {
 		log.Printf("❌ [GlobalServer %d] Error esperando servidor: %v", server.ID, err)
 		gsm.mu.Lock()
@@ -123,35 +173,29 @@ func (gsm *GlobalServerManager) waitAndMarkServerReady(server *models.GlobalServ
 
 	log.Printf("✅ [GlobalServer %d] Servidor en estado 'running'", server.ID)
 
-	// Monitorear cloud-init logs (no bloqueante)
 	go hetznerService.MonitorCloudInitLogs(server.IPAddress, server.RootPassword, 10*time.Minute)
 
-	// Esperar a que cloud-init termine (con verificación inteligente)
 	log.Printf("⏳ [GlobalServer %d] Esperando cloud-init (verificando cada 2 minutos)...", server.ID)
 
-	maxAttempts := 15 // 15 intentos × 2 min = 30 minutos máximo
+	maxAttempts := 15
 	attempt := 0
 
 	for attempt < maxAttempts {
 		attempt++
 
-		// Esperar 2 minutos entre verificaciones
 		if attempt > 1 {
 			log.Printf("⏳ [GlobalServer %d] Intento %d/%d - Esperando 2 minutos...", server.ID, attempt, maxAttempts)
 			time.Sleep(2 * time.Minute)
 		} else {
-			// Primera vez esperar solo 1 minuto (dar tiempo para que SSH esté disponible)
 			log.Printf("⏳ [GlobalServer %d] Primera verificación - Esperando 1 minuto...", server.ID)
 			time.Sleep(1 * time.Minute)
 		}
 
-		// Verificar si el servidor está listo
 		log.Printf("🔍 [GlobalServer %d] Verificando estado del servidor (intento %d/%d)...", server.ID, attempt, maxAttempts)
 
 		if err := gsm.verifyServerReady(server); err != nil {
 			log.Printf("⚠️  [GlobalServer %d] Intento %d/%d - Servidor aún no listo: %v", server.ID, attempt, maxAttempts, err)
 
-			// Si es el último intento, marcar como error
 			if attempt >= maxAttempts {
 				log.Printf("❌ [GlobalServer %d] Timeout después de %d intentos (%d minutos)",
 					server.ID, maxAttempts, maxAttempts*2)
@@ -162,15 +206,12 @@ func (gsm *GlobalServerManager) waitAndMarkServerReady(server *models.GlobalServ
 				return
 			}
 
-			// Continuar esperando
 			continue
 		}
 
-		// Servidor listo!
 		break
 	}
 
-	// Marcar como ready
 	gsm.mu.Lock()
 	server.MarkAsReady()
 	config.DB.Save(server)
@@ -182,7 +223,6 @@ func (gsm *GlobalServerManager) waitAndMarkServerReady(server *models.GlobalServ
 
 // verifyServerReady verifica que el servidor esté completamente inicializado
 func (gsm *GlobalServerManager) verifyServerReady(server *models.GlobalServer) error {
-	// Conectar por SSH y verificar
 	atomicService := NewAtomicBotDeployService(server.IPAddress, server.RootPassword)
 
 	if err := atomicService.Connect(); err != nil {
@@ -190,7 +230,6 @@ func (gsm *GlobalServerManager) verifyServerReady(server *models.GlobalServer) e
 	}
 	defer atomicService.Close()
 
-	// PASO 1: Verificar que cloud-init haya terminado
 	log.Printf("   🔍 [GlobalServer %d] [1/3] Verificando cloud-init...", server.ID)
 	cloudInitCmd := `cloud-init status --wait 2>&1 || echo "TIMEOUT"`
 	output, err := atomicService.executeCommand(cloudInitCmd)
@@ -202,7 +241,6 @@ func (gsm *GlobalServerManager) verifyServerReady(server *models.GlobalServer) e
 	}
 	log.Printf("   ✅ [GlobalServer %d] Cloud-init completado", server.ID)
 
-	// PASO 2: Verificar que Go esté instalado y funcional
 	log.Printf("   🔍 [GlobalServer %d] [2/3] Verificando Go...", server.ID)
 	goCmd := `export PATH=$PATH:/usr/local/go/bin && go version 2>&1`
 	goOutput, err := atomicService.executeCommand(goCmd)
@@ -211,7 +249,6 @@ func (gsm *GlobalServerManager) verifyServerReady(server *models.GlobalServer) e
 	}
 	log.Printf("   ✅ [GlobalServer %d] Go instalado: %s", server.ID, strings.TrimSpace(goOutput))
 
-	// PASO 3: Verificar que GCC esté instalado
 	log.Printf("   🔍 [GlobalServer %d] [3/3] Verificando GCC...", server.ID)
 	gccCmd := `gcc --version 2>&1`
 	gccOutput, err := atomicService.executeCommand(gccCmd)
@@ -230,18 +267,13 @@ func (gsm *GlobalServerManager) AssignPortToAgent(server *models.GlobalServer) (
 	gsm.mu.Lock()
 	defer gsm.mu.Unlock()
 
-	// Verificar capacidad
 	if server.IsAtCapacity() {
 		return 0, fmt.Errorf("servidor a capacidad máxima (%d/%d agentes)", server.CurrentAgents, server.MaxAgents)
 	}
 
-	// Obtener siguiente puerto
 	port := server.GetNextPort()
-
-	// Incrementar contadores
 	server.IncrementAgentCount()
 
-	// Guardar en BD
 	if err := config.DB.Save(server).Error; err != nil {
 		return 0, fmt.Errorf("error guardando servidor: %w", err)
 	}
