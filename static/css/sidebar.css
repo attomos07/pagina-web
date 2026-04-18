@@ -271,7 +271,7 @@
     border-radius: 12px !important;
     margin: 0 !important;
     padding: 0 16px !important;
-    display: flex !important;
+    display: flex;
     flex-direction: row !important;
     justify-content: flex-start !important;
     align-items: center !important;

@@ -81,7 +81,6 @@ body {
 .stat-icon.purple { background:rgba(139,92,246,.1);  color:#8b5cf6; }
 .stat-icon.red    { background:rgba(6,182,212,.05);   color:#ef4444; }
 
-.stat-info {}
 .stat-value { font-size:2rem; font-weight:800; color:#1a1a1a; margin-bottom:.25rem; }
 .stat-label { font-size:.875rem; color:#6b7280; font-weight:600; }
 

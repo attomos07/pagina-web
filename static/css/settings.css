@@ -783,6 +783,7 @@ body {
 @media (max-width: 768px) {
     .content-wrapper {
         padding: 1rem;
+        padding-top: 72px;
     }
 
     .settings-card {
