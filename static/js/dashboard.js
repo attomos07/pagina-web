@@ -230,6 +230,27 @@ function renderServiceTable(container, services, isLeast = false) {
 
 
 
+// ================== Estadísticas de Agentes ==================
+async function loadAgentStats() {
+    try {
+        const response = await fetch('/api/agents', { credentials: 'include' });
+        if (!response.ok) throw new Error('Error al obtener agentes');
+        const data = await response.json();
+
+        const agents = Array.isArray(data.agents) ? data.agents : [];
+
+        // Un agente está activo si isActive=true Y deployStatus='running'
+        // (misma lógica que my-agents.js línea 416)
+        const activeCount = agents.filter(a => a.isActive && a.deployStatus === 'running').length;
+
+        const activeEl = document.getElementById('activeAgentsCount');
+        if (activeEl) activeEl.textContent = activeCount;
+
+    } catch (err) {
+        console.warn('loadAgentStats:', err.message);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     console.log('dashboard.js listo');
     loadAgentStats();

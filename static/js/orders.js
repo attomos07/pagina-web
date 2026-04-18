@@ -209,7 +209,7 @@ function createRow(o) {
       <td><div class="table-time">${o.createdAt||''}</div></td>
       <td>
         <div class="actions-dropdown">
-          <button class="actions-btn" onclick="toggleDropdown(event,${o.id})"><i class="lni lni-more-alt"></i></button>
+          <button class="actions-btn" onclick="toggleDropdown(event,${o.id},this)"><i class="lni lni-more-alt"></i></button>
           <div class="actions-menu" id="dropdown-${o.id}">
             ${o.status!=='preparing'&&o.status!=='ready'&&o.status!=='delivered' ? `<div class="action-item preparing" onclick="updateStatus(${o.id},'preparing')"><i class="lni lni-alarm-clock"></i>En preparación</div>` : ''}
             ${o.status!=='ready'&&o.status!=='delivered' ? `<div class="action-item ready" onclick="updateStatus(${o.id},'ready')"><i class="lni lni-checkmark-circle"></i>Listo</div>` : ''}
@@ -672,17 +672,53 @@ document.addEventListener('DOMContentLoaded', () => {
 // DROPDOWN UTILITIES
 // ==========================================
 
-function toggleDropdown(e, id) {
+function toggleDropdown(e, id, btn) {
     e.stopPropagation();
     const el = document.getElementById(`dropdown-${id}`);
     if (!el) return;
-    if (openDropdown && openDropdown !== el) openDropdown.classList.remove('active');
+
+    // Cerrar anterior
+    if (openDropdown && openDropdown !== el) {
+        openDropdown.classList.remove('active');
+        openDropdown.style.cssText = '';
+    }
+
+    const isOpen = el.classList.contains('active');
     el.classList.toggle('active');
-    openDropdown = el.classList.contains('active') ? el : null;
+
+    if (!isOpen) {
+        // btn siempre es el botón real (pasado como `this`)
+        const rect = btn.getBoundingClientRect();
+        const menuH = 220; // altura estimada del menú
+        const spaceBelow = window.innerHeight - rect.bottom;
+
+        el.style.position = 'fixed';
+        el.style.right = (window.innerWidth - rect.right) + 'px';
+        el.style.left  = 'auto';
+        el.style.zIndex = '9999';
+
+        if (spaceBelow >= menuH) {
+            // Hay espacio abajo → mostrar debajo del botón
+            el.style.top    = (rect.bottom + 6) + 'px';
+            el.style.bottom = 'auto';
+        } else {
+            // Sin espacio abajo → mostrar encima del botón
+            el.style.bottom = (window.innerHeight - rect.top + 6) + 'px';
+            el.style.top    = 'auto';
+        }
+
+        openDropdown = el;
+    } else {
+        el.style.cssText = '';
+        openDropdown = null;
+    }
 }
 
 function closeAllDropdowns() {
-    document.querySelectorAll('.actions-menu').forEach(m => m.classList.remove('active'));
+    document.querySelectorAll('.actions-menu').forEach(m => {
+        m.classList.remove('active');
+        m.style.cssText = '';
+    });
     openDropdown = null;
 }
 

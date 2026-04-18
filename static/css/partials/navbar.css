@@ -525,10 +525,11 @@
 
   /* Botón login en mobile - iOS Style */
   .nav-login {
-    color: #06b6d4 !important;
-    background: rgba(6, 182, 212, 0.1) !important;
-    border-color: rgba(6, 182, 212, 0.2) !important;
-    font-weight: 500;
+    background: #06b6d4 !important;
+    color: white !important;
+    border: none !important;
+    font-weight: 600;
+    box-shadow: 0 8px 32px rgba(6, 182, 212, 0.4);
   }
 
   .mobile-only:nth-child(6) {
@@ -536,11 +537,12 @@
   }
 
   .nav-login:active {
-    background: rgba(6, 182, 212, 0.15) !important;
+    transform: scale(0.97);
+    box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
   }
 
   .nav-login::after {
-    color: #06b6d4;
+    display: none;
   }
 
   /* CTA en mobile - iOS Style */
