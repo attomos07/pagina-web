@@ -310,9 +310,50 @@ body {
 
 /* ── Responsive ────────────────────────────── */
 @media(max-width:768px){
-  .app-container,.main-content{height:auto!important;overflow:visible!important;flex-direction:column;}
-  .content-wrapper{overflow-y:visible!important;height:auto!important;padding:1rem!important;padding-top:80px!important;}
-  .form-grid{grid-template-columns:1fr;}
+  /* Layout */
+  .app-container, .main-content { height:auto !important; overflow:visible !important; flex-direction:column; }
+  .content-wrapper {
+    overflow-y:visible !important; height:auto !important;
+    padding: 1rem 1rem 2rem !important;
+    padding-top: 72px !important;
+  }
+
+  /* Page header */
+  .page-header { flex-direction:column; align-items:flex-start; gap:.75rem; margin-bottom:1.25rem; }
+  .header-title h1 { font-size:1.75rem; }
+  .header-actions { width:100%; }
+  .header-actions .btn-primary { width:100%; justify-content:center; }
+
+  /* Stats: columna única */
+  .stats-grid { grid-template-columns:1fr; gap:.875rem; margin-bottom:1.25rem; }
+  .stat-card { padding:1.25rem; gap:1rem; border-radius:14px; }
+  .stat-icon { width:52px; height:52px; }
+  .stat-icon i { font-size:1.4rem; }
+  .stat-value { font-size:1.75rem; }
+
+  /* Filtros: columna */
+  .controls-section { flex-direction:column; gap:.75rem; margin-bottom:1.25rem; }
+  .filters { flex-direction:column; gap:.625rem; }
+  .filter-wrapper { width:100% !important; min-width:unset !important; }
+  .search-box { max-width:100%; }
+
+  /* Tabla: scroll horizontal */
+  .orders-container { border-radius:14px; overflow-x:auto; }
+  .table-wrapper { overflow-x:auto; border-radius:14px; }
+  .orders-table th, .orders-table td { padding:.75rem 1rem; font-size:.8rem; white-space:nowrap; }
+
+  /* Modal: full-screen sheet */
+  .modal.active { align-items:flex-end; }
+  .modal-content { width:100%; max-width:100%; border-radius:20px 20px 0 0; max-height:92vh; }
+  .modal-body { max-height:calc(92vh - 100px); }
+
+  /* Form */
+  .form-grid { grid-template-columns:1fr; }
+  .item-row { flex-wrap:wrap; }
+  .item-qty { width:60px; }
+  .item-price { width:90px; }
+  .form-actions { flex-direction:column; }
+  .btn-cancel-form, .btn-submit { width:100%; justify-content:center; }
 }
 
 /* ── Tipo "Recoger en local" ───────────────────────────────── */

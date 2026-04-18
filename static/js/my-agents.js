@@ -205,6 +205,7 @@ function reinitializeOnboardingEvents() {
     if (typeof initializeLocationDropdowns==='function') initializeLocationDropdowns();
     if (typeof initializeSocialMediaInputs==='function') initializeSocialMediaInputs();
     if (typeof initializeBusinessTypeSelect==='function') initializeBusinessTypeSelect();
+    if (typeof initializeToneSelection==='function') initializeToneSelection();
     setTimeout(() => {
         if (typeof fetchUserData==='function') fetchUserData();
         if (typeof initBusinessTimePickers==='function') initBusinessTimePickers();

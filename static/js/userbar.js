@@ -86,7 +86,7 @@ async function initUserbar() {
 // LÓGICA DE MENÚ SEGÚN GIRO (Citas vs Pedidos)
 // ============================================
 
-const GIROS_COMIDA = ['pizzeria','pizza','mariscos','gorditas','restaurante',
+var GIROS_COMIDA = ['pizzeria','pizza','mariscos','gorditas','restaurante',
                       'taqueria','tacos','hamburguesas','sushi','comida'];
 
 function applyBusinessTypeMenu(businessType) {

@@ -1410,16 +1410,25 @@ function initializePhoneToggle() {
 function initializeToneSelection() {
   const toneInputs = document.querySelectorAll('input[name="tone"]');
   const customToneEditor = document.getElementById('customToneEditor');
-  
+
+  // Al inicializar: limpiar clases .selected del HTML estático
+  // y reasignar solo al radio realmente :checked (single source of truth)
+  document.querySelectorAll('.tone-radio-option').forEach(opt => opt.classList.remove('selected'));
+  const checkedInput = document.querySelector('input[name="tone"]:checked');
+  if (checkedInput) {
+    checkedInput.closest('.tone-radio-option').classList.add('selected');
+    agentData.config.tone = checkedInput.value;
+  }
+
   toneInputs.forEach(input => {
     input.addEventListener('change', function() {
+      // Quitar selección de TODAS y poner solo en la activa
       document.querySelectorAll('.tone-radio-option').forEach(opt => {
         opt.classList.remove('selected');
       });
-      
       this.closest('.tone-radio-option').classList.add('selected');
       agentData.config.tone = this.value;
-      
+
       if (this.value === 'custom') {
         customToneEditor.classList.add('show');
       } else {
