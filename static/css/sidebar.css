@@ -230,7 +230,6 @@
 
 /* ==========================================
    8. RESPONSIVE MÓVIL
-   FIX: un solo bloque @media limpio, sin duplicados
    ========================================== */
 @media (max-width: 768px) {
 
@@ -238,26 +237,24 @@
     display: flex;
   }
 
+  /* Panel lateral deslizante */
   .sidebar-container {
     position: fixed;
     top: 0;
     left: 0;
-    width: 280px;
+    width: 260px;
     height: 100vh;
-    padding-top: 90px;
-    padding-left: 16px;
-    padding-right: 16px;
-    padding-bottom: 20px;
+    padding: 80px 8px 16px 8px;
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 4px;
+    gap: 2px;
     background: #ffffff;
-    border-radius: 0 20px 20px 0;
-    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.15);
+    border-radius: 0 24px 24px 0;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.18);
     overflow-y: auto;
+    overflow-x: visible;
     z-index: 2000;
-    /* FIX: solo transform — GPU acelera esto solo */
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform;
@@ -267,78 +264,115 @@
     transform: translateX(0);
   }
 
-  .icon-button {
-    width: 100%;
-    height: 46px;
-    border-radius: 8px;
-    margin-bottom: 2px;
-    padding: 0 12px;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    background: transparent;
-    /* FIX: quitar transform en móvil */
-    transition: background 0.15s ease;
+  /* Botones de navegación */
+  .sidebar-container .icon-button {
+    width: 100% !important;
+    height: 52px !important;
+    border-radius: 12px !important;
+    margin: 0 !important;
+    padding: 0 16px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 14px !important;
+    background: transparent !important;
+    transition: background 0.15s ease !important;
+    text-decoration: none !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    overflow: visible !important;
   }
 
-  .icon-button:hover {
+  .sidebar-container .icon-button:hover {
     background: #f1f5f9;
     transform: none;
   }
 
-  .icon-button:active {
+  .sidebar-container .icon-button:active {
     background: #e2e8f0;
     transform: none;
   }
 
-  .icon-button svg {
-    width: 20px;
-    height: 20px;
-    min-width: 20px;
-    margin-right: 12px;
-    stroke: #475569;
-    /* FIX: sin transition en mobile para que sea instantáneo */
-    transition: none;
+  /* Íconos */
+  .sidebar-container .icon-button svg {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    max-width: 22px !important;
+    stroke: #64748b !important;
+    fill: none !important;
+    stroke-width: 2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    transition: none !important;
+    flex-shrink: 0 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: visible !important;
   }
 
-  /* Tooltip → texto visible en móvil */
-  .tooltip {
-    position: static;
-    transform: none;
-    opacity: 1;
-    background: transparent;
-    color: #334155;
-    font-size: 15px;
-    font-weight: 500;
-    padding: 0;
-    box-shadow: none;
-    pointer-events: auto;
-    white-space: nowrap;
-    display: inline-block;
-    transition: none;
+  .sidebar-container .icon-button.active svg {
+    stroke: #06b6d4 !important;
   }
 
-  .tooltip::before {
-    display: none;
+  /* Texto de navegación (tooltip reutilizado como label) */
+  .sidebar-container .tooltip {
+    position: static !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    background: transparent !important;
+    color: #1e293b !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    pointer-events: auto !important;
+    white-space: nowrap !important;
+    display: block !important;
+    flex: 1 !important;
+    transition: none !important;
+    line-height: 1.2 !important;
+    left: auto !important;
+    z-index: auto !important;
+    width: auto !important;
   }
 
-  /* Estado activo en móvil */
-  .icon-button.active {
-    background: #e0f2fe;
+  .sidebar-container .tooltip::before {
+    display: none !important;
   }
 
-  .icon-button.active svg {
-    stroke: #06b6d4;
+  /* Estado activo */
+  .sidebar-container .icon-button.active {
+    background: #e0f9ff !important;
   }
 
-  .icon-button.active .tooltip {
-    color: #06b6d4;
-    font-weight: 600;
+  .sidebar-container .icon-button.active .tooltip {
+    color: #06b6d4 !important;
+    font-weight: 600 !important;
   }
 
+  /* Logout */
+  .logout-button:hover {
+    background: rgba(239, 68, 68, 0.08) !important;
+  }
+
+  .logout-button:hover svg {
+    stroke: #ef4444;
+  }
+
+  .logout-button:hover .tooltip {
+    color: #ef4444 !important;
+  }
+
+  /* Divisor */
   .divider {
     width: 100%;
-    background: #e2e8f0;
-    margin: 8px 0;
+    height: 1px;
+    background: #f1f5f9;
+    margin: 6px 0;
+    flex-shrink: 0;
   }
 }
