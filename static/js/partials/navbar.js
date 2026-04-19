@@ -235,7 +235,7 @@ function setActiveNavLink() {
         }
     }
 
-    // ── Dropdown (hover desktop) ────────────────────────────────────
+    // ── Dropdown (hover desktop + tap mobile) ──────────────────────
     function _initDropdown() {
         const avatar   = document.getElementById('userAvatar');
         const dropdown = document.getElementById('userDropdown');
@@ -245,13 +245,28 @@ function setActiveNavLink() {
         const open  = () => dropdown.classList.add('is-open');
         const close = () => setTimeout(() => { if (!hA && !hD) dropdown.classList.remove('is-open'); }, 120);
 
+        // Desktop: hover
         avatar.addEventListener('mouseenter',   () => { hA = true;  open(); });
         avatar.addEventListener('mouseleave',   () => { hA = false; close(); });
         dropdown.addEventListener('mouseenter', () => { hD = true;  open(); });
         dropdown.addEventListener('mouseleave', () => { hD = false; close(); });
+
+        // Mobile: tap toggle
+        avatar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = dropdown.classList.contains('is-open');
+            // Cerrar el panel de notificaciones si está abierto
+            const panel = document.getElementById('notificationPanel');
+            if (panel) panel.classList.remove('is-open');
+            isOpen ? dropdown.classList.remove('is-open') : open();
+        });
+
+        // Cerrar al hacer click fuera
+        document.addEventListener('click', () => dropdown.classList.remove('is-open'));
+        dropdown.addEventListener('click', (e) => e.stopPropagation());
     }
 
-    // ── Notificaciones (hover desktop) ─────────────────────────────
+    // ── Notificaciones (hover desktop + tap mobile) ─────────────────
     function _initNotifications() {
         const btn   = document.getElementById('notificationBtn');
         const panel = document.getElementById('notificationPanel');
@@ -261,10 +276,25 @@ function setActiveNavLink() {
         const openP  = () => panel.classList.add('is-open');
         const closeP = () => setTimeout(() => { if (!hB && !hP) panel.classList.remove('is-open'); }, 120);
 
+        // Desktop: hover
         btn.addEventListener('mouseenter',   () => { hB = true;  openP(); });
         btn.addEventListener('mouseleave',   () => { hB = false; closeP(); });
         panel.addEventListener('mouseenter', () => { hP = true;  openP(); });
         panel.addEventListener('mouseleave', () => { hP = false; closeP(); });
+
+        // Mobile: tap toggle
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = panel.classList.contains('is-open');
+            // Cerrar el dropdown del avatar si está abierto
+            const dropdown = document.getElementById('userDropdown');
+            if (dropdown) dropdown.classList.remove('is-open');
+            isOpen ? panel.classList.remove('is-open') : openP();
+        });
+
+        // Cerrar al hacer click fuera
+        document.addEventListener('click', () => panel.classList.remove('is-open'));
+        panel.addEventListener('click', (e) => e.stopPropagation());
 
         // Marcar todas como leídas
         const markAll = document.getElementById('markAllBtn');
