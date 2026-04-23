@@ -1589,3 +1589,299 @@ function checkStripeRedirect() {
 
 
 console.log('🎯 Integrations ready!');
+
+// ============================================
+// ONBOARDING MODAL (adaptado de my-agents.js)
+// ============================================
+
+let _onboardingHTMLCache = null;
+let _onboardingScriptLoaded = false;
+
+function openOnboardingModal() {
+    let modal = document.getElementById('onboardingModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'onboardingModal';
+        modal.className = 'onboarding-modal';
+        modal.innerHTML = `
+            <div class="onboarding-overlay" onclick="closeOnboardingModal()"></div>
+            <div class="onboarding-modal-content">
+                <div class="onboarding-modal-header">
+                    <h2 class="onboarding-modal-title">
+                        <i class="lni lni-rocket"></i>
+                        Crear Nuevo Agente
+                    </h2>
+                    <button class="btn-close-onboarding" onclick="closeOnboardingModal()">
+                        <i class="lni lni-close"></i>
+                    </button>
+                </div>
+                <div class="onboarding-modal-body" id="onboardingModalBody">
+                    <div style="display:flex;justify-content:center;align-items:center;padding:3rem;">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text" style="margin-left:1rem;">Cargando formulario...</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    modal.classList.add('active');
+    loadOnboardingContent();
+}
+
+function closeOnboardingModal() {
+    const modal = document.getElementById('onboardingModal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => { if (typeof initAgentSelector === 'function') initAgentSelector(); }, 300);
+    }
+}
+
+async function loadOnboardingContent() {
+    const modalBody = document.getElementById('onboardingModalBody');
+    if (!modalBody) return;
+    try {
+        let rawHtml;
+        if (_onboardingHTMLCache) {
+            rawHtml = _onboardingHTMLCache;
+        } else {
+            const response = await fetch('/onboarding', { credentials: 'include' });
+            if (!response.ok) throw new Error('Error al cargar onboarding');
+            rawHtml = await response.text();
+            _onboardingHTMLCache = rawHtml;
+        }
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(rawHtml, 'text/html');
+        const mainContainer = doc.querySelector('.main-container');
+        if (mainContainer) {
+            modalBody.innerHTML = mainContainer.innerHTML;
+            if (!document.getElementById('onboarding-css')) {
+                const link = document.createElement('link');
+                link.id = 'onboarding-css'; link.rel = 'stylesheet';
+                link.href = '/static/css/onboarding.css';
+                document.head.appendChild(link);
+            }
+            if (!document.getElementById('onboarding-modal-fixes')) {
+                const fix = document.createElement('style');
+                fix.id = 'onboarding-modal-fixes';
+                fix.textContent = `
+                    .section-nav-btn.completed:hover{background:#d1fae5!important;color:#10b981!important;border-color:#10b981!important;box-shadow:0 4px 12px rgba(16,185,129,.2)!important;}
+                    .section-nav-btn.completed:hover i{color:#10b981!important;}
+                    #onboardingModalBody .progress-wrapper,#onboardingModalBody .progress-header,#onboardingModalBody #progressPercentage,#onboardingModalBody .progress-dots{display:none!important;}
+                    .onboarding-modal-header{display:flex!important;align-items:center!important;justify-content:space-between!important;padding:1rem 1.5rem!important;border-bottom:1px solid #eef2f7!important;position:sticky!important;top:0!important;background:white!important;z-index:10!important;flex-direction:row!important;}
+                    .onboarding-modal-title{display:inline-flex!important;align-items:center!important;gap:0.6rem!important;font-weight:800!important;font-size:1.1rem!important;color:#0f172a!important;margin:0!important;flex:1!important;}
+                    .btn-close-onboarding{width:40px!important;height:40px!important;border-radius:50%!important;border:none!important;background:#f3f4f6!important;color:#6b7280!important;cursor:pointer!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;font-size:1.1rem!important;flex-shrink:0!important;transition:all 0.2s!important;}
+                    .btn-close-onboarding:hover{background:#fee2e2!important;color:#ef4444!important;}
+                    #onboardingModalBody .main-container,#onboardingModalBody .onboarding-container{padding-top:0!important;margin-top:0!important;}
+                    #onboardingModalBody .step2-header,#onboardingModalBody .step-header{padding-top:1rem!important;}
+                    .readonly-notice{display:flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#15803d;margin-bottom:16px;}
+                    .readonly-notice i{font-size:1rem;flex-shrink:0;}
+                    .readonly-notice a{color:#0891b2;text-decoration:underline;}
+                    .form-input[readonly]:not(.form-select){background:#f8fafc;color:#64748b;cursor:not-allowed;border-color:#e2e8f0;}
+                `;
+                document.head.appendChild(fix);
+            }
+            if (!_onboardingScriptLoaded) {
+                const script = document.createElement('script');
+                script.src = '/static/js/onboarding.js?v=' + Date.now();
+                script.onload = () => { _onboardingScriptLoaded = true; setTimeout(() => reinitializeOnboardingEvents(), 50); };
+                document.body.appendChild(script);
+            } else {
+                setTimeout(() => reinitializeOnboardingEvents(), 20);
+            }
+        } else {
+            throw new Error('No se encontró .main-container');
+        }
+    } catch (error) {
+        console.error('❌ Error cargando onboarding:', error);
+        modalBody.innerHTML = `
+            <div style="text-align:center;padding:3rem;">
+                <i class="lni lni-warning" style="font-size:3rem;color:#ef4444;"></i>
+                <h3 style="margin:1rem 0;color:#1a1a1a;">Error al cargar el formulario</h3>
+                <p style="color:#6b7280;margin-bottom:1.5rem;">Por favor, intenta de nuevo</p>
+                <button class="btn-primary" onclick="loadOnboardingContent()">
+                    <i class="lni lni-reload"></i><span>Reintentar</span>
+                </button>
+            </div>`;
+    }
+}
+
+function reinitializeOnboardingEvents() {
+    console.log('🔄 Reinicializando modal del agente (integrations)');
+
+    if (typeof window.agentData !== 'undefined') window.agentData = (typeof defaultAgentData === 'function') ? defaultAgentData() : {};
+    if (typeof window.currentSection !== 'undefined') window.currentSection = 1;
+
+    const modal = document.getElementById('onboardingModal');
+    const modalContent = modal?.querySelector('.onboarding-modal-content');
+    if (modalContent) { modalContent.style.maxWidth = '1100px'; modalContent.style.width = '95vw'; modalContent.style.maxHeight = '90vh'; modalContent.style.overflow = 'hidden'; }
+    const modalBody = document.getElementById('onboardingModalBody');
+    if (modalBody) { modalBody.style.maxHeight = '82vh'; modalBody.style.overflowY = 'auto'; modalBody.scrollTop = 0; }
+
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    // Mostrar step1 (selección de red social) primero
+    if (step1) { step1.classList.add('active'); step1.style.display = ''; }
+    if (step2) { step2.classList.remove('active'); step2.style.display = 'none'; }
+    // Ocultar nav de secciones hasta que se complete step1
+    const sectionNavEl = document.getElementById('sectionNavigation');
+    if (sectionNavEl) sectionNavEl.style.display = 'none';
+
+    const AGENT_SECTIONS = [
+        { id:2, containerId:'section-basic',       name:'Info. Básica',  icon:'lni-information' },
+        { id:5, containerId:'section-personality',  name:'Personalidad',  icon:'lni-comments' },
+        { id:6, containerId:'section-schedule',     name:'Horarios',      icon:'lni-calendar' },
+        { id:7, containerId:'section-holidays',     name:'Días Festivos', icon:'lni-gift' },
+        { id:8, containerId:'section-services',     name:'Servicios',     icon:'lni-package' },
+        { id:9, containerId:'section-workers',      name:'Trabajadores',  icon:'lni-users' },
+    ];
+    const AGENT_IDS = AGENT_SECTIONS.map(s => s.containerId);
+
+    ['section-business','section-location','section-social'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+    });
+
+    if (typeof initializeRichEditor === 'function') initializeRichEditor();
+    if (typeof initializePhoneToggle === 'function') initializePhoneToggle();
+    if (typeof initializeSchedule === 'function') initializeSchedule();
+    if (typeof initializeHolidays === 'function') initializeHolidays();
+    if (typeof initializeServices === 'function') initializeServices();
+    if (typeof initializeWorkers === 'function') initializeWorkers();
+    if (typeof initializeLocationDropdowns === 'function') initializeLocationDropdowns();
+    if (typeof initializeSocialMediaInputs === 'function') initializeSocialMediaInputs();
+    if (typeof initializeBusinessTypeSelect === 'function') initializeBusinessTypeSelect();
+    if (typeof initializeToneSelection === 'function') initializeToneSelection();
+    setTimeout(() => {
+        if (typeof fetchUserData === 'function') fetchUserData();
+        if (typeof initBusinessTimePickers === 'function') initBusinessTimePickers();
+        if (typeof initHolidayDatePickers === 'function') initHolidayDatePickers();
+        if (typeof initWorkerTimePickers === 'function') initWorkerTimePickers();
+    }, 100);
+
+    const sectionNav = document.getElementById('sectionNavigation');
+    if (sectionNav) {
+        sectionNav.innerHTML = '';
+        sectionNav.style.justifyContent = 'center';
+        sectionNav.style.flexWrap = 'wrap';
+        sectionNav.style.gap = '0.5rem';
+        AGENT_SECTIONS.forEach(sec => {
+            const btn = document.createElement('button');
+            btn.type = 'button'; btn.className = 'section-nav-btn'; btn.dataset.sectionId = sec.id;
+            btn.innerHTML = `<i class="lni ${sec.icon}"></i><span>${sec.name}</span>`;
+            btn.addEventListener('click', () => window._modalGoToSection(sec.containerId));
+            sectionNav.appendChild(btn);
+        });
+        const resumenBtn = document.createElement('button');
+        resumenBtn.type = 'button'; resumenBtn.id = 'modal-resumen-tab'; resumenBtn.className = 'section-nav-btn';
+        resumenBtn.innerHTML = '<i class="lni lni-checkmark-circle"></i><span>Resumen</span>';
+        resumenBtn.addEventListener('click', () => window._modalGoToResumen());
+        sectionNav.appendChild(resumenBtn);
+    }
+
+    window._modalGoToSection = function(targetId) {
+        AGENT_IDS.forEach(id => { const el = document.getElementById(id); if (el) { el.classList.remove('active'); el.style.display = 'none'; } });
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        if (step1) step1.style.display = 'none';
+        if (step2) { step2.classList.add('active'); step2.style.display = ''; }
+        const target = document.getElementById(targetId);
+        if (target) { target.style.display = ''; target.classList.add('active'); }
+        const currentIdx = AGENT_SECTIONS.findIndex(s => s.containerId === targetId);
+        document.querySelectorAll('#sectionNavigation .section-nav-btn').forEach(btn => {
+            btn.classList.remove('active', 'completed');
+            const sid = parseInt(btn.dataset.sectionId);
+            const sec = AGENT_SECTIONS.find(s => s.id === sid);
+            if (!sec) return;
+            const idx = AGENT_SECTIONS.indexOf(sec);
+            if (idx === currentIdx) btn.classList.add('active');
+            else if (idx < currentIdx) btn.classList.add('completed');
+        });
+        const el = document.getElementById(targetId);
+        if (el) el.querySelectorAll('.btn-prev-section').forEach(b => { b.style.display = currentIdx === 0 ? 'none' : 'flex'; });
+        if (typeof window.updateProgressBar === 'function') window.updateProgressBar();
+        if (modalBody) modalBody.scrollTop = 0;
+    };
+
+    window._modalGoToResumen = function() {
+        AGENT_IDS.forEach(id => { const el = document.getElementById(id); if (el) { el.classList.remove('active'); el.style.display = 'none'; } });
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        if (step1) step1.style.display = 'none';
+        const step3 = document.getElementById('step3');
+        if (step3) { step3.classList.add('active'); step3.style.display = ''; }
+        document.querySelectorAll('#sectionNavigation .section-nav-btn').forEach(b => {
+            b.classList.remove('active', 'completed');
+            if (b.id === 'modal-resumen-tab') b.classList.add('active');
+            else b.classList.add('completed');
+        });
+        if (typeof collectFormData === 'function') collectFormData();
+        if (typeof generateSummary === 'function') generateSummary();
+        if (typeof window.updateProgressBar === 'function') window.updateProgressBar();
+        if (modalBody) modalBody.scrollTop = 0;
+    };
+
+    setTimeout(() => {
+        AGENT_SECTIONS.forEach((sec, idx) => {
+            const el = document.getElementById(sec.containerId);
+            if (!el) return;
+            const prevSec = AGENT_SECTIONS[idx - 1], nextSec = AGENT_SECTIONS[idx + 1];
+            el.querySelectorAll('.btn-prev-section').forEach(btn => {
+                btn.style.display = idx === 0 ? 'none' : 'flex';
+                if (prevSec) btn.onclick = (e) => { e.stopPropagation(); window._modalGoToSection(prevSec.containerId); };
+            });
+            el.querySelectorAll('.btn-next-section,[class*="next"]').forEach(btn => {
+                btn.onclick = (e) => { e.stopPropagation(); nextSec ? window._modalGoToSection(nextSec.containerId) : window._modalGoToResumen(); };
+            });
+        });
+        const b3 = document.getElementById('btnBackStep3');
+        if (b3) { const last = AGENT_SECTIONS[AGENT_SECTIONS.length - 1]; b3.onclick = (e) => { e.stopPropagation(); window._modalGoToSection(last.containerId); }; }
+
+        const btnSubmit = document.getElementById('btnCreateAgent');
+        if (btnSubmit) {
+            const btnClone = btnSubmit.cloneNode(true);
+            btnSubmit.parentNode.replaceChild(btnClone, btnSubmit);
+            btnClone.addEventListener('click', () => { if (typeof createAgent === 'function') createAgent(); });
+            console.log('✅ [integrations] Listener de btnCreateAgent registrado');
+        }
+    }, 150);
+
+    // Hook btnStep1 (Continuar de Red Social) → mostrar step2 + sectionNav
+    const btnStep1El = document.getElementById('btnStep1');
+    if (btnStep1El) {
+        const btnStep1Clone = btnStep1El.cloneNode(true);
+        btnStep1El.parentNode.replaceChild(btnStep1Clone, btnStep1El);
+        btnStep1Clone.addEventListener('click', () => {
+            if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
+            if (step2) { step2.classList.add('active'); step2.style.display = ''; }
+            const nav = document.getElementById('sectionNavigation');
+            if (nav) nav.style.display = '';
+            window._modalGoToSection('section-basic');
+        });
+        console.log('✅ [integrations] Hook btnStep1 registrado');
+    }
+
+    // Listeners en los radios de red social
+    document.querySelectorAll('input[name="social"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            if (typeof selectedSocial !== 'undefined') selectedSocial = this.value;
+            if (typeof agentData !== 'undefined') agentData.social = this.value;
+            const btn = document.getElementById('btnStep1');
+            if (btn) btn.disabled = false;
+            console.log('✅ [integrations] Red social seleccionada:', this.value);
+        });
+    });
+    console.log('✅ [integrations] Listeners de red social registrados:', document.querySelectorAll('input[name="social"]').length);
+
+    // Si ya hay radio pre-seleccionado, habilitar botón de inmediato
+    const preSelected = document.querySelector('input[name="social"]:checked');
+    if (preSelected) {
+        if (typeof selectedSocial !== 'undefined') selectedSocial = preSelected.value;
+        if (typeof agentData !== 'undefined') agentData.social = preSelected.value;
+        const btnPre = document.getElementById('btnStep1');
+        if (btnPre) { btnPre.disabled = false; console.log('✅ [integrations] btnStep1 habilitado por pre-selección:', preSelected.value); }
+    }
+
+    if (typeof updateProgressBar === 'function') updateProgressBar();
+}
+
+window.reinitializeOnboardingEvents = reinitializeOnboardingEvents;

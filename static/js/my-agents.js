@@ -117,6 +117,10 @@ async function loadOnboardingContent() {
                     .btn-close-onboarding:hover{background:#fee2e2!important;color:#ef4444!important;}
                     #onboardingModalBody .main-container,#onboardingModalBody .onboarding-container{padding-top:0!important;margin-top:0!important;}
                     #onboardingModalBody .step2-header,#onboardingModalBody .step-header{padding-top:1rem!important;}
+                    .readonly-notice{display:flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#15803d;margin-bottom:16px;}
+                    .readonly-notice i{font-size:1rem;flex-shrink:0;}
+                    .readonly-notice a{color:#0891b2;text-decoration:underline;}
+                    .form-input[readonly]:not(.form-select){background:#f8fafc;color:#64748b;cursor:not-allowed;border-color:#e2e8f0;}
                 `;
                 document.head.appendChild(fix);
             }
@@ -331,6 +335,19 @@ function reinitializeOnboardingEvents() {
         });
         console.log('✅ [my-agents] Hook btnStep1 registrado');
     }
+
+    // FIX: registrar listeners en los radios de red social DESPUÉS del clone
+    // para que document.getElementById('btnStep1') apunte siempre al nodo actual
+    document.querySelectorAll('input[name="social"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            if (typeof window.selectedSocial !== 'undefined') window.selectedSocial = this.value;
+            if (typeof window.agentData !== 'undefined') window.agentData.social = this.value;
+            const btn = document.getElementById('btnStep1');
+            if (btn) btn.disabled = false;
+            console.log('✅ [my-agents] Red social seleccionada:', this.value, '— btnStep1 habilitado');
+        });
+    });
+    console.log('✅ [my-agents] Listeners de red social registrados:', document.querySelectorAll('input[name="social"]').length);
 }
 
 

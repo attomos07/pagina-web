@@ -612,17 +612,13 @@ async function loadOnboardingContent() {
                     }
                     .section-nav-btn.completed:hover i { color: #10b981 !important; }
 
-                    /* Ocultar elementos del step1/progreso */
+                    /* Ocultar barra de progreso */
                     #onboardingModalBody .progress-wrapper,
                     #onboardingModalBody .steps-progress,
                     #onboardingModalBody .step-indicators,
                     #onboardingModalBody #progressPercentage,
                     #onboardingModalBody .progress-header,
-                    #onboardingModalBody .progress-dots,
-                    #onboardingModalBody #step1 { display: none !important; }
-
-                    /* step2 visible */
-                    #onboardingModalBody #step2 { display: block !important; }
+                    #onboardingModalBody .progress-dots { display: none !important; }
 
                     /* ── Corregir header del modal ── */
                     /* El onboarding.css puede pisar el header — forzar layout correcto */
@@ -739,12 +735,15 @@ async function reinitializeOnboardingEvents() {
         modalBody.scrollTop = 0;
     }
 
-    // ── Ocultar step1, activar step2 ─────────────────────────────────
+    // ── Mostrar step1 (selección de red social) primero ──────────────
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
     const step1 = document.getElementById('step1');
     const step2 = document.getElementById('step2');
-    if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
-    if (step2) { step2.classList.add('active'); step2.style.display = ''; }
+    if (step1) { step1.classList.add('active'); step1.style.display = ''; }
+    if (step2) { step2.classList.remove('active'); step2.style.display = 'none'; }
+    // Ocultar sectionNav hasta que el usuario complete step1
+    const sectionNavEl = document.getElementById('sectionNavigation');
+    if (sectionNavEl) sectionNavEl.style.display = 'none';
 
     // ── Detectar si ya existe al menos un agente ─────────────────────
     let _hasExistingAgents = false;
@@ -920,10 +919,54 @@ async function reinitializeOnboardingEvents() {
             const lastSec = AGENT_SECTIONS[AGENT_SECTIONS.length - 1];
             btnBackStep3.onclick = (e) => { e.stopPropagation(); window._modalGoToSection(lastSec.containerId); };
         }
+
+        const btnSubmit = document.getElementById('btnCreateAgent');
+        if (btnSubmit) {
+            const btnClone = btnSubmit.cloneNode(true);
+            btnSubmit.parentNode.replaceChild(btnClone, btnSubmit);
+            btnClone.addEventListener('click', () => { if (typeof createAgent === 'function') createAgent(); });
+            console.log('✅ [dashboard] Listener de btnCreateAgent registrado');
+        }
     }, 150);
 
-    // ── Activar sección inicial según contexto ───────────────────────
-    window._modalGoToSection(_hasExistingAgents ? 'section-basic' : 'section-business');
+    // ── Sección inicial según contexto (se usa al confirmar step1) ───
+    const _initialSection = _hasExistingAgents ? 'section-basic' : 'section-business';
+
+    // ── Hook btnStep1 (Continuar de Red Social) ───────────────────────
+    const btnStep1El = document.getElementById('btnStep1');
+    if (btnStep1El) {
+        const btnStep1Clone = btnStep1El.cloneNode(true);
+        btnStep1El.parentNode.replaceChild(btnStep1Clone, btnStep1El);
+        btnStep1Clone.addEventListener('click', () => {
+            if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
+            if (step2) { step2.classList.add('active'); step2.style.display = ''; }
+            const nav = document.getElementById('sectionNavigation');
+            if (nav) nav.style.display = '';
+            window._modalGoToSection(_initialSection);
+        });
+        console.log('✅ [dashboard] Hook btnStep1 registrado');
+    }
+
+    // ── Listeners en los radios de red social ─────────────────────────
+    document.querySelectorAll('input[name="social"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            if (typeof selectedSocial !== 'undefined') selectedSocial = this.value;
+            if (typeof agentData !== 'undefined') agentData.social = this.value;
+            const btn = document.getElementById('btnStep1');
+            if (btn) btn.disabled = false;
+            console.log('✅ [dashboard] Red social seleccionada:', this.value);
+        });
+    });
+    console.log('✅ [dashboard] Listeners de red social registrados:', document.querySelectorAll('input[name="social"]').length);
+
+    // Si ya hay radio pre-seleccionado, habilitar botón de inmediato
+    const preSelected = document.querySelector('input[name="social"]:checked');
+    if (preSelected) {
+        if (typeof selectedSocial !== 'undefined') selectedSocial = preSelected.value;
+        if (typeof agentData !== 'undefined') agentData.social = preSelected.value;
+        const btnPre = document.getElementById('btnStep1');
+        if (btnPre) { btnPre.disabled = false; console.log('✅ [dashboard] btnStep1 habilitado por pre-selección:', preSelected.value); }
+    }
 
     if (typeof updateProgressBar === 'function') updateProgressBar();
 }
