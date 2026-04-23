@@ -575,9 +575,11 @@ async function loadOnboardingContent() {
                 const restore = document.createElement('style');
                 restore.id = 'dashboard-layout-restore';
                 restore.textContent = `
-                    .app-container { display: flex !important; height: 100vh !important; overflow: hidden !important; }
-                    .main-content  { flex: 1 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; }
-                    .content-wrapper { flex: 1 !important; overflow-y: auto !important; padding: 2rem !important; padding-top: 100px !important; padding-left: calc(2rem + 96px) !important; }
+                    @media (min-width: 769px) {
+                        .app-container  { display: flex !important; height: 100vh !important; overflow: hidden !important; }
+                        .main-content   { flex: 1 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; }
+                        .content-wrapper { flex: 1 !important; overflow-y: auto !important; padding: 2rem !important; padding-top: 100px !important; padding-left: calc(2rem + 96px) !important; }
+                    }
                 `;
                 document.head.appendChild(restore);
             }
