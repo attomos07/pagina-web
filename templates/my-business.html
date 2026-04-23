@@ -91,6 +91,106 @@
     }
     @keyframes brandSpin { to { transform: rotate(360deg); } }
     </style>
+    <style>
+        /* ── Menú Upload ── */
+        .card-hint {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-bottom: 1rem;
+        }
+        .menu-upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            transition: all 0.2s;
+            overflow: hidden;
+        }
+        .menu-upload-area.menu-drag-over {
+            border-color: #06b6d4;
+            background: #ecfeff;
+        }
+        .menu-upload-placeholder {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            color: #9ca3af;
+            text-align: center;
+        }
+        .menu-upload-placeholder:hover {
+            background: #f9fafb;
+            color: #6b7280;
+        }
+        .menu-upload-placeholder i {
+            font-size: 2rem;
+            color: #06b6d4;
+        }
+        .menu-upload-placeholder strong { color: #06b6d4; }
+        .menu-upload-hint {
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+        .menu-file-preview {
+            padding: 1rem;
+        }
+        .menu-file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .menu-file-info > i {
+            font-size: 1.75rem;
+            color: #06b6d4;
+            flex-shrink: 0;
+        }
+        .menu-file-info > div {
+            flex: 1;
+            min-width: 0;
+        }
+        .menu-file-name {
+            display: block;
+            font-weight: 600;
+            color: #1a1a1a;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .menu-file-size {
+            display: block;
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+        .btn-remove-menu {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: #fee2e2;
+            color: #ef4444;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .btn-remove-menu:hover { background: #fecaca; }
+        .menu-upload-progress {
+            margin-top: 0.75rem;
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+        .menu-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #06b6d4, #0891b2);
+            border-radius: 99px;
+            transition: width 0.15s ease;
+            width: 0%;
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -681,6 +781,43 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                 <div class="empty-list-hint" id="servicesHint">
                                     <i class="lni lni-package"></i>
                                     <span>No hay servicios. Haz clic en "Agregar" para añadir uno.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MENÚ -->
+                        <div class="profile-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="lni lni-files"></i>
+                                    <h2>Menú</h2>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <p class="card-hint">Sube tu menú en PDF o como imagen. El agente de IA lo usará como referencia.</p>
+                                <div class="menu-upload-area" id="menuUploadArea">
+                                    <input type="file" id="menuFileInput" accept="image/*,.pdf" style="display:none">
+                                    <div class="menu-upload-placeholder" id="menuUploadPlaceholder">
+                                        <i class="lni lni-upload"></i>
+                                        <span>Arrastra tu menú aquí o <strong>haz clic para seleccionar</strong></span>
+                                        <span class="menu-upload-hint">PDF o imagen (JPG, PNG) — máx. 10MB</span>
+                                    </div>
+                                    <div class="menu-file-preview" id="menuFilePreview" style="display:none">
+                                        <div class="menu-file-info">
+                                            <i class="lni lni-files" id="menuFileIcon"></i>
+                                            <div>
+                                                <span class="menu-file-name" id="menuFileName"></span>
+                                                <span class="menu-file-size" id="menuFileSize"></span>
+                                            </div>
+                                            <button type="button" class="btn-remove-menu" id="btnRemoveMenu">
+                                                <i class="lni lni-close"></i>
+                                            </button>
+                                        </div>
+                                        <div class="menu-upload-progress" id="menuUploadProgress" style="display:none">
+                                            <div class="menu-progress-bar" id="menuProgressBar"></div>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="menuUrlInput" value="">
                                 </div>
                             </div>
                         </div>

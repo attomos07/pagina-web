@@ -974,8 +974,8 @@ async function fetchUserData() {
       } else {
         console.warn('⚠️ No se encontró activeBranch ni defaultBranch en la respuesta');
       }
-      // Mostrar selector en Info. Básica si hay más de una sucursal
-      if (allBranches.length > 1) {
+      // Mostrar indicador/selector de sucursal siempre
+      if (allBranches.length >= 1) {
         renderBranchSelectorBasic(allBranches, agentData.branchId);
       }
     }
@@ -993,6 +993,19 @@ function renderBranchSelectorBasic(branches, activeBranchId) {
 
   container.innerHTML = '';
 
+  // Con una sola sucursal: solo badge informativo, sin opción de cambiar
+  if (branches.length === 1) {
+    const b = branches[0];
+    const badge = document.createElement('div');
+    badge.className = 'branch-basic-card active branch-basic-single';
+    badge.dataset.branchId = b.id;
+    badge.innerHTML = `<span class="branch-basic-badge">${b.branchNumber}</span><i class="lni lni-map-marker"></i><span>${b.branchName || ('Sucursal ' + b.branchNumber)}</span><i class="lni lni-checkmark-circle branch-basic-check"></i>`;
+    container.appendChild(badge);
+    wrapper.style.display = 'block';
+    return;
+  }
+
+  // Con múltiples sucursales: selector interactivo
   // Card "Todas las sucursales"
   const allCard = document.createElement('div');
   allCard.className = 'branch-basic-card' + (activeBranchId === 0 ? ' active' : '');

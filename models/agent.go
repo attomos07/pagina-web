@@ -46,12 +46,17 @@ type Schedule struct {
 }
 
 type Service struct {
-	Title         string          `json:"title"`
-	Description   string          `json:"description"`
-	PriceType     string          `json:"priceType"`
-	Price         FlexibleString  `json:"price"`
-	OriginalPrice *FlexibleString `json:"originalPrice"`
-	PromoPrice    *FlexibleString `json:"promoPrice"`
+	Title           string          `json:"title"`
+	Description     string          `json:"description"`
+	ImageUrls       []string        `json:"imageUrls"`
+	PriceType       string          `json:"priceType"`
+	Price           FlexibleString  `json:"price"`
+	OriginalPrice   *FlexibleString `json:"originalPrice"`
+	PromoPrice      *FlexibleString `json:"promoPrice"`
+	PromoPeriodType string          `json:"promoPeriodType"`
+	PromoDays       []string        `json:"promoDays"`
+	PromoDateStart  string          `json:"promoDateStart"`
+	PromoDateEnd    string          `json:"promoDateEnd"`
 }
 
 type Staff struct {

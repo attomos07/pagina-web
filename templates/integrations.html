@@ -12,6 +12,119 @@
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/sidebar.css">
     <link rel="stylesheet" href="/static/css/integrations.css">
+    <style>
+        /* ── Proteger layout de integrations vs onboarding.css ── */
+        #integrationsContentWrapper {
+            padding-left: calc(2rem + 96px) !important;
+            padding-top: 100px !important;
+        }
+
+        /* ── Onboarding Modal Overlay (extraído de my-agents.css) ── */
+        .onboarding-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 9999;
+        }
+        .onboarding-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .onboarding-overlay {
+            position: absolute;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+        .onboarding-modal-content {
+            position: relative;
+            background: white;
+            width: 95%;
+            max-width: 1100px;
+            height: 90vh;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: modalSlideUp 0.4s ease-out;
+            display: flex;
+            flex-direction: column;
+        }
+        @keyframes modalSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .onboarding-modal-header {
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eef2f7;
+            flex-shrink: 0;
+        }
+        .onboarding-modal-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #0f172a;
+            margin: 0;
+        }
+        .btn-close-onboarding {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: #f3f4f6;
+            color: #6b7280;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .btn-close-onboarding:hover {
+            background: #fee2e2;
+            color: #ef4444;
+            transform: rotate(90deg);
+        }
+        .onboarding-modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 2rem 2rem;
+            max-height: 82vh;
+        }
+        @media (max-width: 768px) {
+            .onboarding-modal.active { align-items: flex-end; }
+            .onboarding-modal-content {
+                width: 100%; max-width: 100%;
+                height: 96vh;
+                border-radius: 20px 20px 0 0;
+                margin: 0;
+            }
+            .onboarding-modal-body { padding: 0 1rem 1.5rem; }
+
+            /* ── Fix: header queda debajo del userbar mobile ── */
+            .app-container {
+                height: auto !important;
+                overflow: visible !important;
+                flex-direction: column;
+            }
+            .main-content {
+                height: auto !important;
+                overflow: visible !important;
+                padding: 72px 0 0 0 !important;
+            }
+            #integrationsContentWrapper {
+                overflow-y: visible !important;
+                height: auto !important;
+                padding: 1rem 1rem 2rem 1rem !important;
+                padding-top: 1rem !important;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -24,7 +137,7 @@
             {{template "userbar.html" .}}
 
             <!-- Content Wrapper -->
-            <div class="content-wrapper">
+            <div class="content-wrapper" id="integrationsContentWrapper">
                 <div class="integrations-layout">
                     <!-- Page Header -->
                     <div class="page-header">
@@ -736,10 +849,10 @@
                         </div>
                         <h3>No tienes agentes creados</h3>
                         <p>Crea tu primer agente para comenzar a usar las integraciones</p>
-                        <a href="/onboarding" class="btn-primary" style="margin-top: 0.5rem;">
+                        <button type="button" class="btn-primary" onclick="openOnboardingModal()" style="margin-top: 0.5rem;">
                             <i class="lni lni-plus"></i>
                             <span>Crear Agente</span>
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -747,6 +860,253 @@
     </div>
 
     <script src="/static/js/sidebar.js"></script>
+    <script>
+    // ── Onboarding Modal (compartido con my-agents) ──────────────────────────
+    let _onboardingHTMLCache = null;
+    let _onboardingScriptLoaded = false;
+
+    function openOnboardingModal() {
+        let modal = document.getElementById('onboardingModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'onboardingModal';
+            modal.className = 'onboarding-modal';
+            modal.innerHTML = `
+                <div class="onboarding-overlay" onclick="closeOnboardingModal()"></div>
+                <div class="onboarding-modal-content">
+                    <div class="onboarding-modal-header">
+                        <h2 class="onboarding-modal-title">
+                            <i class="lni lni-rocket"></i>
+                            Crear Nuevo Agente
+                        </h2>
+                        <button class="btn-close-onboarding" onclick="closeOnboardingModal()">
+                            <i class="lni lni-close"></i>
+                        </button>
+                    </div>
+                    <div class="onboarding-modal-body" id="onboardingModalBody">
+                        <div style="display:flex;justify-content:center;align-items:center;padding:3rem;">
+                            <div class="loading-spinner"></div>
+                            <div class="loading-text" style="margin-left:1rem;">Cargando formulario...</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        modal.classList.add('active');
+        loadOnboardingContent();
+    }
+
+    function closeOnboardingModal() {
+        const modal = document.getElementById('onboardingModal');
+        if (modal) {
+            modal.classList.remove('active');
+            // Recargar agentes de integraciones al cerrar
+            setTimeout(() => { if (typeof initAgentSelector === 'function') initAgentSelector(); }, 300);
+        }
+    }
+
+    async function loadOnboardingContent() {
+        const modalBody = document.getElementById('onboardingModalBody');
+        if (!modalBody) return;
+        try {
+            let rawHtml;
+            if (_onboardingHTMLCache) {
+                rawHtml = _onboardingHTMLCache;
+            } else {
+                const response = await fetch('/onboarding', { credentials: 'include' });
+                if (!response.ok) throw new Error('Error al cargar onboarding');
+                rawHtml = await response.text();
+                _onboardingHTMLCache = rawHtml;
+            }
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(rawHtml, 'text/html');
+            const mainContainer = doc.querySelector('.main-container');
+            if (mainContainer) {
+                modalBody.innerHTML = mainContainer.innerHTML;
+                // Cargar onboarding.css dinámicamente (solo una vez)
+                if (!document.getElementById('onboarding-css-dynamic')) {
+                    const link = document.createElement('link');
+                    link.id = 'onboarding-css-dynamic';
+                    link.rel = 'stylesheet';
+                    link.href = '/static/css/onboarding.css';
+                    document.head.appendChild(link);
+                }
+                if (!document.getElementById('onboarding-modal-fixes')) {
+                    const fix = document.createElement('style');
+                    fix.id = 'onboarding-modal-fixes';
+                    fix.textContent = `
+                        .section-nav-btn.completed:hover{background:#d1fae5!important;color:#10b981!important;border-color:#10b981!important;box-shadow:0 4px 12px rgba(16,185,129,.2)!important;}
+                        .section-nav-btn.completed:hover i{color:#10b981!important;}
+                        #onboardingModalBody .progress-wrapper,#onboardingModalBody .progress-header,#onboardingModalBody #progressPercentage,#onboardingModalBody .progress-dots,#onboardingModalBody #step1{display:none!important;}
+                        #onboardingModalBody #step2{display:block!important;}
+                        .onboarding-modal-header{display:flex!important;align-items:center!important;justify-content:space-between!important;padding:1rem 1.5rem!important;border-bottom:1px solid #eef2f7!important;position:sticky!important;top:0!important;background:white!important;z-index:10!important;flex-direction:row!important;}
+                        .onboarding-modal-title{display:inline-flex!important;align-items:center!important;gap:0.6rem!important;font-weight:800!important;font-size:1.1rem!important;color:#0f172a!important;margin:0!important;flex:1!important;}
+                        .btn-close-onboarding{width:40px!important;height:40px!important;border-radius:50%!important;border:none!important;background:#f3f4f6!important;color:#6b7280!important;cursor:pointer!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;font-size:1.1rem!important;flex-shrink:0!important;transition:all 0.2s!important;}
+                        .btn-close-onboarding:hover{background:#fee2e2!important;color:#ef4444!important;}
+                        #onboardingModalBody .main-container,#onboardingModalBody .onboarding-container{padding-top:0!important;margin-top:0!important;}
+                        #onboardingModalBody .step2-header,#onboardingModalBody .step-header{padding-top:1rem!important;}
+                    `;
+                    document.head.appendChild(fix);
+                }
+                if (!_onboardingScriptLoaded) {
+                    const script = document.createElement('script');
+                    script.src = '/static/js/onboarding.js?v=' + Date.now();
+                    script.onload = () => { _onboardingScriptLoaded = true; setTimeout(() => reinitializeOnboardingEvents(), 50); };
+                    document.body.appendChild(script);
+                } else {
+                    setTimeout(() => reinitializeOnboardingEvents(), 20);
+                }
+            } else {
+                throw new Error('No se encontró .main-container');
+            }
+        } catch (error) {
+            console.error('❌ Error cargando onboarding:', error);
+            modalBody.innerHTML = `
+                <div style="text-align:center;padding:3rem;">
+                    <i class="lni lni-warning" style="font-size:3rem;color:#ef4444;"></i>
+                    <h3 style="margin:1rem 0;color:#1a1a1a;">Error al cargar el formulario</h3>
+                    <p style="color:#6b7280;margin-bottom:1.5rem;">Por favor, intenta de nuevo</p>
+                    <button class="btn-primary" onclick="loadOnboardingContent()">
+                        <i class="lni lni-reload"></i><span>Reintentar</span>
+                    </button>
+                </div>`;
+        }
+    }
+
+    function reinitializeOnboardingEvents() {
+        console.log('🔄 Reinicializando modal del agente (integrations)');
+        if (typeof window.agentData !== 'undefined') window.agentData = {};
+        if (typeof window.currentSection !== 'undefined') window.currentSection = 1;
+
+        const modal = document.getElementById('onboardingModal');
+        const modalContent = modal?.querySelector('.onboarding-modal-content');
+        if (modalContent) { modalContent.style.maxWidth='1100px'; modalContent.style.width='95vw'; modalContent.style.maxHeight='90vh'; modalContent.style.overflow='hidden'; }
+        const modalBody = document.getElementById('onboardingModalBody');
+        if (modalBody) { modalBody.style.maxHeight='82vh'; modalBody.style.overflowY='auto'; modalBody.scrollTop=0; }
+
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        if (step1) { step1.classList.remove('active'); step1.style.display='none'; }
+        if (step2) { step2.classList.add('active'); step2.style.display=''; }
+
+        const AGENT_SECTIONS = [
+            { id:2, containerId:'section-basic',       name:'Info. Básica',  icon:'lni-information' },
+            { id:5, containerId:'section-personality',  name:'Personalidad',  icon:'lni-comments' },
+            { id:6, containerId:'section-schedule',     name:'Horarios',      icon:'lni-calendar' },
+            { id:7, containerId:'section-holidays',     name:'Días Festivos', icon:'lni-gift' },
+            { id:8, containerId:'section-services',     name:'Servicios',     icon:'lni-package' },
+            { id:9, containerId:'section-workers',      name:'Trabajadores',  icon:'lni-users' },
+        ];
+        const AGENT_IDS = AGENT_SECTIONS.map(s => s.containerId);
+
+        ['section-business','section-location','section-social'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.classList.remove('active'); el.style.display='none'; }
+        });
+
+        if (typeof initializeRichEditor==='function') initializeRichEditor();
+        if (typeof initializePhoneToggle==='function') initializePhoneToggle();
+        if (typeof initializeSchedule==='function') initializeSchedule();
+        if (typeof initializeHolidays==='function') initializeHolidays();
+        if (typeof initializeServices==='function') initializeServices();
+        if (typeof initializeWorkers==='function') initializeWorkers();
+        if (typeof initializeLocationDropdowns==='function') initializeLocationDropdowns();
+        if (typeof initializeSocialMediaInputs==='function') initializeSocialMediaInputs();
+        if (typeof initializeBusinessTypeSelect==='function') initializeBusinessTypeSelect();
+        if (typeof initializeToneSelection==='function') initializeToneSelection();
+        setTimeout(() => {
+            if (typeof fetchUserData==='function') fetchUserData();
+            if (typeof initBusinessTimePickers==='function') initBusinessTimePickers();
+            if (typeof initHolidayDatePickers==='function') initHolidayDatePickers();
+            if (typeof initWorkerTimePickers==='function') initWorkerTimePickers();
+        }, 100);
+
+        const sectionNav = document.getElementById('sectionNavigation');
+        if (sectionNav) {
+            sectionNav.innerHTML = '';
+            sectionNav.style.justifyContent='center'; sectionNav.style.flexWrap='wrap'; sectionNav.style.gap='0.5rem';
+            AGENT_SECTIONS.forEach(sec => {
+                const btn = document.createElement('button');
+                btn.type='button'; btn.className='section-nav-btn'; btn.dataset.sectionId=sec.id;
+                btn.innerHTML=`<i class="lni ${sec.icon}"></i><span>${sec.name}</span>`;
+                btn.addEventListener('click', () => window._modalGoToSection(sec.containerId));
+                sectionNav.appendChild(btn);
+            });
+            const resumenBtn = document.createElement('button');
+            resumenBtn.type='button'; resumenBtn.id='modal-resumen-tab'; resumenBtn.className='section-nav-btn';
+            resumenBtn.innerHTML='<i class="lni lni-checkmark-circle"></i><span>Resumen</span>';
+            resumenBtn.addEventListener('click', () => window._modalGoToResumen());
+            sectionNav.appendChild(resumenBtn);
+        }
+
+        window._modalGoToSection = function(targetId) {
+            AGENT_IDS.forEach(id=>{const el=document.getElementById(id);if(el){el.classList.remove('active');el.style.display='none';}});
+            document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+            if(step1) step1.style.display='none';
+            if(step2){step2.classList.add('active');step2.style.display='';}
+            const target=document.getElementById(targetId);
+            if(target){target.style.display='';target.classList.add('active');}
+            const currentIdx=AGENT_SECTIONS.findIndex(s=>s.containerId===targetId);
+            document.querySelectorAll('#sectionNavigation .section-nav-btn').forEach(btn=>{
+                btn.classList.remove('active','completed');
+                const sid=parseInt(btn.dataset.sectionId);
+                const sec=AGENT_SECTIONS.find(s=>s.id===sid);
+                if(!sec) return;
+                const idx=AGENT_SECTIONS.indexOf(sec);
+                if(idx===currentIdx) btn.classList.add('active');
+                else if(idx<currentIdx) btn.classList.add('completed');
+            });
+            if(typeof window.updateProgressBar==='function') window.updateProgressBar();
+            if(modalBody) modalBody.scrollTop=0;
+        };
+
+        window._modalGoToResumen = function() {
+            AGENT_IDS.forEach(id=>{const el=document.getElementById(id);if(el){el.classList.remove('active');el.style.display='none';}});
+            document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+            if(step1) step1.style.display='none';
+            const step3=document.getElementById('step3');
+            if(step3){step3.classList.add('active');step3.style.display='';}
+            document.querySelectorAll('#sectionNavigation .section-nav-btn').forEach(b=>{
+                b.classList.remove('active','completed');
+                if(b.id==='modal-resumen-tab') b.classList.add('active');
+                else b.classList.add('completed');
+            });
+            if(typeof collectFormData==='function') collectFormData();
+            if(typeof generateSummary==='function') generateSummary();
+            if(typeof window.updateProgressBar==='function') window.updateProgressBar();
+            if(modalBody) modalBody.scrollTop=0;
+        };
+
+        setTimeout(() => {
+            AGENT_SECTIONS.forEach((sec,idx)=>{
+                const el=document.getElementById(sec.containerId);
+                if(!el) return;
+                const prevSec=AGENT_SECTIONS[idx-1], nextSec=AGENT_SECTIONS[idx+1];
+                el.querySelectorAll('.btn-prev-section').forEach(btn=>{
+                    btn.style.display=idx===0?'none':'flex';
+                    if(prevSec) btn.onclick=(e)=>{e.stopPropagation();window._modalGoToSection(prevSec.containerId);};
+                });
+                el.querySelectorAll('.btn-next-section,[class*="next"]').forEach(btn=>{
+                    btn.onclick=(e)=>{e.stopPropagation();nextSec?window._modalGoToSection(nextSec.containerId):window._modalGoToResumen();};
+                });
+            });
+            const b3=document.getElementById('btnBackStep3');
+            if(b3){const last=AGENT_SECTIONS[AGENT_SECTIONS.length-1];b3.onclick=(e)=>{e.stopPropagation();window._modalGoToSection(last.containerId);};}
+
+            const btnSubmit=document.getElementById('btnCreateAgent');
+            if(btnSubmit){
+                const btnClone=btnSubmit.cloneNode(true);
+                btnSubmit.parentNode.replaceChild(btnClone,btnSubmit);
+                btnClone.addEventListener('click',()=>{ if(typeof createAgent==='function') createAgent(); });
+            }
+        }, 150);
+
+        window._modalGoToSection('section-basic');
+        if(typeof updateProgressBar==='function') updateProgressBar();
+    }
+    </script>
     <script src="/static/js/integrations.js"></script>
 </body>
 </html>

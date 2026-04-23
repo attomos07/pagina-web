@@ -211,3 +211,83 @@ func validateServiceImageExt(filename string) (string, error) {
 	}
 	return ext, nil
 }
+
+// UploadMenu recibe un PDF o imagen de menú, lo sube vía SFTP al servidor Hetzner
+// y devuelve la URL pública.
+//
+// POST /api/upload/menu?branch_id={id}
+func UploadMenu(c *gin.Context) {
+	userInterface, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autenticado"})
+		return
+	}
+	user := userInterface.(*models.User)
+
+	branchIDStr := c.Query("branch_id")
+
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No se recibió ningún archivo"})
+		return
+	}
+	defer file.Close()
+
+	if header.Size > 10*1024*1024 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "El archivo no debe superar 10 MB"})
+		return
+	}
+
+	ext, err := validateMenuExt(header.Filename)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error leyendo archivo"})
+		return
+	}
+
+	filename := fmt.Sprintf("menu_%s_%d%s", uuid.New().String()[:8], time.Now().Unix(), ext)
+
+	// Usar servidor global para todos los menús
+	globalServer, err := resolveGlobalServer()
+	if err != nil {
+		log.Printf("❌ [UploadMenu] No se pudo obtener servidor global para user=%d: %v", user.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "El servidor está iniciando. Intenta de nuevo en unos minutos.",
+		})
+		return
+	}
+
+	remotePath := fmt.Sprintf("/var/www/uploads/user_%d/branch_%s/menu", user.ID, branchIDStr)
+	remoteFile := remotePath + "/" + filename
+
+	if err := uploadViaSFTP(globalServer.IPAddress, globalServer.RootPassword,
+		remotePath, remoteFile, fileBytes); err != nil {
+		log.Printf("❌ [UploadMenu] SFTP user=%d: %v", user.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error subiendo archivo al servidor"})
+		return
+	}
+
+	publicURL := fmt.Sprintf("http://%s/uploads/user_%d/branch_%s/menu/%s",
+		globalServer.IPAddress, user.ID, branchIDStr, filename)
+
+	log.Printf("✅ [UploadMenu] user=%d branch=%s → %s", user.ID, branchIDStr, publicURL)
+	c.JSON(http.StatusOK, gin.H{"url": publicURL})
+}
+
+// validateMenuExt valida que sea PDF o imagen.
+func validateMenuExt(filename string) (string, error) {
+	allowed := map[string]bool{
+		".pdf": true, ".jpg": true, ".jpeg": true,
+		".png": true, ".webp": true,
+	}
+	ext := strings.ToLower(filepath.Ext(filename))
+	if !allowed[ext] {
+		return "", fmt.Errorf("formato no permitido: %s — usa pdf, jpg, png o webp", ext)
+	}
+	return ext, nil
+}

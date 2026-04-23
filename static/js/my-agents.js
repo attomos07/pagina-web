@@ -110,9 +110,7 @@ async function loadOnboardingContent() {
                     #onboardingModalBody .progress-wrapper,
                     #onboardingModalBody .progress-header,
                     #onboardingModalBody #progressPercentage,
-                    #onboardingModalBody .progress-dots,
-                    #onboardingModalBody #step1{display:none!important;}
-                    #onboardingModalBody #step2{display:block!important;}
+                    #onboardingModalBody .progress-dots{display:none!important;}
                     .onboarding-modal-header{display:flex!important;align-items:center!important;justify-content:space-between!important;padding:1rem 1.5rem!important;border-bottom:1px solid #eef2f7!important;position:sticky!important;top:0!important;background:white!important;z-index:10!important;flex-direction:row!important;}
                     .onboarding-modal-title{display:inline-flex!important;align-items:center!important;gap:0.6rem!important;font-weight:800!important;font-size:1.1rem!important;color:#0f172a!important;margin:0!important;flex:1!important;}
                     .btn-close-onboarding{width:40px!important;height:40px!important;border-radius:50%!important;border:none!important;background:#f3f4f6!important;color:#6b7280!important;cursor:pointer!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;font-size:1.1rem!important;flex-shrink:0!important;transition:all 0.2s!important;}
@@ -178,8 +176,12 @@ function reinitializeOnboardingEvents() {
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
     const step1 = document.getElementById('step1');
     const step2 = document.getElementById('step2');
-    if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
-    if (step2) { step2.classList.add('active'); step2.style.display = ''; }
+    // Mostrar step1 (selección de red social) primero
+    if (step1) { step1.classList.add('active'); step1.style.display = ''; }
+    if (step2) { step2.classList.remove('active'); step2.style.display = 'none'; }
+    // Ocultar nav de secciones hasta que se complete step1
+    const sectionNavEl = document.getElementById('sectionNavigation');
+    if (sectionNavEl) sectionNavEl.style.display = 'none';
 
     const AGENT_SECTIONS = [
         { id:2, containerId:'section-basic',      name:'Info. Básica',  icon:'lni-information' },
@@ -315,8 +317,20 @@ function reinitializeOnboardingEvents() {
         }
     }, 150);
 
-    window._modalGoToSection('section-basic');
-    if(typeof updateProgressBar==='function') updateProgressBar();
+    // Hook btnStep1 (Continuar de Red Social) → mostrar step2 + sectionNav
+    const btnStep1El = document.getElementById('btnStep1');
+    if (btnStep1El) {
+        const btnStep1Clone = btnStep1El.cloneNode(true);
+        btnStep1El.parentNode.replaceChild(btnStep1Clone, btnStep1El);
+        btnStep1Clone.addEventListener('click', () => {
+            if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
+            if (step2) { step2.classList.add('active'); step2.style.display = ''; }
+            const nav = document.getElementById('sectionNavigation');
+            if (nav) nav.style.display = '';
+            window._modalGoToSection('section-basic');
+        });
+        console.log('✅ [my-agents] Hook btnStep1 registrado');
+    }
 }
 
 

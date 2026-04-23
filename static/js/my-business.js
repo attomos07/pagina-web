@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initWorkers();
     initSaveButton();
     initBrandImages();
+    initMenu();
 
     console.log('✅ Profile funcionalidades inicializadas');
 });
@@ -247,6 +248,13 @@ function loadBranchData(branch) {
 
     // Imágenes de marca
     loadBrandImages(branch.business?.logoUrl || '', branch.business?.bannerUrl || '');
+
+    // Menú
+    const menuUrlEl = document.getElementById('menuUrlInput');
+    if (menuUrlEl) {
+        menuUrlEl.value = branch.business?.menuUrl || '';
+        if (branch.business?.menuUrl) renderMenuPreview(branch.business.menuUrl);
+    }
 
     // Servicios y trabajadores
     renderServices(branch.services || []);
@@ -1028,6 +1036,7 @@ async function saveProfile() {
             email: document.getElementById('emailInput').value,
             logoUrl:   document.getElementById('logoUrlInput')?.value   || '',
             bannerUrl: document.getElementById('bannerUrlInput')?.value || '',
+            menuUrl:   document.getElementById('menuUrlInput')?.value   || '',
         },
         schedule: collectScheduleData(),
         holidays: collectHolidaysData(),
@@ -1226,7 +1235,7 @@ function addServiceItem(e, data = null) {
             <div class="service-images-grid">
                 ${imgUrls.map((url, i) => `
                 <div class="service-img-thumb" data-url="${url}">
-                    <img src="${url}" alt="Foto ${i+1}">
+                    <img src="${url}" alt="Foto ${i+1}" onerror="this.style.display='none';this.nextElementSibling?.remove();this.parentElement.style.background='#f3f4f6';this.parentElement.insertAdjacentHTML('beforeend','<span style=\"font-size:0.7rem;color:#9ca3af;padding:4px\">Sin vista previa</span>')">
                     <button type="button" class="btn-remove-thumb" title="Quitar"><i class="lni lni-close"></i></button>
                 </div>`).join('')}
                 <div class="service-img-add-btn">
@@ -1386,7 +1395,7 @@ function addServiceItem(e, data = null) {
         const thumb = document.createElement('div');
         thumb.className = 'service-img-thumb';
         thumb.dataset.url = url;
-        thumb.innerHTML = `<img src="${url}" alt="Foto"><button type="button" class="btn-remove-thumb" title="Quitar"><i class="lni lni-close"></i></button>`;
+        thumb.innerHTML = `<img src="${url}" alt="Foto" onerror="this.style.opacity='0.3'"><button type="button" class="btn-remove-thumb" title="Quitar"><i class="lni lni-close"></i></button>`;
         // Insert before the add button
         grid.insertBefore(thumb, addBtn);
     }
@@ -1709,4 +1718,109 @@ function loadBrandImages(logoUrl, bannerUrl) {
         if (bannerPreview) bannerPreview.style.display = 'none';
         if (bannerPh)      bannerPh.style.display = 'flex';
     }
+}
+// ============================================
+// MENU UPLOAD
+// ============================================
+
+function initMenu() {
+    const area      = document.getElementById('menuUploadArea');
+    const fileInput = document.getElementById('menuFileInput');
+    const placeholder = document.getElementById('menuUploadPlaceholder');
+    const btnRemove = document.getElementById('btnRemoveMenu');
+    if (!area || !fileInput) return;
+
+    // Click en placeholder → abrir file picker
+    placeholder?.addEventListener('click', () => fileInput.click());
+
+    // Drag & drop
+    area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('menu-drag-over'); });
+    area.addEventListener('dragleave', () => area.classList.remove('menu-drag-over'));
+    area.addEventListener('drop', e => {
+        e.preventDefault();
+        area.classList.remove('menu-drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) handleMenuFile(file);
+    });
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files[0]) handleMenuFile(fileInput.files[0]);
+    });
+
+    btnRemove?.addEventListener('click', () => {
+        document.getElementById('menuUrlInput').value = '';
+        document.getElementById('menuFilePreview').style.display = 'none';
+        document.getElementById('menuUploadPlaceholder').style.display = '';
+        fileInput.value = '';
+    });
+}
+
+async function handleMenuFile(file) {
+    const maxMB = 10;
+    if (file.size > maxMB * 1024 * 1024) {
+        Sileo?.toast(`El archivo supera ${maxMB}MB`, 'error');
+        return;
+    }
+
+    // Mostrar preview inmediato
+    const isPdf = file.type === 'application/pdf';
+    document.getElementById('menuFileIcon').className = isPdf ? 'lni lni-files' : 'lni lni-image';
+    document.getElementById('menuFileName').textContent = file.name;
+    document.getElementById('menuFileSize').textContent = (file.size / 1024).toFixed(0) + ' KB';
+    document.getElementById('menuUploadPlaceholder').style.display = 'none';
+    document.getElementById('menuFilePreview').style.display = '';
+    document.getElementById('menuUploadProgress').style.display = '';
+    document.getElementById('menuProgressBar').style.width = '0%';
+
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', isPdf ? 'pdf' : 'image');
+
+        // Animar progress (fake)
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress = Math.min(progress + 10, 85);
+            document.getElementById('menuProgressBar').style.width = progress + '%';
+        }, 150);
+
+        const branchId = activeBranchId || 0;
+        const resp = await fetch(`/api/upload/menu?branch_id=${branchId}`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+        });
+
+        clearInterval(interval);
+
+        if (!resp.ok) throw new Error('Error al subir el menú');
+        const data = await resp.json();
+        const url = data.url || data.menuUrl || '';
+
+        document.getElementById('menuProgressBar').style.width = '100%';
+        document.getElementById('menuUrlInput').value = url;
+        setTimeout(() => {
+            document.getElementById('menuUploadProgress').style.display = 'none';
+        }, 500);
+
+        Sileo?.toast('Menú subido correctamente', 'success');
+    } catch (err) {
+        console.error('❌ Error subiendo menú:', err);
+        document.getElementById('menuUploadProgress').style.display = 'none';
+        document.getElementById('menuFilePreview').style.display = 'none';
+        document.getElementById('menuUploadPlaceholder').style.display = '';
+        Sileo?.toast('Error al subir el menú', 'error');
+    }
+}
+
+function renderMenuPreview(url) {
+    if (!url) return;
+    const isPdf = url.toLowerCase().endsWith('.pdf');
+    const fileName = url.split('/').pop() || 'menu';
+    document.getElementById('menuFileIcon').className = isPdf ? 'lni lni-files' : 'lni lni-image';
+    document.getElementById('menuFileName').textContent = fileName;
+    document.getElementById('menuFileSize').textContent = isPdf ? 'PDF' : 'Imagen';
+    document.getElementById('menuUploadPlaceholder').style.display = 'none';
+    document.getElementById('menuFilePreview').style.display = '';
+    document.getElementById('menuUrlInput').value = url;
 }

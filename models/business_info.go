@@ -147,6 +147,7 @@ type MyBusinessInfo struct {
 	// Imágenes de marca (subidas vía /api/upload/service-image)
 	LogoURL   string `gorm:"size:500" json:"logoUrl"`   // Logotipo cuadrado
 	BannerURL string `gorm:"size:500" json:"bannerUrl"` // Banner/portada horizontal
+	MenuURL   string `gorm:"size:500" json:"menuUrl"`   // Menú (PDF o imagen)
 
 	CreatedAt time.Time      `json:"createdAt"`
 	UpdatedAt time.Time      `json:"updatedAt"`

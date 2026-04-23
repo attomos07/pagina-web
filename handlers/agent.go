@@ -198,6 +198,11 @@ func CreateAgent(c *gin.Context) {
 
 	log.Printf("✅ Agente creado en BD: ID=%d, Port=%d, BotType=%s", agent.ID, agent.Port, agent.BotType)
 
+	// ── Sincronizar servicios/trabajadores/festivos → my_business_info ──
+	if req.BranchID > 0 {
+		go syncOnboardingToBranch(req.BranchID, req.Config)
+	}
+
 	// Respuesta inmediata
 	c.JSON(http.StatusAccepted, gin.H{
 		"message": "Agente en proceso de creación",
@@ -1116,4 +1121,89 @@ func centerText(text string, width int) string {
 	}
 	padding := (width - len(text)) / 2
 	return strings.Repeat(" ", padding) + text + strings.Repeat(" ", width-len(text)-padding)
+}
+
+// syncOnboardingToBranch sincroniza servicios, trabajadores y festivos
+// del onboarding hacia my_business_info. Se ejecuta en goroutine.
+func syncOnboardingToBranch(branchID uint, cfg models.AgentConfig) {
+	var branch models.MyBusinessInfo
+	if err := config.DB.First(&branch, branchID).Error; err != nil {
+		log.Printf("⚠️  [SyncBranch] No se encontró sucursal %d: %v", branchID, err)
+		return
+	}
+
+	updated := false
+
+	if len(cfg.Services) > 0 {
+		newServices := make(models.BranchServices, len(cfg.Services))
+		for i, s := range cfg.Services {
+			newServices[i] = models.BranchService{
+				Title:           s.Title,
+				Description:     s.Description,
+				PriceType:       s.PriceType,
+				Price:           parseFlexibleFloat(string(s.Price)),
+				OriginalPrice:   parseFlexibleFloatPtr(s.OriginalPrice),
+				PromoPrice:      parseFlexibleFloatPtr(s.PromoPrice),
+				ImageUrls:       s.ImageUrls,
+				PromoPeriodType: s.PromoPeriodType,
+				PromoDays:       s.PromoDays,
+				PromoDateStart:  s.PromoDateStart,
+				PromoDateEnd:    s.PromoDateEnd,
+			}
+		}
+		branch.Services = newServices
+		updated = true
+		log.Printf("✅ [SyncBranch] %d servicio(s) sincronizados → sucursal %d", len(newServices), branchID)
+	}
+
+	if len(cfg.Workers) > 0 {
+		newWorkers := make(models.BranchWorkers, len(cfg.Workers))
+		for i, w := range cfg.Workers {
+			newWorkers[i] = models.BranchWorker{
+				Name:      w.Name,
+				StartTime: w.StartTime,
+				EndTime:   w.EndTime,
+				Days:      w.Days,
+			}
+		}
+		branch.Workers = newWorkers
+		updated = true
+		log.Printf("✅ [SyncBranch] %d trabajador(es) sincronizados → sucursal %d", len(newWorkers), branchID)
+	}
+
+	if len(cfg.Holidays) > 0 {
+		newHolidays := make(models.BusinessHolidays, len(cfg.Holidays))
+		for i, h := range cfg.Holidays {
+			newHolidays[i] = models.Holiday{Date: h.Date, Name: h.Name}
+		}
+		branch.Holidays = newHolidays
+		updated = true
+		log.Printf("✅ [SyncBranch] %d festivo(s) sincronizados → sucursal %d", len(newHolidays), branchID)
+	}
+
+	if updated {
+		if err := config.DB.Save(&branch).Error; err != nil {
+			log.Printf("❌ [SyncBranch] Error guardando sucursal %d: %v", branchID, err)
+		} else {
+			log.Printf("✅ [SyncBranch] Sucursal %d actualizada exitosamente", branchID)
+		}
+	}
+}
+
+// parseFlexibleFloat convierte un FlexibleString a float64
+func parseFlexibleFloat(s string) float64 {
+	if s == "" {
+		return 0
+	}
+	var f float64
+	fmt.Sscanf(s, "%f", &f)
+	return f
+}
+
+// parseFlexibleFloatPtr convierte un *FlexibleString a float64 (0 si nil)
+func parseFlexibleFloatPtr(s *models.FlexibleString) float64 {
+	if s == nil {
+		return 0
+	}
+	return parseFlexibleFloat(string(*s))
 }

@@ -214,6 +214,7 @@ func main() {
 
 		// Upload de imágenes para servicios/productos
 		protected.POST("/upload/service-image", handlers.UploadServiceImage)
+		protected.POST("/upload/menu", handlers.UploadMenu)
 
 		// ============================================
 		// ⭐ APPOINTMENTS - CRUD completo (BD + Sheets sync)

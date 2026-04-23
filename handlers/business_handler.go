@@ -280,6 +280,9 @@ func mapRequestToBranch(branch *models.MyBusinessInfo, req BranchRequest, user *
 	if req.Business.BannerURL != "" {
 		branch.BannerURL = req.Business.BannerURL
 	}
+	if req.Business.MenuURL != "" {
+		branch.MenuURL = req.Business.MenuURL
+	}
 
 	branch.Location = models.BusinessLocation{
 		Address:        req.Location.Address,
@@ -331,6 +334,7 @@ func mapRequestToBranch(branch *models.MyBusinessInfo, req BranchRequest, user *
 			OriginalPrice:   s.OriginalPrice,
 			PromoPrice:      s.PromoPrice,
 			ImageURL:        s.ImageURL,
+			ImageUrls:       s.ImageUrls,
 			PromoPeriodType: s.PromoPeriodType,
 			PromoDays:       s.PromoDays,
 			PromoDateStart:  s.PromoDateStart,
@@ -369,6 +373,7 @@ func buildBranchResponse(b *models.MyBusinessInfo) gin.H {
 			"originalPrice":   s.OriginalPrice,
 			"promoPrice":      s.PromoPrice,
 			"imageUrl":        s.ImageURL,
+			"imageUrls":       s.ImageUrls,
 			"promoPeriodType": s.PromoPeriodType,
 			"promoDays":       s.PromoDays,
 			"promoDateStart":  s.PromoDateStart,
@@ -389,7 +394,7 @@ func buildBranchResponse(b *models.MyBusinessInfo) gin.H {
 			"name": b.BusinessName, "type": b.BusinessType,
 			"typeName": getTypeName(b.BusinessType), "size": b.BusinessSize,
 			"description": b.Description, "website": b.Website, "email": b.Email,
-			"logoUrl": b.LogoURL, "bannerUrl": b.BannerURL,
+			"logoUrl": b.LogoURL, "bannerUrl": b.BannerURL, "menuUrl": b.MenuURL,
 		},
 		"phoneNumber": b.PhoneNumber,
 		"schedule": gin.H{
@@ -497,6 +502,7 @@ type BusinessInfo struct {
 	Email       string `json:"email"`
 	LogoURL     string `json:"logoUrl"`
 	BannerURL   string `json:"bannerUrl"`
+	MenuURL     string `json:"menuUrl"`
 }
 
 type ScheduleInfo struct {
@@ -549,6 +555,7 @@ type ServiceInfo struct {
 	OriginalPrice   float64  `json:"originalPrice"`
 	PromoPrice      float64  `json:"promoPrice"`
 	ImageURL        string   `json:"imageUrl"`
+	ImageUrls       []string `json:"imageUrls"`
 	PromoPeriodType string   `json:"promoPeriodType"` // "days" | "range" | ""
 	PromoDays       []string `json:"promoDays"`       // ["lunes","martes",...]
 	PromoDateStart  string   `json:"promoDateStart"`  // "2025-01-15"
