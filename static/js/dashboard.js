@@ -526,21 +526,6 @@ function openOnboardingModal() {
         document.body.appendChild(modal);
     }
 
-    modal.style.position = 'fixed';
-    modal.style.inset = '0';
-    modal.style.zIndex = '10000';
-    modal.style.display = 'flex';
-    modal.style.alignItems = 'center';
-    modal.style.justifyContent = 'center';
-    modal.style.opacity = '1';
-    modal.style.visibility = 'visible';
-
-    // Compensar el ancho del scrollbar para evitar que el layout se mueva
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    document.body.style.paddingRight = scrollbarWidth + 'px';
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-
     modal.classList.add('active');
     loadOnboardingContent();
 }
@@ -550,13 +535,7 @@ function closeOnboardingModal() {
     const modal = document.getElementById('onboardingModal');
     if (modal) {
         modal.classList.remove('active');
-        modal.style.display = 'none';
-        modal.style.visibility = 'hidden';
-        modal.style.opacity = '0';
     }
-    document.documentElement.style.overflow = '';
-    document.body.style.overflow = '';
-    document.body.style.paddingRight = '';
 }
 window.closeOnboardingModal = closeOnboardingModal;
 
@@ -589,6 +568,19 @@ async function loadOnboardingContent() {
                 link.href = '/static/css/onboarding.css';
                 document.head.appendChild(link);
             }
+            // Restaurar estilos del layout de dashboard que onboarding.css sobreescribe
+            // (onboarding.css define .app-container, .main-content, .content-wrapper
+            //  con valores genéricos que remueven el padding-left del sidebar)
+            if (!document.getElementById('dashboard-layout-restore')) {
+                const restore = document.createElement('style');
+                restore.id = 'dashboard-layout-restore';
+                restore.textContent = `
+                    .app-container { display: flex !important; height: 100vh !important; overflow: hidden !important; }
+                    .main-content  { flex: 1 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; }
+                    .content-wrapper { flex: 1 !important; overflow-y: auto !important; padding: 2rem !important; padding-top: 100px !important; padding-left: calc(2rem + 96px) !important; }
+                `;
+                document.head.appendChild(restore);
+            }
             if (!document.getElementById('onboarding-inline-styles')) {
                 const headStyles = doc.querySelectorAll('head style');
                 if (headStyles.length > 0) {
@@ -612,13 +604,17 @@ async function loadOnboardingContent() {
                     }
                     .section-nav-btn.completed:hover i { color: #10b981 !important; }
 
-                    /* Ocultar barra de progreso */
+                    /* Ocultar elementos del step1/progreso */
                     #onboardingModalBody .progress-wrapper,
                     #onboardingModalBody .steps-progress,
                     #onboardingModalBody .step-indicators,
                     #onboardingModalBody #progressPercentage,
                     #onboardingModalBody .progress-header,
-                    #onboardingModalBody .progress-dots { display: none !important; }
+                    #onboardingModalBody .progress-dots,
+                    #onboardingModalBody #step1 { display: none !important; }
+
+                    /* step2 visible */
+                    #onboardingModalBody #step2 { display: block !important; }
 
                     /* ── Corregir header del modal ── */
                     /* El onboarding.css puede pisar el header — forzar layout correcto */
@@ -735,15 +731,12 @@ async function reinitializeOnboardingEvents() {
         modalBody.scrollTop = 0;
     }
 
-    // ── Mostrar step1 (selección de red social) primero ──────────────
+    // ── Ocultar step1, activar step2 ─────────────────────────────────
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
     const step1 = document.getElementById('step1');
     const step2 = document.getElementById('step2');
-    if (step1) { step1.classList.add('active'); step1.style.display = ''; }
-    if (step2) { step2.classList.remove('active'); step2.style.display = 'none'; }
-    // Ocultar sectionNav hasta que el usuario complete step1
-    const sectionNavEl = document.getElementById('sectionNavigation');
-    if (sectionNavEl) sectionNavEl.style.display = 'none';
+    if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
+    if (step2) { step2.classList.add('active'); step2.style.display = ''; }
 
     // ── Detectar si ya existe al menos un agente ─────────────────────
     let _hasExistingAgents = false;
@@ -919,54 +912,10 @@ async function reinitializeOnboardingEvents() {
             const lastSec = AGENT_SECTIONS[AGENT_SECTIONS.length - 1];
             btnBackStep3.onclick = (e) => { e.stopPropagation(); window._modalGoToSection(lastSec.containerId); };
         }
-
-        const btnSubmit = document.getElementById('btnCreateAgent');
-        if (btnSubmit) {
-            const btnClone = btnSubmit.cloneNode(true);
-            btnSubmit.parentNode.replaceChild(btnClone, btnSubmit);
-            btnClone.addEventListener('click', () => { if (typeof createAgent === 'function') createAgent(); });
-            console.log('✅ [dashboard] Listener de btnCreateAgent registrado');
-        }
     }, 150);
 
-    // ── Sección inicial según contexto (se usa al confirmar step1) ───
-    const _initialSection = _hasExistingAgents ? 'section-basic' : 'section-business';
-
-    // ── Hook btnStep1 (Continuar de Red Social) ───────────────────────
-    const btnStep1El = document.getElementById('btnStep1');
-    if (btnStep1El) {
-        const btnStep1Clone = btnStep1El.cloneNode(true);
-        btnStep1El.parentNode.replaceChild(btnStep1Clone, btnStep1El);
-        btnStep1Clone.addEventListener('click', () => {
-            if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
-            if (step2) { step2.classList.add('active'); step2.style.display = ''; }
-            const nav = document.getElementById('sectionNavigation');
-            if (nav) nav.style.display = '';
-            window._modalGoToSection(_initialSection);
-        });
-        console.log('✅ [dashboard] Hook btnStep1 registrado');
-    }
-
-    // ── Listeners en los radios de red social ─────────────────────────
-    document.querySelectorAll('input[name="social"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-            if (typeof selectedSocial !== 'undefined') selectedSocial = this.value;
-            if (typeof agentData !== 'undefined') agentData.social = this.value;
-            const btn = document.getElementById('btnStep1');
-            if (btn) btn.disabled = false;
-            console.log('✅ [dashboard] Red social seleccionada:', this.value);
-        });
-    });
-    console.log('✅ [dashboard] Listeners de red social registrados:', document.querySelectorAll('input[name="social"]').length);
-
-    // Si ya hay radio pre-seleccionado, habilitar botón de inmediato
-    const preSelected = document.querySelector('input[name="social"]:checked');
-    if (preSelected) {
-        if (typeof selectedSocial !== 'undefined') selectedSocial = preSelected.value;
-        if (typeof agentData !== 'undefined') agentData.social = preSelected.value;
-        const btnPre = document.getElementById('btnStep1');
-        if (btnPre) { btnPre.disabled = false; console.log('✅ [dashboard] btnStep1 habilitado por pre-selección:', preSelected.value); }
-    }
+    // ── Activar sección inicial según contexto ───────────────────────
+    window._modalGoToSection(_hasExistingAgents ? 'section-basic' : 'section-business');
 
     if (typeof updateProgressBar === 'function') updateProgressBar();
 }
