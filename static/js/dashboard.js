@@ -251,9 +251,60 @@ async function loadAgentStats() {
     }
 }
 
+// ── Citas vs Pedidos (misma lógica que sidebar.js) ─────────────────
+const DASHBOARD_GIROS_COMIDA = ['pizzeria','pizza','mariscos','gorditas','restaurante',
+                                 'taqueria','tacos','hamburguesas','sushi','comida'];
+
+async function applyFoodLogic() {
+    try {
+        // Paso 1: /api/me (igual que sidebar)
+        const meResp = await fetch('/api/me', { credentials: 'include' });
+        if (!meResp.ok) return;
+        const meData    = await meResp.json();
+        let bizType     = (meData.user?.businessType || '').toLowerCase();
+        console.log('🍕 [dashboard] businessType desde /api/me:', bizType);
+
+        // Paso 2: /api/my-business tiene prioridad (igual que sidebar)
+        try {
+            const bizResp = await fetch('/api/my-business', { credentials: 'include' });
+            if (bizResp.ok) {
+                const bizData  = await bizResp.json();
+                const branch   = bizData.activeBranch || bizData.defaultBranch;
+                const branchType = (branch?.business?.type || branch?.business?.typeName || branch?.businessType || '').toLowerCase();
+                if (branchType) { bizType = branchType; console.log('🍕 [dashboard] businessType desde /api/my-business:', bizType); }
+            }
+        } catch (_) {}
+
+        const isFood   = DASHBOARD_GIROS_COMIDA.some(g => bizType.includes(g));
+        const labelEl  = document.getElementById('statThirdLabel');
+        const iconEl   = document.getElementById('statThirdIcon');
+        const sectionTitle   = document.getElementById('sectionServicesTitle');
+        const mostTitle      = document.getElementById('mostRequestedTitle');
+        const leastTitle     = document.getElementById('leastRequestedTitle');
+
+        if (isFood) {
+            if (labelEl)      labelEl.textContent = 'Pedidos Hoy';
+            if (iconEl)       iconEl.className    = 'lni lni-cart';
+            if (sectionTitle) sectionTitle.textContent = 'Estadísticas de Productos';
+            if (mostTitle)    mostTitle.textContent    = 'Productos Más Pedidos';
+            if (leastTitle)   leastTitle.textContent   = 'Productos Menos Pedidos';
+        } else {
+            if (labelEl)      labelEl.textContent = 'Citas Agendadas';
+            if (iconEl)       iconEl.className    = 'lni lni-calendar';
+            if (sectionTitle) sectionTitle.textContent = 'Estadísticas de Servicios';
+            if (mostTitle)    mostTitle.textContent    = 'Servicios Más Pedidos';
+            if (leastTitle)   leastTitle.textContent   = 'Servicios Menos Pedidos';
+        }
+        console.log('✅ [dashboard] applyFoodLogic — isFood:', isFood, '— bizType:', bizType);
+    } catch (err) {
+        console.warn('applyFoodLogic error:', err.message);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     console.log('dashboard.js listo');
     loadAgentStats();
+    applyFoodLogic();
     if (!isFreePlan()) {
         initializeCostChart();
         loadBillingData();

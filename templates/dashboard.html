@@ -315,11 +315,11 @@
 
                         <div class="stat-card">
                             <div class="stat-icon lime">
-                                <i class="lni lni-calendar"></i>
+                                <i class="lni lni-calendar" id="statThirdIcon"></i>
                             </div>
                             <div class="stat-content">
                                 <div class="stat-value">0</div>
-                                <div class="stat-label">Citas Agendadas</div>
+                                <div class="stat-label" id="statThirdLabel">Citas Agendadas</div>
                             </div>
                         </div>
 
@@ -406,7 +406,7 @@
                         <div class="services-unified-header">
                             <h2 class="section-title">
                                 <i class="lni lni-bar-chart"></i>
-                                Estadísticas de Servicios
+                                <span id="sectionServicesTitle">Estadísticas de Servicios</span>
                             </h2>
                             <div class="export-buttons">
                                 <button class="btn-export btn-export-excel" onclick="exportToExcel()">
@@ -427,7 +427,7 @@
                                 <div class="service-unified-card-header">
                                     <div class="service-card-title">
                                         <i class="lni lni-bar-chart"></i>
-                                        <h3>Servicios Más Pedidos</h3>
+                                        <h3 id="mostRequestedTitle">Servicios Más Pedidos</h3>
                                         <span class="pie-chart-badge" id="mostRequestedTotal">0 Total</span>
                                     </div>
                                     <div class="view-toggle-group">
@@ -467,7 +467,7 @@
                                 <div class="service-unified-card-header">
                                     <div class="service-card-title">
                                         <i class="lni lni-stats-down"></i>
-                                        <h3>Servicios Menos Pedidos</h3>
+                                        <h3 id="leastRequestedTitle">Servicios Menos Pedidos</h3>
                                         <span class="pie-chart-badge" id="leastRequestedTotal">0 Total</span>
                                     </div>
                                     <div class="view-toggle-group">

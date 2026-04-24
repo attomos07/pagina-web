@@ -1012,8 +1012,8 @@ html {
 
 /* Userbar en mobile: visible a la derecha junto al botón hamburguesa */
 @media (max-width: 768px) {
-    .nav-auth-user {
-        display: flex !important;
+    .nav-auth-user:not([style*="display: none"]):not([style*="display:none"]) {
+        display: flex;
         gap: 4px;
     }
 

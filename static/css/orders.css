@@ -59,7 +59,7 @@ body {
 .btn-secondary:hover { border-color:var(--accent); color:var(--accent); transform:translateY(-2px); }
 
 /* ── Stats grid ────────────────────────────── */
-.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1.5rem; margin-bottom:2rem; }
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1.5rem; margin-bottom:2rem; }
 .stat-card {
   background:white; border-radius:16px; padding:1.5rem;
   box-shadow:0 2px 8px rgba(0,0,0,.06); border:1px solid #f0f0f0;
@@ -81,7 +81,7 @@ body {
 .stat-icon.purple { background:rgba(139,92,246,.1);  color:#8b5cf6; }
 .stat-icon.red    { background:rgba(6,182,212,.05);   color:#ef4444; }
 
-.stat-value { font-size:2rem; font-weight:800; color:#1a1a1a; margin-bottom:.25rem; }
+.stat-value { font-size:clamp(1.1rem, 2.5vw, 1.75rem); font-weight:800; color:#1a1a1a; margin-bottom:.25rem; line-height:1.2; word-break:break-all; }
 .stat-label { font-size:.875rem; color:#6b7280; font-weight:600; }
 
 /* ── Controls ──────────────────────────────── */
@@ -329,7 +329,7 @@ body {
   .stat-card { padding:1.25rem; gap:1rem; border-radius:14px; }
   .stat-icon { width:52px; height:52px; }
   .stat-icon i { font-size:1.4rem; }
-  .stat-value { font-size:1.75rem; }
+  .stat-value { font-size:clamp(1rem, 4vw, 1.5rem); }
 
   /* Filtros: columna */
   .controls-section { flex-direction:column; gap:.75rem; margin-bottom:1.25rem; }

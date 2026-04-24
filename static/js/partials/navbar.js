@@ -185,6 +185,15 @@ function setActiveNavLink() {
 
         localStorage.setItem('userData', JSON.stringify(user));
 
+        // Citas vs Pedidos según giro de negocio (igual que userbar y sidebar)
+        const GIROS_COMIDA = ['pizzeria','pizza','mariscos','gorditas','restaurante','taqueria','tacos','hamburguesas','sushi','comida'];
+        const bizType = (user.businessType || '').toLowerCase();
+        const isFood  = GIROS_COMIDA.some(g => bizType.includes(g));
+        const citasItem   = document.getElementById('navDropdownCitasItem');
+        const pedidosItem = document.getElementById('navDropdownPedidosItem');
+        if (citasItem)   citasItem.style.display   = isFood ? 'none' : '';
+        if (pedidosItem) pedidosItem.style.display  = isFood ? ''     : 'none';
+
         // Inicializar interactividad solo una vez
         if (!window._navbarUBInitialized) {
             window._navbarUBInitialized = true;
@@ -215,11 +224,7 @@ function setActiveNavLink() {
 
     // ── Cargar sesión ───────────────────────────────────────────────
     async function loadSession() {
-        // Render inmediato desde caché para evitar parpadeo
         const cached = localStorage.getItem('userData');
-        if (cached) {
-            try { showUserState(JSON.parse(cached)); } catch(e) {}
-        }
 
         try {
             const res = await fetch('/api/me', { credentials: 'include' });
@@ -227,11 +232,16 @@ function setActiveNavLink() {
                 const data = await res.json();
                 showUserState(data.user);
             } else {
+                localStorage.removeItem('userData');
                 showGuestState();
             }
         } catch(e) {
-            // Sin conexión o error: mantener estado del caché si existe
-            if (!cached) showGuestState();
+            // Sin conexión: usar caché solo si existe, si no mostrar guest
+            if (cached) {
+                try { showUserState(JSON.parse(cached)); } catch(e2) { showGuestState(); }
+            } else {
+                showGuestState();
+            }
         }
     }
 
