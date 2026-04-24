@@ -18,6 +18,8 @@
     <!-- Wistia Player -->
     <script src="https://fast.wistia.com/player.js" async></script>
     <script src="https://fast.wistia.com/embed/71omn60ej6.js" async type="module"></script>
+    <!-- GSAP para animación pixel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/TweenMax.min.js"></script>
 </head>
 <body>
 <!-- Navbar -->
@@ -32,21 +34,7 @@
 <div class="hero-text-content">
 <h1 class="hero-title">
 <div class="title-line-1">Automatiza tu negocio con</div>
-<svg preserveaspectratio="xMidYMid meet" viewbox="0 0 600 100">
-<defs>
-<lineargradient id="gradient" x1="0%" x2="100%" y1="0%" y2="0%">
-<stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1"></stop>
-<stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1"></stop>
-</lineargradient>
-<pattern height="100%" id="wave" patternunits="userSpaceOnUse" width="100%" x="0" y="-0.5">
-<path d="M-40 45 Q-30 43 -20 45 T0 45 T20 45 T40 45 T60 45 T80 45 T100 45 T120 45 T140 45 T160 45 T180 45 T200 45 T220 45 T240 45 T260 45 T280 45 T300 45 T320 45 T340 45 T360 45 T380 45 T400 45 T420 45 T440 45 T460 45 T480 45 T500 45 T520 45 T540 45 T560 45 T580 45 T600 45 T620 45 T640 45 V100 H-40z" fill="url(#gradient)" id="wavePath">
-<animatetransform attributename="transform" begin="0s" dur="1.5s" from="0,0" repeatcount="indefinite" to="40,0" type="translate"></animatetransform>
-</path>
-</pattern>
-</defs>
-<text class="text-base" fill="white" fill-opacity="0.1" font-size="64" text-anchor="middle" x="300" y="65">Agentes de IA</text>
-<text class="text-wave" fill="url(#wave)" fill-opacity="1" font-size="64" text-anchor="middle" x="300" y="65">Agentes de IA</text>
-</svg>
+<svg id="hero-pixel-svg" class="hero-pixel-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"></svg>
 </h1>
 <p class="hero-subtitle">
                     Crea Agentes inteligentes para WhatsApp, Messenger, Instagram y más. Disponible 24/7, listo en minutos y sin escribir una línea de código.

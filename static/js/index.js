@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initCustomPricingPlan();
     initAtomAnimations();
     initBillingToggle();
+    initPixelTextAnimation();
     
     console.log('✅ Todas las funcionalidades inicializadas');
 });
@@ -88,6 +89,107 @@ function updatePricingCards() {
         
         console.log(`💰 Precio actualizado para ${plan.id}: Monthly=$${monthlyPrice}, Annual=$${annualPrice}`);
     });
+}
+
+// ============================================
+// PIXEL TEXT ANIMATION - HERO "AGENTES DE IA"
+// ============================================
+function initPixelTextAnimation() {
+    const svg = document.getElementById('hero-pixel-svg');
+    if (!svg || typeof TweenMax === 'undefined') {
+        console.warn('⚠️ hero-pixel-svg o GSAP no disponibles');
+        return;
+    }
+
+    const FONT = {
+        // Mayúsculas
+        'A': [[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1]],
+        'G': [[0,1,1,1,1],[1,0,0,0,0],[1,0,0,0,0],[1,0,1,1,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
+        'E': [[1,1,1,1,1],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,0],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,1]],
+        'N': [[1,0,0,0,1],[1,1,0,0,1],[1,0,1,0,1],[1,0,0,1,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1]],
+        'T': [[1,1,1,1,1],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]],
+        'S': [[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,0],[0,1,1,1,0],[0,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
+        'D': [[1,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,0]],
+        'I': [[1,1,1],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[1,1,1]],
+        // Minúsculas
+        'a': [[0,0,0,0,0],[0,0,0,0,0],[0,1,1,1,0],[0,0,0,0,1],[0,1,1,1,1],[1,0,0,0,1],[0,1,1,1,1]],
+        'g': [[0,0,0,0,0],[0,0,0,0,0],[0,1,1,1,1],[1,0,0,0,1],[0,1,1,1,1],[0,0,0,0,1],[0,1,1,1,0]],
+        'e': [[0,0,0,0,0],[0,0,0,0,0],[0,1,1,1,0],[1,0,0,0,1],[1,1,1,1,1],[1,0,0,0,0],[0,1,1,1,0]],
+        'n': [[0,0,0,0,0],[0,0,0,0,0],[1,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1]],
+        't': [[0,0,1,0,0],[0,0,1,0,0],[0,1,1,1,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,1,0]],
+        's': [[0,0,0,0,0],[0,0,0,0,0],[0,1,1,1,0],[1,0,0,0,0],[0,1,1,1,0],[0,0,0,0,1],[0,1,1,1,0]],
+        'd': [[0,0,0,0,1],[0,0,0,0,1],[0,1,1,0,1],[1,0,0,1,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,1]],
+    };
+
+    const PS   = 10;
+    const GAP  = 2;
+    const CELL = PS + GAP;
+    const LSPC = 14;
+    const WSPC = 28;
+    const PADX = 18;
+    const PADY = 14;
+    const ns   = 'http://www.w3.org/2000/svg';
+    const text = 'Agentes de IA';
+
+    let cx = PADX;
+
+    for (let ci = 0; ci < text.length; ci++) {
+        const ch = text[ci];
+        if (ch === ' ') { cx += WSPC; continue; }
+        const grid = FONT[ch];
+        if (!grid) continue;
+        for (let row = 0; row < 7; row++) {
+            for (let col = 0; col < grid[row].length; col++) {
+                if (grid[row][col]) {
+                    const r = document.createElementNS(ns, 'rect');
+                    r.setAttribute('x', cx + col * CELL);
+                    r.setAttribute('y', PADY + row * CELL);
+                    r.setAttribute('width',  PS);
+                    r.setAttribute('height', PS);
+                    r.setAttribute('fill', '#06b6d4');
+                    r.setAttribute('rx', '1.5');
+                    svg.appendChild(r);
+                }
+            }
+        }
+        cx += grid[0].length * CELL - GAP + LSPC;
+    }
+
+    const vw = cx + PADX;
+    const vh = 7 * CELL - GAP + PADY * 2;
+    svg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+
+    // Estilos del SVG
+    svg.style.width = '100%';
+    svg.style.maxWidth = '700px';
+    svg.style.display = 'block';
+    svg.style.overflow = 'visible';
+
+    // Animación GSAP
+    if (typeof CSSPlugin !== 'undefined') CSSPlugin.useSVGTransformAttr = true;
+
+    const tl = new TimelineMax({ repeat: -1, repeatDelay: 0.65, yoyo: true });
+    const els = Array.from(svg.querySelectorAll('rect'));
+
+    els.forEach(function(el) {
+        tl.set(el, {
+            x: '+=' + (Math.random() * 1200 - 600),
+            y: '+=' + (Math.random() * 900 - 450),
+            rotation: '+=' + (Math.random() * 1440 - 720),
+            scale: 0,
+            opacity: 0
+        });
+    });
+
+    tl.staggerTo(els, 0.75, {
+        x: 0, y: 0, opacity: 1, scale: 1, rotation: 0,
+        ease: Power4.easeInOut
+    }, 0.0125);
+
+    svg.addEventListener('mouseenter', function() { tl.timeScale(0.15); });
+    svg.addEventListener('mouseleave', function() { tl.timeScale(1); });
+
+    console.log('✅ Pixel text animation inicializada');
 }
 
 // ============================================
