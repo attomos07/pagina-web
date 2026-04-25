@@ -222,6 +222,7 @@ func (gsm *GlobalServerManager) waitAndMarkServerReady(server *models.GlobalServ
 }
 
 // verifyServerReady verifica que el servidor esté completamente inicializado
+// y configura nginx para servir /uploads/ estáticamente.
 func (gsm *GlobalServerManager) verifyServerReady(server *models.GlobalServer) error {
 	atomicService := NewAtomicBotDeployService(server.IPAddress, server.RootPassword)
 
@@ -230,7 +231,8 @@ func (gsm *GlobalServerManager) verifyServerReady(server *models.GlobalServer) e
 	}
 	defer atomicService.Close()
 
-	log.Printf("   🔍 [GlobalServer %d] [1/3] Verificando cloud-init...", server.ID)
+	// ── [1/4] cloud-init ────────────────────────────────────────────────────
+	log.Printf("   🔍 [GlobalServer %d] [1/4] Verificando cloud-init...", server.ID)
 	cloudInitCmd := `cloud-init status --wait 2>&1 || echo "TIMEOUT"`
 	output, err := atomicService.executeCommand(cloudInitCmd)
 	if err != nil || strings.Contains(output, "TIMEOUT") {
@@ -241,7 +243,8 @@ func (gsm *GlobalServerManager) verifyServerReady(server *models.GlobalServer) e
 	}
 	log.Printf("   ✅ [GlobalServer %d] Cloud-init completado", server.ID)
 
-	log.Printf("   🔍 [GlobalServer %d] [2/3] Verificando Go...", server.ID)
+	// ── [2/4] Go ────────────────────────────────────────────────────────────
+	log.Printf("   🔍 [GlobalServer %d] [2/4] Verificando Go...", server.ID)
 	goCmd := `export PATH=$PATH:/usr/local/go/bin && go version 2>&1`
 	goOutput, err := atomicService.executeCommand(goCmd)
 	if err != nil || !strings.Contains(goOutput, "go version") {
@@ -249,7 +252,8 @@ func (gsm *GlobalServerManager) verifyServerReady(server *models.GlobalServer) e
 	}
 	log.Printf("   ✅ [GlobalServer %d] Go instalado: %s", server.ID, strings.TrimSpace(goOutput))
 
-	log.Printf("   🔍 [GlobalServer %d] [3/3] Verificando GCC...", server.ID)
+	// ── [3/4] GCC ───────────────────────────────────────────────────────────
+	log.Printf("   🔍 [GlobalServer %d] [3/4] Verificando GCC...", server.ID)
 	gccCmd := `gcc --version 2>&1`
 	gccOutput, err := atomicService.executeCommand(gccCmd)
 	if err != nil || !strings.Contains(gccOutput, "gcc") {
@@ -257,6 +261,72 @@ func (gsm *GlobalServerManager) verifyServerReady(server *models.GlobalServer) e
 	}
 	gccVersion := strings.Split(gccOutput, "\n")[0]
 	log.Printf("   ✅ [GlobalServer %d] GCC instalado: %s", server.ID, gccVersion)
+
+	// ── [4/4] nginx para servir /uploads/ ───────────────────────────────────
+	// Usamos python3 para escribir el archivo de config nginx sin problemas de
+	// heredoc/escaping dentro de un comando SSH en Go.
+	log.Printf("   🔍 [GlobalServer %d] [4/4] Configurando nginx para /uploads/...", server.ID)
+
+	nginxSetupCmd := `bash -c '
+set -e
+
+# Instalar nginx si no está
+if ! command -v nginx &>/dev/null; then
+    apt-get update -qq
+    apt-get install -y -qq nginx
+fi
+
+# Crear directorio de uploads con permisos correctos
+mkdir -p /var/www/uploads
+chmod 755 /var/www/uploads
+chown www-data:www-data /var/www/uploads 2>/dev/null || true
+
+# Escribir config nginx via python3 para evitar problemas de escaping
+python3 -c "
+import os
+conf = """server {
+    listen 80 default_server;
+    server_name _;
+
+    location /uploads/ {
+        alias /var/www/uploads/;
+        autoindex off;
+        add_header Access-Control-Allow-Origin \"*\";
+        add_header Cache-Control \"public, max-age=2592000\";
+        expires 30d;
+    }
+}
+"""
+os.makedirs(\"/etc/nginx/sites-available\", exist_ok=True)
+with open(\"/etc/nginx/sites-available/attomos-uploads\", \"w\") as f:
+    f.write(conf)
+print(\"config_written\")
+"
+
+# Activar el site y desactivar el default si existe
+ln -sf /etc/nginx/sites-available/attomos-uploads /etc/nginx/sites-enabled/attomos-uploads
+rm -f /etc/nginx/sites-enabled/default
+
+# Validar y recargar nginx
+nginx -t 2>&1
+systemctl enable nginx
+systemctl restart nginx
+
+echo "NGINX_OK"
+'`
+
+	nginxOutput, err := atomicService.executeCommand(nginxSetupCmd)
+	if err != nil {
+		log.Printf("   ❌ [GlobalServer %d] Error configurando nginx: %v — output: %s",
+			server.ID, err, strings.TrimSpace(nginxOutput))
+		return fmt.Errorf("error configurando nginx: %w", err)
+	}
+	if !strings.Contains(nginxOutput, "NGINX_OK") {
+		log.Printf("   ❌ [GlobalServer %d] nginx no reportó OK — output: %s",
+			server.ID, strings.TrimSpace(nginxOutput))
+		return fmt.Errorf("nginx no quedó configurado correctamente: %s", strings.TrimSpace(nginxOutput))
+	}
+	log.Printf("   ✅ [GlobalServer %d] nginx configurado — /uploads/ disponible en puerto 80", server.ID)
 
 	log.Printf("✅ [GlobalServer %d] Health check exitoso - Servidor completamente listo", server.ID)
 	return nil

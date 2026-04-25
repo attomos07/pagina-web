@@ -793,8 +793,8 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                     <h2>Menú</h2>
                                 </div>
                             </div>
-                            <div class="card-content">
-                                <p class="card-hint">Sube tu menú en PDF o como imagen. El agente de IA lo usará como referencia.</p>
+                            <div class="card-content" style="display:flex;flex-direction:column;gap:1.25rem;">
+                                <p class="card-hint" style="margin:0;">Sube tu menú en PDF o como imagen. El agente de IA lo usará como referencia.</p>
                                 <div class="menu-upload-area" id="menuUploadArea">
                                     <input type="file" id="menuFileInput" accept="image/*,.pdf" style="display:none">
                                     <div class="menu-upload-placeholder" id="menuUploadPlaceholder">
@@ -816,6 +816,8 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                         <div class="menu-upload-progress" id="menuUploadProgress" style="display:none">
                                             <div class="menu-progress-bar" id="menuProgressBar"></div>
                                         </div>
+                                        <!-- Vista previa del archivo -->
+                                        <div class="menu-file-viewer" id="menuFileViewer" style="display:none"></div>
                                     </div>
                                     <input type="hidden" id="menuUrlInput" value="">
                                 </div>

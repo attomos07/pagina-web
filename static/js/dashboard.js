@@ -657,17 +657,13 @@ async function loadOnboardingContent() {
                     }
                     .section-nav-btn.completed:hover i { color: #10b981 !important; }
 
-                    /* Ocultar elementos del step1/progreso */
+                    /* Ocultar barra de progreso (no necesaria en modal) */
                     #onboardingModalBody .progress-wrapper,
                     #onboardingModalBody .steps-progress,
                     #onboardingModalBody .step-indicators,
                     #onboardingModalBody #progressPercentage,
                     #onboardingModalBody .progress-header,
-                    #onboardingModalBody .progress-dots,
-                    #onboardingModalBody #step1 { display: none !important; }
-
-                    /* step2 visible */
-                    #onboardingModalBody #step2 { display: block !important; }
+                    #onboardingModalBody .progress-dots { display: none !important; }
 
                     /* ── Corregir header del modal ── */
                     /* El onboarding.css puede pisar el header — forzar layout correcto */
@@ -784,12 +780,15 @@ async function reinitializeOnboardingEvents() {
         modalBody.scrollTop = 0;
     }
 
-    // ── Ocultar step1, activar step2 ─────────────────────────────────
-    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    // ── Mostrar step1 (Red Social) primero ──────────────────────────
+    document.querySelectorAll('.step').forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
     const step1 = document.getElementById('step1');
     const step2 = document.getElementById('step2');
-    if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
-    if (step2) { step2.classList.add('active'); step2.style.display = ''; }
+    if (step1) { step1.classList.add('active'); step1.style.display = ''; }
+    if (step2) { step2.classList.remove('active'); step2.style.display = 'none'; }
+    // Ocultar sectionNav hasta que el usuario complete step1
+    const sectionNavEl = document.getElementById('sectionNavigation');
+    if (sectionNavEl) sectionNavEl.style.display = 'none';
 
     // ── Detectar si ya existe al menos un agente ─────────────────────
     let _hasExistingAgents = false;
@@ -798,6 +797,8 @@ async function reinitializeOnboardingEvents() {
         if (_agentsResp.ok) {
             const _agentsData = await _agentsResp.json();
             _hasExistingAgents = Array.isArray(_agentsData.agents) && _agentsData.agents.length > 0;
+            // En el modal del dashboard los campos de Mi Negocio siempre son editables
+            window._onboardingReadonly = false;
         }
     } catch (_) { /* continuar con flujo completo si falla */ }
 
@@ -967,8 +968,35 @@ async function reinitializeOnboardingEvents() {
         }
     }, 150);
 
-    // ── Activar sección inicial según contexto ───────────────────────
-    window._modalGoToSection(_hasExistingAgents ? 'section-basic' : 'section-business');
+    // ── Hook btnStep1: al hacer clic en "Continuar" de Red Social ──
+    setTimeout(() => {
+        const btnStep1El = document.getElementById('btnStep1');
+        if (btnStep1El) {
+            const btnStep1Clone = btnStep1El.cloneNode(true);
+            btnStep1El.parentNode.replaceChild(btnStep1Clone, btnStep1El);
+            btnStep1Clone.addEventListener('click', () => {
+                if (step1) { step1.classList.remove('active'); step1.style.display = 'none'; }
+                if (step2) { step2.classList.add('active'); step2.style.display = ''; }
+                const nav = document.getElementById('sectionNavigation');
+                if (nav) nav.style.display = '';
+                window._modalGoToSection(_hasExistingAgents ? 'section-basic' : 'section-business');
+            });
+            console.log('✅ [dashboard] Hook btnStep1 registrado');
+        }
+
+        // Listeners para radios de red social
+        document.querySelectorAll('input[name="social"]').forEach(radio => {
+            radio.addEventListener('change', function () {
+                try { selectedSocial = this.value; } catch(e) {}
+                try { agentData.social = this.value; } catch(e) {}
+                try { window.selectedSocial = this.value; } catch(e) {}
+                try { window.agentData.social = this.value; } catch(e) {}
+                const btn = document.getElementById('btnStep1');
+                if (btn) btn.disabled = false;
+                console.log('✅ [dashboard] Red social seleccionada:', this.value);
+            });
+        });
+    }, 200);
 
     if (typeof updateProgressBar === 'function') updateProgressBar();
 }

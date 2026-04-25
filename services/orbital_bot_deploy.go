@@ -137,16 +137,16 @@ func (s *OrbitalBotDeployService) DeployOrbitalBot(agent *models.Agent, geminiAP
 	return nil
 }
 
-// prepareServer prepara el servidor (instala Go, GCC)
+// prepareServer prepara el servidor (instala Go, GCC, nginx para uploads)
 func (s *OrbitalBotDeployService) prepareServer(botDir string) error {
 	// Crear directorios
-	log.Printf("   [1/4] Creando directorios...")
+	log.Printf("   [1/5] Creando directorios...")
 	if output, err := s.executeCommand(fmt.Sprintf("mkdir -p %s/src", botDir)); err != nil {
 		return fmt.Errorf("error creando directorios: %w\nOutput: %s", err, output)
 	}
 
 	// Esperar a que cloud-init libere locks de apt
-	log.Printf("   [2/4] Esperando que cloud-init termine...")
+	log.Printf("   [2/5] Esperando que cloud-init termine...")
 	waitCmd := `timeout 300 bash -c 'while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do echo "Esperando locks de apt..."; sleep 5; done'`
 	if output, err := s.executeCommand(waitCmd); err != nil {
 		log.Printf("   ⚠️  Timeout esperando locks (continuando de todas formas): %v", err)
@@ -155,7 +155,7 @@ func (s *OrbitalBotDeployService) prepareServer(botDir string) error {
 	}
 
 	// Verificar e instalar GCC/build-essential
-	log.Printf("   [3/4] Verificando/instalando GCC...")
+	log.Printf("   [3/5] Verificando/instalando GCC...")
 	gccCmd := `
 	timeout 60 bash -c 'while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 2; done' || true
 	
@@ -191,7 +191,7 @@ func (s *OrbitalBotDeployService) prepareServer(botDir string) error {
 	}
 
 	// Instalar Go si no existe
-	log.Printf("   [4/4] Verificando/instalando Go...")
+	log.Printf("   [4/5] Verificando/instalando Go...")
 	installGoCmd := `
 	if ! command -v go &> /dev/null; then
 		echo "Descargando Go 1.24..."
@@ -223,6 +223,76 @@ func (s *OrbitalBotDeployService) prepareServer(botDir string) error {
 	}
 	if err != nil {
 		return fmt.Errorf("error instalando Go: %w", err)
+	}
+
+	// Configurar nginx para servir /uploads/ en puerto 8080.
+	// OrbitalBot usa servidores individuales con URLs http://{ip}:8080/uploads/branch_X/...
+	// El bot orbital corre en agent.Port (distinto de 8080), nginx toma 8080 libremente.
+	// Idempotente: si ya está configurado igual, no hace nada.
+	log.Printf("   [5/5] Verificando/configurando nginx para /uploads/ (puerto 8080)...")
+	nginxCmd := `bash -c '
+set -e
+
+if ! command -v nginx &>/dev/null; then
+    timeout 60 bash -c "while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 2; done" || true
+    apt-get install -y -qq nginx
+    echo "nginx_instalado"
+else
+    echo "nginx_ya_existe"
+fi
+
+mkdir -p /var/www/uploads
+chmod 755 /var/www/uploads
+
+python3 -c "
+import os
+conf = \"\"\"server {
+    listen 8080;
+    server_name _;
+
+    location /uploads/ {
+        alias /var/www/uploads/;
+        autoindex off;
+        add_header Access-Control-Allow-Origin \\\"*\\\";
+        add_header Cache-Control \\\"public, max-age=2592000\\\";
+        expires 30d;
+    }
+}
+\"\"\"
+os.makedirs(\"/etc/nginx/sites-available\", exist_ok=True)
+dest = \"/etc/nginx/sites-available/attomos-uploads-orbital\"
+try:
+    with open(dest) as f:
+        existing = f.read()
+    if existing == conf:
+        print(\"nginx_config_sin_cambios\")
+        exit(0)
+except FileNotFoundError:
+    pass
+with open(dest, \"w\") as f:
+    f.write(conf)
+print(\"nginx_config_escrita\")
+"
+
+ln -sf /etc/nginx/sites-available/attomos-uploads-orbital /etc/nginx/sites-enabled/attomos-uploads-orbital
+
+nginx -t 2>&1
+systemctl enable nginx --quiet
+if systemctl is-active nginx --quiet; then
+    systemctl reload nginx
+else
+    systemctl start nginx
+fi
+
+echo "NGINX_OK"
+'`
+
+	nginxOutput, nginxErr := s.executeCommand(nginxCmd)
+	if nginxErr != nil || !strings.Contains(nginxOutput, "NGINX_OK") {
+		log.Printf("   ⚠️  [prepareServer] nginx no se pudo configurar (las imágenes pueden no verse): %v — output: %s",
+			nginxErr, strings.TrimSpace(nginxOutput))
+	} else {
+		log.Printf("   ✅ nginx configurado — /uploads/ disponible en puerto 8080")
 	}
 
 	log.Printf("   ✅ Servidor preparado correctamente")

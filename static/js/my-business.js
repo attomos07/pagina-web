@@ -1751,6 +1751,8 @@ function initMenu() {
         document.getElementById('menuUrlInput').value = '';
         document.getElementById('menuFilePreview').style.display = 'none';
         document.getElementById('menuUploadPlaceholder').style.display = '';
+        const v = document.getElementById('menuFileViewer');
+        if (v) { v.style.display = 'none'; v.innerHTML = ''; }
         fileInput.value = '';
     });
 }
@@ -1801,9 +1803,10 @@ async function handleMenuFile(file) {
         document.getElementById('menuUrlInput').value = url;
         setTimeout(() => {
             document.getElementById('menuUploadProgress').style.display = 'none';
+            _renderMenuViewer(url);
         }, 500);
 
-        Sileo?.toast('Menú subido correctamente', 'success');
+        showNotification('Menú subido correctamente', 'success');
     } catch (err) {
         console.error('❌ Error subiendo menú:', err);
         document.getElementById('menuUploadProgress').style.display = 'none';
@@ -1823,4 +1826,18 @@ function renderMenuPreview(url) {
     document.getElementById('menuUploadPlaceholder').style.display = 'none';
     document.getElementById('menuFilePreview').style.display = '';
     document.getElementById('menuUrlInput').value = url;
+    _renderMenuViewer(url);
+}
+
+// Renderiza iframe (PDF) o img (imagen) en el viewer
+function _renderMenuViewer(url) {
+    const viewer = document.getElementById('menuFileViewer');
+    if (!viewer || !url) return;
+    const isPdf = url.toLowerCase().endsWith('.pdf');
+    viewer.style.display = 'block';
+    if (isPdf) {
+        viewer.innerHTML = `<iframe src="${url}" title="Vista previa del menú"></iframe>`;
+    } else {
+        viewer.innerHTML = `<img src="${url}" alt="Vista previa del menú">`;
+    }
 }

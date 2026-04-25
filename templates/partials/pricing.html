@@ -156,6 +156,108 @@
         </div>
     </section>
 
+
+    <!-- Cost Calculator Section -->
+    <section class="calculator-section">
+        <div class="container">
+            <h2 class="section-title">Calculadora de Costos de IA</h2>
+            <p class="section-subtitle">Estima cuánto gastarás en Gemini 2.5 Flash-Lite según el volumen de tu negocio</p>
+
+            <div class="calculator-card">
+                <!-- ── INPUTS ── -->
+                <div class="calculator-inputs">
+
+                    <!-- Conversaciones -->
+                    <div class="calc-group">
+                        <label class="calc-label">
+                            <i class="lni lni-comments"></i>
+                            Conversaciones por mes
+                        </label>
+                        <div class="calc-slider-wrap">
+                            <input type="range" id="convSlider" min="100" max="50000" step="100" value="1000" class="calc-slider">
+                            <input type="number" id="convInput" value="1000" min="1" class="calc-number-input">
+                        </div>
+                        <div class="calc-scale">
+                            <span>100</span><span>10k</span><span>25k</span><span>50k</span>
+                        </div>
+                    </div>
+
+                    <!-- Tokens por mensaje (separado entrada / salida) -->
+                    <div class="calc-group">
+                        <label class="calc-label">
+                            <i class="lni lni-arrow-right"></i>
+                            Tokens por mensaje de <strong style="color:#06b6d4">entrada</strong>
+                            <span class="calc-hint">(cliente + contexto)</span>
+                        </label>
+                        <div class="calc-token-row">
+                            <input type="range" id="tokInSlider" min="50" max="5000" step="50" value="580" class="calc-slider">
+                            <input type="number" id="tokInInput" value="580" min="1" class="calc-number-input">
+                        </div>
+                    </div>
+
+                    <div class="calc-group">
+                        <label class="calc-label">
+                            <i class="lni lni-arrow-left"></i>
+                            Tokens por mensaje de <strong style="color:#10b981">salida</strong>
+                            <span class="calc-hint">(respuesta del bot)</span>
+                        </label>
+                        <div class="calc-token-row">
+                            <input type="range" id="tokOutSlider" min="50" max="2000" step="50" value="180" class="calc-slider">
+                            <input type="number" id="tokOutInput" value="180" min="1" class="calc-number-input">
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ── RESULTADO ── -->
+                <div class="calculator-result">
+                    <div class="result-header">
+                        <i class="lni lni-calculator"></i>
+                        Estimado mensual
+                    </div>
+
+                    <div class="result-main">
+                        <div class="result-usd" id="resultUSD">$0.00 USD</div>
+                        <div class="result-mxn" id="resultMXN">≈ $0.00 MXN</div>
+                    </div>
+
+                    <div class="result-breakdown">
+                        <div class="breakdown-item breakdown-in">
+                            <span class="breakdown-label">Tokens entrada / costo</span>
+                            <div class="breakdown-dual">
+                                <span class="breakdown-val" id="bdInput">—</span>
+                                <span class="breakdown-cost" id="bdInputCost">—</span>
+                            </div>
+                        </div>
+                        <div class="breakdown-item breakdown-out">
+                            <span class="breakdown-label">Tokens salida / costo</span>
+                            <div class="breakdown-dual">
+                                <span class="breakdown-val" id="bdOutput">—</span>
+                                <span class="breakdown-cost" id="bdOutputCost">—</span>
+                            </div>
+                        </div>
+                        <div class="breakdown-item breakdown-total">
+                            <span class="breakdown-label">Total tokens/mes</span>
+                            <span class="breakdown-val" id="bdTotal">—</span>
+                        </div>
+                    </div>
+
+                    <div class="result-tier" id="resultTier">
+                        <i class="lni lni-gift"></i>
+                        <span>Este volumen entra en el <strong>nivel gratuito</strong> de Gemini</span>
+                    </div>
+
+                    <div class="result-note">
+                        Gemini 2.5 Flash-Lite: entrada $0.10/M · salida $0.40/M tokens<br>
+                        <a href="https://ai.google.dev/gemini-api/docs/pricing?hl=es-419#standard_9" target="_blank" rel="noopener" style="color:rgba(255,255,255,0.6);text-decoration:underline;">
+                            Ver precios oficiales de Google ↗
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- FAQ Section -->
     <section class="faq-section">
         <div class="container">

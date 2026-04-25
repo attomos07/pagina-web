@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initPricingInteractions();
     initComparisonTable();
     initFAQ();
+    initCostCalculator();
     
     console.log('✅ Pricing functionality initialized');
 });
@@ -619,4 +620,111 @@ function initSectionFadeIn(selector) {
 
     sections.forEach(s => observer.observe(s));
     console.log('✅ Section fade-in inicializado');
+}
+
+// ============================================
+// COST CALCULATOR
+// ============================================
+
+function initCostCalculator() {
+    // ── Element refs ──
+    const convSlider   = document.getElementById('convSlider');
+    const convInput    = document.getElementById('convInput');
+    const tokInSlider  = document.getElementById('tokInSlider');
+    const tokInInput   = document.getElementById('tokInInput');
+    const tokOutSlider = document.getElementById('tokOutSlider');
+    const tokOutInput  = document.getElementById('tokOutInput');
+    if (!convSlider) return;
+
+    // ── State ──
+    let conversations  = 1000;
+    const messagesPerConv = 10; // fijo: promedio típico de mensajes por conversación
+    let tokIn  = 580;   // tokens entrada por mensaje (cliente + contexto)
+    let tokOut = 180;   // tokens salida por mensaje (respuesta bot)
+
+    // Precios Gemini 2.5 Flash-Lite (USD / 1M tokens)
+    const PRICE_IN  = 0.10;
+    const PRICE_OUT = 0.40;
+    const MXN_RATE  = 20;
+
+    function fmt(n) { return Math.round(n).toLocaleString('es-MX'); }
+
+    function updateSliderTrack(slider) {
+        const min = parseFloat(slider.min);
+        const max = parseFloat(slider.max);
+        const val = parseFloat(slider.value);
+        const pct = ((val - min) / (max - min)) * 100;
+        slider.style.background = `linear-gradient(to right, #06b6d4 ${pct}%, #e5e7eb ${pct}%)`;
+    }
+
+    function calculate() {
+        const totalInTokens  = tokIn  * messagesPerConv * conversations;
+        const totalOutTokens = tokOut * messagesPerConv * conversations;
+        const totalTokens    = totalInTokens + totalOutTokens;
+
+        const costIn  = (totalInTokens  / 1_000_000) * PRICE_IN;
+        const costOut = (totalOutTokens / 1_000_000) * PRICE_OUT;
+        const costUSD = costIn + costOut;
+        const costMXN = costUSD * MXN_RATE;
+
+        document.getElementById('resultUSD').textContent     = '$' + costUSD.toFixed(2) + ' USD';
+        document.getElementById('resultMXN').textContent     = '≈ $' + costMXN.toFixed(0) + ' MXN';
+        document.getElementById('bdInput').textContent       = fmt(totalInTokens / 1000) + 'K';
+        document.getElementById('bdInputCost').textContent   = '$' + costIn.toFixed(3) + ' USD';
+        document.getElementById('bdOutput').textContent      = fmt(totalOutTokens / 1000) + 'K';
+        document.getElementById('bdOutputCost').textContent  = '$' + costOut.toFixed(3) + ' USD';
+        document.getElementById('bdTotal').textContent       = fmt(totalTokens / 1000) + 'K';
+
+        // Tier: nivel gratuito Gemini ~500 RPD (conversaciones diarias)
+        const dailyConv = conversations / 30;
+        const tierEl = document.getElementById('resultTier');
+        if (dailyConv <= 500) {
+            tierEl.className = 'result-tier';
+            tierEl.innerHTML = '<i class="lni lni-gift"></i><span>Este volumen entra en el <strong>nivel gratuito</strong> de Gemini — $0 USD en API</span>';
+        } else {
+            tierEl.className = 'result-tier paid';
+            tierEl.innerHTML = '<i class="lni lni-warning"></i><span>Este volumen requiere el <strong>nivel de pago</strong>. Considera cachear el contexto del negocio.</span>';
+        }
+    }
+
+    // ── Sync slider ↔ number input ──
+    function syncPair(slider, input, setter) {
+        slider.addEventListener('input', () => {
+            const v = parseInt(slider.value);
+            setter(v);
+            input.value = v;
+            updateSliderTrack(slider);
+            calculate();
+        });
+        input.addEventListener('input', () => {
+            let v = parseInt(input.value) || 0;
+            if (v < parseInt(slider.min)) v = parseInt(slider.min);
+            if (v > parseInt(slider.max)) v = parseInt(slider.max);
+            slider.value = v;
+            setter(v);
+            updateSliderTrack(slider);
+            calculate();
+        });
+        input.addEventListener('blur', () => {
+            let v = parseInt(input.value) || parseInt(slider.min);
+            if (v < parseInt(slider.min)) v = parseInt(slider.min);
+            if (v > parseInt(slider.max)) v = parseInt(slider.max);
+            input.value = v;
+            slider.value = v;
+            setter(v);
+            updateSliderTrack(slider);
+            calculate();
+        });
+    }
+
+    syncPair(convSlider,   convInput,   v => { conversations   = v; });
+    syncPair(tokInSlider,  tokInInput,  v => { tokIn           = v; });
+    syncPair(tokOutSlider, tokOutInput, v => { tokOut          = v; });
+
+    // ── Init slider tracks ──
+    updateSliderTrack(convSlider);
+    updateSliderTrack(tokInSlider);
+    updateSliderTrack(tokOutSlider);
+
+    calculate();
 }

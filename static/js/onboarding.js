@@ -3,9 +3,9 @@
 // ============================================
 let currentStep = 1;
 let currentSection = 1;
-let selectedSocial = '';
+window.selectedSocial = ''; let selectedSocial = window.selectedSocial;
 let userBusinessType = '';
-let agentData = {
+window.agentData = {
   social: '',        // plataforma: 'whatsapp' | 'meta'
   branchId: 0,       // ID de my_business_info (fuente de verdad)
   businessType: '',  // heredado de my-business (para validación local)
@@ -36,6 +36,7 @@ let agentData = {
     }
   }
 };
+let agentData = window.agentData;
 
 // Datos del negocio cargados desde /api/my-business (solo lectura en onboarding)
 let businessData = null;
@@ -1390,7 +1391,9 @@ function initializeSocialSelection() {
   socialInputs.forEach(input => {
     input.addEventListener('change', function() {
       selectedSocial = this.value;
+      window.selectedSocial = this.value;
       agentData.social = this.value;
+      window.agentData.social = this.value;
       btnStep1.disabled = false;
     });
   });

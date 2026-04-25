@@ -778,3 +778,308 @@ body {
         font-size: 28px;
     }
 }
+/* ============================================
+   COST CALCULATOR SECTION
+   ============================================ */
+
+.calculator-section {
+    padding: 100px 20px;
+    background: #f9fafb;
+}
+
+.section-subtitle {
+    text-align: center;
+    color: #6b7280;
+    font-size: 18px;
+    margin-top: -24px;
+    margin-bottom: 48px;
+}
+
+.calculator-card {
+    max-width: 960px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.08);
+    border: 1px solid #e5e7eb;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    overflow: hidden;
+}
+
+/* ── Inputs side ── */
+.calculator-inputs {
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+}
+
+.calc-group {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.calc-label {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.calc-label i {
+    color: #06b6d4;
+    font-size: 1.1rem;
+}
+
+/* Slider */
+.calc-slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.calc-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: #e5e7eb;
+    outline: none;
+    cursor: pointer;
+}
+
+.calc-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #06b6d4;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(6,182,212,0.4);
+    transition: transform 0.15s;
+}
+
+.calc-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.calc-value-badge {
+    min-width: 72px;
+    text-align: center;
+    padding: 6px 12px;
+    background: #06b6d4;
+    color: white;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.calc-scale {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    padding: 0 2px;
+}
+
+/* Pills */
+.calc-pills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.calc-pill {
+    padding: 8px 20px;
+    border: 2px solid #e5e7eb;
+    border-radius: 999px;
+    background: white;
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.calc-pill span {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #9ca3af;
+}
+
+.calc-pill:hover {
+    border-color: #06b6d4;
+    color: #06b6d4;
+}
+
+.calc-pill.active {
+    border-color: #06b6d4;
+    background: #06b6d4;
+    color: white;
+}
+
+.calc-pill.active span {
+    color: rgba(255,255,255,0.8);
+}
+
+/* ── Result side ── */
+.calculator-result {
+    background: linear-gradient(160deg, #0e7490 0%, #06b6d4 100%);
+    padding: 40px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    color: white;
+}
+
+.result-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.85;
+}
+
+.result-header i { font-size: 1.1rem; }
+
+.result-main {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.result-usd {
+    font-size: 2.75rem;
+    font-weight: 800;
+    line-height: 1;
+    transition: all 0.3s;
+}
+
+.result-mxn {
+    font-size: 1.1rem;
+    font-weight: 600;
+    opacity: 0.8;
+    transition: all 0.3s;
+}
+
+.result-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 14px;
+    padding: 16px;
+}
+
+.breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+}
+
+.breakdown-label { opacity: 0.8; }
+
+.breakdown-val {
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.result-tier {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: rgba(16,185,129,0.25);
+    border: 1px solid rgba(16,185,129,0.5);
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.result-tier i { font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+
+.result-tier.paid {
+    background: rgba(245,158,11,0.2);
+    border-color: rgba(245,158,11,0.4);
+}
+
+.result-note {
+    font-size: 0.72rem;
+    opacity: 0.6;
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .calculator-card {
+        grid-template-columns: 1fr;
+    }
+    .calculator-inputs { padding: 28px 24px; }
+    .calculator-result { padding: 28px 24px; }
+    .result-usd { font-size: 2.2rem; }
+}
+
+/* ── Calculator number inputs ── */
+.calc-number-input {
+    width: 90px;
+    padding: 6px 10px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    text-align: center;
+    transition: border-color 0.2s;
+    flex-shrink: 0;
+    -moz-appearance: textfield;
+}
+.calc-number-input::-webkit-outer-spin-button,
+.calc-number-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.calc-number-input:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6,182,212,0.12);
+}
+
+.calc-token-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.calc-hint {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #9ca3af;
+    margin-left: 4px;
+}
+
+/* Breakdown dual (tokens + cost) */
+.breakdown-dual {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+.breakdown-cost {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    font-weight: 500;
+}
+.breakdown-in  .breakdown-label { color: rgba(255,255,255,0.75); }
+.breakdown-in  .breakdown-label::before { content: "→ "; }
+.breakdown-out .breakdown-label { color: rgba(255,255,255,0.75); }
+.breakdown-out .breakdown-label::before { content: "← "; }
+.breakdown-total { border-top: 1px solid rgba(255,255,255,0.15); padding-top: 10px; margin-top: 2px; }

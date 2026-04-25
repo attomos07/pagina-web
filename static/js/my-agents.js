@@ -159,7 +159,7 @@ async function loadOnboardingContent() {
 function reinitializeOnboardingEvents() {
     console.log('🔄 Reinicializando modal del agente (my-agents)');
 
-    if (typeof window.agentData !== 'undefined') window.agentData = (typeof defaultAgentData==='function')?defaultAgentData():{};
+    if (typeof agentData !== 'undefined') { agentData.social=''; agentData.name=''; agentData.phoneNumber=''; agentData.config={tone:'formal',customTone:'',languages:[],additionalLanguages:[],specialInstructions:'',schedule:{monday:{open:true,start:'09:00',end:'18:00'},tuesday:{open:true,start:'09:00',end:'18:00'},wednesday:{open:true,start:'09:00',end:'18:00'},thursday:{open:true,start:'09:00',end:'18:00'},friday:{open:true,start:'09:00',end:'18:00'},saturday:{open:false,start:'09:00',end:'14:00'},sunday:{open:false,start:'09:00',end:'14:00'}}}; }
     if (typeof window.currentSection !== 'undefined') window.currentSection = 1;
 
     const modal = document.getElementById('onboardingModal');
@@ -340,8 +340,9 @@ function reinitializeOnboardingEvents() {
     // para que document.getElementById('btnStep1') apunte siempre al nodo actual
     document.querySelectorAll('input[name="social"]').forEach(radio => {
         radio.addEventListener('change', function () {
-            if (typeof window.selectedSocial !== 'undefined') window.selectedSocial = this.value;
-            if (typeof window.agentData !== 'undefined') window.agentData.social = this.value;
+            // Escribir directamente en las vars globales de onboarding.js (son let, no window.*)
+            try { selectedSocial = this.value; } catch(e) {}
+            try { agentData.social = this.value; } catch(e) {}
             const btn = document.getElementById('btnStep1');
             if (btn) btn.disabled = false;
             console.log('✅ [my-agents] Red social seleccionada:', this.value, '— btnStep1 habilitado');
