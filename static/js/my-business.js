@@ -1018,12 +1018,14 @@ function initSaveButton() {
     }
 }
 
-async function saveProfile() {
+async function saveProfile(opts = {}) {
     const saveBtn = document.getElementById('saveProfileBtn');
     const originalText = saveBtn.innerHTML;
 
-    saveBtn.innerHTML = `<div class="loading-spinner"></div><span>Guardando...</span>`;
-    saveBtn.disabled = true;
+    if (!opts.silent) {
+        saveBtn.innerHTML = `<div class="loading-spinner"></div><span>Guardando...</span>`;
+        saveBtn.disabled = true;
+    }
 
     const profileData = {
         branchId: activeBranchId || 0,
@@ -1068,8 +1070,7 @@ async function saveProfile() {
         });
 
         const result = await response.json();
-        saveBtn.innerHTML = originalText;
-        saveBtn.disabled = false;
+        if (!opts.silent) { saveBtn.innerHTML = originalText; saveBtn.disabled = false; }
 
         if (response.ok && result.success) {
             // Actualizar nombre en el dropdown si cambió
@@ -1092,14 +1093,13 @@ async function saveProfile() {
                 window.userbarUtils.updateUserData('businessType', newBusinessType);
             }
 
-            showNotification('¡Cambios guardados exitosamente!', 'success');
+            if (!opts.silent) showNotification('¡Cambios guardados exitosamente!', 'success');
         } else {
             throw new Error(result.error || 'Error desconocido');
         }
     } catch (error) {
         console.error('❌ Error:', error);
-        saveBtn.innerHTML = originalText;
-        saveBtn.disabled = false;
+        if (!opts.silent) { saveBtn.innerHTML = originalText; saveBtn.disabled = false; }
         showNotification(error.message || 'Error al guardar', 'error');
     }
 }
@@ -1771,7 +1771,7 @@ async function handleMenuFile(file) {
     document.getElementById('menuFileSize').textContent = (file.size / 1024).toFixed(0) + ' KB';
     document.getElementById('menuUploadPlaceholder').style.display = 'none';
     document.getElementById('menuFilePreview').style.display = '';
-    // Preview local inmediata
+    // Preview local inmediata antes del upload
     const localUrl = URL.createObjectURL(file);
     _renderMenuViewer(localUrl, isPdf);
     document.getElementById('menuUploadProgress').style.display = '';
@@ -1808,6 +1808,8 @@ async function handleMenuFile(file) {
             document.getElementById('menuUploadProgress').style.display = 'none';
         }, 500);
 
+        // Auto-guardar menuUrl en la BD para que persista al recargar
+        await saveProfile({ silent: true });
         showNotification('Menú subido correctamente', 'success');
     } catch (err) {
         console.error('❌ Error subiendo menú:', err);
