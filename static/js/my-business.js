@@ -1808,7 +1808,7 @@ async function handleMenuFile(file) {
             document.getElementById('menuUploadProgress').style.display = 'none';
         }, 500);
 
-        // Auto-guardar menuUrl en la BD para que persista al recargar
+        // Auto-guardar menuUrl en BD para que persista al recargar
         await saveProfile({ silent: true });
         showNotification('Menú subido correctamente', 'success');
     } catch (err) {
@@ -1834,13 +1834,27 @@ function renderMenuPreview(url) {
 }
 
 // Renderiza iframe (PDF) o img (imagen) en el viewer
-function _renderMenuViewer(url, isPdf) {
+async function _renderMenuViewer(url, isPdf) {
     const viewer = document.getElementById('menuFileViewer');
     if (!viewer || !url) return;
     if (isPdf === undefined) isPdf = url.toLowerCase().endsWith('.pdf');
     viewer.style.display = 'block';
     if (isPdf) {
-        viewer.innerHTML = `<iframe src="${url}" title="Vista previa del menú"></iframe>`;
+        // Si es blob URL local, usarla directo
+        if (url.startsWith('blob:')) {
+            viewer.innerHTML = `<iframe src="${url}" title="Vista previa del menú"></iframe>`;
+        } else {
+            // URL del servidor: fetchear como blob para evitar Content-Disposition: attachment
+            viewer.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100px;color:#9ca3af;font-size:.85rem;gap:.5rem"><div class="brand-spinner"></div> Cargando vista previa...</div>`;
+            try {
+                const resp = await fetch(url, { credentials: 'include' });
+                const blob = await resp.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                viewer.innerHTML = `<iframe src="${blobUrl}" title="Vista previa del menú"></iframe>`;
+            } catch (e) {
+                viewer.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:80px;color:#9ca3af;font-size:.85rem;">No se pudo cargar la vista previa</div>`;
+            }
+        }
     } else {
         viewer.innerHTML = `<img src="${url}" alt="Vista previa del menú">`;
     }
