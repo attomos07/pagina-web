@@ -1021,7 +1021,6 @@ function initSaveButton() {
 async function saveProfile(opts = {}) {
     const saveBtn = document.getElementById('saveProfileBtn');
     const originalText = saveBtn.innerHTML;
-
     if (!opts.silent) {
         saveBtn.innerHTML = `<div class="loading-spinner"></div><span>Guardando...</span>`;
         saveBtn.disabled = true;
@@ -1771,7 +1770,6 @@ async function handleMenuFile(file) {
     document.getElementById('menuFileSize').textContent = (file.size / 1024).toFixed(0) + ' KB';
     document.getElementById('menuUploadPlaceholder').style.display = 'none';
     document.getElementById('menuFilePreview').style.display = '';
-    // Preview local inmediata antes del upload
     const localUrl = URL.createObjectURL(file);
     _renderMenuViewer(localUrl, isPdf);
     document.getElementById('menuUploadProgress').style.display = '';
@@ -1807,8 +1805,6 @@ async function handleMenuFile(file) {
         setTimeout(() => {
             document.getElementById('menuUploadProgress').style.display = 'none';
         }, 500);
-
-        // Auto-guardar menuUrl en BD para que persista al recargar
         await saveProfile({ silent: true });
         showNotification('Menú subido correctamente', 'success');
     } catch (err) {
@@ -1840,19 +1836,27 @@ async function _renderMenuViewer(url, isPdf) {
     if (isPdf === undefined) isPdf = url.toLowerCase().endsWith('.pdf');
     viewer.style.display = 'block';
     if (isPdf) {
-        // Si es blob URL local, usarla directo
         if (url.startsWith('blob:')) {
+            // Archivo local recién subido — directo al iframe
             viewer.innerHTML = `<iframe src="${url}" title="Vista previa del menú"></iframe>`;
         } else {
-            // URL del servidor: fetchear como blob para evitar Content-Disposition: attachment
-            viewer.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100px;color:#9ca3af;font-size:.85rem;gap:.5rem"><div class="brand-spinner"></div> Cargando vista previa...</div>`;
+            // URL del servidor — fetchear como blob para evitar Content-Disposition: attachment
+            viewer.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:80px;color:#9ca3af;font-size:.85rem;gap:.5rem"><div class="brand-spinner"></div> Cargando vista previa...</div>`;
             try {
-                const resp = await fetch(url, { credentials: 'include' });
+                const resp = await fetch(url, { credentials: 'include', mode: 'cors' });
+                if (!resp.ok) throw new Error('fetch failed');
                 const blob = await resp.blob();
                 const blobUrl = URL.createObjectURL(blob);
                 viewer.innerHTML = `<iframe src="${blobUrl}" title="Vista previa del menú"></iframe>`;
             } catch (e) {
-                viewer.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:80px;color:#9ca3af;font-size:.85rem;">No se pudo cargar la vista previa</div>`;
+                // Fallback: botón para abrir en nueva pestaña
+                viewer.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;padding:1.5rem;color:#6b7280;font-size:.85rem;text-align:center;">
+                    <i class="lni lni-files" style="font-size:2rem;color:#06b6d4;"></i>
+                    <span>Vista previa no disponible</span>
+                    <a href="${url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.4rem;padding:.45rem 1rem;border:1.5px solid #06b6d4;border-radius:8px;background:white;color:#06b6d4;font-size:.82rem;font-weight:600;text-decoration:none;">
+                        <i class="lni lni-eye"></i> Ver PDF
+                    </a>
+                </div>`;
             }
         }
     } else {
