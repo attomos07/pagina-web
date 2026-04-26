@@ -112,9 +112,27 @@ func Chat(promptContext, userMessage, conversationHistory string) (string, error
 	// Obtener el prompt del sistema desde la configuración del negocio
 	systemPrompt := GetSystemPrompt()
 
+	// Construir catálogo de media para instrucciones especiales
+	mediaCatalog := ""
+	if BusinessCfg != nil {
+		photosSection := ""
+		for _, svc := range BusinessCfg.Services {
+			if len(svc.ImageUrls) > 0 {
+				photosSection += fmt.Sprintf("  - %s\n", svc.Title)
+			}
+		}
+		if photosSection != "" {
+			mediaCatalog += "\nSERVICIOS/PRODUCTOS CON FOTOS DISPONIBLES:\n" + photosSection
+			mediaCatalog += "\nREGLA CRÍTICA DE FOTOS: Si el cliente pide ver fotos, imágenes o cómo se ve alguno de los productos/servicios de la lista anterior, tu respuesta debe ser EXCLUSIVAMENTE esta línea, sin ningún texto antes ni después:\nSEND_PHOTOS:TituloExactoDelServicio\nDonde TituloExactoDelServicio es el título tal como aparece en la lista. NO agregues explicación, emojis ni texto adicional.\n"
+		}
+		if BusinessCfg.MenuUrl != "" {
+			mediaCatalog += "\nREGLA CRÍTICA DE MENÚ: Si el cliente pide el menú, la carta, el PDF o imagen del menú, responde EXCLUSIVAMENTE con:\nSEND_MENU\nSin texto adicional.\n"
+		}
+	}
+
 	// Construir prompt completo
 	fullPrompt := fmt.Sprintf(`%s
-
+%s
 HISTORIAL DE CONVERSACIÓN:
 %s
 
@@ -130,6 +148,7 @@ INSTRUCCIONES:
 
 RESPUESTA:`,
 		systemPrompt,
+		mediaCatalog,
 		conversationHistory,
 		promptContext,
 		userMessage)

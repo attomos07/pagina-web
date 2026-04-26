@@ -3,6 +3,8 @@ package src
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -38,6 +40,109 @@ func SendMessage(jid types.JID, text string) error {
 
 	_, err := client.SendMessage(context.Background(), jid, msg)
 	return err
+}
+
+// SendImage descarga una imagen desde url y la envía al chat con un caption opcional.
+func SendImage(jid types.JID, imageURL string, caption string) error {
+	if client == nil {
+		return fmt.Errorf("cliente no configurado")
+	}
+
+	data, mimeType, err := downloadMedia(imageURL)
+	if err != nil {
+		return fmt.Errorf("error descargando imagen: %w", err)
+	}
+
+	uploaded, err := client.Upload(context.Background(), data, whatsmeow.MediaImage)
+	if err != nil {
+		return fmt.Errorf("error subiendo imagen a WhatsApp: %w", err)
+	}
+
+	msg := &waProto.Message{
+		ImageMessage: &waProto.ImageMessage{
+			Caption:       proto.String(caption),
+			Mimetype:      proto.String(mimeType),
+			URL:           proto.String(uploaded.URL),
+			DirectPath:    proto.String(uploaded.DirectPath),
+			MediaKey:      uploaded.MediaKey,
+			FileEncSHA256: uploaded.FileEncSHA256,
+			FileSHA256:    uploaded.FileSHA256,
+			FileLength:    proto.Uint64(uploaded.FileLength),
+		},
+	}
+
+	_, err = client.SendMessage(context.Background(), jid, msg)
+	return err
+}
+
+// SendDocument descarga un archivo desde url y lo envía como documento al chat.
+func SendDocument(jid types.JID, fileURL string, fileName string, caption string) error {
+	if client == nil {
+		return fmt.Errorf("cliente no configurado")
+	}
+
+	data, mimeType, err := downloadMedia(fileURL)
+	if err != nil {
+		return fmt.Errorf("error descargando documento: %w", err)
+	}
+
+	uploaded, err := client.Upload(context.Background(), data, whatsmeow.MediaDocument)
+	if err != nil {
+		return fmt.Errorf("error subiendo documento a WhatsApp: %w", err)
+	}
+
+	msg := &waProto.Message{
+		DocumentMessage: &waProto.DocumentMessage{
+			Title:         proto.String(fileName),
+			Caption:       proto.String(caption),
+			Mimetype:      proto.String(mimeType),
+			URL:           proto.String(uploaded.URL),
+			DirectPath:    proto.String(uploaded.DirectPath),
+			MediaKey:      uploaded.MediaKey,
+			FileEncSHA256: uploaded.FileEncSHA256,
+			FileSHA256:    uploaded.FileSHA256,
+			FileLength:    proto.Uint64(uploaded.FileLength),
+		},
+	}
+
+	_, err = client.SendMessage(context.Background(), jid, msg)
+	return err
+}
+
+// downloadMedia descarga bytes desde una URL HTTP y detecta el MIME type.
+func downloadMedia(url string) ([]byte, string, error) {
+	resp, err := http.Get(url) //nolint:noctx
+	if err != nil {
+		return nil, "", fmt.Errorf("GET %s: %w", url, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, "", fmt.Errorf("GET %s: status %d", url, resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", fmt.Errorf("leyendo body: %w", err)
+	}
+
+	mimeType := resp.Header.Get("Content-Type")
+	if mimeType == "" {
+		// Detectar por extensión
+		urlLower := strings.ToLower(url)
+		switch {
+		case strings.HasSuffix(urlLower, ".pdf"):
+			mimeType = "application/pdf"
+		case strings.HasSuffix(urlLower, ".png"):
+			mimeType = "image/png"
+		case strings.HasSuffix(urlLower, ".webp"):
+			mimeType = "image/webp"
+		default:
+			mimeType = "image/jpeg"
+		}
+	}
+
+	return data, mimeType, nil
 }
 
 // NormalizeText normaliza texto quitando acentos y convirtiendo a minúsculas

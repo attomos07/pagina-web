@@ -845,6 +845,7 @@ body {
 .calc-slider {
     flex: 1;
     -webkit-appearance: none;
+    appearance: none;
     height: 6px;
     border-radius: 3px;
     background: #e5e7eb;
@@ -1044,9 +1045,10 @@ body {
     transition: border-color 0.2s;
     flex-shrink: 0;
     -moz-appearance: textfield;
+    appearance: textfield;
 }
 .calc-number-input::-webkit-outer-spin-button,
-.calc-number-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.calc-number-input::-webkit-inner-spin-button { -webkit-appearance: none; appearance: none; }
 .calc-number-input:focus {
     outline: none;
     border-color: #06b6d4;

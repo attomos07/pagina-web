@@ -94,8 +94,105 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 	log.Printf("   💬 Texto: %s", messageText)
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
+	// ── Detección temprana de solicitud de menú ──────────────────────────────
+	// Se maneja aquí para tener acceso al JID y poder enviar imagen/documento.
+	if BusinessCfg != nil && BusinessCfg.MenuUrl != "" {
+		msgLower := strings.ToLower(messageText)
+		menuKeywords := []string{
+			"menu", "menú", "carta",
+			"que tienen", "qué tienen",
+			"ver menu", "ver menú",
+			"manda menu", "manda el menu", "manda menú", "manda el menú",
+			"muestra menu", "muestra el menu",
+			"pdf", "imagen del men", "foto del men",
+			"tienen men", "tienen carta",
+		}
+		isMenuRequest := false
+		for _, kw := range menuKeywords {
+			if strings.Contains(msgLower, kw) {
+				isMenuRequest = true
+				break
+			}
+		}
+		if isMenuRequest {
+			menuURL := BusinessCfg.MenuUrl
+			log.Printf("📋 Solicitud de menú detectada — enviando: %s", menuURL)
+			urlLower := strings.ToLower(menuURL)
+			var sendErr error
+			if strings.HasSuffix(urlLower, ".pdf") {
+				sendErr = SendDocument(msg.Info.Chat, menuURL, "menu.pdf", "")
+			} else {
+				sendErr = SendImage(msg.Info.Chat, menuURL, "")
+			}
+			if sendErr != nil {
+				log.Printf("❌ Error enviando menú: %v", sendErr)
+				// fallback: enviar URL como texto
+				SendMessage(msg.Info.Chat, menuURL)
+			} else {
+				log.Printf("✅ Menú enviado correctamente")
+			}
+			log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+			return
+		}
+	}
+
 	// Procesar mensaje
 	response := ProcessMessage(messageText, phoneNumber, senderName)
+
+	// ── Interceptar respuestas de media de Gemini ───────────────────────────
+	// Gemini puede envolver el tag en texto, buscamos en toda la respuesta
+	if idx := strings.Index(response, "SEND_PHOTOS:"); idx != -1 {
+		raw := response[idx+len("SEND_PHOTOS:"):]
+		// Cortar en el primer salto de línea, emoji o fin de cadena
+		end := len(raw)
+		for i, ch := range raw {
+			if ch == '\n' || ch == '\r' || ch == '🌽' || ch == '🍕' || ch == '✅' {
+				end = i
+				break
+			}
+		}
+		serviceTitle := strings.TrimSpace(raw[:end])
+		log.Printf("📸 Gemini solicita fotos del servicio: %s", serviceTitle)
+		sent := false
+		if BusinessCfg != nil {
+			var matched *Service
+			queryNorm := normalizeStr(serviceTitle)
+
+			// 1. Coincidencia exacta (case-insensitive)
+			for i := range BusinessCfg.Services {
+				if strings.EqualFold(strings.TrimSpace(BusinessCfg.Services[i].Title), serviceTitle) {
+					matched = &BusinessCfg.Services[i]
+					break
+				}
+			}
+			// 2. Fuzzy: el título normalizado contiene la query o viceversa
+			if matched == nil {
+				for i := range BusinessCfg.Services {
+					titleNorm := normalizeStr(BusinessCfg.Services[i].Title)
+					if strings.Contains(titleNorm, queryNorm) || strings.Contains(queryNorm, titleNorm) {
+						matched = &BusinessCfg.Services[i]
+						break
+					}
+				}
+			}
+
+			if matched != nil && len(matched.ImageUrls) > 0 {
+				for _, imgURL := range matched.ImageUrls {
+					if err := SendImage(msg.Info.Chat, imgURL, ""); err != nil {
+						log.Printf("❌ Error enviando foto de servicio: %v", err)
+					}
+				}
+				log.Printf("✅ Fotos de '%s' enviadas (%d imágenes)", matched.Title, len(matched.ImageUrls))
+				sent = true
+			}
+		}
+		if !sent {
+			log.Printf("⚠️  Servicio '%s' no encontrado o sin fotos", serviceTitle)
+			SendMessage(msg.Info.Chat, "No encontré fotos de ese producto. ¿Puedes ser más específico?")
+		}
+		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		return
+	}
 
 	// Enviar respuesta
 	if response != "" {
@@ -855,4 +952,16 @@ func cleanPhoneNumber(userID string) string {
 	fixed := "52" + local
 	log.Printf("⚠️  Longitud inusual (%d dígitos), tomando últimos 10: %s → %s", len(cleaned), cleaned, fixed)
 	return fixed
+}
+
+// normalizeStr convierte a minúsculas y elimina acentos para comparación fuzzy
+func normalizeStr(s string) string {
+	s = strings.ToLower(s)
+	replacer := strings.NewReplacer(
+		"á", "a", "é", "e", "í", "i", "ó", "o", "ú", "u",
+		"à", "a", "è", "e", "ì", "i", "ò", "o", "ù", "u",
+		"ä", "a", "ë", "e", "ï", "i", "ö", "o", "ü", "u",
+		"ñ", "n",
+	)
+	return replacer.Replace(s)
 }

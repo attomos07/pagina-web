@@ -13,19 +13,23 @@ import (
 
 // BusinessConfig contiene toda la configuración del negocio
 type BusinessConfig struct {
-	AgentName    string      `json:"agentName"`
-	BusinessType string      `json:"businessType"`
-	PhoneNumber  string      `json:"phoneNumber"`
-	Website      string      `json:"website,omitempty"`
-	Email        string      `json:"email,omitempty"`
-	Description  string      `json:"description,omitempty"`
-	Personality  Personality `json:"personality"`
-	Schedule     Schedule    `json:"schedule"`
-	Holidays     []Holiday   `json:"holidays"`
-	Services     []Service   `json:"services"`
-	Workers      []Worker    `json:"workers"`
-	Location     Location    `json:"location"`
-	SocialMedia  SocialMedia `json:"socialMedia"`
+	AgentName    string `json:"agentName"`
+	BusinessType string `json:"businessType"`
+	PhoneNumber  string `json:"phoneNumber"`
+	Website      string `json:"website,omitempty"`
+	Email        string `json:"email,omitempty"`
+	Description  string `json:"description,omitempty"`
+	// URLs de imágenes y menú del negocio
+	MenuUrl     string      `json:"menuUrl,omitempty"`
+	LogoUrl     string      `json:"logoUrl,omitempty"`
+	BannerUrl   string      `json:"bannerUrl,omitempty"`
+	Personality Personality `json:"personality"`
+	Schedule    Schedule    `json:"schedule"`
+	Holidays    []Holiday   `json:"holidays"`
+	Services    []Service   `json:"services"`
+	Workers     []Worker    `json:"workers"`
+	Location    Location    `json:"location"`
+	SocialMedia SocialMedia `json:"socialMedia"`
 }
 
 // Personality define la personalidad del bot
@@ -62,12 +66,13 @@ type Holiday struct {
 
 // Service representa un servicio/producto
 type Service struct {
-	Title         string  `json:"title"`
-	Description   string  `json:"description"`
-	PriceType     string  `json:"priceType"` // normal, promotion
-	Price         float64 `json:"price,omitempty"`
-	OriginalPrice float64 `json:"originalPrice,omitempty"`
-	PromoPrice    float64 `json:"promoPrice,omitempty"`
+	Title         string   `json:"title"`
+	Description   string   `json:"description"`
+	PriceType     string   `json:"priceType"` // normal, promotion
+	Price         float64  `json:"price,omitempty"`
+	OriginalPrice float64  `json:"originalPrice,omitempty"`
+	PromoPrice    float64  `json:"promoPrice,omitempty"`
+	ImageUrls     []string `json:"imageUrls,omitempty"`
 }
 
 // Worker representa un trabajador

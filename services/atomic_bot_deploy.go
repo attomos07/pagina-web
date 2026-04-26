@@ -24,19 +24,23 @@ type AtomicBotDeployService struct {
 
 // BusinessConfig estructura para generar business_config.json
 type BusinessConfig struct {
-	AgentName    string      `json:"agentName"`
-	BusinessType string      `json:"businessType"`
-	PhoneNumber  string      `json:"phoneNumber"`
-	Website      string      `json:"website,omitempty"`
-	Email        string      `json:"email,omitempty"`
-	Description  string      `json:"description,omitempty"`
-	Personality  Personality `json:"personality"`
-	Schedule     Schedule    `json:"schedule"`
-	Holidays     []Holiday   `json:"holidays"`
-	Services     []Service   `json:"services"`
-	Workers      []Worker    `json:"workers"`
-	Location     Location    `json:"location"`
-	SocialMedia  SocialMedia `json:"socialMedia"`
+	AgentName    string `json:"agentName"`
+	BusinessType string `json:"businessType"`
+	PhoneNumber  string `json:"phoneNumber"`
+	Website      string `json:"website,omitempty"`
+	Email        string `json:"email,omitempty"`
+	Description  string `json:"description,omitempty"`
+	// URLs de imágenes y menú
+	MenuUrl     string      `json:"menuUrl,omitempty"`
+	LogoUrl     string      `json:"logoUrl,omitempty"`
+	BannerUrl   string      `json:"bannerUrl,omitempty"`
+	Personality Personality `json:"personality"`
+	Schedule    Schedule    `json:"schedule"`
+	Holidays    []Holiday   `json:"holidays"`
+	Services    []Service   `json:"services"`
+	Workers     []Worker    `json:"workers"`
+	Location    Location    `json:"location"`
+	SocialMedia SocialMedia `json:"socialMedia"`
 }
 
 type Personality struct {
@@ -547,7 +551,7 @@ func (s *AtomicBotDeployService) DeployAtomicBot(agent *models.Agent, branch *mo
 }
 
 // prepareServer prepara el servidor (instala Go, GCC, nginx, crea directorios)
-func (s *AtomicBotDeployService) prepareServer(userID uint, botDir string) error {
+func (s *AtomicBotDeployService) prepareServer(_ uint, botDir string) error {
 	// Crear directorios
 	log.Printf("   [1/5] Creando directorios...")
 	if output, err := s.executeCommand(fmt.Sprintf("mkdir -p %s/src", botDir)); err != nil {
@@ -718,7 +722,7 @@ echo "NGINX_OK"
 }
 
 // transferBotFiles transfiere los archivos del bot al servidor
-func (s *AtomicBotDeployService) transferBotFiles(userID uint, botDir string) error {
+func (s *AtomicBotDeployService) transferBotFiles(_ uint, botDir string) error {
 	// Ruta local del código del bot
 	localBotPath := "./providers/atomic-whatsapp-web"
 
@@ -852,6 +856,10 @@ func (s *AtomicBotDeployService) generateBusinessConfig(agent *models.Agent, bra
 		config.Website = branch.Website
 		config.Email = branch.Email
 		config.Description = branch.Description
+		// URLs de imágenes y menú
+		config.MenuUrl = branch.MenuURL
+		config.LogoUrl = branch.LogoURL
+		config.BannerUrl = branch.BannerURL
 
 		config.Location = Location{
 			Address:        branch.Location.Address,
@@ -1066,7 +1074,7 @@ func (s *AtomicBotDeployService) generateEnvFile(agent *models.Agent, geminiAPIK
 }
 
 // compileBotOnServer compila el bot en el servidor
-func (s *AtomicBotDeployService) compileBotOnServer(userID uint, botDir string) error {
+func (s *AtomicBotDeployService) compileBotOnServer(_ uint, botDir string) error {
 	compileCmd := fmt.Sprintf(`
 	export PATH=$PATH:/usr/local/go/bin
 	export HOME=/root
