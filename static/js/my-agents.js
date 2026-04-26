@@ -188,16 +188,18 @@ function reinitializeOnboardingEvents() {
     if (sectionNavEl) sectionNavEl.style.display = 'none';
 
     const AGENT_SECTIONS = [
+        { id:1, containerId:'section-business',    name:'Info. Negocio', icon:'lni-briefcase' },
         { id:2, containerId:'section-basic',      name:'Info. Básica',  icon:'lni-information' },
         { id:5, containerId:'section-personality', name:'Personalidad',  icon:'lni-comments' },
         { id:6, containerId:'section-schedule',    name:'Horarios',      icon:'lni-calendar' },
         { id:7, containerId:'section-holidays',    name:'Días Festivos', icon:'lni-gift' },
         { id:8, containerId:'section-services',    name:'Servicios',     icon:'lni-package' },
-        { id:9, containerId:'section-workers',     name:'Trabajadores',  icon:'lni-users' },
+        { id:9, containerId:'section-menu',        name:'Menú',          icon:'lni-files' },
+        { id:10, containerId:'section-workers',    name:'Trabajadores',  icon:'lni-users' },
     ];
     const AGENT_IDS = AGENT_SECTIONS.map(s => s.containerId);
 
-    ['section-business','section-location','section-social'].forEach(id => {
+    ['section-location','section-social'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.classList.remove('active'); el.style.display = 'none'; }
     });
@@ -208,6 +210,7 @@ function reinitializeOnboardingEvents() {
     if (typeof initializeHolidays==='function') initializeHolidays();
     if (typeof initializeServices==='function') initializeServices();
     if (typeof initializeWorkers==='function') initializeWorkers();
+    if (typeof initializeMenu==='function') initializeMenu();
     if (typeof initializeLocationDropdowns==='function') initializeLocationDropdowns();
     if (typeof initializeSocialMediaInputs==='function') initializeSocialMediaInputs();
     if (typeof initializeBusinessTypeSelect==='function') initializeBusinessTypeSelect();
@@ -336,19 +339,20 @@ function reinitializeOnboardingEvents() {
         console.log('✅ [my-agents] Hook btnStep1 registrado');
     }
 
-    // FIX: registrar listeners en los radios de red social DESPUÉS del clone
-    // para que document.getElementById('btnStep1') apunte siempre al nodo actual
-    document.querySelectorAll('input[name="social"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-            // Escribir directamente en las vars globales de onboarding.js (son let, no window.*)
-            try { selectedSocial = this.value; } catch(e) {}
-            try { agentData.social = this.value; } catch(e) {}
-            const btn = document.getElementById('btnStep1');
-            if (btn) btn.disabled = false;
-            console.log('✅ [my-agents] Red social seleccionada:', this.value, '— btnStep1 habilitado');
+
+    // ── Social radio: event delegation robusta sobre step1 ──────────────────
+    const _step1El = document.getElementById('step1');
+    if (_step1El) {
+        _step1El.addEventListener('change', function(e) {
+            if (e.target && e.target.name === 'social') {
+                if (window.agentData) window.agentData.social = e.target.value;
+                const btn = document.getElementById('btnStep1');
+                if (btn) btn.disabled = false;
+            }
         });
-    });
-    console.log('✅ [my-agents] Listeners de red social registrados:', document.querySelectorAll('input[name="social"]').length);
+    }
+    // También llamar initializeSocialSelection si ya está disponible
+    if (typeof initializeSocialSelection === 'function') initializeSocialSelection();
 }
 
 

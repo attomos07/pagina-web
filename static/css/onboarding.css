@@ -3384,3 +3384,98 @@ input:checked + .toggle-slider:before {
   border-color: #f59e0b;
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
 }
+
+/* ── Sección Menú – Upload area ── */
+.menu-upload-area {
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  transition: all 0.2s;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+.menu-upload-area.menu-drag-over {
+  border-color: #06b6d4;
+  background: #ecfeff;
+}
+.menu-upload-placeholder {
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: #9ca3af;
+  text-align: center;
+}
+.menu-upload-placeholder:hover {
+  background: #f9fafb;
+  color: #6b7280;
+}
+.menu-upload-placeholder i {
+  font-size: 2.25rem;
+  color: #06b6d4;
+}
+.menu-upload-placeholder strong { color: #06b6d4; }
+.menu-upload-hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+.menu-file-preview { padding: 1rem; }
+.menu-file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.menu-file-info > i {
+  font-size: 1.75rem;
+  color: #06b6d4;
+  flex-shrink: 0;
+}
+.menu-file-info > div {
+  flex: 1;
+  min-width: 0;
+}
+.menu-file-name {
+  display: block;
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.menu-file-size {
+  display: block;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+.btn-remove-menu {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #fee2e2;
+  color: #ef4444;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.btn-remove-menu:hover { background: #fecaca; }
+.menu-upload-progress {
+  margin-top: 0.75rem;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.menu-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #06b6d4, #0891b2);
+  border-radius: 99px;
+  transition: width 0.15s ease;
+}
+.menu-file-viewer {
+  margin-top: 0.75rem;
+}

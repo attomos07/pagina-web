@@ -818,7 +818,8 @@ async function reinitializeOnboardingEvents() {
             { id: 6,  containerId: 'section-schedule',     name: 'Horarios',       icon: 'lni-calendar' },
             { id: 7,  containerId: 'section-holidays',     name: 'Días Festivos',  icon: 'lni-gift' },
             { id: 8,  containerId: 'section-services',     name: 'Servicios',      icon: 'lni-package' },
-            { id: 9,  containerId: 'section-workers',      name: 'Trabajadores',   icon: 'lni-users' },
+            { id: 9,  containerId: 'section-menu',         name: 'Menú',           icon: 'lni-files' },
+            { id: 10, containerId: 'section-workers',      name: 'Trabajadores',   icon: 'lni-users' },
           ];
 
     const AGENT_IDS = AGENT_SECTIONS.map(s => s.containerId);
@@ -827,7 +828,7 @@ async function reinitializeOnboardingEvents() {
     const _alwaysHide = ['section-location', 'section-social'];
     // Si ya tiene agentes, también ocultar las de negocio/horarios/festivos/servicios/trabajadores
     if (_hasExistingAgents) {
-        _alwaysHide.push('section-business','section-schedule','section-holidays','section-services','section-workers');
+        _alwaysHide.push('section-business','section-schedule','section-holidays','section-services','section-menu','section-workers');
     }
     _alwaysHide.forEach(id => {
         const el = document.getElementById(id);
@@ -841,6 +842,7 @@ async function reinitializeOnboardingEvents() {
     if (typeof initializeSchedule === 'function') initializeSchedule();
     if (typeof initializeHolidays === 'function') initializeHolidays();
     if (typeof initializeServices === 'function') initializeServices();
+    if (typeof initializeMenu === 'function') initializeMenu();
     if (typeof initializeWorkers === 'function') initializeWorkers();
     if (typeof initializeLocationDropdowns === 'function') initializeLocationDropdowns();
     if (typeof initializeSocialMediaInputs === 'function') initializeSocialMediaInputs();

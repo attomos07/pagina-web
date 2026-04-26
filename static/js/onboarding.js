@@ -51,7 +51,8 @@ const SECTIONS = [
   { id: 6, name: 'Horarios', icon: 'lni-calendar', containerId: 'section-schedule' },
   { id: 7, name: 'Días Festivos', icon: 'lni-gift', containerId: 'section-holidays' },
   { id: 8, name: 'Servicios', icon: 'lni-package', containerId: 'section-services' },
-  { id: 9, name: 'Trabajadores', icon: 'lni-users', containerId: 'section-workers' }
+  { id: 9, name: 'Menú', icon: 'lni-files', containerId: 'section-menu' },
+  { id: 10, name: 'Trabajadores', icon: 'lni-users', containerId: 'section-workers' }
 ];
 
 // Location data
@@ -154,6 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initializeHolidays();
   initializeServices();
   initializeWorkers();
+  initializeMenu();
   initializeLocationDropdowns();
   initializeSocialMediaInputs();
   
@@ -2403,7 +2405,7 @@ function updateProgressBar() {
     fraction = 0;
   } else if (currentStep === 2) {
     // Opción B: solo las 9 secciones del paso 2 marcan el progreso real (0%→100%)
-    fraction = currentSection / 9;
+    fraction = currentSection / SECTIONS.length;
   } else {
     fraction = 1.0;
   }
@@ -3004,6 +3006,7 @@ async function createAgent() {
         phoneNumber: agentData.phoneNumber,
         businessType: agentData.businessType,
         branchId: agentData.branchId,
+        menuUrl: agentData.menuUrl || '',
         metaDocument: '',
         config: agentData.config
       }),
@@ -3201,4 +3204,114 @@ function updateStatusSteps(currentStep) {
     
     container.appendChild(stepDiv);
   });
+}
+
+// ============================================
+// SECCIÓN MENÚ
+// ============================================
+function initializeMenu() {
+  const area        = document.getElementById('ob-menuUploadArea');
+  const fileInput   = document.getElementById('ob-menuFileInput');
+  const placeholder = document.getElementById('ob-menuUploadPlaceholder');
+  const btnRemove   = document.getElementById('ob-btnRemoveMenu');
+  if (!area || !fileInput) return;
+
+  placeholder?.addEventListener('click', () => fileInput.click());
+
+  area.addEventListener('dragover', e => {
+    e.preventDefault();
+    area.classList.add('menu-drag-over');
+  });
+  area.addEventListener('dragleave', () => area.classList.remove('menu-drag-over'));
+  area.addEventListener('drop', e => {
+    e.preventDefault();
+    area.classList.remove('menu-drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) handleMenuFileOnboarding(file);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) handleMenuFileOnboarding(fileInput.files[0]);
+  });
+
+  btnRemove?.addEventListener('click', () => {
+    document.getElementById('ob-menuUrlInput').value = '';
+    document.getElementById('ob-menuFilePreview').style.display = 'none';
+    document.getElementById('ob-menuUploadPlaceholder').style.display = '';
+    const v = document.getElementById('ob-menuFileViewer');
+    if (v) { v.style.display = 'none'; v.innerHTML = ''; }
+    fileInput.value = '';
+    agentData.menuUrl = '';
+  });
+}
+
+async function handleMenuFileOnboarding(file) {
+  const maxMB = 10;
+  if (file.size > maxMB * 1024 * 1024) {
+    Sileo?.toast(`El archivo supera ${maxMB}MB`, 'error');
+    return;
+  }
+
+  const isPdf = file.type === 'application/pdf';
+  document.getElementById('ob-menuFileIcon').className = isPdf ? 'lni lni-files' : 'lni lni-image';
+  document.getElementById('ob-menuFileName').textContent = file.name;
+  document.getElementById('ob-menuFileSize').textContent = (file.size / 1024).toFixed(0) + ' KB';
+  document.getElementById('ob-menuUploadPlaceholder').style.display = 'none';
+  document.getElementById('ob-menuFilePreview').style.display = '';
+  document.getElementById('ob-menuUploadProgress').style.display = '';
+  document.getElementById('ob-menuProgressBar').style.width = '0%';
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', isPdf ? 'pdf' : 'image');
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress = Math.min(progress + 10, 85);
+      document.getElementById('ob-menuProgressBar').style.width = progress + '%';
+    }, 150);
+
+    const branchId = agentData.branchId || 0;
+    const resp = await fetch(`/api/upload/menu?branch_id=${branchId}`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData
+    });
+
+    clearInterval(interval);
+    if (!resp.ok) throw new Error('Error al subir el menú');
+
+    const data = await resp.json();
+    const url = data.url || data.menuUrl || '';
+
+    document.getElementById('ob-menuProgressBar').style.width = '100%';
+    document.getElementById('ob-menuUrlInput').value = url;
+    agentData.menuUrl = url;
+
+    setTimeout(() => {
+      document.getElementById('ob-menuUploadProgress').style.display = 'none';
+      _renderMenuViewerOnboarding(url);
+    }, 500);
+
+    Sileo?.toast('Menú subido correctamente', 'success');
+  } catch (err) {
+    console.error('❌ Error subiendo menú:', err);
+    document.getElementById('ob-menuUploadProgress').style.display = 'none';
+    document.getElementById('ob-menuFilePreview').style.display = 'none';
+    document.getElementById('ob-menuUploadPlaceholder').style.display = '';
+    Sileo?.toast('Error al subir el menú', 'error');
+  }
+}
+
+function _renderMenuViewerOnboarding(url) {
+  const viewer = document.getElementById('ob-menuFileViewer');
+  if (!viewer || !url) return;
+  const isPdf = url.toLowerCase().endsWith('.pdf');
+  viewer.style.display = 'block';
+  if (isPdf) {
+    viewer.innerHTML = `<iframe src="${url}" title="Vista previa del menú" style="width:100%;height:300px;border:none;border-radius:8px;"></iframe>`;
+  } else {
+    viewer.innerHTML = `<img src="${url}" alt="Vista previa del menú" style="max-width:100%;border-radius:8px;margin-top:0.75rem;">`;
+  }
 }
