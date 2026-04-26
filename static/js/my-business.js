@@ -1771,6 +1771,9 @@ async function handleMenuFile(file) {
     document.getElementById('menuFileSize').textContent = (file.size / 1024).toFixed(0) + ' KB';
     document.getElementById('menuUploadPlaceholder').style.display = 'none';
     document.getElementById('menuFilePreview').style.display = '';
+    // Preview local inmediata
+    const localUrl = URL.createObjectURL(file);
+    _renderMenuViewer(localUrl, isPdf);
     document.getElementById('menuUploadProgress').style.display = '';
     document.getElementById('menuProgressBar').style.width = '0%';
 
@@ -1803,7 +1806,6 @@ async function handleMenuFile(file) {
         document.getElementById('menuUrlInput').value = url;
         setTimeout(() => {
             document.getElementById('menuUploadProgress').style.display = 'none';
-            _renderMenuViewer(url);
         }, 500);
 
         showNotification('Menú subido correctamente', 'success');
@@ -1830,10 +1832,10 @@ function renderMenuPreview(url) {
 }
 
 // Renderiza iframe (PDF) o img (imagen) en el viewer
-function _renderMenuViewer(url) {
+function _renderMenuViewer(url, isPdf) {
     const viewer = document.getElementById('menuFileViewer');
     if (!viewer || !url) return;
-    const isPdf = url.toLowerCase().endsWith('.pdf');
+    if (isPdf === undefined) isPdf = url.toLowerCase().endsWith('.pdf');
     viewer.style.display = 'block';
     if (isPdf) {
         viewer.innerHTML = `<iframe src="${url}" title="Vista previa del menú"></iframe>`;
