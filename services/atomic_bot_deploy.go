@@ -514,7 +514,7 @@ func (s *AtomicBotDeployService) DeployAtomicBot(agent *models.Agent, branch *mo
 
 	// PASO 2: Transferir archivos del bot
 	log.Printf("📤 [Agent %d] PASO 2/6: Transfiriendo archivos del bot...", agent.ID)
-	if err := s.transferBotFiles(agent.UserID, botDir); err != nil {
+	if err := s.TransferBotFiles(agent.UserID, botDir); err != nil {
 		return fmt.Errorf("error transfiriendo archivos: %w", err)
 	}
 
@@ -721,8 +721,8 @@ echo "NGINX_OK"
 	return nil
 }
 
-// transferBotFiles transfiere los archivos del bot al servidor
-func (s *AtomicBotDeployService) transferBotFiles(_ uint, botDir string) error {
+// TransferBotFiles transfiere los archivos del bot al servidor
+func (s *AtomicBotDeployService) TransferBotFiles(_ uint, botDir string) error {
 	// Ruta local del código del bot
 	localBotPath := "./providers/atomic-whatsapp-web"
 

@@ -1242,27 +1242,23 @@ func RedeployAgent(c *gin.Context) {
 			}
 		}
 
-		// 6. Actualizar código fuente del bot en el servidor (git pull)
-		log.Printf("🔄 [Agent %d] Redeploy PASO 6/7: actualizando código fuente...", agent.ID)
-		if sshClient != nil {
-			if sess, err := sshClient.NewSession(); err == nil {
-				gitCmd := fmt.Sprintf(
-					"export HOME=/root; cd %s && git pull origin main 2>&1 || echo 'git pull failed, usando código actual'",
-					botDir,
-				)
-				out, _ := sess.CombinedOutput(gitCmd)
-				sess.Close()
-				log.Printf("   [Agent %d] git pull: %s", agent.ID, strings.TrimSpace(string(out)))
-			}
+		// 6. Re-subir código fuente del bot (desde Railway a Hetzner via SFTP)
+		log.Printf("🔄 [Agent %d] Redeploy PASO 6/7: subiendo código fuente actualizado...", agent.ID)
+		if err := atomicService.TransferBotFiles(agent.UserID, botDir); err != nil {
+			log.Printf("⚠️  [Agent %d] Redeploy: error subiendo archivos (continuando): %v", agent.ID, err)
+		} else {
+			log.Printf("✅ [Agent %d] Redeploy: código fuente actualizado", agent.ID)
 		}
 
-		// 7. Recompilar binario con el código actualizado
+		// 7. Recompilar binario en Hetzner con el código actualizado
 		log.Printf("🔄 [Agent %d] Redeploy PASO 7/7: recompilando bot...", agent.ID)
 		if err := atomicService.CompileBotOnServer(agent.UserID, botDir); err != nil {
 			log.Printf("⚠️  [Agent %d] Redeploy: error compilando (continuando con binario anterior): %v", agent.ID, err)
+		} else {
+			log.Printf("✅ [Agent %d] Redeploy: binario recompilado exitosamente", agent.ID)
 		}
 
-		// 8. Reiniciar bot con la config y binario actualizados
+		// 8. Reiniciar bot con el nuevo binario y config actualizados
 		log.Printf("🔄 [Agent %d] Redeploy PASO 8/8: reiniciando bot...", agent.ID)
 		if err := atomicService.RestartBot(agent.ID); err != nil {
 			log.Printf("❌ [Agent %d] Redeploy: error reiniciando: %v", agent.ID, err)
