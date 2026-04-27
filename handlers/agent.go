@@ -1173,24 +1173,25 @@ func RedeployAgent(c *gin.Context) {
 		}
 		defer atomicService.Close()
 
-		// 1. Detener el servicio systemd
-		log.Printf("🔄 [Agent %d] Redeploy: deteniendo bot...", agent.ID)
+		// 1. Detener bot
+		log.Printf("🔄 [Agent %d] Redeploy PASO 1/6: deteniendo bot...", agent.ID)
 		atomicService.StopBot(agent.ID)
 
-		// 2. Borrar base de datos de sesión WhatsApp para que genere nuevo QR
+		// 2. Borrar sesión WhatsApp para forzar nuevo QR
+		log.Printf("🔄 [Agent %d] Redeploy PASO 2/6: borrando sesión WhatsApp...", agent.ID)
 		botDir := fmt.Sprintf("/home/user_%d/atomic-bot", agent.UserID)
 		dbFile := fmt.Sprintf("%s/whatsapp-%d.db", botDir, agent.ID)
-		rmCmd := fmt.Sprintf("rm -f %s %s-shm %s-wal", dbFile, dbFile, dbFile)
 		sshClient := atomicService.GetSSHClient()
 		if sshClient != nil {
 			if sess, err := sshClient.NewSession(); err == nil {
-				sess.CombinedOutput(rmCmd)
+				sess.CombinedOutput(fmt.Sprintf("rm -f %s %s-shm %s-wal", dbFile, dbFile, dbFile))
 				sess.Close()
 				log.Printf("✅ [Agent %d] Redeploy: sesión WhatsApp eliminada", agent.ID)
 			}
 		}
 
-		// 3. Limpiar log para que GetQRCodeFromLogs no lea la conexión anterior
+		// 3. Limpiar log para que GetQRCodeFromLogs no lea conexión anterior
+		log.Printf("🔄 [Agent %d] Redeploy PASO 3/6: limpiando logs...", agent.ID)
 		logFile := fmt.Sprintf("/var/log/atomic-bot-%d.log", agent.ID)
 		if sshClient != nil {
 			if sess, err := sshClient.NewSession(); err == nil {
@@ -1200,20 +1201,82 @@ func RedeployAgent(c *gin.Context) {
 			}
 		}
 
-		// 4. Reiniciar bot (arranca limpio y genera nuevo QR)
+		// 4. Sincronizar business_config.json con datos más recientes de MyBusinessInfo
+		log.Printf("🔄 [Agent %d] Redeploy PASO 4/6: sincronizando business_config.json...", agent.ID)
+		var branch *models.MyBusinessInfo
+		if agent.BranchID > 0 {
+			var b models.MyBusinessInfo
+			if err := config.DB.First(&b, agent.BranchID).Error; err == nil {
+				branch = &b
+				log.Printf("✅ [Agent %d] Redeploy: sucursal cargada: %s", agent.ID, b.BranchName)
+			} else {
+				log.Printf("⚠️  [Agent %d] Redeploy: no se pudo cargar sucursal %d: %v", agent.ID, agent.BranchID, err)
+			}
+		}
+		if err := atomicService.UpdateBusinessConfig(&agent, branch); err != nil {
+			log.Printf("⚠️  [Agent %d] Redeploy: error actualizando business_config: %v (continuando)", agent.ID, err)
+		}
+
+		// 5. Sincronizar .env con Gemini key, Google credentials y pagos actuales
+		log.Printf("🔄 [Agent %d] Redeploy PASO 5/6: sincronizando .env...", agent.ID)
+		// Recargar agente fresco de BD para tener los datos más recientes
+		var freshAgent models.Agent
+		if err := config.DB.First(&freshAgent, agent.ID).Error; err == nil {
+			// Gemini key
+			var user models.User
+			if err := config.DB.First(&user, freshAgent.UserID).Error; err == nil {
+				geminiKey := user.GetGeminiAPIKey()
+				if geminiKey != "" {
+					if err := atomicService.UpdateGeminiAPIKey(&freshAgent, geminiKey); err != nil {
+						log.Printf("⚠️  [Agent %d] Redeploy: error actualizando Gemini key: %v", agent.ID, err)
+					} else {
+						log.Printf("✅ [Agent %d] Redeploy: Gemini key actualizada", agent.ID)
+					}
+				}
+			}
+			// Payment config (Stripe/SPEI)
+			if err := atomicService.UpdatePaymentConfig(&freshAgent); err != nil {
+				log.Printf("⚠️  [Agent %d] Redeploy: error actualizando payment config: %v (continuando)", agent.ID, err)
+			} else {
+				log.Printf("✅ [Agent %d] Redeploy: payment config actualizada", agent.ID)
+			}
+		}
+
+		// 6. Actualizar código fuente del bot en el servidor (git pull)
+		log.Printf("🔄 [Agent %d] Redeploy PASO 6/7: actualizando código fuente...", agent.ID)
+		if sshClient != nil {
+			if sess, err := sshClient.NewSession(); err == nil {
+				gitCmd := fmt.Sprintf(
+					"export HOME=/root; cd %s && git pull origin main 2>&1 || echo 'git pull failed, usando código actual'",
+					botDir,
+				)
+				out, _ := sess.CombinedOutput(gitCmd)
+				sess.Close()
+				log.Printf("   [Agent %d] git pull: %s", agent.ID, strings.TrimSpace(string(out)))
+			}
+		}
+
+		// 7. Recompilar binario con el código actualizado
+		log.Printf("🔄 [Agent %d] Redeploy PASO 7/7: recompilando bot...", agent.ID)
+		if err := atomicService.CompileBotOnServer(agent.UserID, botDir); err != nil {
+			log.Printf("⚠️  [Agent %d] Redeploy: error compilando (continuando con binario anterior): %v", agent.ID, err)
+		}
+
+		// 8. Reiniciar bot con la config y binario actualizados
+		log.Printf("🔄 [Agent %d] Redeploy PASO 8/8: reiniciando bot...", agent.ID)
 		if err := atomicService.RestartBot(agent.ID); err != nil {
 			log.Printf("❌ [Agent %d] Redeploy: error reiniciando: %v", agent.ID, err)
 			config.DB.Model(&agent).Update("deploy_status", "error")
 			return
 		}
 
-		// 5. Actualizar estado en BD
+		// Actualizar estado en BD
 		config.DB.Model(&agent).Updates(map[string]interface{}{
 			"deploy_status": "running",
 			"is_active":     true,
 		})
 
-		log.Printf("✅ [Agent %d] Redeploy completado — nuevo QR disponible", agent.ID)
+		log.Printf("✅ [Agent %d] Redeploy completado — config actualizada y nuevo QR disponible", agent.ID)
 	}()
 
 	c.JSON(http.StatusOK, gin.H{

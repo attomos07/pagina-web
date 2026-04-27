@@ -526,7 +526,7 @@ func (s *AtomicBotDeployService) DeployAtomicBot(agent *models.Agent, branch *mo
 
 	// PASO 4: Compilar bot
 	log.Printf("🔨 [Agent %d] PASO 4/6: Compilando bot en servidor...", agent.ID)
-	if err := s.compileBotOnServer(agent.UserID, botDir); err != nil {
+	if err := s.CompileBotOnServer(agent.UserID, botDir); err != nil {
 		return fmt.Errorf("error compilando bot: %w", err)
 	}
 
@@ -1073,8 +1073,8 @@ func (s *AtomicBotDeployService) generateEnvFile(agent *models.Agent, geminiAPIK
 	return env.String()
 }
 
-// compileBotOnServer compila el bot en el servidor
-func (s *AtomicBotDeployService) compileBotOnServer(_ uint, botDir string) error {
+// CompileBotOnServer compila el bot en el servidor
+func (s *AtomicBotDeployService) CompileBotOnServer(_ uint, botDir string) error {
 	compileCmd := fmt.Sprintf(`
 	export PATH=$PATH:/usr/local/go/bin
 	export HOME=/root
