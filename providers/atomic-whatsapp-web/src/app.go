@@ -12,13 +12,22 @@ import (
 	"go.mau.fi/whatsmeow/types/events"
 )
 
+// OrderItem representa un producto en el carrito
+type OrderItem struct {
+	Title    string
+	Quantity int
+	Price    float64
+}
+
 // UserState estado del usuario
 type UserState struct {
 	IsScheduling        bool
 	IsCancelling        bool
-	IsAskingForEmail    bool // Esperando respuesta sobre recordatorio por email
+	IsAskingForEmail    bool
+	IsOrdering          bool
 	Step                int
 	Data                map[string]string
+	Cart                []OrderItem
 	ConversationHistory []string
 	LastMessageTime     int64
 }
@@ -251,6 +260,31 @@ func ProcessMessage(message, userID, userName string) string {
 	if state.IsAskingForEmail {
 		log.Println("📧 PROCESANDO RESPUESTA DE RECORDATORIO POR EMAIL")
 		return processEmailReminderResponse(state, message, userID)
+	}
+
+	// Flujo de pedido (pizzeria / comida)
+	if isPizzeriaMode() {
+		if state.IsOrdering {
+			log.Println("🍕 CONTINUANDO FLUJO DE PEDIDO")
+			return continueOrderFlow(state, message, userID, userName)
+		}
+		orderKeywords := []string{
+			"quiero", "dame", "me das", "pedido", "ordenar", "pedir",
+			"quiero pedir", "quiero ordenar", "me pones", "ponme",
+			"una pizza", "dos pizzas", "una gordita", "dos gorditas",
+			"para llevar", "a domicilio", "para comer",
+		}
+		wantsToOrder := false
+		for _, kw := range orderKeywords {
+			if strings.Contains(messageLower, kw) {
+				wantsToOrder = true
+				break
+			}
+		}
+		if wantsToOrder {
+			log.Println("🍕 INICIANDO FLUJO DE PEDIDO")
+			return startOrderFlow(state, message, userName)
+		}
 	}
 
 	// Si quiere cancelar y no está cancelando
@@ -829,75 +863,199 @@ Máximo 4-5 líneas.`,
 	return confirmation
 }
 
-func handleNormalConversation(message string, state *UserState) string {
-	log.Println("💬 Manejando conversación normal con Gemini")
-
-	var promptContext string
-	messageLower := strings.ToLower(message)
-
-	// Detección de intención de compra/pago
-	buyKeywords := []string{
-		"quiero comprar", "quiero pagar", "quiero uno", "quiero una",
-		"quiero dos", "quiero tres", "me das", "me da", "dame",
-		"link de pago", "link para pagar", "como pago", "cómo pago",
-		"pagar con tarjeta", "pago con tarjeta",
-		"tienen link", "tienen pago", "aceptan tarjeta", "acepta tarjeta",
-		"comprar", "ordenar", "quiero pedirlo", "quiero ordenar",
+// isPizzeriaMode detecta si el negocio es de comida
+func isPizzeriaMode() bool {
+	if BusinessCfg == nil {
+		return false
 	}
-	wantsToBuy := false
-	for _, kw := range buyKeywords {
-		if strings.Contains(messageLower, kw) {
-			wantsToBuy = true
-			break
+	foodTypes := []string{"pizzeria", "pizza", "gorditas", "gordita", "restaurante", "comida", "taqueria", "tacos"}
+	bt := strings.ToLower(BusinessCfg.BusinessType)
+	for _, ft := range foodTypes {
+		if strings.Contains(bt, ft) {
+			return true
 		}
 	}
+	return false
+}
 
-	if wantsToBuy && HasPaymentMethods() {
-		log.Println("💳 Intención de compra detectada — mostrando opciones de pago")
-
-		detectedService := ""
-		detectedPrice := 0.0
-		if BusinessCfg != nil {
-			for _, svc := range BusinessCfg.Services {
-				if strings.Contains(messageLower, strings.ToLower(svc.Title)) {
-					detectedService = svc.Title
-					detectedPrice = svc.Price
-					if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
-						detectedPrice = svc.PromoPrice
-					}
-					break
-				}
-			}
-		}
-
-		var geminiCtx string
-		if detectedService != "" {
-			geminiCtx = fmt.Sprintf(
-				"El cliente quiere comprar %s ($%.0f). Confírmale brevemente el producto y dile que le envías las opciones de pago. 1-2 líneas.",
-				detectedService, detectedPrice,
-			)
-		} else {
-			geminiCtx = "El cliente quiere comprar algo pero no especificó el producto. Pregúntale cuál producto desea, mencionando los disponibles. Muy breve."
-		}
-
-		response, err := Chat(geminiCtx, message, joinHistory(state.ConversationHistory))
-		if err != nil || response == "" {
-			response = "¡Claro! Aquí tienes las opciones de pago:"
-		}
-
-		if detectedService != "" {
-			paymentMsg := BuildPaymentMessage(detectedService, detectedPrice)
-			if paymentMsg != "" {
-				response += "\n\n" + paymentMsg
-			}
-		}
-
+func startOrderFlow(state *UserState, message, userName string) string {
+	state.IsOrdering = true
+	state.Step = 1
+	state.Cart = []OrderItem{}
+	state.Data["userName"] = userName
+	parseCartFromMessage(state, message)
+	if len(state.Cart) > 0 {
+		state.Step = 2
+		response := buildCartSummary(state) + "\n\n" + "Para llevar o a domicilio? 🏠"
 		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
 		return response
 	}
+	response := buildMenuResponse()
+	state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
+	return response
+}
 
-	// Flujo normal
-	messageLower = strings.ToLower(message)
+func continueOrderFlow(state *UserState, message, userID, userName string) string {
+	msgL := strings.ToLower(message)
+	if strings.Contains(msgL, "cancelar") || strings.Contains(msgL, "olvida") || strings.Contains(msgL, "no quiero") {
+		state.IsOrdering = false
+		state.Cart = []OrderItem{}
+		state.Data = make(map[string]string)
+		return "Entendido, pedido cancelado. En que mas te puedo ayudar? 😊"
+	}
+	switch state.Step {
+	case 1:
+		parseCartFromMessage(state, message)
+		if len(state.Cart) == 0 {
+			response := buildMenuResponse()
+			state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
+			return response
+		}
+		state.Step = 2
+		response := buildCartSummary(state) + "\n\n" + "Para llevar o a domicilio? 🏠"
+		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
+		return response
+	case 2:
+		if strings.Contains(msgL, "domicilio") || strings.Contains(msgL, "delivery") || strings.Contains(msgL, "a mi casa") {
+			state.Data["deliveryType"] = "domicilio"
+			state.Step = 3
+			response := "Perfecto! 🛵 Cual es tu direccion de entrega?"
+			state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
+			return response
+		} else if strings.Contains(msgL, "llevar") || strings.Contains(msgL, "recoger") || strings.Contains(msgL, "local") {
+			state.Data["deliveryType"] = "llevar"
+			state.Step = 4
+			return confirmOrder(state, userID, userName)
+		}
+		response := "Prefieres pasar por tu pedido o te lo llevamos a domicilio? 🏠🛵"
+		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
+		return response
+	case 3:
+		state.Data["deliveryAddress"] = message
+		state.Step = 4
+		return confirmOrder(state, userID, userName)
+	default:
+		state.IsOrdering = false
+		return handleNormalConversation(message, state)
+	}
+}
+
+func confirmOrder(state *UserState, userID, userName string) string {
+	deliveryType := state.Data["deliveryType"]
+	address := state.Data["deliveryAddress"]
+	var sb strings.Builder
+	sb.WriteString("🧾 *Resumen de tu pedido:*\n\n")
+	total := 0.0
+	for _, item := range state.Cart {
+		sb.WriteString(fmt.Sprintf("• %dx %s — $%.0f\n", item.Quantity, item.Title, item.Price*float64(item.Quantity)))
+		total += item.Price * float64(item.Quantity)
+	}
+	sb.WriteString(fmt.Sprintf("\n💰 *Total: $%.0f MXN*\n", total))
+	if deliveryType == "domicilio" && address != "" {
+		sb.WriteString(fmt.Sprintf("🛵 *Entrega:* %s\n", address))
+	} else {
+		sb.WriteString("🏠 *Para llevar en sucursal*\n")
+	}
+	sb.WriteString(fmt.Sprintf("👤 *Cliente:* %s\n", userName))
+	if HasPaymentMethods() && len(state.Cart) > 0 {
+		paymentMsg := BuildPaymentMessage(state.Cart[0].Title, total)
+		if paymentMsg != "" {
+			sb.WriteString("\n" + paymentMsg)
+		}
+	}
+	sb.WriteString("\n\n" + "Pedido recibido! Nos pondremos en contacto pronto. 🙌")
+	state.IsOrdering = false
+	state.Cart = []OrderItem{}
+	state.Data = make(map[string]string)
+	response := sb.String()
+	state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
+	return response
+}
+
+func parseCartFromMessage(state *UserState, message string) {
+	if BusinessCfg == nil {
+		return
+	}
+	msgL := strings.ToLower(message)
+	for _, svc := range BusinessCfg.Services {
+		titleL := strings.ToLower(svc.Title)
+		if !strings.Contains(msgL, titleL) {
+			found := false
+			for _, w := range strings.Fields(titleL) {
+				if len(w) > 3 && strings.Contains(msgL, w) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+		}
+		qty := 1
+		qtyWords := map[string]int{"una": 1, "un": 1, "uno": 1, "dos": 2, "2": 2, "tres": 3, "3": 3, "cuatro": 4, "4": 4, "cinco": 5, "5": 5}
+		for word, n := range qtyWords {
+			if strings.Contains(msgL, word+" "+titleL) {
+				qty = n
+				break
+			}
+		}
+		price := svc.Price
+		if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
+			price = svc.PromoPrice
+		}
+		alreadyIn := false
+		for i, item := range state.Cart {
+			if strings.EqualFold(item.Title, svc.Title) {
+				state.Cart[i].Quantity += qty
+				alreadyIn = true
+				break
+			}
+		}
+		if !alreadyIn {
+			state.Cart = append(state.Cart, OrderItem{Title: svc.Title, Quantity: qty, Price: price})
+		}
+	}
+}
+
+func buildCartSummary(state *UserState) string {
+	if len(state.Cart) == 0 {
+		return "No hay productos en tu pedido."
+	}
+	var sb strings.Builder
+	sb.WriteString("🛒 *Tu pedido:*\n")
+	total := 0.0
+	for _, item := range state.Cart {
+		sb.WriteString(fmt.Sprintf("  • %dx %s — $%.0f\n", item.Quantity, item.Title, item.Price*float64(item.Quantity)))
+		total += item.Price * float64(item.Quantity)
+	}
+	sb.WriteString(fmt.Sprintf("💰 Subtotal: $%.0f MXN", total))
+	return sb.String()
+}
+
+func buildMenuResponse() string {
+	if BusinessCfg == nil || len(BusinessCfg.Services) == 0 {
+		return "Que te gustaria ordenar?"
+	}
+	var sb strings.Builder
+	sb.WriteString("Que deseas ordenar? 😋 Tenemos:\n\n")
+	for _, svc := range BusinessCfg.Services {
+		price := svc.Price
+		if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
+			price = svc.PromoPrice
+		}
+		sb.WriteString(fmt.Sprintf("• *%s* — $%.0f MXN\n", svc.Title, price))
+	}
+	sb.WriteString("\nCuanto quieres ordenar?")
+	return sb.String()
+}
+
+func handleNormalConversation(message string, state *UserState) string {
+	log.Println("💬 Manejando conversación normal con Gemini")
+
+	// Contexto: si pregunta por servicios, horarios, ubicación, etc.
+	var promptContext string
+
+	messageLower := strings.ToLower(message)
 
 	if strings.Contains(messageLower, "servicio") || strings.Contains(messageLower, "precio") ||
 		strings.Contains(messageLower, "cuanto cuesta") || strings.Contains(messageLower, "costo") {
