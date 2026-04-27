@@ -1017,6 +1017,39 @@ func confirmOrder(state *UserState, userID, userName string) string {
 	return response
 }
 
+// extractQuantity detecta la cantidad en un mensaje en lenguaje natural.
+// Busca números y palabras numéricas en todo el mensaje, sin requerir
+// que vayan pegados al nombre del servicio.
+// Ejemplos: "dos de nata", "quiero 3", "pediré dos gorditas"
+func extractQuantity(msgL string) int {
+	// Primero buscar dígitos explícitos (ej: "3 gorditas", "pediré 2")
+	for _, pair := range []struct {
+		word string
+		n    int
+	}{
+		{"10", 10}, {"9", 9}, {"8", 8}, {"7", 7}, {"6", 6},
+		{"5", 5}, {"4", 4}, {"3", 3}, {"2", 2}, {"1", 1},
+	} {
+		if strings.Contains(msgL, pair.word) {
+			return pair.n
+		}
+	}
+	// Luego buscar palabras numéricas en cualquier posición del mensaje
+	for _, pair := range []struct {
+		word string
+		n    int
+	}{
+		{"diez", 10}, {"nueve", 9}, {"ocho", 8}, {"siete", 7}, {"seis", 6},
+		{"cinco", 5}, {"cuatro", 4}, {"tres", 3}, {"dos", 2},
+		{"una", 1}, {"uno", 1}, {"un", 1},
+	} {
+		if strings.Contains(msgL, pair.word) {
+			return pair.n
+		}
+	}
+	return 1
+}
+
 func parseCartFromMessage(state *UserState, message string) {
 	if BusinessCfg == nil {
 		return
@@ -1036,14 +1069,7 @@ func parseCartFromMessage(state *UserState, message string) {
 				continue
 			}
 		}
-		qty := 1
-		qtyWords := map[string]int{"una": 1, "un": 1, "uno": 1, "dos": 2, "2": 2, "tres": 3, "3": 3, "cuatro": 4, "4": 4, "cinco": 5, "5": 5}
-		for word, n := range qtyWords {
-			if strings.Contains(msgL, word+" "+titleL) {
-				qty = n
-				break
-			}
-		}
+		qty := extractQuantity(msgL)
 		price := svc.Price
 		if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
 			price = svc.PromoPrice
