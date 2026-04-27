@@ -1074,6 +1074,31 @@ func buildMenuResponse() string {
 	return sb.String()
 }
 
+// getContextualWelcome genera un mensaje de bienvenida adecuado al giro del negocio.
+// Para negocios de comida menciona "hacer tu pedido", para servicios menciona "agendar cita".
+func getContextualWelcome() string {
+	if isPizzeriaMode() && BusinessCfg != nil {
+		// Generar con Gemini si está disponible
+		if geminiEnabled {
+			prompt := fmt.Sprintf(
+				"Genera un mensaje de bienvenida breve (2-3 líneas) para %s, un negocio de comida tipo %s.\n\nIncluye:\n- Saludo amigable\n- Mención de que pueden preguntar por el menú o hacer su pedido\n- Un emoji de comida apropiado\n\nNO menciones citas ni agendamientos.\nTono: amigable.\nRespuesta SOLO con el mensaje.",
+				BusinessCfg.AgentName, BusinessCfg.BusinessType,
+			)
+			response, err := Chat(prompt, "Bienvenida", "")
+			if err == nil && response != "" {
+				return response
+			}
+		}
+		// Fallback texto plano para comida
+		name := ""
+		if BusinessCfg != nil {
+			name = BusinessCfg.AgentName
+		}
+		return fmt.Sprintf("¡Hola! Bienvenido a %s 👋\n\nPuedes ver nuestro menú o hacer tu pedido directamente. ¿Qué se te antoja hoy? 😋", name)
+	}
+	return GenerateWelcomeMessage()
+}
+
 func handleNormalConversation(message string, state *UserState) string {
 	log.Println("💬 Manejando conversación normal con Gemini")
 
@@ -1094,7 +1119,7 @@ func handleNormalConversation(message string, state *UserState) string {
 	} else if strings.Contains(messageLower, "hola") || strings.Contains(messageLower, "buenos") ||
 		strings.Contains(messageLower, "buenas") {
 		// Generar mensaje de bienvenida personalizado
-		return GenerateWelcomeMessage()
+		return getContextualWelcome()
 	} else {
 		promptContext = "Responde de manera útil y natural según la información del negocio."
 	}
