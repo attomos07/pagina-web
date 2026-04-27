@@ -29,7 +29,6 @@ type PaymentConfig struct {
 var paymentConfigCache *PaymentConfig
 
 // LoadPaymentConfig carga la config de pagos desde la API de Attomos.
-// Se llama una vez al inicio del bot (o cuando se detecta cambio en config).
 func LoadPaymentConfig() error {
 	attomosURL := os.Getenv("ATTOMOS_API_URL")
 	botToken := os.Getenv("BOT_API_TOKEN")
@@ -91,27 +90,55 @@ func HasPaymentMethods() bool {
 	return cfg.SPEIEnabled || (cfg.StripeEnabled && cfg.StripeChargesEnabled)
 }
 
-// BuildPaymentMessage construye el mensaje de opciones de pago para el cliente.
-// Se llama cuando se confirma la cita, antes de despedirse.
+// AskPaymentMethod construye la pregunta de método de pago según lo que tiene configurado el negocio.
+// Siempre incluye efectivo + los métodos digitales activos.
+func AskPaymentMethod() string {
+	cfg := GetPaymentConfig()
+	hasSPEI := cfg.SPEIEnabled && cfg.CLABENumber != ""
+	hasStripe := cfg.StripeEnabled && cfg.StripeChargesEnabled
+
+	var sb strings.Builder
+	sb.WriteString("💳 ¿Cómo deseas pagar?\n\n")
+	sb.WriteString("• 💵 *Efectivo*\n")
+	if hasStripe {
+		sb.WriteString("• 💳 *Tarjeta* (pago en línea)\n")
+	}
+	if hasSPEI {
+		sb.WriteString("• 🏦 *Transferencia SPEI*\n")
+	}
+	return strings.TrimRight(sb.String(), "\n")
+}
+
+// BuildPaymentMessage construye el mensaje de pago para el cliente.
 //
-// Para tarjeta: genera una URL de TakeApp con el servicio pre-seleccionado
-// (?item=Nombre+del+servicio) en lugar de crear un Stripe Payment Link directo.
-// Esto unifica el flujo de pago del bot con el marketplace de TakeApp.
-func BuildPaymentMessage(servicio string, precio float64) string {
+// paymentMethod indica el método que el usuario ya eligió:
+//   - "efectivo"       → mensaje de confirmación en efectivo, sin links
+//   - "tarjeta"        → solo muestra el link de Ninda (Stripe)
+//   - "transferencia"  → solo muestra los datos SPEI
+//   - ""               → muestra todos los métodos disponibles (usado en flujo de citas)
+func BuildPaymentMessage(servicio string, precio float64, paymentMethod string) string {
 	cfg := GetPaymentConfig()
 
 	hasSPEI := cfg.SPEIEnabled && cfg.CLABENumber != ""
 	hasTakeApp := cfg.StripeEnabled && cfg.StripeChargesEnabled
 
-	if !hasSPEI && !hasTakeApp {
-		return ""
-	}
-
 	attomosURL := os.Getenv("ATTOMOS_API_URL")
 	branchID := os.Getenv("BRANCH_ID")
 
-	var sb strings.Builder
+	// ── Efectivo: mensaje corto, sin opciones digitales ─────────────────────
+	if paymentMethod == "efectivo" {
+		return "💵 *Pago en efectivo confirmado.* ¡Te esperamos pronto! 🙌"
+	}
 
+	// ── Validar que haya algo que mostrar ────────────────────────────────────
+	showSPEI := hasSPEI && (paymentMethod == "" || paymentMethod == "transferencia")
+	showStripe := hasTakeApp && (paymentMethod == "" || paymentMethod == "tarjeta")
+
+	if !showSPEI && !showStripe {
+		return ""
+	}
+
+	var sb strings.Builder
 	sb.WriteString("\n💳 *Opciones de pago*\n")
 	sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━\n")
 
@@ -119,8 +146,8 @@ func BuildPaymentMessage(servicio string, precio float64) string {
 		sb.WriteString(fmt.Sprintf("💰 *Total:* $%.0f MXN\n\n", precio))
 	}
 
-	// ── SPEI ──────────────────────────────────────────────────────────────────
-	if hasSPEI {
+	// ── SPEI ─────────────────────────────────────────────────────────────────
+	if showSPEI {
 		sb.WriteString("🏦 *Transferencia SPEI*\n")
 		sb.WriteString(fmt.Sprintf("   CLABE: `%s`\n", cfg.CLABENumber))
 		if cfg.BankName != "" {
@@ -131,32 +158,35 @@ func BuildPaymentMessage(servicio string, precio float64) string {
 		}
 	}
 
-	if hasSPEI && hasTakeApp {
+	if showSPEI && showStripe {
 		sb.WriteString("\n")
 	}
 
-	// ── Tarjeta vía TakeApp ────────────────────────────────────────────────────
-	if hasTakeApp && attomosURL != "" && branchID != "" {
-		// Construir URL de TakeApp con el servicio pre-seleccionado.
-		// El cliente llega a la tienda con el producto ya en el carrito.
-		takeURL := fmt.Sprintf(
-			"%s/takeapp/%s?item=%s",
+	// ── Tarjeta vía Ninda ────────────────────────────────────────────────────
+	if showStripe && attomosURL != "" && branchID != "" {
+		nindaURL := fmt.Sprintf(
+			"%s/ninda/%s?item=%s",
 			attomosURL,
 			branchID,
 			url.QueryEscape(servicio),
 		)
 		sb.WriteString("💳 *Pagar con tarjeta*\n")
-		sb.WriteString(fmt.Sprintf("   👉 %s\n", takeURL))
+		sb.WriteString(fmt.Sprintf("   👉 %s\n", nindaURL))
 	}
 
 	sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━\n")
-	sb.WriteString("_Puedes pagar antes o después de tu cita_ 😊")
+
+	// Footer contextual: "cita" para servicios, "pedido" para comida
+	if isPizzeriaMode() {
+		sb.WriteString("_Puedes pagar antes o al momento de recoger_ 😊")
+	} else {
+		sb.WriteString("_Puedes pagar antes o después de tu cita_ 😊")
+	}
 
 	return sb.String()
 }
 
 // GetServicePrice busca el precio de un servicio en BusinessCfg.
-// Retorna 0 si no se encuentra o si el precio es variable.
 func GetServicePrice(serviceName string) float64 {
 	if BusinessCfg == nil {
 		return 0

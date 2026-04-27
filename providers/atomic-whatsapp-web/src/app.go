@@ -804,7 +804,7 @@ func saveAppointment(state *UserState, userID string) string {
 	if HasPaymentMethods() {
 		servicio := state.Data["servicio"]
 		precio := GetServicePrice(servicio)
-		paymentMsg := BuildPaymentMessage(servicio, precio)
+		paymentMsg := BuildPaymentMessage(servicio, precio, "")
 		if paymentMsg != "" {
 			log.Println("💳 [Payments] Agregando opciones de pago al mensaje de confirmación")
 			confirmation += "\n\n" + paymentMsg
@@ -925,7 +925,7 @@ func continueOrderFlow(state *UserState, message, userID, userName string) strin
 		} else if strings.Contains(msgL, "llevar") || strings.Contains(msgL, "recoger") || strings.Contains(msgL, "local") {
 			state.Data["deliveryType"] = "llevar"
 			state.Step = 4
-			return confirmOrder(state, userID, userName)
+			return askPaymentMethodStep(state)
 		}
 		response := "Prefieres pasar por tu pedido o te lo llevamos a domicilio? 🏠🛵"
 		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
@@ -933,11 +933,36 @@ func continueOrderFlow(state *UserState, message, userID, userName string) strin
 	case 3:
 		state.Data["deliveryAddress"] = message
 		state.Step = 4
+		return askPaymentMethodStep(state)
+	case 4:
+		// Parsear método de pago elegido por el cliente
+		if strings.Contains(msgL, "efectivo") || strings.Contains(msgL, "cash") {
+			state.Data["paymentMethod"] = "efectivo"
+		} else if strings.Contains(msgL, "tarjeta") || strings.Contains(msgL, "card") ||
+			strings.Contains(msgL, "linea") || strings.Contains(msgL, "línea") || strings.Contains(msgL, "online") {
+			state.Data["paymentMethod"] = "tarjeta"
+		} else if strings.Contains(msgL, "transferencia") || strings.Contains(msgL, "spei") ||
+			strings.Contains(msgL, "banco") || strings.Contains(msgL, "clabe") {
+			state.Data["paymentMethod"] = "transferencia"
+		} else {
+			// No se entendió → preguntar de nuevo
+			response := "No entendí tu respuesta 😅\n\n" + AskPaymentMethod()
+			state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
+			return response
+		}
 		return confirmOrder(state, userID, userName)
 	default:
 		state.IsOrdering = false
 		return handleNormalConversation(message, state)
 	}
+}
+
+// askPaymentMethodStep pregunta al cliente cómo desea pagar.
+// Se usa en el flujo de pedidos (pizzería/comida) entre el paso de entrega y la confirmación.
+func askPaymentMethodStep(state *UserState) string {
+	response := AskPaymentMethod()
+	state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
+	return response
 }
 
 func confirmOrder(state *UserState, userID, userName string) string {
@@ -958,7 +983,7 @@ func confirmOrder(state *UserState, userID, userName string) string {
 	}
 	sb.WriteString(fmt.Sprintf("👤 *Cliente:* %s\n", userName))
 	if HasPaymentMethods() && len(state.Cart) > 0 {
-		paymentMsg := BuildPaymentMessage(state.Cart[0].Title, total)
+		paymentMsg := BuildPaymentMessage(state.Cart[0].Title, total, state.Data["paymentMethod"])
 		if paymentMsg != "" {
 			sb.WriteString("\n" + paymentMsg)
 		}
