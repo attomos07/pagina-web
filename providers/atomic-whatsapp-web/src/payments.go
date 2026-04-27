@@ -41,7 +41,7 @@ func LoadPaymentConfig() error {
 		return nil
 	}
 
-	reqURL := fmt.Sprintf("%s/api/payment-config/%s", attomosURL, branchID)
+	reqURL := fmt.Sprintf("%s/api/payment-config/bot/%s", attomosURL, branchID)
 	req, err := http.NewRequest("GET", reqURL, nil)
 	if err != nil {
 		return fmt.Errorf("error creando request: %w", err)

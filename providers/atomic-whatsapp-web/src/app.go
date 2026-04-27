@@ -832,10 +832,72 @@ Máximo 4-5 líneas.`,
 func handleNormalConversation(message string, state *UserState) string {
 	log.Println("💬 Manejando conversación normal con Gemini")
 
-	// Contexto: si pregunta por servicios, horarios, ubicación, etc.
 	var promptContext string
-
 	messageLower := strings.ToLower(message)
+
+	// Detección de intención de compra/pago
+	buyKeywords := []string{
+		"quiero comprar", "quiero pagar", "quiero uno", "quiero una",
+		"quiero dos", "quiero tres", "me das", "me da", "dame",
+		"link de pago", "link para pagar", "como pago", "cómo pago",
+		"pagar con tarjeta", "pago con tarjeta",
+		"tienen link", "tienen pago", "aceptan tarjeta", "acepta tarjeta",
+		"comprar", "ordenar", "quiero pedirlo", "quiero ordenar",
+	}
+	wantsToBuy := false
+	for _, kw := range buyKeywords {
+		if strings.Contains(messageLower, kw) {
+			wantsToBuy = true
+			break
+		}
+	}
+
+	if wantsToBuy && HasPaymentMethods() {
+		log.Println("💳 Intención de compra detectada — mostrando opciones de pago")
+
+		detectedService := ""
+		detectedPrice := 0.0
+		if BusinessCfg != nil {
+			for _, svc := range BusinessCfg.Services {
+				if strings.Contains(messageLower, strings.ToLower(svc.Title)) {
+					detectedService = svc.Title
+					detectedPrice = svc.Price
+					if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
+						detectedPrice = svc.PromoPrice
+					}
+					break
+				}
+			}
+		}
+
+		var geminiCtx string
+		if detectedService != "" {
+			geminiCtx = fmt.Sprintf(
+				"El cliente quiere comprar %s ($%.0f). Confírmale brevemente el producto y dile que le envías las opciones de pago. 1-2 líneas.",
+				detectedService, detectedPrice,
+			)
+		} else {
+			geminiCtx = "El cliente quiere comprar algo pero no especificó el producto. Pregúntale cuál producto desea, mencionando los disponibles. Muy breve."
+		}
+
+		response, err := Chat(geminiCtx, message, joinHistory(state.ConversationHistory))
+		if err != nil || response == "" {
+			response = "¡Claro! Aquí tienes las opciones de pago:"
+		}
+
+		if detectedService != "" {
+			paymentMsg := BuildPaymentMessage(detectedService, detectedPrice)
+			if paymentMsg != "" {
+				response += "\n\n" + paymentMsg
+			}
+		}
+
+		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
+		return response
+	}
+
+	// Flujo normal
+	messageLower = strings.ToLower(message)
 
 	if strings.Contains(messageLower, "servicio") || strings.Contains(messageLower, "precio") ||
 		strings.Contains(messageLower, "cuanto cuesta") || strings.Contains(messageLower, "costo") {

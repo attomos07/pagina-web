@@ -204,6 +204,7 @@ func main() {
 		protected.PUT("/agents/:id", handlers.UpdateAgent)
 		protected.DELETE("/agents/:id", handlers.DeleteAgent)
 		protected.PATCH("/agents/:id/toggle", handlers.ToggleAgentStatus)
+		protected.POST("/agents/:id/redeploy", handlers.RedeployAgent)
 
 		// Mi Negocio / Sucursales
 		protected.GET("/my-business", handlers.GetMyBusiness)
@@ -319,6 +320,7 @@ func main() {
 
 	// Bot Payment Link — autenticado con BOT_API_TOKEN (no JWT)
 	router.POST("/api/payment-config/stripe/payment-link", handlers.CreateBotPaymentLink)
+	router.GET("/api/payment-config/bot/:branch_id", handlers.GetBotPaymentConfig)
 
 	// ============================================
 	// PÁGINAS WEB

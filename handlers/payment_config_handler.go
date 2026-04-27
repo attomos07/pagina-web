@@ -436,6 +436,56 @@ func maskCLABE(clabe string) string {
 	return "•••••••••••••• " + clabe[len(clabe)-4:]
 }
 
+// GetBotPaymentConfig — GET /api/bot/payment-config/:branch_id
+// Autenticado con BOT_API_TOKEN (Bearer token interno).
+// Lo llama el bot AtomicBot al arrancar para cargar la config de pagos.
+func GetBotPaymentConfig(c *gin.Context) {
+	auth := c.GetHeader("Authorization")
+	botToken := os.Getenv("BOT_API_TOKEN")
+	if botToken == "" || auth != "Bearer "+botToken {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autorizado"})
+		return
+	}
+
+	branchID := c.Param("branch_id")
+	if branchID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "branchId requerido"})
+		return
+	}
+
+	var cfg models.PaymentConfig
+	err := config.DB.Where("branch_id = ?", branchID).First(&cfg).Error
+	if err != nil {
+		// Sin config todavía — responder vacío en lugar de error
+		c.JSON(http.StatusOK, gin.H{
+			"configured":                false,
+			"speiEnabled":               false,
+			"clabeNumber":               "",
+			"bankName":                  "",
+			"accountName":               "",
+			"stripeEnabled":             false,
+			"stripeAccountId":           "",
+			"stripeAccountStatus":       "",
+			"stripeChargesEnabled":      false,
+			"paymentRequiredForBooking": false,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"configured":                true,
+		"speiEnabled":               cfg.SPEIEnabled,
+		"clabeNumber":               cfg.CLABENumber, // CLABE sin enmascarar para el bot
+		"bankName":                  cfg.BankName,
+		"accountName":               cfg.AccountName,
+		"stripeEnabled":             cfg.StripeEnabled,
+		"stripeAccountId":           cfg.StripeAccountID,
+		"stripeAccountStatus":       cfg.StripeAccountStatus,
+		"stripeChargesEnabled":      cfg.StripeChargesEnabled,
+		"paymentRequiredForBooking": cfg.PaymentRequiredForBooking,
+	})
+}
+
 // ============================================================
 // POST /api/payment-config/stripe/payment-link
 // Llamado por el bot para generar un Stripe Payment Link

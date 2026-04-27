@@ -538,6 +538,15 @@ function createAgentRow(agent) {
                     <i class="lni lni-eye"></i>
                     <span>Ver Detalles</span>
                 </button>
+                <button class="dropdown-item qr" onclick="showQRModal(${agent.id})">
+                    <i class="lni lni-qr-code"></i>
+                    <span>Ver QR</span>
+                </button>
+                <button class="dropdown-item redeploy" onclick="confirmRedeploy(${agent.id}, '${agent.name}')">
+                    <i class="lni lni-reload"></i>
+                    <span>Redeploy</span>
+                </button>
+                <div class="dropdown-divider"></div>
                 <button class="dropdown-item pause" onclick="toggleAgentStatus(${agent.id}, ${agent.isActive})">
                     <i class="lni lni-${agent.isActive ? 'pause' : 'play'}"></i>
                     <span>${agent.isActive ? 'Pausar' : 'Activar'}</span>
@@ -849,6 +858,107 @@ function escapeHtml(text) {
         "'": '&#039;'
     };
     return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+
+// ─── QR Modal ────────────────────────────────────────────────
+let _qrPollInterval = null;
+
+async function showQRModal(agentId) {
+    document.querySelectorAll('.actions-dropdown').forEach(d => d.classList.remove('show'));
+
+    let modal = document.getElementById('qrModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'qrModal';
+        modal.className = 'qr-modal';
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div class="qr-overlay" onclick="closeQRModal()"></div>
+        <div class="qr-content">
+            <div class="qr-header">
+                <h3><i class="lni lni-qr-code"></i> Escanea el QR con WhatsApp</h3>
+                <button class="qr-close" onclick="closeQRModal()"><i class="lni lni-close"></i></button>
+            </div>
+            <div class="qr-body" id="qrBody">
+                <div class="qr-spinner"><div class="brand-spinner"></div><p>Obteniendo QR...</p></div>
+            </div>
+            <p class="qr-hint">Abre WhatsApp → Dispositivos vinculados → Vincular dispositivo</p>
+        </div>`;
+
+    modal.classList.add('active');
+    _startQRPolling(agentId);
+}
+
+function _startQRPolling(agentId) {
+    if (_qrPollInterval) clearInterval(_qrPollInterval);
+    _fetchQR(agentId);
+    _qrPollInterval = setInterval(() => {
+        const modal = document.getElementById('qrModal');
+        if (!modal || !modal.classList.contains('active')) { clearInterval(_qrPollInterval); return; }
+        _fetchQR(agentId);
+    }, 8000);
+}
+
+async function _fetchQR(agentId) {
+    try {
+        const resp = await fetch(`/api/agents/${agentId}/qr`, { credentials: 'include' });
+        const data = await resp.json();
+        const body = document.getElementById('qrBody');
+        if (!body) return;
+
+        if (data.connected) {
+            body.innerHTML = `<div class="qr-connected"><i class="lni lni-checkmark-circle"></i><p>¡WhatsApp conectado!</p></div>`;
+            clearInterval(_qrPollInterval);
+        } else if (data.qrCode) {
+            // El backend devuelve texto QR ASCII — convertir a imagen con qrcode lib o mostrar en <pre>
+            body.innerHTML = `<pre class="qr-ascii">${escapeHtml(data.qrCode)}</pre>
+                <p class="qr-status"><i class="lni lni-checkmark-circle"></i> QR listo — escanea ahora</p>`;
+        } else {
+            body.innerHTML = `<div class="qr-spinner"><div class="brand-spinner"></div><p>${escapeHtml(data.message || 'Esperando QR...')}</p></div>`;
+        }
+    } catch (e) {
+        const body = document.getElementById('qrBody');
+        if (body) body.innerHTML = `<div class="qr-spinner"><p style="color:#ef4444">Error al obtener QR</p></div>`;
+    }
+}
+
+function closeQRModal() {
+    if (_qrPollInterval) { clearInterval(_qrPollInterval); _qrPollInterval = null; }
+    const modal = document.getElementById('qrModal');
+    if (modal) modal.classList.remove('active');
+}
+
+// ─── Redeploy ────────────────────────────────────────────────
+function confirmRedeploy(agentId, agentName) {
+    document.querySelectorAll('.actions-dropdown').forEach(d => d.classList.remove('show'));
+    showConfirmModal({
+        type: 'warning',
+        icon: 'lni-reload',
+        title: '¿Redeploy del Agente?',
+        message: `Se reiniciará el bot <strong>${escapeHtml(agentName)}</strong> desde cero. El QR se regenerará y tendrás que volver a escanear.`,
+        list: ['El bot se desconectará momentáneamente', 'Se generará un nuevo QR', 'Los datos del negocio no se perderán'],
+        confirmText: 'Sí, Redeploy',
+        confirmClass: 'warning',
+        onConfirm: () => redeployAgent(agentId)
+    });
+}
+
+async function redeployAgent(agentId) {
+    try {
+        showNotification('🔄 Iniciando redeploy...', 'info');
+        const resp = await fetch(`/api/agents/${agentId}/redeploy`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        if (!resp.ok) throw new Error('Error en redeploy');
+        showNotification('✅ Redeploy iniciado. El bot estará listo en unos segundos.', 'success');
+        setTimeout(() => loadAgents(), 3000);
+    } catch (e) {
+        showNotification('❌ Error al hacer redeploy', 'error');
+    }
 }
 
 // Recargar agentes cada 30 segundos
