@@ -1,6 +1,7 @@
 package src
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -200,4 +201,102 @@ func GetServicePrice(serviceName string) float64 {
 		}
 	}
 	return 0
+}
+
+// BotCheckoutItem representa un ítem del carrito para el checkout del bot
+type BotCheckoutItem struct {
+	ServiceIndex int     `json:"serviceIndex"`
+	Title        string  `json:"title"`
+	Price        float64 `json:"price"`
+	Quantity     int     `json:"quantity"`
+}
+
+// CreateBotCheckoutURL llama al backend de Attomos para crear una Stripe Checkout
+// Session y retorna la URL directa de pago — sin pasar por la tienda de Ninda.
+// Se usa cuando el cliente elige pagar con tarjeta desde WhatsApp.
+func CreateBotCheckoutURL(customerName, customerPhone string, items []OrderItem) (string, error) {
+	attomosURL := os.Getenv("ATTOMOS_API_URL")
+	branchID := os.Getenv("BRANCH_ID")
+	botToken := os.Getenv("BOT_API_TOKEN")
+
+	if attomosURL == "" || branchID == "" {
+		return "", fmt.Errorf("ATTOMOS_API_URL o BRANCH_ID no configurados")
+	}
+
+	// Convertir cart items al formato del endpoint
+	checkoutItems := make([]BotCheckoutItem, 0, len(items))
+	for i, item := range items {
+		checkoutItems = append(checkoutItems, BotCheckoutItem{
+			ServiceIndex: i,
+			Title:        item.Title,
+			Price:        item.Price,
+			Quantity:     item.Quantity,
+		})
+	}
+
+	// Parsear branchID a uint
+	var branchIDUint uint
+	fmt.Sscanf(branchID, "%d", &branchIDUint)
+
+	reqBody := map[string]interface{}{
+		"branchId":      branchIDUint,
+		"items":         checkoutItems,
+		"customerName":  customerName,
+		"customerPhone": customerPhone,
+		"source":        "bot",
+	}
+
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", fmt.Errorf("error serializando request: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", attomosURL+"/api/ninda/checkout", bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return "", fmt.Errorf("error creando request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if botToken != "" {
+		req.Header.Set("Authorization", "Bearer "+botToken)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("error llamando API de checkout: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("API retornó %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return "", fmt.Errorf("error parseando respuesta: %w", err)
+	}
+
+	checkoutURL, ok := result["checkoutUrl"].(string)
+	if !ok || checkoutURL == "" {
+		return "", fmt.Errorf("respuesta sin checkoutUrl")
+	}
+
+	log.Printf("✅ [BotCheckout] Stripe Checkout creado: %s", checkoutURL)
+	return checkoutURL, nil
+}
+
+// BuildStripeOnlyMessage construye el mensaje con el link directo de Stripe Checkout.
+// Usado cuando el cliente ya eligió "tarjeta" y se generó la sesión exitosamente.
+func BuildStripeOnlyMessage(checkoutURL string, precio float64) string {
+	var sb strings.Builder
+	sb.WriteString("\n💳 *Pago con tarjeta*\n")
+	sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━\n")
+	if precio > 0 {
+		sb.WriteString(fmt.Sprintf("💰 *Total:* $%.0f MXN\n\n", precio))
+	}
+	sb.WriteString("👉 " + checkoutURL + "\n")
+	sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━\n")
+	sb.WriteString("_El link expira en 24 horas_ ⏱️")
+	return sb.String()
 }

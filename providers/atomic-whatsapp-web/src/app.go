@@ -886,7 +886,7 @@ func startOrderFlow(state *UserState, message, userName string) string {
 	parseCartFromMessage(state, message)
 	if len(state.Cart) > 0 {
 		state.Step = 2
-		response := buildCartSummary(state) + "\n\n" + "Para llevar o a domicilio? 🏠"
+		response := buildCartSummary(state) + "\n\n" + "¿Cómo lo quieres?\n\n• 🥡 *Para llevar* (recoger en local)\n• 🍽️ *Para comer aquí* (en el local)\n• 🛵 *A domicilio*"
 		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
 		return response
 	}
@@ -912,22 +912,27 @@ func continueOrderFlow(state *UserState, message, userID, userName string) strin
 			return response
 		}
 		state.Step = 2
-		response := buildCartSummary(state) + "\n\n" + "Para llevar o a domicilio? 🏠"
+		response := buildCartSummary(state) + "\n\n" + "¿Cómo lo quieres?\n\n• 🥡 *Para llevar* (recoger en local)\n• 🍽️ *Para comer aquí* (en el local)\n• 🛵 *A domicilio*"
 		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
 		return response
 	case 2:
 		if strings.Contains(msgL, "domicilio") || strings.Contains(msgL, "delivery") || strings.Contains(msgL, "a mi casa") {
 			state.Data["deliveryType"] = "domicilio"
 			state.Step = 3
-			response := "Perfecto! 🛵 Cual es tu direccion de entrega?"
+			response := "Perfecto! 🛵 ¿Cuál es tu dirección de entrega?"
 			state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
 			return response
-		} else if strings.Contains(msgL, "llevar") || strings.Contains(msgL, "recoger") || strings.Contains(msgL, "local") {
+		} else if strings.Contains(msgL, "comer") || strings.Contains(msgL, "aqui") ||
+			strings.Contains(msgL, "aquí") || strings.Contains(msgL, "salon") || strings.Contains(msgL, "salón") {
+			state.Data["deliveryType"] = "local"
+			state.Step = 4
+			return askPaymentMethodStep(state)
+		} else if strings.Contains(msgL, "llevar") || strings.Contains(msgL, "recoger") {
 			state.Data["deliveryType"] = "llevar"
 			state.Step = 4
 			return askPaymentMethodStep(state)
 		}
-		response := "Prefieres pasar por tu pedido o te lo llevamos a domicilio? 🏠🛵"
+		response := "No entendí 😅 ¿Cómo lo quieres?\n\n• 🥡 *Para llevar* (recoger en local)\n• 🍽️ *Para comer aquí* (en el local)\n• 🛵 *A domicilio*"
 		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
 		return response
 	case 3:
@@ -977,13 +982,28 @@ func confirmOrder(state *UserState, userID, userName string) string {
 	}
 	sb.WriteString(fmt.Sprintf("\n💰 *Total: $%.0f MXN*\n", total))
 	if deliveryType == "domicilio" && address != "" {
-		sb.WriteString(fmt.Sprintf("🛵 *Entrega:* %s\n", address))
+		sb.WriteString(fmt.Sprintf("🛵 *Entrega a domicilio:* %s\n", address))
+	} else if deliveryType == "local" {
+		sb.WriteString("🍽️ *Para comer en el local*\n")
 	} else {
-		sb.WriteString("🏠 *Para llevar en sucursal*\n")
+		sb.WriteString("🥡 *Para llevar (recoger en local)*\n")
 	}
 	sb.WriteString(fmt.Sprintf("👤 *Cliente:* %s\n", userName))
-	if HasPaymentMethods() && len(state.Cart) > 0 {
-		paymentMsg := BuildPaymentMessage(state.Cart[0].Title, total, state.Data["paymentMethod"])
+	paymentMethod := state.Data["paymentMethod"]
+	if paymentMethod == "tarjeta" && HasPaymentMethods() && len(state.Cart) > 0 {
+		// Generar Stripe Checkout directo (sin pasar por Ninda)
+		checkoutURL, err := CreateBotCheckoutURL(userName, userID, state.Cart)
+		if err != nil {
+			log.Printf("⚠️  [Bot] Error creando checkout: %v — mostrando link de Ninda como fallback", err)
+			paymentMsg := BuildPaymentMessage(state.Cart[0].Title, total, "tarjeta")
+			if paymentMsg != "" {
+				sb.WriteString("\n" + paymentMsg)
+			}
+		} else {
+			sb.WriteString("\n" + BuildStripeOnlyMessage(checkoutURL, total))
+		}
+	} else if HasPaymentMethods() && len(state.Cart) > 0 {
+		paymentMsg := BuildPaymentMessage(state.Cart[0].Title, total, paymentMethod)
 		if paymentMsg != "" {
 			sb.WriteString("\n" + paymentMsg)
 		}
