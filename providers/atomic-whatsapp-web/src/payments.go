@@ -299,3 +299,60 @@ func BuildStripeOnlyMessage(checkoutURL string, precio float64) string {
 	sb.WriteString("_El link expira en 24 horas_ ⏱️")
 	return sb.String()
 }
+
+// BotAppointmentPayload datos de la cita para enviar al backend
+type BotAppointmentPayload struct {
+	AgentID    uint   `json:"agentId"`
+	UserID     uint   `json:"userId"`
+	ClientName string `json:"clientName"`
+	Phone      string `json:"phone"`
+	Service    string `json:"service"`
+	Worker     string `json:"worker"`
+	Date       string `json:"date"` // YYYY-MM-DD
+	Time       string `json:"time"` // HH:MM
+	Notes      string `json:"notes"`
+}
+
+// SaveAppointmentToBackend guarda la cita en la BD de Attomos vía API REST.
+// Se llama siempre al confirmar una cita, independientemente de si Google Sheets
+// está conectado o no. Así la cita aparece en el panel de Mis Citas.
+func SaveAppointmentToBackend(payload BotAppointmentPayload) error {
+	attomosURL := os.Getenv("ATTOMOS_API_URL")
+	botToken := os.Getenv("BOT_API_TOKEN")
+
+	if attomosURL == "" || botToken == "" {
+		return fmt.Errorf("ATTOMOS_API_URL o BOT_API_TOKEN no configurados")
+	}
+
+	// Leer agentID y userID desde el entorno si no vienen en el payload
+	if payload.AgentID == 0 {
+		fmt.Sscanf(os.Getenv("AGENT_ID"), "%d", &payload.AgentID)
+	}
+
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("error serializando cita: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", attomosURL+"/api/bot/appointments", bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return fmt.Errorf("error creando request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+botToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("error llamando API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("API retornó %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	log.Printf("✅ [Backend] Cita guardada en BD: %s", string(respBody))
+	return nil
+}

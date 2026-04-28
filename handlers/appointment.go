@@ -270,6 +270,95 @@ func DeleteAppointment(c *gin.Context) {
 }
 
 // ============================================
+// ENDPOINT PARA EL BOT (autenticado con BOT_API_TOKEN)
+// ============================================
+
+// CreateBotAppointment — POST /api/bot/appointments
+// Llamado por AtomicBot/OrbitalBot al confirmar una cita.
+// Autenticado con BOT_API_TOKEN (Bearer token interno).
+func CreateBotAppointment(c *gin.Context) {
+	auth := c.GetHeader("Authorization")
+	botToken := config.GetEnv("BOT_API_TOKEN")
+	if botToken == "" || auth != "Bearer "+botToken {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autorizado"})
+		return
+	}
+
+	var req struct {
+		AgentID    uint   `json:"agentId"`
+		UserID     uint   `json:"userId"`
+		ClientName string `json:"clientName"`
+		Phone      string `json:"phone"`
+		Service    string `json:"service"`
+		Worker     string `json:"worker"`
+		Date       string `json:"date"` // YYYY-MM-DD
+		Time       string `json:"time"` // HH:MM
+		Notes      string `json:"notes"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos: " + err.Error()})
+		return
+	}
+
+	if req.ClientName == "" || req.Date == "" || req.Time == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "clientName, date y time son requeridos"})
+		return
+	}
+
+	// Obtener userID desde el agente si no viene en el body
+	if req.UserID == 0 && req.AgentID > 0 {
+		var agent models.Agent
+		if err := config.DB.First(&agent, req.AgentID).Error; err == nil {
+			req.UserID = agent.UserID
+		}
+	}
+
+	if req.UserID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No se pudo determinar el usuario"})
+		return
+	}
+
+	dateTimeStr := fmt.Sprintf("%s %s:00", req.Date, req.Time)
+	parsedDate, err := time.ParseInLocation("2006-01-02 15:04:05", dateTimeStr, time.Local)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato de fecha/hora inválido"})
+		return
+	}
+
+	firstName, lastName := splitClientName(req.ClientName)
+
+	appointment := models.Appointment{
+		UserID:          req.UserID,
+		AgentID:         req.AgentID,
+		ClientFirstName: firstName,
+		ClientLastName:  lastName,
+		ClientPhone:     req.Phone,
+		Service:         req.Service,
+		Worker:          req.Worker,
+		Date:            parsedDate,
+		Notes:           req.Notes,
+		Status:          models.AppointmentStatusConfirmed,
+		Source:          models.AppointmentSourceAgent,
+	}
+
+	if err := config.DB.Create(&appointment).Error; err != nil {
+		log.Printf("❌ [BotAppointment] Error guardando cita: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error guardando la cita"})
+		return
+	}
+
+	log.Printf("✅ [BotAppointment] Cita creada ID=%d | %s | %s | %s %s",
+		appointment.ID, req.ClientName, req.Service, req.Date, req.Time)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"id":      appointment.ID,
+		"message": "Cita guardada correctamente",
+	})
+}
+
+// ============================================
 // SINCRONIZACIÓN INTERNA (Sheets → BD)
 // ============================================
 

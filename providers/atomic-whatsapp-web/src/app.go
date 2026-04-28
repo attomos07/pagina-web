@@ -825,6 +825,35 @@ func saveAppointment(state *UserState, userID string) string {
 	}
 	log.Println("")
 
+	// ── Guardar cita en el backend de Attomos (siempre, con o sin Sheets) ──
+	log.Println("📤 PASO 3/3: Guardando cita en backend de Attomos...")
+	backendPayload := BotAppointmentPayload{
+		ClientName: appointmentData["nombre"],
+		Phone:      appointmentData["telefono"],
+		Service:    appointmentData["servicio"],
+		Worker:     appointmentData["barbero"],
+		Date:       appointmentData["fechaExacta"], // DD/MM/YYYY → se convierte en backend
+		Time:       appointmentData["hora"],
+		Notes:      appointmentData["email"],
+	}
+	// Convertir fecha DD/MM/YYYY → YYYY-MM-DD para el backend
+	if len(backendPayload.Date) == 10 {
+		parts := strings.Split(backendPayload.Date, "/")
+		if len(parts) == 3 {
+			backendPayload.Date = parts[2] + "-" + parts[1] + "-" + parts[0]
+		}
+	}
+	// Hora: normalizar de "10:00 AM" → "10:00" (24h)
+	if h, m, err := ConvertirHoraA24h(backendPayload.Time); err == nil {
+		backendPayload.Time = fmt.Sprintf("%02d:%02d", h, m)
+	}
+
+	if backendErr := SaveAppointmentToBackend(backendPayload); backendErr != nil {
+		log.Printf("⚠️  [Backend] No se pudo guardar cita en Attomos: %v", backendErr)
+	} else {
+		log.Println("✅ [Backend] Cita guardada correctamente en panel de Attomos")
+	}
+
 	// Construir mensaje de confirmación usando Gemini si está disponible
 	confirmation := generateConfirmationMessage(state.Data, fechaExacta, horaNormalizada)
 
