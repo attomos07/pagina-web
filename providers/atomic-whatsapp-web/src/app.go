@@ -35,7 +35,33 @@ type UserState struct {
 var (
 	userStates = make(map[string]*UserState)
 	stateMutex sync.RWMutex
+
+	// processedMsgs evita procesar el mismo mensaje dos veces
+	// (whatsmeow puede disparar el evento duplicado por retries de WebSocket)
+	processedMsgs   = make(map[string]int64) // messageID → timestamp unix
+	processedMsgsMu sync.Mutex
 )
+
+// isDuplicateMessage retorna true si el messageID ya fue procesado en los últimos 10 segundos.
+func isDuplicateMessage(msgID string) bool {
+	processedMsgsMu.Lock()
+	defer processedMsgsMu.Unlock()
+
+	now := time.Now().Unix()
+
+	// Limpiar entradas viejas (> 60s) para no crecer indefinidamente
+	for id, ts := range processedMsgs {
+		if now-ts > 60 {
+			delete(processedMsgs, id)
+		}
+	}
+
+	if _, seen := processedMsgs[msgID]; seen {
+		return true
+	}
+	processedMsgs[msgID] = now
+	return false
+}
 
 // GetUserState obtiene o crea el estado de un usuario
 func GetUserState(userID string) *UserState {
@@ -76,6 +102,12 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 
 	// Ignorar mensajes de grupos
 	if msg.Info.IsGroup {
+		return
+	}
+
+	// Deduplicar: ignorar si ya procesamos este mensaje (whatsmeow puede enviarlo dos veces)
+	if isDuplicateMessage(msg.Info.ID) {
+		log.Printf("⚠️  Mensaje duplicado ignorado: %s", msg.Info.ID)
 		return
 	}
 
@@ -886,7 +918,7 @@ func startOrderFlow(state *UserState, message, userName string) string {
 	parseCartFromMessage(state, message)
 	if len(state.Cart) > 0 {
 		state.Step = 2
-		response := buildCartSummary(state) + "\n\n" + "¿Cómo lo quieres?\n\n• 🥡 *Para llevar* (recoger en local)\n• 🍽️ *Para comer aquí* (en el local)\n• 🛵 *A domicilio*"
+		response := buildCartSummary(state) + "\n\n" + "Para llevar o a domicilio? 🏠"
 		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
 		return response
 	}
@@ -912,62 +944,32 @@ func continueOrderFlow(state *UserState, message, userID, userName string) strin
 			return response
 		}
 		state.Step = 2
-		response := buildCartSummary(state) + "\n\n" + "¿Cómo lo quieres?\n\n• 🥡 *Para llevar* (recoger en local)\n• 🍽️ *Para comer aquí* (en el local)\n• 🛵 *A domicilio*"
+		response := buildCartSummary(state) + "\n\n" + "Para llevar o a domicilio? 🏠"
 		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
 		return response
 	case 2:
 		if strings.Contains(msgL, "domicilio") || strings.Contains(msgL, "delivery") || strings.Contains(msgL, "a mi casa") {
 			state.Data["deliveryType"] = "domicilio"
 			state.Step = 3
-			response := "Perfecto! 🛵 ¿Cuál es tu dirección de entrega?"
+			response := "Perfecto! 🛵 Cual es tu direccion de entrega?"
 			state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
 			return response
-		} else if strings.Contains(msgL, "comer") || strings.Contains(msgL, "aqui") ||
-			strings.Contains(msgL, "aquí") || strings.Contains(msgL, "salon") || strings.Contains(msgL, "salón") {
-			state.Data["deliveryType"] = "local"
-			state.Step = 4
-			return askPaymentMethodStep(state)
-		} else if strings.Contains(msgL, "llevar") || strings.Contains(msgL, "recoger") {
+		} else if strings.Contains(msgL, "llevar") || strings.Contains(msgL, "recoger") || strings.Contains(msgL, "local") {
 			state.Data["deliveryType"] = "llevar"
 			state.Step = 4
-			return askPaymentMethodStep(state)
+			return confirmOrder(state, userID, userName)
 		}
-		response := "No entendí 😅 ¿Cómo lo quieres?\n\n• 🥡 *Para llevar* (recoger en local)\n• 🍽️ *Para comer aquí* (en el local)\n• 🛵 *A domicilio*"
+		response := "Prefieres pasar por tu pedido o te lo llevamos a domicilio? 🏠🛵"
 		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
 		return response
 	case 3:
 		state.Data["deliveryAddress"] = message
 		state.Step = 4
-		return askPaymentMethodStep(state)
-	case 4:
-		// Parsear método de pago elegido por el cliente
-		if strings.Contains(msgL, "efectivo") || strings.Contains(msgL, "cash") {
-			state.Data["paymentMethod"] = "efectivo"
-		} else if strings.Contains(msgL, "tarjeta") || strings.Contains(msgL, "card") ||
-			strings.Contains(msgL, "linea") || strings.Contains(msgL, "línea") || strings.Contains(msgL, "online") {
-			state.Data["paymentMethod"] = "tarjeta"
-		} else if strings.Contains(msgL, "transferencia") || strings.Contains(msgL, "spei") ||
-			strings.Contains(msgL, "banco") || strings.Contains(msgL, "clabe") {
-			state.Data["paymentMethod"] = "transferencia"
-		} else {
-			// No se entendió → preguntar de nuevo
-			response := "No entendí tu respuesta 😅\n\n" + AskPaymentMethod()
-			state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
-			return response
-		}
 		return confirmOrder(state, userID, userName)
 	default:
 		state.IsOrdering = false
 		return handleNormalConversation(message, state)
 	}
-}
-
-// askPaymentMethodStep pregunta al cliente cómo desea pagar.
-// Se usa en el flujo de pedidos (pizzería/comida) entre el paso de entrega y la confirmación.
-func askPaymentMethodStep(state *UserState) string {
-	response := AskPaymentMethod()
-	state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
-	return response
 }
 
 func confirmOrder(state *UserState, userID, userName string) string {
@@ -982,28 +984,13 @@ func confirmOrder(state *UserState, userID, userName string) string {
 	}
 	sb.WriteString(fmt.Sprintf("\n💰 *Total: $%.0f MXN*\n", total))
 	if deliveryType == "domicilio" && address != "" {
-		sb.WriteString(fmt.Sprintf("🛵 *Entrega a domicilio:* %s\n", address))
-	} else if deliveryType == "local" {
-		sb.WriteString("🍽️ *Para comer en el local*\n")
+		sb.WriteString(fmt.Sprintf("🛵 *Entrega:* %s\n", address))
 	} else {
-		sb.WriteString("🥡 *Para llevar (recoger en local)*\n")
+		sb.WriteString("🏠 *Para llevar en sucursal*\n")
 	}
 	sb.WriteString(fmt.Sprintf("👤 *Cliente:* %s\n", userName))
-	paymentMethod := state.Data["paymentMethod"]
-	if paymentMethod == "tarjeta" && HasPaymentMethods() && len(state.Cart) > 0 {
-		// Generar Stripe Checkout directo (sin pasar por Ninda)
-		checkoutURL, err := CreateBotCheckoutURL(userName, userID, state.Cart)
-		if err != nil {
-			log.Printf("⚠️  [Bot] Error creando checkout: %v — mostrando link de Ninda como fallback", err)
-			paymentMsg := BuildPaymentMessage(state.Cart[0].Title, total, "tarjeta")
-			if paymentMsg != "" {
-				sb.WriteString("\n" + paymentMsg)
-			}
-		} else {
-			sb.WriteString("\n" + BuildStripeOnlyMessage(checkoutURL, total))
-		}
-	} else if HasPaymentMethods() && len(state.Cart) > 0 {
-		paymentMsg := BuildPaymentMessage(state.Cart[0].Title, total, paymentMethod)
+	if HasPaymentMethods() && len(state.Cart) > 0 {
+		paymentMsg := BuildPaymentMessage(state.Cart[0].Title, total, state.Data["paymentMethod"])
 		if paymentMsg != "" {
 			sb.WriteString("\n" + paymentMsg)
 		}
@@ -1015,39 +1002,6 @@ func confirmOrder(state *UserState, userID, userName string) string {
 	response := sb.String()
 	state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
 	return response
-}
-
-// extractQuantity detecta la cantidad en un mensaje en lenguaje natural.
-// Busca números y palabras numéricas en todo el mensaje, sin requerir
-// que vayan pegados al nombre del servicio.
-// Ejemplos: "dos de nata", "quiero 3", "pediré dos gorditas"
-func extractQuantity(msgL string) int {
-	// Primero buscar dígitos explícitos (ej: "3 gorditas", "pediré 2")
-	for _, pair := range []struct {
-		word string
-		n    int
-	}{
-		{"10", 10}, {"9", 9}, {"8", 8}, {"7", 7}, {"6", 6},
-		{"5", 5}, {"4", 4}, {"3", 3}, {"2", 2}, {"1", 1},
-	} {
-		if strings.Contains(msgL, pair.word) {
-			return pair.n
-		}
-	}
-	// Luego buscar palabras numéricas en cualquier posición del mensaje
-	for _, pair := range []struct {
-		word string
-		n    int
-	}{
-		{"diez", 10}, {"nueve", 9}, {"ocho", 8}, {"siete", 7}, {"seis", 6},
-		{"cinco", 5}, {"cuatro", 4}, {"tres", 3}, {"dos", 2},
-		{"una", 1}, {"uno", 1}, {"un", 1},
-	} {
-		if strings.Contains(msgL, pair.word) {
-			return pair.n
-		}
-	}
-	return 1
 }
 
 func parseCartFromMessage(state *UserState, message string) {
@@ -1069,7 +1023,14 @@ func parseCartFromMessage(state *UserState, message string) {
 				continue
 			}
 		}
-		qty := extractQuantity(msgL)
+		qty := 1
+		qtyWords := map[string]int{"una": 1, "un": 1, "uno": 1, "dos": 2, "2": 2, "tres": 3, "3": 3, "cuatro": 4, "4": 4, "cinco": 5, "5": 5}
+		for word, n := range qtyWords {
+			if strings.Contains(msgL, word+" "+titleL) {
+				qty = n
+				break
+			}
+		}
 		price := svc.Price
 		if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
 			price = svc.PromoPrice
@@ -1120,31 +1081,6 @@ func buildMenuResponse() string {
 	return sb.String()
 }
 
-// getContextualWelcome genera un mensaje de bienvenida adecuado al giro del negocio.
-// Para negocios de comida menciona "hacer tu pedido", para servicios menciona "agendar cita".
-func getContextualWelcome() string {
-	if isPizzeriaMode() && BusinessCfg != nil {
-		// Generar con Gemini si está disponible
-		if geminiEnabled {
-			prompt := fmt.Sprintf(
-				"Genera un mensaje de bienvenida breve (2-3 líneas) para %s, un negocio de comida tipo %s.\n\nIncluye:\n- Saludo amigable\n- Mención de que pueden preguntar por el menú o hacer su pedido\n- Un emoji de comida apropiado\n\nNO menciones citas ni agendamientos.\nTono: amigable.\nRespuesta SOLO con el mensaje.",
-				BusinessCfg.AgentName, BusinessCfg.BusinessType,
-			)
-			response, err := Chat(prompt, "Bienvenida", "")
-			if err == nil && response != "" {
-				return response
-			}
-		}
-		// Fallback texto plano para comida
-		name := ""
-		if BusinessCfg != nil {
-			name = BusinessCfg.AgentName
-		}
-		return fmt.Sprintf("¡Hola! Bienvenido a %s 👋\n\nPuedes ver nuestro menú o hacer tu pedido directamente. ¿Qué se te antoja hoy? 😋", name)
-	}
-	return GenerateWelcomeMessage()
-}
-
 func handleNormalConversation(message string, state *UserState) string {
 	log.Println("💬 Manejando conversación normal con Gemini")
 
@@ -1165,7 +1101,7 @@ func handleNormalConversation(message string, state *UserState) string {
 	} else if strings.Contains(messageLower, "hola") || strings.Contains(messageLower, "buenos") ||
 		strings.Contains(messageLower, "buenas") {
 		// Generar mensaje de bienvenida personalizado
-		return getContextualWelcome()
+		return GenerateWelcomeMessage()
 	} else {
 		promptContext = "Responde de manera útil y natural según la información del negocio."
 	}
