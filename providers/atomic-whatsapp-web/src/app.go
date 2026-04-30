@@ -238,6 +238,9 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 		return
 	}
 
+	// Limpiar formato markdown de Gemini: ** → * (WhatsApp usa asterisco simple)
+	response = strings.ReplaceAll(response, "**", "*")
+
 	// Enviar respuesta
 	if response != "" {
 		log.Printf("📤 ENVIANDO RESPUESTA a %s...", senderName)
@@ -1022,10 +1025,42 @@ func confirmOrder(state *UserState, userID, userName string) string {
 	}
 	sb.WriteString(fmt.Sprintf("👤 *Cliente:* %s\n", userName))
 	if HasPaymentMethods() && len(state.Cart) > 0 {
-		paymentMsg := BuildPaymentMessage(state.Cart[0].Title, total, state.Data["paymentMethod"])
-		if paymentMsg != "" {
-			sb.WriteString("\n" + paymentMsg)
+		cfg := GetPaymentConfig()
+		hasStripe := cfg.StripeEnabled && cfg.StripeChargesEnabled
+		hasSPEI := cfg.SPEIEnabled && cfg.CLABENumber != ""
+
+		sb.WriteString("\n\n💳 *Opciones de pago*\n")
+		sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━\n")
+		sb.WriteString(fmt.Sprintf("💰 *Total:* $%.0f MXN\n\n", total))
+
+		// SPEI
+		if hasSPEI {
+			sb.WriteString("🏦 *Transferencia SPEI*\n")
+			sb.WriteString(fmt.Sprintf("   CLABE: %s\n", cfg.CLABENumber))
+			if cfg.BankName != "" {
+				sb.WriteString(fmt.Sprintf("   Banco: %s\n", cfg.BankName))
+			}
+			if cfg.AccountName != "" {
+				sb.WriteString(fmt.Sprintf("   A nombre de: %s\n", cfg.AccountName))
+			}
 		}
+
+		// Tarjeta: generar link de Stripe Payment Link (URL corta)
+		if hasStripe {
+			if hasSPEI {
+				sb.WriteString("\n")
+			}
+			checkoutURL, err := CreateBotCheckoutURL(userName, userID, state.Cart)
+			if err != nil {
+				log.Printf("⚠️  [confirmOrder] Error generando link de pago: %v", err)
+			} else {
+				sb.WriteString("💳 *Pagar con tarjeta*\n")
+				sb.WriteString(fmt.Sprintf("   👉 %s\n", checkoutURL))
+			}
+		}
+
+		sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━\n")
+		sb.WriteString("_Puedes pagar antes o al momento de recoger_ 😊")
 	}
 	sb.WriteString("\n\n" + "Pedido recibido! Nos pondremos en contacto pronto. 🙌")
 	state.IsOrdering = false
