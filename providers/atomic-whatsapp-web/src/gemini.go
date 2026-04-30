@@ -405,7 +405,25 @@ func GenerateWelcomeMessage() string {
 		log.Println("💬 Generando mensaje de bienvenida con Gemini...")
 
 		ctx := context.Background()
-		prompt := fmt.Sprintf(`Genera un mensaje de bienvenida breve (2-3 líneas) para %s, un %s.
+		// Prompt diferente según el giro del negocio
+		var prompt string
+		if isPizzeriaMode() {
+			prompt = fmt.Sprintf(`Genera un mensaje de bienvenida breve (2-3 líneas) para %s, un negocio de comida tipo %s.
+
+Incluye:
+- Saludo amigable
+- Mención de que pueden preguntar por el menú o hacer su pedido
+- Un emoji de comida apropiado
+
+NO menciones citas ni agendamientos.
+Tono: %s
+
+RESPONDE SOLO CON EL MENSAJE, SIN EXPLICACIONES.`,
+				BusinessCfg.AgentName,
+				BusinessCfg.BusinessType,
+				BusinessCfg.Personality.Tone)
+		} else {
+			prompt = fmt.Sprintf(`Genera un mensaje de bienvenida breve (2-3 líneas) para %s, un %s.
 
 Incluye:
 - Saludo amigable
@@ -415,9 +433,10 @@ Incluye:
 Tono: %s
 
 RESPONDE SOLO CON EL MENSAJE, SIN EXPLICACIONES.`,
-			BusinessCfg.AgentName,
-			BusinessCfg.BusinessType,
-			BusinessCfg.Personality.Tone)
+				BusinessCfg.AgentName,
+				BusinessCfg.BusinessType,
+				BusinessCfg.Personality.Tone)
+		}
 
 		resp, err := geminiModel.GenerateContent(ctx, genai.Text(prompt))
 		if err == nil && resp != nil && len(resp.Candidates) > 0 {
@@ -441,9 +460,15 @@ RESPONDE SOLO CON EL MENSAJE, SIN EXPLICACIONES.`,
 		log.Println("⚠️  Gemini no disponible para generar mensaje de bienvenida")
 	}
 
-	// Mensaje por defecto
-	defaultMsg := fmt.Sprintf("¡Hola! Bienvenido a %s 👋\n\nPuedo ayudarte con información sobre nuestros servicios, horarios o agendar una cita. ¿En qué te puedo ayudar?",
-		BusinessCfg.AgentName)
+	// Mensaje por defecto según giro
+	var defaultMsg string
+	if isPizzeriaMode() {
+		defaultMsg = fmt.Sprintf("¡Hola! Bienvenido a %s 👋\n\nPuedes ver nuestro menú o hacer tu pedido directamente. ¿Qué se te antoja hoy? 😋",
+			BusinessCfg.AgentName)
+	} else {
+		defaultMsg = fmt.Sprintf("¡Hola! Bienvenido a %s 👋\n\nPuedo ayudarte con información sobre nuestros servicios, horarios o agendar una cita. ¿En qué te puedo ayudar?",
+			BusinessCfg.AgentName)
+	}
 
 	log.Printf("📝 Usando mensaje de bienvenida por defecto\n")
 	return defaultMsg
