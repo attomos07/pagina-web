@@ -1,6 +1,8 @@
 package src
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"regexp"
@@ -8,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/generative-ai-go/genai"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/types/events"
 )
@@ -1033,33 +1036,71 @@ func confirmOrder(state *UserState, userID, userName string) string {
 	return response
 }
 
+// extractQuantity detecta la cantidad en un mensaje en lenguaje natural.
+func extractQuantity(msgL string) int {
+	for _, pair := range []struct {
+		word string
+		n    int
+	}{
+		{"10", 10}, {"9", 9}, {"8", 8}, {"7", 7}, {"6", 6},
+		{"5", 5}, {"4", 4}, {"3", 3}, {"2", 2},
+	} {
+		if strings.Contains(msgL, pair.word) {
+			return pair.n
+		}
+	}
+	for _, pair := range []struct {
+		word string
+		n    int
+	}{
+		{"diez", 10}, {"nueve", 9}, {"ocho", 8}, {"siete", 7}, {"seis", 6},
+		{"cinco", 5}, {"cuatro", 4}, {"tres", 3}, {"dos", 2},
+		{"una", 1}, {"uno", 1}, {"un", 1},
+	} {
+		if strings.Contains(msgL, pair.word) {
+			return pair.n
+		}
+	}
+	return 1
+}
+
 func parseCartFromMessage(state *UserState, message string) {
-	if BusinessCfg == nil {
+	if BusinessCfg == nil || len(BusinessCfg.Services) == 0 {
 		return
 	}
+
+	// ── Intentar con Gemini primero ──────────────────────────────────────────
+	if geminiEnabled {
+		items, err := extractCartWithGemini(message)
+		if err == nil && len(items) > 0 {
+			for _, item := range items {
+				alreadyIn := false
+				for i, existing := range state.Cart {
+					if strings.EqualFold(existing.Title, item.Title) {
+						state.Cart[i].Quantity += item.Quantity
+						alreadyIn = true
+						break
+					}
+				}
+				if !alreadyIn {
+					state.Cart = append(state.Cart, item)
+				}
+			}
+			return
+		}
+		if err != nil {
+			log.Printf("⚠️  [Cart] Gemini falló, usando fallback: %v", err)
+		}
+	}
+
+	// ── Fallback: match exacto del título completo ────────────────────────────
 	msgL := strings.ToLower(message)
 	for _, svc := range BusinessCfg.Services {
 		titleL := strings.ToLower(svc.Title)
 		if !strings.Contains(msgL, titleL) {
-			found := false
-			for _, w := range strings.Fields(titleL) {
-				if len(w) > 3 && strings.Contains(msgL, w) {
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
+			continue
 		}
-		qty := 1
-		qtyWords := map[string]int{"una": 1, "un": 1, "uno": 1, "dos": 2, "2": 2, "tres": 3, "3": 3, "cuatro": 4, "4": 4, "cinco": 5, "5": 5}
-		for word, n := range qtyWords {
-			if strings.Contains(msgL, word+" "+titleL) {
-				qty = n
-				break
-			}
-		}
+		qty := extractQuantity(msgL)
 		price := svc.Price
 		if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
 			price = svc.PromoPrice
@@ -1076,6 +1117,108 @@ func parseCartFromMessage(state *UserState, message string) {
 			state.Cart = append(state.Cart, OrderItem{Title: svc.Title, Quantity: qty, Price: price})
 		}
 	}
+}
+
+// extractCartWithGemini usa Gemini para identificar qué productos del catálogo
+// pidió el cliente y en qué cantidad, tolerando errores ortográficos y variaciones.
+func extractCartWithGemini(message string) ([]OrderItem, error) {
+	if BusinessCfg == nil || len(BusinessCfg.Services) == 0 {
+		return nil, fmt.Errorf("sin catálogo")
+	}
+
+	// Construir catálogo con títulos y precios
+	catalog := ""
+	for i, svc := range BusinessCfg.Services {
+		price := svc.Price
+		if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
+			price = svc.PromoPrice
+		}
+		catalog += fmt.Sprintf("%d. %s ($%.0f)\n", i+1, svc.Title, price)
+	}
+
+	prompt := fmt.Sprintf(`Eres un sistema de detección de pedidos. Dado el siguiente catálogo y mensaje del cliente, identifica qué productos pidió y en qué cantidad.
+
+CATÁLOGO:
+%s
+
+MENSAJE DEL CLIENTE: "%s"
+
+REGLAS:
+- Solo incluye productos que el cliente mencionó explícitamente
+- Usa el nombre EXACTO del catálogo
+- Si el cliente no pidió ningún producto del catálogo, devuelve un array vacío
+- Tolera errores ortográficos (ej: "peperroni" = "pepperoni")
+- Si no se especifica cantidad, asume 1
+
+RESPONDE ÚNICAMENTE con un JSON válido, sin texto adicional:
+[{"title": "Nombre exacto del producto", "quantity": 1, "price": 0.0}]
+
+Si no hay productos: []`, catalog, message)
+
+	ctx := context.Background()
+	resp, err := geminiModel.GenerateContent(ctx, genai.Text(prompt))
+	if err != nil {
+		return nil, fmt.Errorf("error Gemini: %w", err)
+	}
+
+	if resp == nil || len(resp.Candidates) == 0 {
+		return nil, fmt.Errorf("sin respuesta")
+	}
+
+	var responseText string
+	for _, cand := range resp.Candidates {
+		if cand.Content != nil {
+			for _, part := range cand.Content.Parts {
+				responseText += fmt.Sprintf("%v", part)
+			}
+		}
+	}
+
+	// Extraer JSON de la respuesta
+	jsonStart := strings.Index(responseText, "[")
+	jsonEnd := strings.LastIndex(responseText, "]")
+	if jsonStart == -1 || jsonEnd == -1 {
+		return nil, fmt.Errorf("JSON no encontrado en respuesta")
+	}
+	jsonStr := responseText[jsonStart : jsonEnd+1]
+
+	type geminiItem struct {
+		Title    string  `json:"title"`
+		Quantity int     `json:"quantity"`
+		Price    float64 `json:"price"`
+	}
+
+	var geminiItems []geminiItem
+	if err := json.Unmarshal([]byte(jsonStr), &geminiItems); err != nil {
+		return nil, fmt.Errorf("error parseando JSON: %w", err)
+	}
+
+	// Resolver precios reales desde el catálogo (no confiar en el precio de Gemini)
+	items := make([]OrderItem, 0, len(geminiItems))
+	for _, gi := range geminiItems {
+		if gi.Quantity <= 0 {
+			gi.Quantity = 1
+		}
+		// Buscar precio real en el catálogo
+		price := gi.Price
+		for _, svc := range BusinessCfg.Services {
+			if strings.EqualFold(strings.TrimSpace(svc.Title), strings.TrimSpace(gi.Title)) {
+				price = svc.Price
+				if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
+					price = svc.PromoPrice
+				}
+				break
+			}
+		}
+		if price == 0 {
+			log.Printf("⚠️  [Cart] Producto no encontrado en catálogo: %s — omitiendo", gi.Title)
+			continue
+		}
+		items = append(items, OrderItem{Title: gi.Title, Quantity: gi.Quantity, Price: price})
+		log.Printf("✅ [Cart] Gemini detectó: %dx %s ($%.0f)", gi.Quantity, gi.Title, price)
+	}
+
+	return items, nil
 }
 
 func buildCartSummary(state *UserState) string {
