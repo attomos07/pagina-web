@@ -322,6 +322,9 @@ func main() {
 	router.POST("/api/payment-config/stripe/payment-link", handlers.CreateBotPaymentLink)
 	router.GET("/api/payment-config/bot/:branch_id", handlers.GetBotPaymentConfig)
 
+	// Proxy de imágenes — sirve recursos de Hetzner por HTTPS para evitar mixed content
+	router.GET("/api/uploads/proxy", handlers.ProxyUpload)
+
 	// ============================================
 	// PÁGINAS WEB
 	// ============================================

@@ -5,6 +5,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -110,8 +112,13 @@ func UploadServiceImage(c *gin.Context) {
 			return
 		}
 
-		publicURL = fmt.Sprintf("http://%s:8080/uploads/branch_%s/%s",
-			orbitalAgent.ServerIP, branchIDStr, filename)
+		internalPath := fmt.Sprintf("/branch_%s/%s", branchIDStr, filename)
+		baseURL := os.Getenv("BASE_URL")
+		if baseURL == "" {
+			baseURL = "http://localhost:8080"
+		}
+		publicURL = fmt.Sprintf("%s/api/uploads/proxy?server=%s&port=8080&path=%s",
+			baseURL, orbitalAgent.ServerIP, internalPath)
 
 	} else {
 		// ── Ruta AtomicBot / onboarding: servidor global compartido ──
@@ -134,8 +141,13 @@ func UploadServiceImage(c *gin.Context) {
 			return
 		}
 
-		publicURL = fmt.Sprintf("http://%s/uploads/user_%d/branch_%s/%s",
-			globalServer.IPAddress, user.ID, branchIDStr, filename)
+		internalPath := fmt.Sprintf("/user_%d/branch_%s/%s", user.ID, branchIDStr, filename)
+		baseURL := os.Getenv("BASE_URL")
+		if baseURL == "" {
+			baseURL = "http://localhost:8080"
+		}
+		publicURL = fmt.Sprintf("%s/api/uploads/proxy?server=%s&path=%s",
+			baseURL, globalServer.IPAddress, internalPath)
 	}
 
 	log.Printf("✅ [Upload] user=%d branch=%s → %s", user.ID, branchIDStr, publicURL)
@@ -272,8 +284,13 @@ func UploadMenu(c *gin.Context) {
 		return
 	}
 
-	publicURL := fmt.Sprintf("http://%s/uploads/user_%d/branch_%s/menu/%s",
-		globalServer.IPAddress, user.ID, branchIDStr, filename)
+	internalPath := fmt.Sprintf("/user_%d/branch_%s/menu/%s", user.ID, branchIDStr, filename)
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:8080"
+	}
+	publicURL := fmt.Sprintf("%s/api/uploads/proxy?server=%s&path=%s",
+		baseURL, globalServer.IPAddress, internalPath)
 
 	log.Printf("✅ [UploadMenu] user=%d branch=%s → %s", user.ID, branchIDStr, publicURL)
 	c.JSON(http.StatusOK, gin.H{"url": publicURL})
@@ -290,4 +307,62 @@ func validateMenuExt(filename string) (string, error) {
 		return "", fmt.Errorf("formato no permitido: %s — usa pdf, jpg, png o webp", ext)
 	}
 	return ext, nil
+}
+
+// ProxyUpload sirve imágenes/archivos desde el servidor Hetzner a través del backend.
+// Esto evita el problema de mixed content (HTTP desde página HTTPS).
+//
+// GET /api/uploads/proxy?server={ip}&path={/user_1/branch_2/img.jpg}&port={80}
+func ProxyUpload(c *gin.Context) {
+	server := c.Query("server")
+	path := c.Query("path")
+	port := c.DefaultQuery("port", "80")
+
+	if server == "" || path == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "server y path son requeridos"})
+		return
+	}
+
+	// Validar que la ruta sea segura (solo /uploads/...)
+	cleanPath := filepath.Clean(path)
+	if !strings.HasPrefix(cleanPath, "/") {
+		cleanPath = "/" + cleanPath
+	}
+
+	internalURL := fmt.Sprintf("http://%s:%s/uploads%s", server, port, cleanPath)
+	log.Printf("🖼️  [Proxy] %s", internalURL)
+
+	resp, err := http.Get(internalURL)
+	if err != nil {
+		log.Printf("❌ [Proxy] Error fetching %s: %v", internalURL, err)
+		c.JSON(http.StatusBadGateway, gin.H{"error": "No se pudo obtener la imagen"})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		c.Status(resp.StatusCode)
+		return
+	}
+
+	contentType := resp.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+
+	// Cache de 30 días
+	c.Header("Cache-Control", "public, max-age=2592000")
+	c.Header("Content-Type", contentType)
+	c.Status(http.StatusOK)
+	io.Copy(c.Writer, resp.Body)
+}
+
+// ProxyUploadURL construye la URL del proxy para una URL interna de Hetzner.
+// Útil cuando se necesita convertir URLs antiguas (http://IP/uploads/...) al proxy.
+func ProxyUploadURL(internalURL string) string {
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		return internalURL
+	}
+	return fmt.Sprintf("%s/api/uploads/proxy?url=%s", baseURL, url.QueryEscape(internalURL))
 }

@@ -162,9 +162,36 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 			menuURL := BusinessCfg.MenuUrl
 			log.Printf("📋 Solicitud de menú detectada — enviando: %s", menuURL)
 			urlLower := strings.ToLower(menuURL)
+
+			// Extraer nombre real del archivo desde la URL
+			menuFileName := "menu.pdf"
+			if parts := strings.Split(menuURL, "/"); len(parts) > 0 {
+				rawName := parts[len(parts)-1]
+				// Quitar query string si existe
+				if idx := strings.Index(rawName, "?"); idx != -1 {
+					rawName = rawName[:idx]
+				}
+				if rawName != "" {
+					menuFileName = rawName
+				}
+			}
+			// Usar nombre del negocio como título más amigable
+			if BusinessCfg.AgentName != "" {
+				ext := ".pdf"
+				if !strings.HasSuffix(strings.ToLower(menuFileName), ".pdf") {
+					for _, e := range []string{".jpg", ".jpeg", ".png", ".webp"} {
+						if strings.HasSuffix(strings.ToLower(menuFileName), e) {
+							ext = e
+							break
+						}
+					}
+				}
+				menuFileName = "Menú - " + BusinessCfg.AgentName + ext
+			}
+
 			var sendErr error
 			if strings.HasSuffix(urlLower, ".pdf") {
-				sendErr = SendDocument(msg.Info.Chat, menuURL, "menu.pdf", "")
+				sendErr = SendDocument(msg.Info.Chat, menuURL, menuFileName, "")
 			} else {
 				sendErr = SendImage(msg.Info.Chat, menuURL, "")
 			}
