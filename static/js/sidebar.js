@@ -12,7 +12,9 @@
 
     // Giros de comida — muestra "Pedidos" en lugar de "Citas"
     const GIROS_COMIDA = ['pizzeria','pizza','mariscos','gorditas','restaurante',
-                          'taqueria','tacos','hamburguesas','sushi','comida'];
+                          'taqueria','tacos','hamburguesas','sushi','comida',
+                          'panaderia','panadería','reposteria','repostería',
+                          'pasteleria','pastelería'];
 
     // Aplica visibilidad Citas vs Pedidos según el giro recibido
     function applyFoodLogic(businessType) {
