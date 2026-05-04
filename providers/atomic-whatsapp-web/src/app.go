@@ -962,7 +962,7 @@ func isPizzeriaMode() bool {
 	if BusinessCfg == nil {
 		return false
 	}
-	foodTypes := []string{"pizzeria", "pizza", "gorditas", "gordita", "restaurante", "comida", "taqueria", "tacos", "panaderia", "panadería", "reposteria", "repostería", "pasteleria", "pastelería"}
+	foodTypes := []string{"pizzeria", "pizza", "gorditas", "gordita", "restaurante", "comida", "taqueria", "tacos", "panaderia", "panadería", "reposteria", "repostería", "pasteleria", "pastelería", "libreria", "librería"}
 	bt := strings.ToLower(BusinessCfg.BusinessType)
 	for _, ft := range foodTypes {
 		if strings.Contains(bt, ft) {
