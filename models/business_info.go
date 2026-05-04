@@ -91,6 +91,7 @@ type BranchService struct {
 	PromoDays       []string `json:"promoDays"`       // ["lunes","martes",...] cuando type="days"
 	PromoDateStart  string   `json:"promoDateStart"`  // "2025-01-15" cuando type="range"
 	PromoDateEnd    string   `json:"promoDateEnd"`    // "2025-02-28" cuando type="range"
+	InStock         bool     `json:"inStock"`         // true = en existencia, false = agotado
 }
 
 type BranchServices []BranchService

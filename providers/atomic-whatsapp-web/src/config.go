@@ -73,6 +73,7 @@ type Service struct {
 	OriginalPrice float64  `json:"originalPrice,omitempty"`
 	PromoPrice    float64  `json:"promoPrice,omitempty"`
 	ImageUrls     []string `json:"imageUrls,omitempty"`
+	InStock       bool     `json:"inStock"` // true = en existencia, false = agotado
 }
 
 // Worker representa un trabajador
@@ -218,11 +219,15 @@ func GetBusinessInfoPrompt() string {
 	if len(BusinessCfg.Services) > 0 {
 		sb.WriteString("\n**SERVICIOS Y PRECIOS:**\n")
 		for _, service := range BusinessCfg.Services {
+			stockLabel := ""
+			if !service.InStock {
+				stockLabel = " ❌ AGOTADO"
+			}
 			if service.PriceType == "promotion" && service.PromoPrice > 0 {
-				sb.WriteString(fmt.Sprintf("- %s: $%.2f (antes $%.2f) 🎉\n",
-					service.Title, service.PromoPrice, service.OriginalPrice))
+				sb.WriteString(fmt.Sprintf("- %s: $%.2f (antes $%.2f) 🎉%s\n",
+					service.Title, service.PromoPrice, service.OriginalPrice, stockLabel))
 			} else {
-				sb.WriteString(fmt.Sprintf("- %s: $%.2f\n", service.Title, service.Price))
+				sb.WriteString(fmt.Sprintf("- %s: $%.2f%s\n", service.Title, service.Price, stockLabel))
 			}
 			if service.Description != "" {
 				// Limpiar HTML del description

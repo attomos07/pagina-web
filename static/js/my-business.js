@@ -1191,6 +1191,7 @@ function addServiceItem(e, data = null) {
     div.dataset.serviceId = id;
 
     const isPromo = data?.priceType === 'promo';
+    const inStock = data?.inStock !== false; // true por defecto
 
     // Periodo de promoción
     const periodType = data?.promoPeriodType || 'days';
@@ -1220,6 +1221,11 @@ function addServiceItem(e, data = null) {
     div.innerHTML = `
         <div class="service-item-row">
             <input type="text" class="info-input service-title" placeholder="Nombre del servicio" value="${data?.title || ''}">
+            <label class="stock-toggle" title="${inStock ? 'En existencia' : 'Agotado'}">
+                <input type="checkbox" class="service-in-stock" ${inStock ? 'checked' : ''}>
+                <span class="stock-slider"></span>
+                <span class="stock-label">${inStock ? '✅ En existencia' : '❌ Agotado'}</span>
+            </label>
             <button type="button" class="btn-remove-item" onclick="removeItem(this, 'servicesList', 'servicesHint')">
                 <i class="lni lni-trash-can"></i>
             </button>
@@ -1290,6 +1296,13 @@ function addServiceItem(e, data = null) {
             </div>
         </div>
     `;
+
+    // Toggle de stock — actualizar label al cambiar
+    div.querySelector('.service-in-stock')?.addEventListener('change', function() {
+        const label = this.closest('.stock-toggle').querySelector('.stock-label');
+        label.textContent = this.checked ? '✅ En existencia' : '❌ Agotado';
+        this.closest('.stock-toggle').title = this.checked ? 'En existencia' : 'Agotado';
+    });
 
     // Toggle Normal / Promo
     div.querySelectorAll('.price-type-btn').forEach(btn => {
@@ -1438,9 +1451,11 @@ function collectServicesData() {
             promoDateEnd   = item.querySelector('.promo-date-end')?.value || '';
         }
 
+        const inStockEl = item.querySelector('.service-in-stock');
         services.push({
             title,
             description:    item.querySelector('.service-desc')?.value || '',
+            inStock:        inStockEl ? inStockEl.checked : true,
             imageUrls:      (item.querySelector('.service-image-urls')?.value || '').split(',').filter(Boolean),
             priceType:      isPromo ? 'promo' : 'normal',
             price:          parseFloat(item.querySelector('.service-price')?.value) || 0,

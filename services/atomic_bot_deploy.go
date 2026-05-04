@@ -84,6 +84,7 @@ type Service struct {
 	PromoDays       []string `json:"promoDays,omitempty"`
 	PromoDateStart  string   `json:"promoDateStart,omitempty"`
 	PromoDateEnd    string   `json:"promoDateEnd,omitempty"`
+	InStock         bool     `json:"inStock"` // true = en existencia, false = agotado
 }
 
 type Worker struct {
@@ -927,6 +928,7 @@ func convertBranchServices(services models.BranchServices) []Service {
 			PromoDays:       s.PromoDays,
 			PromoDateStart:  s.PromoDateStart,
 			PromoDateEnd:    s.PromoDateEnd,
+			InStock:         s.InStock,
 		}
 	}
 	return result

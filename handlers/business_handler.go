@@ -339,6 +339,7 @@ func mapRequestToBranch(branch *models.MyBusinessInfo, req BranchRequest, user *
 			PromoDays:       s.PromoDays,
 			PromoDateStart:  s.PromoDateStart,
 			PromoDateEnd:    s.PromoDateEnd,
+			InStock:         s.InStock,
 		}
 	}
 	branch.Services = branchServices
@@ -378,6 +379,7 @@ func buildBranchResponse(b *models.MyBusinessInfo) gin.H {
 			"promoDays":       s.PromoDays,
 			"promoDateStart":  s.PromoDateStart,
 			"promoDateEnd":    s.PromoDateEnd,
+			"inStock":         s.InStock,
 		}
 	}
 
@@ -560,6 +562,7 @@ type ServiceInfo struct {
 	PromoDays       []string `json:"promoDays"`       // ["lunes","martes",...]
 	PromoDateStart  string   `json:"promoDateStart"`  // "2025-01-15"
 	PromoDateEnd    string   `json:"promoDateEnd"`    // "2025-02-28"
+	InStock         bool     `json:"inStock"`
 }
 
 type WorkerInfo struct {
