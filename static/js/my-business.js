@@ -253,6 +253,9 @@ function loadBranchData(branch) {
     const menuUrlEl = document.getElementById('menuUrlInput');
     if (menuUrlEl) {
         menuUrlEl.value = branch.business?.menuUrl || '';
+        // Restaurar nombre original si viene del servidor
+        const origNameEl = document.getElementById('menuOriginalName');
+        if (origNameEl && branch.business?.menuName) origNameEl.value = branch.business.menuName;
         if (branch.business?.menuUrl) renderMenuPreview(branch.business.menuUrl);
     }
 
@@ -1783,6 +1786,9 @@ async function handleMenuFile(file) {
     document.getElementById('menuFileIcon').className = isPdf ? 'lni lni-files' : 'lni lni-image';
     document.getElementById('menuFileName').textContent = file.name;
     document.getElementById('menuFileSize').textContent = (file.size / 1024).toFixed(0) + ' KB';
+    // Guardar nombre original para mostrarlo al recargar
+    const menuOrigNameEl = document.getElementById('menuOriginalName');
+    if (menuOrigNameEl) menuOrigNameEl.value = file.name;
     document.getElementById('menuUploadPlaceholder').style.display = 'none';
     document.getElementById('menuFilePreview').style.display = '';
     const localUrl = URL.createObjectURL(file);
@@ -1834,7 +1840,10 @@ async function handleMenuFile(file) {
 function renderMenuPreview(url) {
     if (!url) return;
     const isPdf = url.toLowerCase().endsWith('.pdf');
-    const fileName = url.split('/').pop() || 'menu';
+    // Preferir nombre original guardado; si no, usar el de la URL
+    const origName = document.getElementById('menuOriginalName')?.value || '';
+    const urlFileName = url.split('/').pop()?.split('?')[0] || 'menu';
+    const fileName = origName || urlFileName;
     document.getElementById('menuFileIcon').className = isPdf ? 'lni lni-files' : 'lni lni-image';
     document.getElementById('menuFileName').textContent = fileName;
     document.getElementById('menuFileSize').textContent = isPdf ? 'PDF' : 'Imagen';
