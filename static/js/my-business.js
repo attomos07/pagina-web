@@ -1236,6 +1236,11 @@ function addServiceItem(e, data = null) {
     div.innerHTML = `
         <div class="service-item-row">
             <input type="text" class="info-input service-title" placeholder="Nombre del servicio" value="${data?.title || ''}">
+            <label class="stock-toggle" title="${inStock ? 'En existencia' : 'Agotado'}">
+                <input type="checkbox" class="service-in-stock" ${inStock ? 'checked' : ''}>
+                <span class="stock-slider"></span>
+                <span class="stock-label">${inStock ? 'En existencia' : 'Agotado'}</span>
+            </label>
 
             <button type="button" class="btn-remove-item" onclick="removeItem(this, 'servicesList', 'servicesHint')">
                 <i class="lni lni-trash-can"></i>
@@ -1460,7 +1465,7 @@ function collectServicesData() {
         services.push({
             title,
             description:    item.querySelector('.service-desc')?.value || '',
-            inStock:        true, // siempre en existencia (toggle quitado de UI)
+            inStock:        inStockEl ? inStockEl.checked : true,
             imageUrls:      (item.querySelector('.service-image-urls')?.value || '').split(',').filter(Boolean),
             priceType:      isPromo ? 'promo' : 'normal',
             price:          parseFloat(item.querySelector('.service-price')?.value) || 0,
