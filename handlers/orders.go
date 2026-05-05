@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"attomos/config"
 	"attomos/models"
@@ -248,4 +249,71 @@ func orderToResponse(o models.Order, agentNames map[uint]string) OrderResponse {
 		CashReceived:    o.CashReceived,
 		CreatedAt:       o.CreatedAt.Format("2006-01-02 15:04"),
 	}
+}
+
+// CreateBotOrder crea un pedido desde el bot de WhatsApp
+func CreateBotOrder(c *gin.Context) {
+	botToken := os.Getenv("BOT_API_TOKEN")
+	if botToken == "" || c.GetHeader("Authorization") != "Bearer "+botToken {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
+		return
+	}
+
+	var req struct {
+		AgentID         uint                     `json:"agentId"`
+		ClientName      string                   `json:"clientName"`
+		ClientPhone     string                   `json:"clientPhone"`
+		Items           []map[string]interface{} `json:"items"`
+		Total           float64                  `json:"total"`
+		OrderType       string                   `json:"orderType"`
+		DeliveryAddress string                   `json:"deliveryAddress"`
+		Status          string                   `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var agent models.Agent
+	if err := config.DB.First(&agent, req.AgentID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Agente no encontrado"})
+		return
+	}
+
+	itemsJSON, _ := json.Marshal(req.Items)
+	var items models.OrderItems
+	json.Unmarshal(itemsJSON, &items)
+
+	orderType := models.OrderTypePickup
+	if req.OrderType != "" {
+		orderType = models.OrderType(req.OrderType)
+	}
+	status := models.OrderStatusPending
+	if req.Status != "" {
+		status = models.OrderStatus(req.Status)
+	}
+
+	agentID := &req.AgentID
+	order := models.Order{
+		UserID:          agent.UserID,
+		AgentID:         agentID,
+		ClientName:      req.ClientName,
+		ClientPhone:     req.ClientPhone,
+		Items:           items,
+		Total:           req.Total,
+		OrderType:       orderType,
+		Status:          status,
+		Source:          models.OrderSourceAgent,
+		DeliveryAddress: req.DeliveryAddress,
+		EstimatedTime:   30,
+	}
+
+	if err := config.DB.Create(&order).Error; err != nil {
+		log.Printf("❌ [Bot] Error guardando pedido: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error guardando pedido"})
+		return
+	}
+
+	log.Printf("✅ [Bot] Pedido creado ID=%d agente=%d cliente=%s", order.ID, req.AgentID, req.ClientName)
+	c.JSON(http.StatusOK, gin.H{"success": true, "id": order.ID})
 }

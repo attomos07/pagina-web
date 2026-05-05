@@ -233,6 +233,10 @@ func main() {
 		protected.PATCH("/orders/:id/status", handlers.UpdateOrderStatus)
 		protected.DELETE("/orders/:id", handlers.DeleteOrder)
 
+		// Bot endpoints (no requieren JWT, usan BOT_API_TOKEN)
+		router.POST("/api/bot/orders", handlers.CreateBotOrder)
+		router.POST("/api/bot/appointments", handlers.CreateBotAppointment)
+
 		// Client History
 		protected.GET("/client-history", handlers.GetHistorial)
 		protected.GET("/client-history/client/:phone", handlers.GetHistorialCliente)
