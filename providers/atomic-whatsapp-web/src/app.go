@@ -144,10 +144,10 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 		if st.Data["awaitingMenuChoice"] == "true" {
 			delete(st.Data, "awaitingMenuChoice")
 			msgL := strings.ToLower(strings.TrimSpace(messageText))
-			wantsPDF := strings.Contains(msgL, "2") || strings.Contains(msgL, "pdf") ||
+			wantsPDF := strings.Contains(msgL, "b)") || strings.Contains(msgL, "b ") || strings.Contains(msgL, "pdf") ||
 				strings.Contains(msgL, "foto") || strings.Contains(msgL, "imagen") ||
 				strings.Contains(msgL, "manda") || strings.Contains(msgL, "archivo")
-			wantsText := strings.Contains(msgL, "1") || strings.Contains(msgL, "escrito") ||
+			wantsText := strings.Contains(msgL, "a)") || strings.Contains(msgL, "a ") || strings.Contains(msgL, "escrito") ||
 				strings.Contains(msgL, "lista") || strings.Contains(msgL, "texto") ||
 				strings.Contains(msgL, "aqui") || strings.Contains(msgL, "aquí")
 			if wantsPDF && BusinessCfg != nil && BusinessCfg.MenuUrl != "" {
@@ -181,7 +181,7 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 			} else {
 				// No se entendió — volver a preguntar
 				st.Data["awaitingMenuChoice"] = "true"
-				SendMessage(msg.Info.Chat, "Por favor elige:\n\n1️⃣ Escrito\n2️⃣ PDF / Foto")
+				SendMessage(msg.Info.Chat, "Por favor elige:\n\nA) Escrito\nB) PDF / Foto")
 				log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 				return
 			}
@@ -212,7 +212,7 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 			state := GetUserState(phoneNumber)
 			// Preguntar al cliente cómo quiere ver el menú
 			state.Data["awaitingMenuChoice"] = "true"
-			pregunta := "¿Cómo prefieres ver el menú? 😊\n\n1️⃣ Escrito (te lo listo aquí)\n2️⃣ PDF / Foto (te lo mando)"
+			pregunta := "¿Cómo prefieres ver el menú? 😊\n\nA) Escrito (te lo listo aquí)\nB) PDF / Foto (te lo mando)"
 			SendMessage(msg.Info.Chat, pregunta)
 			log.Printf("📋 Menú solicitado — esperando elección del cliente")
 			log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -1346,6 +1346,8 @@ func buildMenuResponse() string {
 		price := effectivePrice(svc)
 		if price == 0 {
 			lines = append(lines, fmt.Sprintf("• *%s* — Gratis", svc.Title))
+		} else if svc.PriceType == "promotion" && svc.OriginalPrice > 0 {
+			lines = append(lines, fmt.Sprintf("• *%s* — ~$%.0f~ $%.0f MXN 🔥", svc.Title, svc.OriginalPrice, price))
 		} else {
 			lines = append(lines, fmt.Sprintf("• *%s* — $%.0f MXN", svc.Title, price))
 		}
