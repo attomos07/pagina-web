@@ -465,6 +465,7 @@ func getTypeName(code string) string {
 		"spa": "Spa / Wellness", "consultorio": "Consultorio Médico",
 		"veterinaria": "Veterinaria", "hotel": "Hotel / Hospedaje",
 		"tienda": "Tienda / Retail", "agencia": "Agencia / Servicios", "otro": "Otro",
+		"panaderia": "Panadería / Repostería", "libreria": "Librería", "pescaderia": "Pescadería / Marisquería",
 	}
 	if name, ok := types[code]; ok {
 		return name

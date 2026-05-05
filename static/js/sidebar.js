@@ -15,7 +15,8 @@
                           'taqueria','tacos','hamburguesas','sushi','comida',
                           'panaderia','panadería','reposteria','repostería',
                           'pasteleria','pastelería',
-                          'libreria','librería','libros'];
+                          'libreria','librería','libros',
+                          'pescaderia','pescadería','marisquería','marisqueria'];
 
     // Aplica visibilidad Citas vs Pedidos según el giro recibido
     function applyFoodLogic(businessType) {

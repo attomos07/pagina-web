@@ -102,7 +102,7 @@
     .stock-toggle input[type="checkbox"] { display: none; }
     .stock-slider {
         width: 36px; height: 20px;
-        background: #e5e7eb;
+        background: #ef4444; /* rojo = agotado por defecto */
         border-radius: 10px;
         position: relative;
         transition: background .2s;
@@ -117,11 +117,15 @@
         top: 3px; left: 3px;
         transition: transform .2s;
     }
-    .service-in-stock:checked + .stock-slider { background: #06b6d4; }
+    .service-in-stock:checked + .stock-slider { background: #06b6d4; /* teal = en existencia */ }
     .service-in-stock:checked + .stock-slider::after { transform: translateX(16px); }
     .stock-label {
         font-size: 12px;
-        color: #6b7280;
+        font-weight: 500;
+        color: #ef4444; /* rojo = agotado */
+    }
+    .service-in-stock:checked ~ .stock-label {
+        color: #06b6d4; /* teal = en existencia */
     }
 </style>
     <style>
@@ -610,6 +614,10 @@ m102 -640 c3 -7 144 -90 173 -101 5 -2 39 -18 75 -35 36 -18 106 -44 155 -60
                                                 <div class="select-option" data-value="libreria">
                                                     <i class="lni lni-book"></i>
                                                     <span>Librería</span>
+                                                </div>
+                                                <div class="select-option" data-value="pescaderia">
+                                                    <i class="lni lni-fish"></i>
+                                                    <span>Pescadería / Marisquería</span>
                                                 </div>
                                                 <div class="select-option" data-value="escuela">
                                                     <i class="lni lni-graduation"></i>

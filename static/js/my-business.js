@@ -1431,6 +1431,21 @@ function addServiceItem(e, data = null) {
         });
     });
 
+    // Toggle de stock — actualizar color del label al cambiar
+    const stockCheckbox = div.querySelector('.service-in-stock');
+    if (stockCheckbox) {
+        // Color inicial
+        const stockLabel = div.querySelector('.stock-label');
+        if (stockLabel) stockLabel.style.color = stockCheckbox.checked ? '#06b6d4' : '#ef4444';
+        // Al cambiar
+        stockCheckbox.addEventListener('change', function() {
+            const label = this.closest('.stock-toggle').querySelector('.stock-label');
+            label.textContent = this.checked ? 'En existencia' : 'Agotado';
+            label.style.color = this.checked ? '#06b6d4' : '#ef4444';
+            this.closest('.stock-toggle').title = this.checked ? 'En existencia' : 'Agotado';
+        });
+    }
+
     list.appendChild(div);
 }
 
