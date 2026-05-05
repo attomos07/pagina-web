@@ -1181,10 +1181,7 @@ func parseCartFromMessage(state *UserState, message string) {
 			continue
 		}
 		qty := extractQuantity(msgL)
-		price := svc.Price
-		if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
-			price = svc.PromoPrice
-		}
+		price := effectivePrice(svc)
 		alreadyIn := false
 		for i, item := range state.Cart {
 			if strings.EqualFold(item.Title, svc.Title) {
@@ -1209,10 +1206,7 @@ func extractCartWithGemini(message string) ([]OrderItem, error) {
 	// Construir catálogo con títulos y precios
 	catalog := ""
 	for i, svc := range BusinessCfg.Services {
-		price := svc.Price
-		if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
-			price = svc.PromoPrice
-		}
+		price := effectivePrice(svc)
 		catalog += fmt.Sprintf("%d. %s ($%.0f)\n", i+1, svc.Title, price)
 	}
 
@@ -1287,10 +1281,7 @@ Si no hay productos: []`, catalog, message)
 			svcNorm := normalizeStr(strings.TrimSpace(BusinessCfg.Services[i].Title))
 			if svcNorm == giNorm {
 				matchedSvc = &BusinessCfg.Services[i]
-				price = matchedSvc.Price
-				if matchedSvc.PriceType == "promotion" && matchedSvc.PromoPrice > 0 {
-					price = matchedSvc.PromoPrice
-				}
+				price = effectivePrice(*matchedSvc)
 				break
 			}
 		}
@@ -1326,6 +1317,22 @@ func buildCartSummary(state *UserState) string {
 	return sb.String()
 }
 
+// effectivePrice devuelve el precio a cobrar de un servicio,
+// priorizando PromoPrice si está en promoción, con fallback a OriginalPrice.
+func effectivePrice(svc Service) float64 {
+	if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
+		return svc.PromoPrice
+	}
+	if svc.Price > 0 {
+		return svc.Price
+	}
+	// Fallback: si por algún motivo price=0 pero hay originalPrice
+	if svc.OriginalPrice > 0 {
+		return svc.OriginalPrice
+	}
+	return 0
+}
+
 func buildMenuResponse() string {
 	if BusinessCfg == nil || len(BusinessCfg.Services) == 0 {
 		return "Que te gustaria ordenar?"
@@ -1336,10 +1343,7 @@ func buildMenuResponse() string {
 		if !svc.InStock {
 			continue // omitir agotados
 		}
-		price := svc.Price
-		if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
-			price = svc.PromoPrice
-		}
+		price := effectivePrice(svc)
 		if price == 0 {
 			lines = append(lines, fmt.Sprintf("• *%s* — Gratis", svc.Title))
 		} else {

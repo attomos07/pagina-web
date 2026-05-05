@@ -410,13 +410,14 @@ func GenerateWelcomeMessage() string {
 		// Prompt diferente según el giro del negocio
 		var prompt string
 		if isPizzeriaMode() {
-			prompt = fmt.Sprintf(`Genera un mensaje de bienvenida MUY BREVE (1-2 líneas máximo) para %s, un negocio de comida tipo %s.
+			prompt = fmt.Sprintf(`Genera un mensaje de bienvenida MUY BREVE (1-2 líneas máximo) para %s, un negocio tipo %s.
 
 Reglas ESTRICTAS:
-- Solo saludo + invitación a pedir o preguntar por el menú
+- Solo saludo + invitación a pedir o preguntar por el menú/catálogo
 - NO listes productos ni precios
 - NO uses párrafos largos
-- Un emoji de comida apropiado
+- Usa UN emoji acorde al tipo de negocio (ej: 📚 para librería, 🍕 para pizzería, 🐟 para pescadería, 🥐 para panadería)
+- NO uses 🍔 si no es hamburguesas
 - Tono: %s
 
 RESPONDE SOLO CON EL MENSAJE, SIN EXPLICACIONES.`,
