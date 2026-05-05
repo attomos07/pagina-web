@@ -995,7 +995,7 @@ func startOrderFlow(state *UserState, message, userName string) string {
 	parseCartFromMessage(state, message)
 	if len(state.Cart) > 0 {
 		state.Step = 2
-		response := buildCartSummary(state) + "\n\n" + "Para llevar o a domicilio? 🏠"
+		response := buildCartSummary(state) + "\n\n" + "¿Cómo lo prefieres? 😊\n\n🛵 A domicilio\n🏪 Recoger en local\n🍽️ Comer aquí"
 		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
 		return response
 	}
@@ -1021,22 +1021,26 @@ func continueOrderFlow(state *UserState, message, userID, userName string) strin
 			return response
 		}
 		state.Step = 2
-		response := buildCartSummary(state) + "\n\n" + "Para llevar o a domicilio? 🏠"
+		response := buildCartSummary(state) + "\n\n" + "¿Cómo lo prefieres? 😊\n\n🛵 A domicilio\n🏪 Recoger en local\n🍽️ Comer aquí"
 		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
 		return response
 	case 2:
-		if strings.Contains(msgL, "domicilio") || strings.Contains(msgL, "delivery") || strings.Contains(msgL, "a mi casa") {
+		if strings.Contains(msgL, "domicilio") || strings.Contains(msgL, "delivery") || strings.Contains(msgL, "a mi casa") || strings.Contains(msgL, "llevar") {
 			state.Data["deliveryType"] = "domicilio"
 			state.Step = 3
-			response := "Perfecto! 🛵 Cual es tu direccion de entrega?"
+			response := "Perfecto! 🛵 ¿Cuál es tu dirección de entrega?"
 			state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
 			return response
-		} else if strings.Contains(msgL, "llevar") || strings.Contains(msgL, "recoger") || strings.Contains(msgL, "local") {
+		} else if strings.Contains(msgL, "recoger") || strings.Contains(msgL, "paso") || strings.Contains(msgL, "pick") {
 			state.Data["deliveryType"] = "llevar"
 			state.Step = 4
 			return confirmOrder(state, userID, userName)
+		} else if strings.Contains(msgL, "aqui") || strings.Contains(msgL, "aquí") || strings.Contains(msgL, "local") || strings.Contains(msgL, "mesa") || strings.Contains(msgL, "comer") {
+			state.Data["deliveryType"] = "dine_in"
+			state.Step = 4
+			return confirmOrder(state, userID, userName)
 		}
-		response := "Prefieres pasar por tu pedido o te lo llevamos a domicilio? 🏠🛵"
+		response := "¿Cómo lo prefieres? 😊\n\n🛵 A domicilio\n🏪 Recoger en local\n🍽️ Comer aquí"
 		state.ConversationHistory = append(state.ConversationHistory, "Asistente: "+response)
 		return response
 	case 3:
@@ -1060,10 +1064,17 @@ func confirmOrder(state *UserState, userID, userName string) string {
 		total += item.Price * float64(item.Quantity)
 	}
 	sb.WriteString(fmt.Sprintf("\n💰 *Total: $%.0f MXN*\n", total))
-	if deliveryType == "domicilio" && address != "" {
-		sb.WriteString(fmt.Sprintf("🛵 *Entrega:* %s\n", address))
-	} else {
-		sb.WriteString("🏠 *Para llevar en sucursal*\n")
+	switch deliveryType {
+	case "domicilio":
+		if address != "" {
+			sb.WriteString(fmt.Sprintf("🛵 *Entrega a domicilio:* %s\n", address))
+		} else {
+			sb.WriteString("🛵 *Entrega a domicilio*\n")
+		}
+	case "dine_in":
+		sb.WriteString("🍽️ *Para comer en el local*\n")
+	default:
+		sb.WriteString("🏪 *Recoger en local*\n")
 	}
 	sb.WriteString(fmt.Sprintf("👤 *Cliente:* %s\n", userName))
 	if HasPaymentMethods() && len(state.Cart) > 0 {
@@ -1105,6 +1116,36 @@ func confirmOrder(state *UserState, userID, userName string) string {
 		sb.WriteString("_Puedes pagar antes o al momento de recoger_ 😊")
 	}
 	sb.WriteString("\n\n" + "Pedido recibido! Nos pondremos en contacto pronto. 🙌")
+
+	// Guardar pedido en Attomos
+	orderItems := make([]map[string]interface{}, 0, len(state.Cart))
+	for _, item := range state.Cart {
+		orderItems = append(orderItems, map[string]interface{}{
+			"title":    item.Title,
+			"quantity": item.Quantity,
+			"price":    item.Price,
+		})
+	}
+	orderType := deliveryType
+	if orderType == "llevar" {
+		orderType = "pickup"
+	}
+	if orderType == "dine_in" {
+		orderType = "dine_in"
+	}
+	if orderType == "domicilio" {
+		orderType = "delivery"
+	}
+	go SaveOrderToBackend(BotOrderPayload{
+		ClientName:      userName,
+		ClientPhone:     userID,
+		Items:           orderItems,
+		Total:           total,
+		OrderType:       orderType,
+		DeliveryAddress: address,
+		Status:          "pending",
+	})
+
 	state.IsOrdering = false
 	state.Cart = []OrderItem{}
 	state.Data = make(map[string]string)
