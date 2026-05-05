@@ -265,8 +265,10 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 		return
 	}
 
-	// Limpiar formato markdown de Gemini: ** → * (WhatsApp usa asterisco simple)
+	// Limpiar formato markdown de Gemini
 	response = strings.ReplaceAll(response, "**", "*")
+	// WhatsApp requiere *texto* sin espacios internos; Gemini suele dejar " *texto * "
+	response = cleanBoldSpaces(response)
 
 	// Enviar respuesta
 	if response != "" {
@@ -1156,9 +1158,12 @@ func parseCartFromMessage(state *UserState, message string) {
 	}
 
 	// ── Fallback: match exacto del título completo ────────────────────────────
-	msgL := strings.ToLower(message)
+	msgL := normalizeStr(message)
 	for _, svc := range BusinessCfg.Services {
-		titleL := strings.ToLower(svc.Title)
+		if !svc.InStock {
+			continue
+		}
+		titleL := normalizeStr(svc.Title)
 		if !strings.Contains(msgL, titleL) {
 			continue
 		}
@@ -1261,23 +1266,33 @@ Si no hay productos: []`, catalog, message)
 		if gi.Quantity <= 0 {
 			gi.Quantity = 1
 		}
-		// Buscar precio real en el catálogo
-		price := gi.Price
-		for _, svc := range BusinessCfg.Services {
-			if strings.EqualFold(strings.TrimSpace(svc.Title), strings.TrimSpace(gi.Title)) {
-				price = svc.Price
-				if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
-					price = svc.PromoPrice
+		// Buscar precio real en el catálogo — usando normalizeStr para tolerar tildes
+		price := 0.0
+		var matchedSvc *Service
+		giNorm := normalizeStr(strings.TrimSpace(gi.Title))
+		for i := range BusinessCfg.Services {
+			svcNorm := normalizeStr(strings.TrimSpace(BusinessCfg.Services[i].Title))
+			if svcNorm == giNorm {
+				matchedSvc = &BusinessCfg.Services[i]
+				price = matchedSvc.Price
+				if matchedSvc.PriceType == "promotion" && matchedSvc.PromoPrice > 0 {
+					price = matchedSvc.PromoPrice
 				}
 				break
 			}
 		}
-		if price == 0 {
+		if matchedSvc == nil {
 			log.Printf("⚠️  [Cart] Producto no encontrado en catálogo: %s — omitiendo", gi.Title)
 			continue
 		}
-		items = append(items, OrderItem{Title: gi.Title, Quantity: gi.Quantity, Price: price})
-		log.Printf("✅ [Cart] Gemini detectó: %dx %s ($%.0f)", gi.Quantity, gi.Title, price)
+		if !matchedSvc.InStock {
+			log.Printf("⚠️  [Cart] Producto agotado ignorado: %s", gi.Title)
+			continue
+		}
+		// Usar el título real del catálogo (con tildes y capitalización correcta)
+		realTitle := matchedSvc.Title
+		items = append(items, OrderItem{Title: realTitle, Quantity: gi.Quantity, Price: price})
+		log.Printf("✅ [Cart] Gemini detectó: %dx %s ($%.0f)", gi.Quantity, realTitle, price)
 	}
 
 	return items, nil
@@ -1303,15 +1318,29 @@ func buildMenuResponse() string {
 		return "Que te gustaria ordenar?"
 	}
 	var sb strings.Builder
-	sb.WriteString("Que deseas ordenar? 😋 Tenemos:\n\n")
+	var lines []string
 	for _, svc := range BusinessCfg.Services {
+		if !svc.InStock {
+			continue // omitir agotados
+		}
 		price := svc.Price
 		if svc.PriceType == "promotion" && svc.PromoPrice > 0 {
 			price = svc.PromoPrice
 		}
-		sb.WriteString(fmt.Sprintf("• *%s* — $%.0f MXN\n", svc.Title, price))
+		if price == 0 {
+			lines = append(lines, fmt.Sprintf("• *%s* — Gratis", svc.Title))
+		} else {
+			lines = append(lines, fmt.Sprintf("• *%s* — $%.0f MXN", svc.Title, price))
+		}
 	}
-	sb.WriteString("\nCuanto quieres ordenar?")
+	if len(lines) == 0 {
+		return "Lo sentimos, no tenemos productos disponibles en este momento. 😔"
+	}
+	sb.WriteString("¿Qué deseas ordenar? 😋 Tenemos:\n\n")
+	for _, line := range lines {
+		sb.WriteString(line + "\n")
+	}
+	sb.WriteString("\n¿Cuánto quieres ordenar?")
 	return sb.String()
 }
 
@@ -1438,6 +1467,31 @@ func cleanPhoneNumber(userID string) string {
 	fixed := "52" + local
 	log.Printf("⚠️  Longitud inusual (%d dígitos), tomando últimos 10: %s → %s", len(cleaned), cleaned, fixed)
 	return fixed
+}
+
+// cleanBoldSpaces elimina espacios internos en negritas WhatsApp (*texto*)
+// Gemini suele devolver "* texto *" o " * texto * " que WhatsApp no renderiza como negrita
+func cleanBoldSpaces(s string) string {
+	// " * " al final de bloque negrita: "texto * " → "texto*"
+	// Usamos un approach línea por línea para mayor precisión
+	lines := strings.Split(s, "\n")
+	for i, line := range lines {
+		// Quitar espacios antes del * de cierre: "texto *" → "texto*"
+		for strings.Contains(line, " *") {
+			prev := line
+			// Solo cuando el espacio está DENTRO de una negrita (no es bullet)
+			// Patrón: cualquier carácter, espacio, asterisco, no-alfanumérico o fin
+			line = strings.ReplaceAll(line, " *\n", "*\n")
+			line = strings.ReplaceAll(line, " * ", "* ")
+			line = strings.ReplaceAll(line, " *—", "*—")
+			line = strings.ReplaceAll(line, " *$", "*")
+			if line == prev {
+				break
+			}
+		}
+		lines[i] = line
+	}
+	return strings.Join(lines, "\n")
 }
 
 // normalizeStr convierte a minúsculas y elimina acentos para comparación fuzzy

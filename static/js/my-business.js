@@ -203,6 +203,15 @@ async function deleteBranch(branchId) {
     }
 }
 
+// Actualiza el título de la sección Menú/Catálogo según el giro seleccionado
+function updateMenuLabel() {
+    const giro = document.getElementById('businessTypeInput')?.getAttribute('data-value') || '';
+    const h2 = document.querySelector('.menu-section-title');
+    if (!h2) return;
+    const isLibreria = ['libreria', 'librería', 'libros'].includes(giro.toLowerCase());
+    h2.textContent = isLibreria ? 'Catálogo' : 'Menú';
+}
+
 function loadBranchData(branch) {
     // Actualizar label del dropdown
     const label = branch.branchName || ('Sucursal ' + branch.branchNumber);
@@ -220,6 +229,7 @@ function loadBranchData(branch) {
     if (typeInput) {
         typeInput.value = branch.business?.typeName || '';
         typeInput.setAttribute('data-value', branch.business?.type || '');
+        updateMenuLabel(); // Ajustar título Menú/Catálogo según giro
     }
 
     // Ubicación
@@ -460,6 +470,7 @@ function initCustomSelect() {
         option.classList.add('selected');
 
         closeDropdown();
+        updateMenuLabel(); // Actualizar Menú/Catálogo al cambiar giro
         console.log(`✅ Giro seleccionado: ${text} (${value})`);
     }
 
@@ -1093,6 +1104,7 @@ async function saveProfile(opts = {}) {
             const newBusinessType = document.getElementById('businessTypeInput')?.getAttribute('data-value');
             if (newBusinessType && window.userbarUtils?.updateUserData) {
                 window.userbarUtils.updateUserData('businessType', newBusinessType);
+                updateMenuLabel();
             }
 
             if (!opts.silent) showNotification('¡Cambios guardados exitosamente!', 'success');
@@ -1224,11 +1236,7 @@ function addServiceItem(e, data = null) {
     div.innerHTML = `
         <div class="service-item-row">
             <input type="text" class="info-input service-title" placeholder="Nombre del servicio" value="${data?.title || ''}">
-            <label class="stock-toggle" title="${inStock ? 'En existencia' : 'Agotado'}">
-                <input type="checkbox" class="service-in-stock" ${inStock ? 'checked' : ''}>
-                <span class="stock-slider"></span>
-                <span class="stock-label">${inStock ? '✅ En existencia' : '❌ Agotado'}</span>
-            </label>
+
             <button type="button" class="btn-remove-item" onclick="removeItem(this, 'servicesList', 'servicesHint')">
                 <i class="lni lni-trash-can"></i>
             </button>
@@ -1300,12 +1308,6 @@ function addServiceItem(e, data = null) {
         </div>
     `;
 
-    // Toggle de stock — actualizar label al cambiar
-    div.querySelector('.service-in-stock')?.addEventListener('change', function() {
-        const label = this.closest('.stock-toggle').querySelector('.stock-label');
-        label.textContent = this.checked ? '✅ En existencia' : '❌ Agotado';
-        this.closest('.stock-toggle').title = this.checked ? 'En existencia' : 'Agotado';
-    });
 
     // Toggle Normal / Promo
     div.querySelectorAll('.price-type-btn').forEach(btn => {
@@ -1458,7 +1460,7 @@ function collectServicesData() {
         services.push({
             title,
             description:    item.querySelector('.service-desc')?.value || '',
-            inStock:        inStockEl ? inStockEl.checked : true,
+            inStock:        true, // siempre en existencia (toggle quitado de UI)
             imageUrls:      (item.querySelector('.service-image-urls')?.value || '').split(',').filter(Boolean),
             priceType:      isPromo ? 'promo' : 'normal',
             price:          parseFloat(item.querySelector('.service-price')?.value) || 0,
