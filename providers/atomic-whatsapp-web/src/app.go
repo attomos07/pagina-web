@@ -138,6 +138,56 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 	log.Printf("   💬 Texto: %s", messageText)
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
+	// ── Respuesta a elección escrito vs PDF (tiene acceso al JID aquí) ──────
+	{
+		st := GetUserState(phoneNumber)
+		if st.Data["awaitingMenuChoice"] == "true" {
+			delete(st.Data, "awaitingMenuChoice")
+			msgL := strings.ToLower(strings.TrimSpace(messageText))
+			wantsPDF := strings.Contains(msgL, "2") || strings.Contains(msgL, "pdf") ||
+				strings.Contains(msgL, "foto") || strings.Contains(msgL, "imagen") ||
+				strings.Contains(msgL, "manda") || strings.Contains(msgL, "archivo")
+			wantsText := strings.Contains(msgL, "1") || strings.Contains(msgL, "escrito") ||
+				strings.Contains(msgL, "lista") || strings.Contains(msgL, "texto") ||
+				strings.Contains(msgL, "aqui") || strings.Contains(msgL, "aquí")
+			if wantsPDF && BusinessCfg != nil && BusinessCfg.MenuUrl != "" {
+				menuURL := BusinessCfg.MenuUrl
+				urlLower := strings.ToLower(menuURL)
+				menuFileName := "Menú - " + BusinessCfg.AgentName
+				var sendErr error
+				if strings.HasSuffix(urlLower, ".pdf") {
+					sendErr = SendDocument(msg.Info.Chat, menuURL, menuFileName+".pdf", "")
+				} else {
+					for _, e := range []string{".jpg", ".jpeg", ".png", ".webp"} {
+						if strings.HasSuffix(urlLower, e) {
+							menuFileName += e
+							break
+						}
+					}
+					sendErr = SendImage(msg.Info.Chat, menuURL, "")
+				}
+				if sendErr != nil {
+					log.Printf("❌ Error enviando menú PDF: %v", sendErr)
+					SendMessage(msg.Info.Chat, "Aquí te lo dejo: "+menuURL)
+				} else {
+					log.Printf("✅ Menú PDF/foto enviado")
+				}
+				log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+				return
+			} else if wantsText || !wantsPDF {
+				SendMessage(msg.Info.Chat, buildMenuResponse())
+				log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+				return
+			} else {
+				// No se entendió — volver a preguntar
+				st.Data["awaitingMenuChoice"] = "true"
+				SendMessage(msg.Info.Chat, "Por favor elige:\n\n1️⃣ Escrito\n2️⃣ PDF / Foto")
+				log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+				return
+			}
+		}
+	}
+
 	// ── Detección temprana de solicitud de menú ──────────────────────────────
 	// Se maneja aquí para tener acceso al JID y poder enviar imagen/documento.
 	if BusinessCfg != nil && BusinessCfg.MenuUrl != "" {
@@ -159,49 +209,12 @@ func HandleMessage(msg *events.Message, client *whatsmeow.Client) {
 			}
 		}
 		if isMenuRequest {
-			menuURL := BusinessCfg.MenuUrl
-			log.Printf("📋 Solicitud de menú detectada — enviando: %s", menuURL)
-			urlLower := strings.ToLower(menuURL)
-
-			// Extraer nombre real del archivo desde la URL
-			menuFileName := "menu.pdf"
-			if parts := strings.Split(menuURL, "/"); len(parts) > 0 {
-				rawName := parts[len(parts)-1]
-				// Quitar query string si existe
-				if idx := strings.Index(rawName, "?"); idx != -1 {
-					rawName = rawName[:idx]
-				}
-				if rawName != "" {
-					menuFileName = rawName
-				}
-			}
-			// Usar nombre del negocio como título más amigable
-			if BusinessCfg.AgentName != "" {
-				ext := ".pdf"
-				if !strings.HasSuffix(strings.ToLower(menuFileName), ".pdf") {
-					for _, e := range []string{".jpg", ".jpeg", ".png", ".webp"} {
-						if strings.HasSuffix(strings.ToLower(menuFileName), e) {
-							ext = e
-							break
-						}
-					}
-				}
-				menuFileName = "Menú - " + BusinessCfg.AgentName + ext
-			}
-
-			var sendErr error
-			if strings.HasSuffix(urlLower, ".pdf") {
-				sendErr = SendDocument(msg.Info.Chat, menuURL, menuFileName, "")
-			} else {
-				sendErr = SendImage(msg.Info.Chat, menuURL, "")
-			}
-			if sendErr != nil {
-				log.Printf("❌ Error enviando menú: %v", sendErr)
-				// fallback: enviar URL como texto
-				SendMessage(msg.Info.Chat, menuURL)
-			} else {
-				log.Printf("✅ Menú enviado correctamente")
-			}
+			state := GetUserState(phoneNumber)
+			// Preguntar al cliente cómo quiere ver el menú
+			state.Data["awaitingMenuChoice"] = "true"
+			pregunta := "¿Cómo prefieres ver el menú? 😊\n\n1️⃣ Escrito (te lo listo aquí)\n2️⃣ PDF / Foto (te lo mando)"
+			SendMessage(msg.Info.Chat, pregunta)
+			log.Printf("📋 Menú solicitado — esperando elección del cliente")
 			log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 			return
 		}

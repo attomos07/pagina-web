@@ -145,6 +145,8 @@ INSTRUCCIONES:
 - Máximo 3-4 líneas de respuesta
 - Sé útil y directo
 - Si no sabes algo, dilo claramente
+- IMPORTANTE: Si el cliente pregunta qué productos, servicios, pizzas, platillos, libros o items tienen disponibles, SIEMPRE responde en formato lista con viñetas (•), NO en párrafo corrido
+- Usa *nombre* para poner en negrita los nombres de productos en la lista
 
 RESPUESTA:`,
 		systemPrompt,
@@ -408,15 +410,14 @@ func GenerateWelcomeMessage() string {
 		// Prompt diferente según el giro del negocio
 		var prompt string
 		if isPizzeriaMode() {
-			prompt = fmt.Sprintf(`Genera un mensaje de bienvenida breve (2-3 líneas) para %s, un negocio de comida tipo %s.
+			prompt = fmt.Sprintf(`Genera un mensaje de bienvenida MUY BREVE (1-2 líneas máximo) para %s, un negocio de comida tipo %s.
 
-Incluye:
-- Saludo amigable
-- Mención de que pueden preguntar por el menú o hacer su pedido
+Reglas ESTRICTAS:
+- Solo saludo + invitación a pedir o preguntar por el menú
+- NO listes productos ni precios
+- NO uses párrafos largos
 - Un emoji de comida apropiado
-
-NO menciones citas ni agendamientos.
-Tono: %s
+- Tono: %s
 
 RESPONDE SOLO CON EL MENSAJE, SIN EXPLICACIONES.`,
 				BusinessCfg.AgentName,
