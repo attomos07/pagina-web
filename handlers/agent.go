@@ -1046,8 +1046,9 @@ func ResetAgentSession(c *gin.Context) {
 		return
 	}
 
-	// 1. Detener bot
+	// 1. Detener bot y esperar a que libere el .db
 	atomicService.StopBot(agent.ID)
+	time.Sleep(2 * time.Second)
 
 	// 2. Borrar sesión WhatsApp (.db + archivos WAL)
 	botDir := fmt.Sprintf("/home/user_%d/atomic-bot", agent.UserID)
