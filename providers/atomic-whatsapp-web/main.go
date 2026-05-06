@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -196,36 +197,32 @@ func main() {
 		}
 
 		// ✅ FIX: Dar tiempo al WebSocket para estabilizarse antes de mostrar el QR
-		// Esto reduce la probabilidad de que el handshake falle al escanear
 		time.Sleep(500 * time.Millisecond)
 
 		fmt.Println("\n📱 Escanea este código QR con tu WhatsApp:")
 		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
-		qrShown := false
+		// Limpiar archivos de estado previos
+		os.Remove(qrFilePath())
+		os.Remove(connectedFilePath())
 
 		for evt := range qrChan {
 			if evt.Event == "code" {
-				// Limpiar QR anterior si ya se mostró uno
-				if qrShown {
-					// Limpiar pantalla completa y volver al inicio
-					fmt.Print("\033[2J\033[H")
-					// Re-imprimir header
-					fmt.Println("\n📱 Escanea este código QR con tu WhatsApp:")
-					fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-				}
+				// Escribir QR ASCII al archivo dedicado (más confiable que parsear logs)
+				var buf bytes.Buffer
+				qrterminal.GenerateHalfBlock(evt.Code, qrterminal.L, &buf)
+				os.WriteFile(qrFilePath(), buf.Bytes(), 0644)
 
-				// Generar y mostrar QR directamente
+				// Mostrar en stdout (log) también
 				qrterminal.GenerateHalfBlock(evt.Code, qrterminal.L, os.Stdout)
-
 				fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 				fmt.Println("⏳ Esperando escaneo... (El QR se actualiza automáticamente)")
-
-				qrShown = true
 			} else {
 				log.Printf("📱 Estado de login: %s\n", evt.Event)
 			}
 		}
+		// QR scaneado o expirado — limpiar archivo QR
+		os.Remove(qrFilePath())
 	} else {
 		err = client.Connect()
 		if err != nil {
@@ -253,6 +250,24 @@ func main() {
 
 	fmt.Println("\n👋 Desconectando bot...")
 	client.Disconnect()
+}
+
+// qrFilePath retorna la ruta del archivo QR para este agente
+func qrFilePath() string {
+	agentID := os.Getenv("AGENT_ID")
+	if agentID == "" {
+		agentID = "0"
+	}
+	return fmt.Sprintf("/tmp/atomic-bot-%s-qr.txt", agentID)
+}
+
+// connectedFilePath retorna la ruta del marker de conexión para este agente
+func connectedFilePath() string {
+	agentID := os.Getenv("AGENT_ID")
+	if agentID == "" {
+		agentID = "0"
+	}
+	return fmt.Sprintf("/tmp/atomic-bot-%s-connected.txt", agentID)
 }
 
 // Banner del bot
@@ -461,6 +476,9 @@ func handleEvents(evt interface{}, client *whatsmeow.Client) {
 		log.Println("WHATSAPP_SESSION_ACTIVE") // sentinel único para detección en logs
 		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 		log.Println("✅ El bot está listo para recibir mensajes")
+		// Marcar conexión en archivo — método primario de detección de estado
+		os.WriteFile(connectedFilePath(), []byte("connected"), 0644)
+		os.Remove(qrFilePath())
 
 	case *events.Disconnected:
 		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -468,6 +486,7 @@ func handleEvents(evt interface{}, client *whatsmeow.Client) {
 		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 		log.Println("⚠️  Dispositivo desvinculado de WhatsApp")
 		log.Println("💡 El sistema está esperando nueva conexión...")
+		os.Remove(connectedFilePath())
 
 	case *events.LoggedOut:
 		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -486,6 +505,7 @@ func handleEvents(evt interface{}, client *whatsmeow.Client) {
 		// Solo para sesiones ya establecidas: limpiar DB y reiniciar
 		log.Println("⚠️  El dispositivo fue desvinculado de WhatsApp")
 		log.Println("🔄 Limpiando sesión y preparando para nueva conexión...")
+		os.Remove(connectedFilePath())
 
 		go func() {
 			time.Sleep(2 * time.Second)
