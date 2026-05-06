@@ -887,9 +887,6 @@ async function showQRModal(agentId) {
                 <div class="qr-spinner"><div class="brand-spinner"></div><p>Obteniendo QR...</p></div>
             </div>
             <p class="qr-hint">Abre WhatsApp → Dispositivos vinculados → Vincular dispositivo</p>
-            <button class="qr-reconnect-btn" id="qrReconnectBtn" onclick="reconnectBot(${agentId})" style="margin-top:12px;padding:8px 16px;background:#06b6d4;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;">
-                🔄 Generar nuevo QR
-            </button>
         </div>`;
 
     modal.classList.add('active');
@@ -929,25 +926,6 @@ async function _fetchQR(agentId) {
     }
 }
 
-async function reconnectBot(agentId) {
-    const btn = document.getElementById('qrReconnectBtn');
-    if (btn) { btn.disabled = true; btn.textContent = '⏳ Reseteando...'; }
-    const body = document.getElementById('qrBody');
-    if (body) body.innerHTML = '<div class="qr-spinner"><div class="brand-spinner"></div><p>Reseteando sesión...</p></div>';
-
-    try {
-        await fetch(`/api/agents/${agentId}/reset-session`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-        // Esperar 5s para que el bot arranque y genere QR
-        await new Promise(r => setTimeout(r, 5000));
-        _startQRPolling(agentId);
-    } catch(e) {
-        if (body) body.innerHTML = '<div class="qr-spinner"><p style="color:#ef4444">Error al reconectar</p></div>';
-    }
-    if (btn) { btn.disabled = false; btn.textContent = '🔄 Generar nuevo QR'; }
-}
 
 function closeQRModal() {
     if (_qrPollInterval) { clearInterval(_qrPollInterval); _qrPollInterval = null; }

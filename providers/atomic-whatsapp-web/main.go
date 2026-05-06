@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -144,6 +145,39 @@ func main() {
 
 	// Configurar cliente global
 	src.SetClient(client)
+
+	// ── Servidor HTTP de control interno ──────────────────────────────────
+	// Permite llamar /logout desde el backend antes de un redeploy
+	botHTTPPort := os.Getenv("BOT_HTTP_PORT")
+	if botHTTPPort == "" {
+		botHTTPPort = "3999"
+	}
+	go func() {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodPost {
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				return
+			}
+			log.Println("🚪 Logout solicitado — desconectando de WhatsApp...")
+			if globalClient != nil && globalClient.IsConnected() {
+				globalClient.Logout(context.Background())
+				log.Println("✅ Logout completado — sesión invalidada en WhatsApp")
+			}
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("ok"))
+			go func() {
+				time.Sleep(500 * time.Millisecond)
+				os.Exit(0) // systemd reiniciará si es necesario
+			}()
+		})
+		mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("ok"))
+		})
+		log.Printf("🌐 Bot HTTP server en :%s", botHTTPPort)
+		http.ListenAndServe(":"+botHTTPPort, mux)
+	}()
 
 	// Registrar manejador de eventos
 	client.AddEventHandler(func(evt interface{}) {
