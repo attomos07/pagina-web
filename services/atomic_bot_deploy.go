@@ -1223,96 +1223,94 @@ func (s *AtomicBotDeployService) GetBotLogs(agentID uint, lines int) (string, er
 	return output, nil
 }
 
-// GetQRCodeFromLogs obtiene el QR code desde los logs del bot
+// GetQRCodeFromLogs obtiene el QR code desde los logs del bot.
+//
+// Lógica de estados (en orden de prioridad):
+//  1. Si hay "WHATSAPP_SESSION_ACTIVE" Y después hay un evento de desconexión → desconectado real
+//  2. Si hay "WHATSAPP_SESSION_ACTIVE" Y no hay desconexión posterior → conectado
+//  3. Si hay QR en los logs → mostrar QR (los eventos Disconnected durante pairing se ignoran)
+//  4. Bot iniciando → esperar
+//
+// IMPORTANTE: Los eventos Disconnected/LoggedOut que ocurren ANTES de una conexión
+// exitosa (durante el pairing QR) son normales en whatsmeow y NO deben bloquear el QR.
 func (s *AtomicBotDeployService) GetQRCodeFromLogs(agentID uint) (string, bool, error) {
-	// Leer últimas 300 líneas del log (más líneas para asegurar capturar el QR)
 	cmd := fmt.Sprintf("tail -n 300 /var/log/atomic-bot-%d.log", agentID)
 	output, err := s.executeCommand(cmd)
-
 	if err != nil {
 		return "", false, fmt.Errorf("error leyendo logs: %w", err)
 	}
 
 	lines := strings.Split(output, "\n")
-
-	// Log para debugging
 	log.Printf("📋 [Agent %d] Analizando %d líneas de logs", agentID, len(lines))
 
-	// PASO 1: Buscar mensajes de desconexión/logout RECIENTES (últimas 50 líneas)
-	// Si encontramos una desconexión reciente, el bot NO está conectado
-	for i := len(lines) - 1; i >= 0 && i >= len(lines)-50; i-- {
-		line := lines[i]
-
-		if strings.Contains(line, "WHATSAPP DESCONECTADO") ||
-			strings.Contains(line, "SESIÓN CERRADA - LOGOUT DETECTADO") ||
-			strings.Contains(line, "Dispositivo desvinculado") ||
-			strings.Contains(line, "esperando nueva conexión") ||
-			strings.Contains(line, "Limpiando sesión") ||
-			strings.Contains(line, "Eliminando base de datos de sesión") {
-			log.Printf("⚠️  [Agent %d] Desconexión reciente detectada en logs", agentID)
-			return "", false, fmt.Errorf("bot desconectado recientemente - esperando reconexión")
-		}
-	}
-
-	// PASO 2: Buscar el mensaje MÁS RECIENTE de conexión EXITOSA
-	// Solo estos mensajes indican que WhatsApp está REALMENTE conectado
-	lastConnectionIndex := -1
+	// ── PASO 1: Buscar la última conexión exitosa ───────────────────────────
+	// Buscamos hacia atrás el sentinel que solo se escribe en events.Connected
+	lastConnectedIdx := -1
 	for i := len(lines) - 1; i >= 0; i-- {
-		line := lines[i]
-
-		// SOLO estos mensajes indican conexión real a WhatsApp.
-		// IMPORTANTE: NO incluir strings que también aparezcan en el banner de inicio
-		// (ej: "📱 Esperando mensajes de WhatsApp..." se imprime en printFinalStatus
-		// incluso ANTES de que WhatsApp esté conectado, causando falsos positivos).
-		if strings.Contains(line, "🟢 WHATSAPP CONECTADO") ||
-			strings.Contains(line, "WHATSAPP_SESSION_ACTIVE") ||
-			strings.Contains(line, "El bot está listo para recibir mensajes") {
-			lastConnectionIndex = i
-			log.Printf("✅ [Agent %d] Mensaje de conexión encontrado en línea %d: %s", agentID, i, strings.TrimSpace(line))
+		if strings.Contains(lines[i], "WHATSAPP_SESSION_ACTIVE") ||
+			strings.Contains(lines[i], "🟢 WHATSAPP CONECTADO") {
+			lastConnectedIdx = i
+			log.Printf("✅ [Agent %d] Última conexión exitosa en línea %d", agentID, i)
 			break
 		}
 	}
 
-	// PASO 3: Si encontramos mensaje de conexión, verificar que no haya QR DESPUÉS
-	// Si hay un QR después del mensaje de conexión, significa que se desconectó y reconectó
-	if lastConnectionIndex != -1 {
-		// Buscar QR después del mensaje de conexión
-		for i := lastConnectionIndex + 1; i < len(lines); i++ {
+	// ── PASO 2: Si hubo conexión, verificar si hay desconexión DESPUÉS ──────
+	if lastConnectedIdx != -1 {
+		disconnectedAfter := false
+		qrAfter := false
+
+		for i := lastConnectedIdx + 1; i < len(lines); i++ {
 			line := lines[i]
-			if strings.ContainsAny(line, "█▄▀▌") || strings.Contains(line, "Escanea este código QR") {
-				log.Printf("⚠️  [Agent %d] QR encontrado DESPUÉS de mensaje de conexión - bot se desconectó", agentID)
-				lastConnectionIndex = -1
-				break
+			// Desconexión real post-conexión
+			if strings.Contains(line, "WHATSAPP DESCONECTADO") ||
+				strings.Contains(line, "SESIÓN CERRADA - LOGOUT DETECTADO") ||
+				strings.Contains(line, "Eliminando base de datos de sesión") {
+				disconnectedAfter = true
+				log.Printf("⚠️  [Agent %d] Desconexión detectada DESPUÉS de sesión activa (línea %d)", agentID, i)
+			}
+			// Nuevo QR post-conexión (bot reiniciado para nuevo pairing)
+			if strings.ContainsAny(line, "█▄▀▌") {
+				qrAfter = true
 			}
 		}
 
-		// Si todavía tenemos un índice de conexión válido, está conectado
-		if lastConnectionIndex != -1 {
+		if disconnectedAfter && !qrAfter {
+			// Se desconectó y aún no generó nuevo QR — esperar reconexión
+			log.Printf("⚠️  [Agent %d] Bot desconectado post-sesión, esperando nuevo QR", agentID)
+			return "", false, fmt.Errorf("bot desconectado recientemente - esperando reconexión")
+		}
+
+		if !disconnectedAfter && !qrAfter {
+			// Sigue conectado
 			log.Printf("✅ [Agent %d] Bot conectado a WhatsApp", agentID)
 			return "", true, nil
 		}
+
+		// Si hay QR después de la desconexión → caer al PASO 3 para mostrarlo
 	}
 
-	// PASO 4: Buscar QR code (bot NO está conectado)
+	// ── PASO 3: Buscar QR en logs ───────────────────────────────────────────
+	// Llegar aquí significa: nunca se conectó (bot nuevo/incógnito) O ya hay nuevo QR.
+	// Los eventos Disconnected durante el pairing inicial son normales — los ignoramos.
 	qrCode := extractQRFromLogs(lines)
 	if qrCode != "" {
 		log.Printf("📱 [Agent %d] QR code encontrado (%d caracteres)", agentID, len(qrCode))
 		return qrCode, false, nil
 	}
 
-	// PASO 5: Verificar si el bot está iniciando
+	// ── PASO 4: Bot todavía iniciando ──────────────────────────────────────
 	for i := len(lines) - 1; i >= 0 && i >= len(lines)-30; i-- {
-		line := lines[i]
-		if strings.Contains(line, "Inicializando servicios") ||
-			strings.Contains(line, "AtomicBot WhatsApp") ||
-			strings.Contains(line, "Conectando a WhatsApp") ||
-			strings.Contains(line, "📱 Conectando a WhatsApp") {
-			log.Printf("⏳ [Agent %d] Bot está iniciando, esperando QR code", agentID)
+		if strings.Contains(lines[i], "Inicializando servicios") ||
+			strings.Contains(lines[i], "AtomicBot WhatsApp") ||
+			strings.Contains(lines[i], "Conectando a WhatsApp") ||
+			strings.Contains(lines[i], "Cargando configuración") {
+			log.Printf("⏳ [Agent %d] Bot iniciando, esperando QR", agentID)
 			return "", false, fmt.Errorf("bot iniciando, esperando código QR")
 		}
 	}
 
-	// PASO 6: No hay QR ni conexión clara
+	// ── PASO 5: Estado indeterminado ───────────────────────────────────────
 	lastLines := ""
 	startIdx := len(lines) - 15
 	if startIdx < 0 {
@@ -1323,8 +1321,7 @@ func (s *AtomicBotDeployService) GetQRCodeFromLogs(agentID uint) (string, bool, 
 			lastLines += lines[i] + "\n"
 		}
 	}
-
-	log.Printf("⚠️  [Agent %d] Estado no claro. Últimas líneas:\n%s", agentID, lastLines)
+	log.Printf("⚠️  [Agent %d] Estado indeterminado. Últimas líneas:\n%s", agentID, lastLines)
 	return "", false, fmt.Errorf("esperando inicialización del bot")
 }
 
