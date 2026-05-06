@@ -20,8 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     console.log('📋 Agent ID:', agentId);
-    loadAgentDetails();
-    startQRPolling();
+    loadAgentDetails(); // startQRPolling se llama dentro, una vez que agent está cargado
 });
 
 // Load agent details
@@ -42,9 +41,10 @@ async function loadAgentDetails() {
         
         renderAgentDetails(agent);
         
-        // Cargar QR inmediatamente solo la primera vez
-        // El polling continuará actualizando
+        // Cargar QR inmediatamente y arrancar el polling continuo
+        // (se hace aquí porque agent ya está cargado)
         loadQRCode();
+        startQRPolling();
     } catch (error) {
         console.error('❌ Error:', error);
         alert('Error loading agent details');

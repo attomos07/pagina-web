@@ -896,14 +896,32 @@ async function showQRModal(agentId) {
 function _startQRPolling(agentId) {
     if (_qrPollInterval) clearInterval(_qrPollInterval);
     _fetchQR(agentId);
+
+    // Usar intervalo adaptativo: rápido mientras espera QR, lento cuando conectado
+    let _pollConnected = false;
     _qrPollInterval = setInterval(() => {
         const modal = document.getElementById('qrModal');
-        if (!modal || !modal.classList.contains('active')) { clearInterval(_qrPollInterval); return; }
-        _fetchQR(agentId);
+        if (!modal || !modal.classList.contains('active')) {
+            clearInterval(_qrPollInterval);
+            _qrPollInterval = null;
+            return;
+        }
+        _fetchQR(agentId, (connected) => {
+            if (connected !== _pollConnected) {
+                _pollConnected = connected;
+                // Ajustar intervalo: 15s si conectado, 8s si esperando QR
+                clearInterval(_qrPollInterval);
+                _qrPollInterval = setInterval(() => {
+                    const m = document.getElementById('qrModal');
+                    if (!m || !m.classList.contains('active')) { clearInterval(_qrPollInterval); return; }
+                    _fetchQR(agentId);
+                }, _pollConnected ? 15000 : 8000);
+            }
+        });
     }, 8000);
 }
 
-async function _fetchQR(agentId) {
+async function _fetchQR(agentId, onStatusChange) {
     try {
         const resp = await fetch(`/api/agents/${agentId}/qr`, { credentials: 'include' });
         const data = await resp.json();
@@ -911,14 +929,37 @@ async function _fetchQR(agentId) {
         if (!body) return;
 
         if (data.connected) {
-            body.innerHTML = `<div class="qr-connected"><i class="lni lni-checkmark-circle"></i><p>¡WhatsApp conectado!</p></div>`;
-            clearInterval(_qrPollInterval);
+            body.innerHTML = `
+                <div class="qr-connected">
+                    <i class="lni lni-checkmark-circle"></i>
+                    <p>¡WhatsApp conectado!</p>
+                    <small style="color:#6b7280;font-size:0.8rem;margin-top:0.5rem;display:block;">
+                        Monitoreando conexión cada 15 segundos
+                    </small>
+                </div>`;
+            if (onStatusChange) onStatusChange(true);
         } else if (data.qrCode) {
-            // El backend devuelve texto QR ASCII — convertir a imagen con qrcode lib o mostrar en <pre>
             body.innerHTML = `<pre class="qr-ascii">${escapeHtml(data.qrCode)}</pre>
                 <p class="qr-status"><i class="lni lni-checkmark-circle"></i> QR listo — escanea ahora</p>`;
+            if (onStatusChange) onStatusChange(false);
         } else {
-            body.innerHTML = `<div class="qr-spinner"><div class="brand-spinner"></div><p>${escapeHtml(data.message || 'Esperando QR...')}</p></div>`;
+            // Detectar si fue desvinculado después de estar conectado
+            const msg = data.message || data.error || '';
+            const wasDisconnected = msg.toLowerCase().includes('desconectado') ||
+                msg.toLowerCase().includes('desvinculado') ||
+                msg.toLowerCase().includes('reconexión');
+
+            if (wasDisconnected) {
+                body.innerHTML = `
+                    <div class="qr-spinner">
+                        <div class="brand-spinner"></div>
+                        <p style="color:#f59e0b;">⚠️ Dispositivo desvinculado<br>
+                        <small>El bot se está reiniciando, espera el nuevo QR...</small></p>
+                    </div>`;
+            } else {
+                body.innerHTML = `<div class="qr-spinner"><div class="brand-spinner"></div><p>${escapeHtml(msg || 'Esperando QR...')}</p></div>`;
+            }
+            if (onStatusChange) onStatusChange(false);
         }
     } catch (e) {
         const body = document.getElementById('qrBody');
