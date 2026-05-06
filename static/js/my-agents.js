@@ -865,6 +865,14 @@ function escapeHtml(text) {
 let _qrPollInterval = null;
 
 async function showQRModal(agentId) {
+    // Resetear sesión primero para forzar nuevo QR
+    try {
+        await fetch(`/api/agents/${agentId}/reset-session`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+    } catch(e) { /* continuar aunque falle */ }
+
     document.querySelectorAll('.actions-dropdown').forEach(d => d.classList.remove('show'));
 
     let modal = document.getElementById('qrModal');

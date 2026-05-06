@@ -1008,6 +1008,71 @@ func DeleteAgent(c *gin.Context) {
 	})
 }
 
+// ResetAgentSession borra la sesión de WhatsApp y limpia el log
+// para que el bot genere un nuevo QR al reconectar.
+func ResetAgentSession(c *gin.Context) {
+	agentID := c.Param("id")
+	userInterface, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autenticado"})
+		return
+	}
+	user := userInterface.(*models.User)
+
+	var agent models.Agent
+	if err := config.DB.Where("id = ? AND user_id = ?", agentID, user.ID).First(&agent).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Agente no encontrado"})
+		return
+	}
+
+	serverManager := services.GetGlobalServerManager()
+	servers, err := serverManager.ListAllServers()
+	if err != nil || len(servers) == 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se encontró servidor"})
+		return
+	}
+
+	globalServer := servers[0]
+	atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
+	if err := atomicService.Connect(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error conectando al servidor"})
+		return
+	}
+	defer atomicService.Close()
+
+	sshClient := atomicService.GetSSHClient()
+	if sshClient == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Sin conexión SSH"})
+		return
+	}
+
+	// 1. Detener bot
+	atomicService.StopBot(agent.ID)
+
+	// 2. Borrar sesión WhatsApp (.db + archivos WAL)
+	botDir := fmt.Sprintf("/home/user_%d/atomic-bot", agent.UserID)
+	dbFile := fmt.Sprintf("%s/whatsapp-%d.db", botDir, agent.ID)
+	if sess, err := sshClient.NewSession(); err == nil {
+		sess.CombinedOutput(fmt.Sprintf("rm -f %s %s-shm %s-wal", dbFile, dbFile, dbFile))
+		sess.Close()
+	}
+
+	// 3. Limpiar log para que GetQRCodeFromLogs no lea estado anterior
+	logFile := fmt.Sprintf("/var/log/atomic-bot-%d.log", agent.ID)
+	if sess, err := sshClient.NewSession(); err == nil {
+		sess.CombinedOutput(fmt.Sprintf("truncate -s 0 %s 2>/dev/null || true", logFile))
+		sess.Close()
+	}
+
+	// 4. Reiniciar bot para que genere nuevo QR
+	if err := atomicService.RestartBot(agent.ID); err != nil {
+		log.Printf("⚠️  [Agent %d] ResetSession: error reiniciando: %v", agent.ID, err)
+	}
+
+	log.Printf("✅ [Agent %d] Sesión reseteada — bot reiniciando para generar QR", agent.ID)
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Sesión reseteada, generando nuevo QR..."})
+}
+
 // GetAgentQRCode obtiene el QR code del agente (solo para AtomicBot)
 func GetAgentQRCode(c *gin.Context) {
 	agentID := c.Param("id")

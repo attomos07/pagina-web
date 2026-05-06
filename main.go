@@ -205,6 +205,7 @@ func main() {
 		protected.DELETE("/agents/:id", handlers.DeleteAgent)
 		protected.PATCH("/agents/:id/toggle", handlers.ToggleAgentStatus)
 		protected.POST("/agents/:id/redeploy", handlers.RedeployAgent)
+		protected.POST("/agents/:id/reset-session", handlers.ResetAgentSession)
 
 		// Mi Negocio / Sucursales
 		protected.GET("/my-business", handlers.GetMyBusiness)
