@@ -366,7 +366,7 @@ func printFinalStatus(gemini, sheets, calendar string) {
 		fmt.Println("   4. Revisa los logs arriba para más detalles")
 	}
 
-	fmt.Println("\n📱 Esperando mensajes de WhatsApp...")
+	fmt.Println("\n⏳ Bot en espera de mensajes de WhatsApp...")
 	fmt.Println("💡 Presiona Ctrl+C para detener el bot")
 }
 
@@ -458,6 +458,7 @@ func handleEvents(evt interface{}, client *whatsmeow.Client) {
 	case *events.Connected:
 		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 		log.Println("🟢 WHATSAPP CONECTADO")
+		log.Println("WHATSAPP_SESSION_ACTIVE") // sentinel único para detección en logs
 		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 		log.Println("✅ El bot está listo para recibir mensajes")
 

@@ -1260,10 +1260,13 @@ func (s *AtomicBotDeployService) GetQRCodeFromLogs(agentID uint) (string, bool, 
 	for i := len(lines) - 1; i >= 0; i-- {
 		line := lines[i]
 
-		// SOLO estos mensajes indican conexión real a WhatsApp
+		// SOLO estos mensajes indican conexión real a WhatsApp.
+		// IMPORTANTE: NO incluir strings que también aparezcan en el banner de inicio
+		// (ej: "📱 Esperando mensajes de WhatsApp..." se imprime en printFinalStatus
+		// incluso ANTES de que WhatsApp esté conectado, causando falsos positivos).
 		if strings.Contains(line, "🟢 WHATSAPP CONECTADO") ||
-			strings.Contains(line, "El bot está listo para recibir mensajes") ||
-			strings.Contains(line, "📱 Esperando mensajes de WhatsApp") {
+			strings.Contains(line, "WHATSAPP_SESSION_ACTIVE") ||
+			strings.Contains(line, "El bot está listo para recibir mensajes") {
 			lastConnectionIndex = i
 			log.Printf("✅ [Agent %d] Mensaje de conexión encontrado en línea %d: %s", agentID, i, strings.TrimSpace(line))
 			break
