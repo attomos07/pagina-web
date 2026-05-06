@@ -1030,49 +1030,39 @@ func ResetAgentSession(c *gin.Context) {
 		return
 	}
 
-	// Marcar como desplegando
 	config.DB.Model(&agent).Updates(map[string]interface{}{
 		"deploy_status": "deploying",
 		"is_active":     false,
 	})
 
-	// Responder inmediatamente — el deploy corre en background
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Redeploy iniciado, generando nuevo QR..."})
 
 	go func() {
 		serverManager := services.GetGlobalServerManager()
 		servers, err := serverManager.ListAllServers()
 		if err != nil || len(servers) == 0 {
-			log.Printf("❌ [Agent %d] ResetSession: no se encontró servidor", agent.ID)
 			config.DB.Model(&agent).Update("deploy_status", "error")
 			return
 		}
-
 		globalServer := servers[0]
 		atomicService := services.NewAtomicBotDeployService(globalServer.IPAddress, globalServer.RootPassword)
 		if err := atomicService.Connect(); err != nil {
-			log.Printf("❌ [Agent %d] ResetSession: error SSH: %v", agent.ID, err)
 			config.DB.Model(&agent).Update("deploy_status", "error")
 			return
 		}
 		defer atomicService.Close()
 
-		// 1. Detener servicio
-		log.Printf("🔄 [Agent %d] ResetSession PASO 1/3: deteniendo bot...", agent.ID)
 		atomicService.StopBot(agent.ID)
-		time.Sleep(3 * time.Second)
+		time.Sleep(2 * time.Second)
 
-		// 2. Borrar carpeta completa del bot
-		log.Printf("🔄 [Agent %d] ResetSession PASO 2/3: eliminando carpeta del bot...", agent.ID)
 		botDir := fmt.Sprintf("/home/user_%d/atomic-bot", agent.UserID)
+		dbFile := fmt.Sprintf("%s/whatsapp-%d.db", botDir, agent.ID)
 		sshClient := atomicService.GetSSHClient()
 		if sshClient != nil {
 			if sess, err := sshClient.NewSession(); err == nil {
-				out, _ := sess.CombinedOutput(fmt.Sprintf("rm -rf %s && echo OK", botDir))
+				sess.CombinedOutput(fmt.Sprintf("rm -f %s %s-shm %s-wal", dbFile, dbFile, dbFile))
 				sess.Close()
-				log.Printf("✅ [Agent %d] ResetSession: carpeta eliminada: %s", agent.ID, string(out))
 			}
-			// Limpiar log
 			logFile := fmt.Sprintf("/var/log/atomic-bot-%d.log", agent.ID)
 			if sess, err := sshClient.NewSession(); err == nil {
 				sess.CombinedOutput(fmt.Sprintf("truncate -s 0 %s 2>/dev/null || true", logFile))
@@ -1080,38 +1070,14 @@ func ResetAgentSession(c *gin.Context) {
 			}
 		}
 
-		// 3. Deploy completo desde cero
-		log.Printf("🔄 [Agent %d] ResetSession PASO 3/3: deploy completo...", agent.ID)
-		var branch *models.MyBusinessInfo
-		if agent.BranchID > 0 {
-			var b models.MyBusinessInfo
-			if err := config.DB.First(&b, agent.BranchID).Error; err == nil {
-				branch = &b
-			}
-		}
-		var freshAgent models.Agent
-		if err := config.DB.First(&freshAgent, agent.ID).Error; err != nil {
-			freshAgent = agent
-		}
-		geminiKey := ""
-		var googleCreds []byte
-		var user2 models.User
-		if err := config.DB.First(&user2, freshAgent.UserID).Error; err == nil {
-			geminiKey = user2.GetGeminiAPIKey()
-		}
-		if freshAgent.GoogleToken != "" {
-			googleCreds = []byte(freshAgent.GoogleToken)
-		}
-		if err := atomicService.DeployAtomicBot(&freshAgent, branch, geminiKey, googleCreds); err != nil {
-			log.Printf("❌ [Agent %d] ResetSession: deploy falló: %v", agent.ID, err)
-			config.DB.Model(&agent).Update("deploy_status", "error")
-			return
+		if err := atomicService.RestartBot(agent.ID); err != nil {
+			log.Printf("⚠️  [Agent %d] ResetSession: error reiniciando: %v", agent.ID, err)
 		}
 		config.DB.Model(&agent).Updates(map[string]interface{}{
 			"deploy_status": "running",
 			"is_active":     true,
 		})
-		log.Printf("✅ [Agent %d] ResetSession: deploy completo — bot listo para QR", agent.ID)
+		log.Printf("✅ [Agent %d] Sesión reseteada — bot reiniciando para generar QR", agent.ID)
 	}()
 }
 
@@ -1284,24 +1250,16 @@ func RedeployAgent(c *gin.Context) {
 		log.Printf("🔄 [Agent %d] Redeploy PASO 1/6: deteniendo bot...", agent.ID)
 		atomicService.StopBot(agent.ID)
 
-		// 2. Logout de WhatsApp + borrar carpeta completa
-		log.Printf("🔄 [Agent %d] Redeploy PASO 2/6: logout y eliminando carpeta...", agent.ID)
+		// 2. Borrar sesión WhatsApp para forzar nuevo QR
+		log.Printf("🔄 [Agent %d] Redeploy PASO 2/6: borrando sesión WhatsApp...", agent.ID)
 		botDir := fmt.Sprintf("/home/user_%d/atomic-bot", agent.UserID)
-		botHTTPPort := 10000 + int(agent.ID)
+		dbFile := fmt.Sprintf("%s/whatsapp-%d.db", botDir, agent.ID)
 		sshClient := atomicService.GetSSHClient()
 		if sshClient != nil {
-			// Llamar /logout para invalidar la sesión en los servidores de WhatsApp
 			if sess, err := sshClient.NewSession(); err == nil {
-				out, _ := sess.CombinedOutput(fmt.Sprintf("curl -s -X POST http://localhost:%d/logout 2>/dev/null || true", botHTTPPort))
+				sess.CombinedOutput(fmt.Sprintf("rm -f %s %s-shm %s-wal", dbFile, dbFile, dbFile))
 				sess.Close()
-				log.Printf("✅ [Agent %d] Redeploy: logout WhatsApp: %s", agent.ID, string(out))
-			}
-			time.Sleep(2 * time.Second) // esperar que el proceso libere archivos
-			// Borrar carpeta completa
-			if sess, err := sshClient.NewSession(); err == nil {
-				out, _ := sess.CombinedOutput(fmt.Sprintf("rm -rf %s && echo OK", botDir))
-				sess.Close()
-				log.Printf("✅ [Agent %d] Redeploy: carpeta eliminada: %s", agent.ID, string(out))
+				log.Printf("✅ [Agent %d] Redeploy: sesión WhatsApp eliminada", agent.ID)
 			}
 		}
 

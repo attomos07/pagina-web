@@ -537,11 +537,6 @@ func (s *AtomicBotDeployService) DeployAtomicBot(agent *models.Agent, branch *mo
 		return fmt.Errorf("error creando servicio: %w", err)
 	}
 
-	// Eliminar sesión anterior para que el QR aparezca fresco
-	dbFile := fmt.Sprintf("%s/whatsapp-%d.db", botDir, agent.ID)
-	s.executeCommand(fmt.Sprintf("rm -f %s", dbFile))
-	log.Printf("🗑️  [Agent %d] Sesión eliminada: %s", agent.ID, dbFile)
-
 	// PASO 6: Iniciar bot
 	log.Printf("▶️  [Agent %d] PASO 6/6: Iniciando AtomicBot...", agent.ID)
 	if err := s.startBot(agent.ID); err != nil {
@@ -1037,7 +1032,6 @@ func (s *AtomicBotDeployService) generateEnvFile(agent *models.Agent, geminiAPIK
 	env.WriteString(fmt.Sprintf("PHONE_NUMBER=%s\n", agent.PhoneNumber))
 	env.WriteString(fmt.Sprintf("PORT=%d\n", agent.Port))
 	env.WriteString(fmt.Sprintf("DATABASE_FILE=whatsapp-%d.db\n", agent.ID))
-	env.WriteString(fmt.Sprintf("BOT_HTTP_PORT=%d\n", 10000+agent.ID))
 	env.WriteString("\n")
 
 	// API Key de Gemini
@@ -1170,25 +1164,14 @@ WantedBy=multi-user.target`,
 }
 
 // startBot inicia el bot
-
-// DeleteSession elimina el archivo de sesión de WhatsApp del bot
-// para forzar un nuevo QR en el siguiente inicio.
-func (s *AtomicBotDeployService) DeleteSession(agent *models.Agent) error {
-	botDir := fmt.Sprintf("/home/user_%d/atomic-bot", agent.UserID)
-	dbFile := fmt.Sprintf("%s/whatsapp-%d.db", botDir, agent.ID)
-	cmd := fmt.Sprintf("rm -f %s", dbFile)
-	if _, err := s.executeCommand(cmd); err != nil {
-		return fmt.Errorf("error eliminando sesión: %w", err)
-	}
-	log.Printf("🗑️  [Agent %d] Sesión de WhatsApp eliminada (%s)", agent.ID, dbFile)
-	return nil
-}
-
 func (s *AtomicBotDeployService) startBot(agentID uint) error {
 	serviceName := fmt.Sprintf("atomic-bot-%d", agentID)
 
 	// Detener si ya está corriendo
 	s.executeCommand(fmt.Sprintf("systemctl stop %s", serviceName))
+
+	// Re-habilitar el servicio (puede haber sido deshabilitado por StopBot)
+	s.executeCommand(fmt.Sprintf("systemctl enable %s", serviceName))
 
 	// Iniciar servicio
 	if _, err := s.executeCommand(fmt.Sprintf("systemctl start %s", serviceName)); err != nil {
@@ -1210,22 +1193,22 @@ func (s *AtomicBotDeployService) startBot(agentID uint) error {
 
 // StopBot detiene el bot
 func (s *AtomicBotDeployService) StopBot(agentID uint) error {
-	cmd := fmt.Sprintf("systemctl stop atomic-bot-%d", agentID)
-	if _, err := s.executeCommand(cmd); err != nil {
-		return fmt.Errorf("error deteniendo: %w", err)
-	}
-
-	log.Printf("✅ [Agent %d] AtomicBot detenido", agentID)
+	serviceName := fmt.Sprintf("atomic-bot-%d", agentID)
+	// Deshabilitar restart automático antes de detener para evitar que
+	// systemd reinicie el bot con sesión antigua antes de que se borre el .db
+	s.executeCommand(fmt.Sprintf("systemctl stop %s", serviceName))
+	s.executeCommand(fmt.Sprintf("systemctl disable %s", serviceName))
+	log.Printf("✅ [Agent %d] AtomicBot detenido (restart deshabilitado)", agentID)
 	return nil
 }
 
 // RestartBot reinicia el bot
 func (s *AtomicBotDeployService) RestartBot(agentID uint) error {
-	cmd := fmt.Sprintf("systemctl restart atomic-bot-%d", agentID)
-	if _, err := s.executeCommand(cmd); err != nil {
+	serviceName := fmt.Sprintf("atomic-bot-%d", agentID)
+	s.executeCommand(fmt.Sprintf("systemctl enable %s", serviceName))
+	if _, err := s.executeCommand(fmt.Sprintf("systemctl restart %s", serviceName)); err != nil {
 		return fmt.Errorf("error reiniciando: %w", err)
 	}
-
 	log.Printf("✅ [Agent %d] AtomicBot reiniciado", agentID)
 	return nil
 }
