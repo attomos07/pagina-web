@@ -887,7 +887,7 @@ async function showQRModal(agentId) {
                 <div class="qr-spinner"><div class="brand-spinner"></div><p>Obteniendo QR...</p></div>
             </div>
             <p class="qr-hint">Abre WhatsApp → Dispositivos vinculados → Vincular dispositivo</p>
-            <button class="qr-reconnect-btn" id="qrReconnectBtn" onclick="reconnectBot(agentId)" style="margin-top:12px;padding:8px 16px;background:#06b6d4;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;">
+            <button class="qr-reconnect-btn" id="qrReconnectBtn" onclick="reconnectBot(${agentId})" style="margin-top:12px;padding:8px 16px;background:#06b6d4;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;">
                 🔄 Generar nuevo QR
             </button>
         </div>`;
