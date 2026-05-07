@@ -34,7 +34,6 @@ func InitGemini() error {
 		return fmt.Errorf("GEMINI_API_KEY no configurada")
 	}
 
-	// Validar formato de API Key
 	if !strings.HasPrefix(apiKey, "AIzaSy") {
 		geminiEnabled = false
 		log.Printf("❌ GEMINI_API_KEY tiene formato inválido (debe comenzar con 'AIzaSy'): %s...\n", apiKey[:10])
@@ -52,16 +51,13 @@ func InitGemini() error {
 	}
 
 	geminiClient = client
-	// 🔥 CAMBIO AQUÍ: Usar gemini-2.5-flash-lite en lugar de gemini-2.0-flash-exp
 	geminiModel = client.GenerativeModel("gemini-2.5-flash-lite")
 
-	// Configurar parámetros del modelo
 	geminiModel.SetTemperature(0.7)
 	geminiModel.SetMaxOutputTokens(1024)
 	geminiModel.SetTopP(0.9)
 	geminiModel.SetTopK(40)
 
-	// Hacer una prueba rápida
 	log.Println("🧪 Probando conexión con Gemini...")
 	testResp, err := geminiModel.GenerateContent(ctx, genai.Text("Di 'OK' si funcionas correctamente"))
 	if err != nil {
@@ -78,7 +74,6 @@ func InitGemini() error {
 
 	geminiEnabled = true
 	log.Println("✅ Gemini AI inicializado y verificado correctamente")
-	// 🔥 CAMBIO AQUÍ: Actualizar el log para reflejar el modelo correcto
 	log.Println("📊 Modelo: gemini-2.5-flash-lite")
 	log.Println("🎯 Temperatura: 0.7")
 	log.Println("📝 Max Tokens: 1024")
@@ -109,12 +104,12 @@ func Chat(promptContext, userMessage, conversationHistory string) (string, error
 
 	ctx := context.Background()
 
-	// Obtener el prompt del sistema desde la configuración del negocio
 	systemPrompt := GetSystemPrompt()
 
-	// Construir catálogo de media para instrucciones especiales
+	// ── Construir reglas de media (fotos y menú) ─────────────────────────────
 	mediaCatalog := ""
 	if BusinessCfg != nil {
+		// Fotos de servicios/productos
 		photosSection := ""
 		for _, svc := range BusinessCfg.Services {
 			if len(svc.ImageUrls) > 0 {
@@ -123,14 +118,25 @@ func Chat(promptContext, userMessage, conversationHistory string) (string, error
 		}
 		if photosSection != "" {
 			mediaCatalog += "\nSERVICIOS/PRODUCTOS CON FOTOS DISPONIBLES:\n" + photosSection
-			mediaCatalog += "\nREGLA CRÍTICA DE FOTOS: Si el cliente pide ver fotos, imágenes o cómo se ve alguno de los productos/servicios de la lista anterior, tu respuesta debe ser EXCLUSIVAMENTE esta línea, sin ningún texto antes ni después:\nSEND_PHOTOS:TituloExactoDelServicio\nDonde TituloExactoDelServicio es el título tal como aparece en la lista. NO agregues explicación, emojis ni texto adicional.\n"
+			mediaCatalog += "\n⚠️ REGLA ABSOLUTA DE FOTOS (NO IGNORAR): Si el cliente pide ver fotos, imágenes o cómo se ve alguno de los productos/servicios de la lista anterior, tu ÚNICA respuesta permitida es exactamente:\nSEND_PHOTOS:TituloExactoDelServicio\nDonde TituloExactoDelServicio es el título tal como aparece en la lista. NO agregues explicación, emojis ni texto adicional antes o después.\n"
 		}
+
+		// Menú como archivo (PDF o imagen)
 		if BusinessCfg.MenuUrl != "" {
-			mediaCatalog += "\nREGLA CRÍTICA DE MENÚ: Si el cliente pide el menú, la carta, el PDF o imagen del menú, responde EXCLUSIVAMENTE con:\nSEND_MENU\nSin texto adicional.\n"
+			mediaCatalog += `
+⚠️ REGLA ABSOLUTA DE MENÚ (OBLIGATORIA, NO IGNORAR):
+Este negocio tiene un menú en imagen/PDF disponible.
+Si el cliente pide VER el menú, la carta, fotos del menú, el PDF, o dice frases como:
+"puedo ver el menú", "mándame el menú", "foto del menú", "tienen menú en foto",
+"menú foto", "foto", "imagen del menú", o cualquier variación similar,
+tu ÚNICA respuesta permitida es exactamente esta palabra, sin nada más:
+SEND_MENU
+NO listes productos. NO expliques. NO agregues texto antes ni después. Solo escribe: SEND_MENU
+`
 		}
 	}
 
-	// Construir prompt completo
+	// ── Construir prompt completo ─────────────────────────────────────────────
 	fullPrompt := fmt.Sprintf(`%s
 %s
 HISTORIAL DE CONVERSACIÓN:
@@ -157,7 +163,6 @@ RESPUESTA:`,
 
 	log.Println("🚀 Enviando petición a Gemini...")
 
-	// Generar respuesta
 	resp, err := geminiModel.GenerateContent(ctx, genai.Text(fullPrompt))
 	if err != nil {
 		log.Printf("❌ Error generando respuesta de Gemini: %v\n", err)
@@ -174,7 +179,6 @@ RESPUESTA:`,
 		return "¿Podrías repetir eso?", nil
 	}
 
-	// Extraer texto de la respuesta
 	var answer strings.Builder
 	for _, cand := range resp.Candidates {
 		if cand.Content != nil {
@@ -186,7 +190,6 @@ RESPUESTA:`,
 
 	result := strings.TrimSpace(answer.String())
 
-	// Limitar longitud
 	if len(result) > 500 {
 		result = result[:450] + "..."
 	}
@@ -216,7 +219,6 @@ func AnalyzeForAppointment(message, conversationHistory string, isCurrentlySched
 
 	ctx := context.Background()
 
-	// Obtener servicios disponibles
 	servicesInfo := ""
 	if BusinessCfg != nil && len(BusinessCfg.Services) > 0 {
 		servicesInfo = "SERVICIOS DISPONIBLES:\n"
@@ -225,7 +227,6 @@ func AnalyzeForAppointment(message, conversationHistory string, isCurrentlySched
 		}
 	}
 
-	// Obtener trabajadores disponibles
 	workersInfo := ""
 	if BusinessCfg != nil && len(BusinessCfg.Workers) > 0 {
 		workersInfo = "PERSONAL DISPONIBLE:\n"
@@ -234,7 +235,6 @@ func AnalyzeForAppointment(message, conversationHistory string, isCurrentlySched
 		}
 	}
 
-	// Construir prompt de análisis
 	analysisPrompt := fmt.Sprintf(`Analiza este mensaje y extrae información de agendamiento.
 
 %s
@@ -281,7 +281,6 @@ RESPONDE EN JSON:
 
 	log.Println("🚀 Enviando análisis a Gemini...")
 
-	// Generar análisis
 	resp, err := geminiModel.GenerateContent(ctx, genai.Text(analysisPrompt))
 	if err != nil {
 		log.Printf("⚠️  Error en análisis de Gemini: %v, usando fallback\n", err)
@@ -293,7 +292,6 @@ RESPONDE EN JSON:
 		return fallbackAnalysis(message), nil
 	}
 
-	// Extraer respuesta
 	var responseText string
 	for _, cand := range resp.Candidates {
 		if cand.Content != nil {
@@ -305,7 +303,6 @@ RESPONDE EN JSON:
 
 	log.Printf("📄 Respuesta de análisis de Gemini:\n%s\n", responseText)
 
-	// Extraer JSON de la respuesta
 	jsonStart := strings.Index(responseText, "{")
 	jsonEnd := strings.LastIndex(responseText, "}")
 
@@ -317,7 +314,6 @@ RESPONDE EN JSON:
 	jsonStr := responseText[jsonStart : jsonEnd+1]
 	log.Printf("📊 JSON extraído: %s\n", jsonStr)
 
-	// Parsear JSON
 	var analysis AppointmentAnalysis
 	if err := json.Unmarshal([]byte(jsonStr), &analysis); err != nil {
 		log.Printf("⚠️  Error parseando JSON: %v, usando fallback\n", err)
@@ -325,7 +321,6 @@ RESPONDE EN JSON:
 		return fallbackAnalysis(message), nil
 	}
 
-	// Asegurar que el mapa esté inicializado
 	if analysis.ExtractedData == nil {
 		analysis.ExtractedData = make(map[string]string)
 	}
@@ -402,12 +397,10 @@ func GenerateWelcomeMessage() string {
 		return "¡Hola! ¿En qué puedo ayudarte hoy?"
 	}
 
-	// Si hay Gemini, generar mensaje dinámico
 	if geminiEnabled && geminiClient != nil {
 		log.Println("💬 Generando mensaje de bienvenida con Gemini...")
 
 		ctx := context.Background()
-		// Prompt diferente según el giro del negocio
 		var prompt string
 		if isPizzeriaMode() {
 			prompt = fmt.Sprintf(`Genera un mensaje de bienvenida MUY BREVE (1-2 líneas máximo) para %s, un negocio tipo %s.
@@ -462,7 +455,6 @@ RESPONDE SOLO CON EL MENSAJE, SIN EXPLICACIONES.`,
 		log.Println("⚠️  Gemini no disponible para generar mensaje de bienvenida")
 	}
 
-	// Mensaje por defecto según giro
 	var defaultMsg string
 	if isPizzeriaMode() {
 		defaultMsg = fmt.Sprintf("¡Hola! Bienvenido a %s 👋\n\nPuedes ver nuestro menú o hacer tu pedido directamente. ¿Qué se te antoja hoy? 😋",
